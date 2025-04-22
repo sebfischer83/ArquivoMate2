@@ -1,9 +1,23 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+﻿@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @attribute [Authorize]
+@inject NavigationManager Navigation
 
-<PageTitle>Home</PageTitle>
+<AuthorizeView>
+    <Authorized>
+        Hello, @context.User.Identity?.Name!
+        <button class="nav-link btn btn-link" @onclick="BeginLogOut">Log out</button>
+    </Authorized>
+    <NotAuthorized>
+        <a href="authentication/login">Log in</a>
+    </NotAuthorized>
+</AuthorizeView>
 
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
+@code {
+    public void BeginLogOut()
+    {
+        Navigation.NavigateToLogout("authentication/logout");
+    }
+}

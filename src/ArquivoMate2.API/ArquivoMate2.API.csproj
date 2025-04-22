@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>bb5e46f1-5f35-4a18-b8ac-a5d3eef93c99</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>..\..</DockerfileContext>
+    <DockerComposeProjectPath>..\..\docker-compose.dcproj</DockerComposeProjectPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.18" />
+    <PackageReference Include="Hangfire.PostgreSql" Version="1.20.12" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.3" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.1.17" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ArquivoMate2.Application\ArquivoMate2.Application.csproj" />
+    <ProjectReference Include="..\ArquivoMate2.Domain\ArquivoMate2.Domain.csproj" />
+    <ProjectReference Include="..\ArquivoMate2.Infrastructure\ArquivoMate2.Infrastructure.csproj" />
+    <ProjectReference Include="..\ArquivoMate2.Shared\ArquivoMate2.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

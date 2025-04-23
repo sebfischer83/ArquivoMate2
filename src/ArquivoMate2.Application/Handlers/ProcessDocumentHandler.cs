@@ -16,7 +16,6 @@ namespace ArquivoMate2.Application.Handlers
 
         async Task IRequestHandler<ProcessDocumentCommand>.Handle(ProcessDocumentCommand request, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Starting processing for document {DocumentId}", request.DocumentId);
             var sw = Stopwatch.StartNew();
             try
             {

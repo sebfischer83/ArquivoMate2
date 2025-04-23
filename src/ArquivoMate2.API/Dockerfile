@@ -2,6 +2,16 @@
 
 # Diese Stufe wird verwendet, wenn sie von VS im Schnellmodus ausgeführt wird (Standardeinstellung für Debugkonfiguration).
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+USER root
+RUN apt-get -y update
+RUN apt -y install webp
+RUN apt -y install poppler-utils
+RUN apt-get install -y iputils-ping
+RUN apt-get -y update && apt -y install ocrmypdf
+RUN apt-get -y install tesseract-ocr-deu
+RUN apt-get -y install tesseract-ocr-all
+RUN apt-get -y install fontconfig
+RUN fc-cache -f -v
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080

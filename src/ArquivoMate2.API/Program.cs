@@ -4,7 +4,12 @@ using ArquivoMate2.Infrastructure.Configuration;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.Extensions.DependencyInjection;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Scalar.AspNetCore;
+using Serilog;
+using Serilog.Configuration;
 
 namespace ArquivoMate2.API
 {
@@ -14,7 +19,29 @@ namespace ArquivoMate2.API
         {
             var builder = WebApplication.CreateBuilder(args);
             string connectionString = builder.Configuration.GetConnectionString("Default");
-            // Add services to the container.
+
+            builder.Host.UseSerilog((context, config) =>
+            {
+                config.ReadFrom.Configuration(context.Configuration);
+                config.Enrich.FromLogContext();
+                config.Enrich.WithProperty("Application", typeof(Program).Assembly.GetName().Name);
+            });
+
+            builder.Services.AddOpenTelemetry()
+              .ConfigureResource(r => r.AddService("My Service"))
+              .WithTracing(tracing =>
+              {
+                  tracing.AddSource(typeof(Program).Assembly.GetName().Name);
+                  tracing.AddAspNetCoreInstrumentation();
+                  tracing.AddHttpClientInstrumentation();
+                  tracing.AddConsoleExporter(); 
+                  tracing.AddSource("Marten");
+                  tracing.AddOtlpExporter(opt =>
+                  {
+                      opt.Endpoint = new Uri("http://seq:5341/ingest/otlp/v1/traces");
+                      opt.Protocol = OtlpExportProtocol.HttpProtobuf;
+                  });
+              });
 
             builder.Services.AddControllers();
             builder.Services.AddMarten(builder.Configuration);
@@ -22,7 +49,11 @@ namespace ArquivoMate2.API
             // Replace the problematic line with the following:
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(UploadDocumentHandler).Assembly));
             builder.Services.AddHangfire(config =>
-                    config.UsePostgreSqlStorage(opt => opt.UseNpgsqlConnection(connectionString)));
+            {
+                config.UseSerilogLogProvider();
+                config.UseRecommendedSerializerSettings();
+                config.UsePostgreSqlStorage(opt => opt.UseNpgsqlConnection(connectionString));
+            });
             builder.Services.AddHangfireServer();
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -36,7 +67,6 @@ namespace ArquivoMate2.API
                 app.MapOpenApi();
                 app.MapScalarApiReference(opt =>
                 {
-                    opt.BaseServerUrl = "https://localhost:5000";
                     opt.AddServer("https://localhost:5000", "Local Development");
                 });
             }
@@ -46,6 +76,7 @@ namespace ArquivoMate2.API
             app.UseAuthorization();
 
             app.UseHangfireDashboard("/hangfire", new DashboardOptions { });
+            app.UseSerilogRequestLogging();
 
             app.MapControllers();
             app.MapHangfireDashboard();

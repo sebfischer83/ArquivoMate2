@@ -38,3 +38,5 @@ _ReSharper*/
 /Limex.WsLocalServices.CustomerService/Data/WebCountersData/*
 /Limex.WsLocalServices.CustomerService/Data/CurrentCustomerVersions/*
 /WsServerWebServiceDerivate/Limex.WsLocalServices.RepdocServerWebService/WormAPI.dll
+/src/ArquivoMate2.API/logs
+/src/ArquivoMate2.API/uploads

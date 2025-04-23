@@ -41,8 +41,22 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
 
+  seq:
+    image: datalust/seq
+    container_name: seq
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8070:80"
+      - "127.0.0.1:8071:5341"
+    environment:
+      ACCEPT_EULA: "Y"
+    volumes:
+      - seq:/data
+
 volumes:
   db_data:
     driver: local
   redis:
+    driver: local
+  seq:
     driver: local

@@ -1,4 +1,6 @@
 ﻿using ArquivoMate2.Application.Commands;
+using ArquivoMate2.Application.Configuration;
+using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Services;
 using ArquivoMate2.Shared.Models;
 using Hangfire;
@@ -14,29 +16,24 @@ namespace ArquivoMate2.API.Controllers
     {
         private readonly IMediator _mediator;
         private readonly IWebHostEnvironment _env;
+        private readonly ICurrentUserService _currentUserService;
 
-        public DocumentsController(IMediator mediator, IWebHostEnvironment env)
+        public DocumentsController(IMediator mediator, IWebHostEnvironment env, ICurrentUserService currentUserService)
         {
             _mediator = mediator;
             _env = env;
+            _currentUserService = currentUserService;
         }
 
         [HttpPost]
-        public async Task<IActionResult> Upload([FromForm] UploadDocumentRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> Upload([FromForm] UploadDocumentRequest request, CancellationToken cancellationToken, [FromServices] OcrSettings ocrSettings)
         {
             if (request.File is null || request.File.Length == 0)
                 return BadRequest();
 
-            var uploads = Path.Combine(_env.ContentRootPath, "uploads");
-            Directory.CreateDirectory(uploads);
-            var filePath = Path.Combine(uploads, request.File.FileName);
-            await using var stream = new FileStream(filePath, FileMode.Create);
-            await request.File.CopyToAsync(stream, cancellationToken);
+            var id = await _mediator.Send(new UploadDocumentCommand(request), cancellationToken);
 
-            var id = await _mediator.Send(new UploadDocumentCommand(filePath), cancellationToken);
-
-            // Automatically enqueue processing after successful upload
-            BackgroundJob.Enqueue<DocumentProcessingService>(svc => svc.ProcessAsync(id));
+            BackgroundJob.Enqueue<DocumentProcessingService>(svc => svc.ProcessAsync(id, _currentUserService.UserId));
 
             return CreatedAtAction(nameof(Upload), new { id }, null);
         }

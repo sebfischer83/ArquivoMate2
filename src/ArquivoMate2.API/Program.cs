@@ -1,5 +1,6 @@
 
 using ArquivoMate2.Application.Handlers;
+using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Infrastructure.Configuration;
 using Hangfire;
 using Hangfire.PostgreSql;
@@ -44,7 +45,8 @@ namespace ArquivoMate2.API
               });
 
             builder.Services.AddControllers();
-            builder.Services.AddMarten(builder.Configuration);
+            builder.Services.AddInfrastructure(builder.Configuration);
+            builder.Services.AddHttpContextAccessor();
 
             // Replace the problematic line with the following:
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(UploadDocumentHandler).Assembly));

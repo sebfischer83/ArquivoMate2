@@ -45,7 +45,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ArquivoMate2.Application\ArquivoMate2.Application.csproj" />
-    <ProjectReference Include="..\ArquivoMate2.Domain\ArquivoMate2.Domain.csproj" />
     <ProjectReference Include="..\ArquivoMate2.Infrastructure\ArquivoMate2.Infrastructure.csproj" />
     <ProjectReference Include="..\ArquivoMate2.Shared\ArquivoMate2.Shared.csproj" />
   </ItemGroup>

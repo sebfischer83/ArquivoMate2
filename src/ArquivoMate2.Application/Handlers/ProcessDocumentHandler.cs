@@ -1,4 +1,5 @@
 ﻿using ArquivoMate2.Application.Commands;
+using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Document;
 using Marten;
 using MediatR;
@@ -11,8 +12,10 @@ namespace ArquivoMate2.Application.Handlers
     {
         private readonly IDocumentSession _session;
         private readonly ILogger<ProcessDocumentHandler> _logger;
-        public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger)
-            => (_session, _logger) = (session, logger);
+        private readonly IDocumentTextExtractor _documentTextExtractor;
+
+        public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger, IDocumentTextExtractor documentTextExtractor)
+            => (_session, _logger, _documentTextExtractor) = (session, logger, documentTextExtractor);
 
         async Task IRequestHandler<ProcessDocumentCommand>.Handle(ProcessDocumentCommand request, CancellationToken cancellationToken)
         {
@@ -25,6 +28,9 @@ namespace ArquivoMate2.Application.Handlers
                     _logger.LogWarning("Document {DocumentId} not found", request.DocumentId);
                     throw new KeyNotFoundException($"Document {request.DocumentId} not found");
                 }
+
+                //var text = await _documentTextExtractor.ExtractPdfTextAsync(, cancellationToken);
+
 
                 doc.MarkAsProcessed();
                 _session.Events.Append(request.DocumentId, new DocumentProcessed(request.DocumentId, DateTime.UtcNow));

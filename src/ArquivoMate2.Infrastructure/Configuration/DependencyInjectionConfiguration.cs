@@ -1,21 +1,27 @@
-﻿using ArquivoMate2.Domain.Document;
+﻿using ArquivoMate2.Application.Configuration;
+using ArquivoMate2.Application.Interfaces;
+using ArquivoMate2.Domain.Document;
+using ArquivoMate2.Domain.ValueObjects;
 using ArquivoMate2.Infrastructure.Persistance;
+using ArquivoMate2.Infrastructure.Services;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace ArquivoMate2.Infrastructure.Configuration
 {
-    public static class MartenConfiguration
+    public static class DependencyInjectionConfiguration
     {
-        public static IServiceCollection AddMarten(this IServiceCollection services, IConfiguration config)
+        public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
         {
             services.AddMarten(options =>
             {
@@ -39,6 +45,25 @@ namespace ArquivoMate2.Infrastructure.Configuration
             // Für CQRS: Lightweight Sessions
             services.AddScoped<IDocumentSession>(sp => sp.GetRequiredService<IDocumentStore>().LightweightSession());
             services.AddScoped<IQuerySession>(sp => sp.GetRequiredService<IDocumentStore>().QuerySession());
+
+            // Services
+            services.AddScoped<IDocumentTextExtractor, DocumentTextExtractor>();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+
+            // config
+            services.Configure<OcrSettings>(
+                config.GetSection("OcrSettings"));
+
+            services.AddSingleton(sp =>
+                sp.GetRequiredService<IOptions<OcrSettings>>().Value);
+
+            services.Configure<Paths>(
+                config.GetSection("Paths"));
+
+            services.AddSingleton(sp =>
+                sp.GetRequiredService<IOptions<Paths>>().Value);
+            
 
             return services;
         }

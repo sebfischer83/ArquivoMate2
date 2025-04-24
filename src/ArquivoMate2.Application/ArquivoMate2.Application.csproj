@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ArquivoMate2.Domain\ArquivoMate2.Domain.csproj" />
+    <ProjectReference Include="..\ArquivoMate2.Shared\ArquivoMate2.Shared.csproj" />
   </ItemGroup>
 
 </Project>

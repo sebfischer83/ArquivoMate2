@@ -1,6 +1,7 @@
-﻿using MediatR;
+﻿using ArquivoMate2.Shared.Models;
+using MediatR;
 
 namespace ArquivoMate2.Application.Commands
 {
-    public record UploadDocumentCommand(string FilePath) : IRequest<Guid>;
+    public record UploadDocumentCommand(UploadDocumentRequest request) : IRequest<Guid>;
 }

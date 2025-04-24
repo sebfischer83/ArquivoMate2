@@ -49,6 +49,8 @@ namespace ArquivoMate2.Infrastructure.Configuration
             // Services
             services.AddScoped<IDocumentTextExtractor, DocumentTextExtractor>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<IFileMetadataService, FileMetadataService>();
+            services.AddScoped<IPathService, PathService>();
 
 
             // config

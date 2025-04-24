@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace ArquivoMate2.Infrastructure.Services
 {
-    public class FileMetadataService
+    public class FileMetadataService : IFileMetadataService
     {
         private readonly IPathService _paths;
 
@@ -35,8 +35,7 @@ namespace ArquivoMate2.Infrastructure.Services
             await File.WriteAllTextAsync(metaPath, json, ct);
         }
 
-        public async Task<DocumentMetadata?> ReadMetadataAsync(
-            Guid documentId, string userId, CancellationToken ct = default)
+        public async Task<DocumentMetadata?> ReadMetadataAsync(Guid documentId, string userId, CancellationToken ct = default)
         {
             var metaPath = Path.Combine(
                  _paths.GetDocumentUploadPath(userId),

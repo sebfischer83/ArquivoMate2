@@ -10,6 +10,6 @@ namespace ArquivoMate2.Application.Interfaces
     public interface IFileMetadataService
     {
         Task WriteMetadataAsync(DocumentMetadata metadata, CancellationToken ct = default);
-        Task<DocumentMetadata?> ReadMetadataAsync(Guid documentId, Guid userId, CancellationToken ct = default);
+        Task<DocumentMetadata?> ReadMetadataAsync(Guid documentId, string userId, CancellationToken ct = default);
     }
 }

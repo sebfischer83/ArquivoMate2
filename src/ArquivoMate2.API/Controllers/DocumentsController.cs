@@ -6,11 +6,13 @@ using ArquivoMate2.Shared.Models;
 using Hangfire;
 using Marten;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ArquivoMate2.API.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/documents")]
     public class DocumentsController : ControllerBase
     {

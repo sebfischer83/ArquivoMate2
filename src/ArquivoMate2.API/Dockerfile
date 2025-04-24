@@ -12,6 +12,8 @@ RUN apt-get -y install tesseract-ocr-deu
 RUN apt-get -y install tesseract-ocr-all
 RUN apt-get -y install fontconfig
 RUN fc-cache -f -v
+RUN mkdir -p /var/arquivomate2
+RUN chown $APP_UID /var/arquivomate2
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080

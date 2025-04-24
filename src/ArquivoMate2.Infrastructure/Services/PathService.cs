@@ -24,7 +24,7 @@ namespace ArquivoMate2.Infrastructure.Services
 
         public string GetDocumentUploadPath(string userId)
         {
-            throw new NotImplementedException();
+            return Path.Combine(_paths.Upload, userId);
         }
     }
 }

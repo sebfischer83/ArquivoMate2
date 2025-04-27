@@ -44,9 +44,13 @@ namespace ArquivoMate2.Application.Handlers
             await using var fs = new FileStream(filePath, FileMode.Create);
             await request.request.File.CopyToAsync(fs, cancellationToken);
 
-            var @event = new DocumentUploaded(fileId, _currentUserService.UserId, filePath, DateTime.UtcNow);
+            var @event = new DocumentUploaded(fileId, _currentUserService.UserId, DateTime.UtcNow);
             _session.Events.StartStream<Document>(@event.AggregateId, @event);
             await _session.SaveChangesAsync(cancellationToken);
+
+            var languages = (request.request.Language == null || request.request.Language.Length == 0)
+                ? _ocrSettings.DefaultLanguages
+                : request.request.Language;
 
             var metadata = new DocumentMetadata(
                 fileId,
@@ -56,7 +60,7 @@ namespace ArquivoMate2.Application.Handlers
                 ext,
                 request.request.File.Length,
                 DateTime.UtcNow,
-                (string.IsNullOrWhiteSpace(request.request.Language) ? _ocrSettings.DefaultLanguage : request.request.Language)
+                languages
             );
             await _fileMetadataService.WriteMetadataAsync(metadata, cancellationToken);
 

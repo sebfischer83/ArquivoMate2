@@ -8,6 +8,6 @@ namespace ArquivoMate2.Application.Configuration
 {
     public class OcrSettings
     {
-        public string DefaultLanguage { get; set; } = string.Empty;
+        public string[] DefaultLanguages { get; set; } = Array.Empty<string>();
     }
 }

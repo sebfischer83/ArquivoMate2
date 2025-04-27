@@ -20,6 +20,8 @@ namespace ArquivoMate2.Application.Services
             _logger.LogInformation("Starting document processing for Document ID: {DocumentId}, User ID: {UserId}", documentId, userId);
             await _mediator.Send(new ProcessDocumentCommand(documentId, userId));
             // Post-processing actions (notifications, indexing)
+
+            // Delete the temp uploaded file after processing
         }
     }
 }

@@ -4,37 +4,33 @@
     public class Document
     {
         public Guid Id { get; private set; }
-        public string FilePath { get; private set; }
+        public string FilePath { get; private set; } = string.Empty;
+
+        public string ThumbnailPath { get; private set; } = string.Empty;
+
+        public string UserId { get; private set; } = string.Empty;
         public bool Processed { get; private set; }
         public DateTime UploadedAt { get; private set; }
         public DateTime? ProcessedAt { get; private set; }
 
-        public Document() { }
+        public bool Accepted { get; private set; }
 
-        public static Document Create(DocumentUploaded evt)
-        {
-            var doc = new Document();
-            doc.Apply(evt);
-            return doc;
-        }
+        public DateTime AcceptedAt { get; private set; } = DateTime.UtcNow;
+
+        public Document() { }
 
         public void Apply(DocumentUploaded e)
         {
             Id = e.AggregateId;
-            FilePath = e.FilePath;
             UploadedAt = e.OccurredOn;
-        }
-
-        public void MarkAsUploaded(DocumentUploaded @event)
-        {
-            Id = @event.AggregateId;
-            FilePath = @event.FilePath;
+            UserId = e.UserId;
         }
 
         public void MarkAsProcessed()
         {
             if (Processed) throw new InvalidOperationException("Document is already processed.");
             Processed = true;
+            ProcessedAt = DateTime.UtcNow;
         }
     }
 }

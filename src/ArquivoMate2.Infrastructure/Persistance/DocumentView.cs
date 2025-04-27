@@ -4,8 +4,16 @@
     {
         public Guid Id { get; set; }
         public string FilePath { get; set; } = string.Empty;
+
+        public string ThumbnailPath { get; set; } = string.Empty;
+
+        public string UserId { get; set; } = string.Empty;
         public bool Processed { get; set; }
         public DateTime UploadedAt { get; set; }
         public DateTime? ProcessedAt { get; set; }
+
+        public bool Accepted { get; set; }
+
+        public DateTime AcceptedAt { get; set; } = DateTime.UtcNow;
     }
 }

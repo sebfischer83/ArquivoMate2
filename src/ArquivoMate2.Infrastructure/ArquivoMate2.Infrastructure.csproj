@@ -6,12 +6,20 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <MagickCopyNativeWindows>false</MagickCopyNativeWindows>
+    <MagickCopyNativeLinux>true</MagickCopyNativeLinux>
+    <MagickCopyNativeLinuxMusl>false</MagickCopyNativeLinuxMusl>
+    <MagickCopyNativeMacOS>false</MagickCopyNativeMacOS>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Marten" Version="7.40.0" />
     <PackageReference Include="Marten.AspNetCore" Version="7.40.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.4" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.4" />
     <PackageReference Include="PdfPig" Version="0.1.10" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.6.0" />
   </ItemGroup>
 
   <ItemGroup>

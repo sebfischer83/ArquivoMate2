@@ -8,6 +8,6 @@ namespace ArquivoMate2.Application.Interfaces
 {
     public interface IDocumentTextExtractor
     {
-        Task<string> ExtractPdfTextAsync(Stream documentStream, CancellationToken cancellationToken = default);
+        Task<string> ExtractPdfTextAsync(Stream documentStream, Domain.ValueObjects.DocumentMetadata documentMetadata, bool forceOcr, CancellationToken cancellationToken = default);
     }
 }

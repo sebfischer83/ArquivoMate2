@@ -10,20 +10,14 @@
     <DockerComposeProjectPath>..\..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <MagickCopyNativeWindows>false</MagickCopyNativeWindows>
-    <MagickCopyNativeLinux>true</MagickCopyNativeLinux>
-    <MagickCopyNativeLinuxMusl>false</MagickCopyNativeLinuxMusl>
-    <MagickCopyNativeMacOS>false</MagickCopyNativeMacOS>
-  </PropertyGroup>
- 
+
   <ItemGroup>
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.18" />
     <PackageReference Include="Hangfire.PostgreSql" Version="1.20.12" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.4" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.3" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
-    <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.6.0" />
+
     <PackageReference Include="Npgsql.OpenTelemetry" Version="9.0.3" />
     <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.11.2" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.11.2" />

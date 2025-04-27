@@ -1,6 +1,7 @@
 ﻿using ArquivoMate2.Application.Commands;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Document;
+using ArquivoMate2.Domain.ValueObjects;
 using Marten;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -13,9 +14,11 @@ namespace ArquivoMate2.Application.Handlers
         private readonly IDocumentSession _session;
         private readonly ILogger<ProcessDocumentHandler> _logger;
         private readonly IDocumentTextExtractor _documentTextExtractor;
+        private readonly IFileMetadataService fileMetadataService;
+        private readonly IPathService pathService;
 
-        public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger, IDocumentTextExtractor documentTextExtractor)
-            => (_session, _logger, _documentTextExtractor) = (session, logger, documentTextExtractor);
+        public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger, IDocumentTextExtractor documentTextExtractor, IFileMetadataService fileMetadataService, IPathService pathService)
+            => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService) = (session, logger, documentTextExtractor, fileMetadataService, pathService);
 
         async Task IRequestHandler<ProcessDocumentCommand>.Handle(ProcessDocumentCommand request, CancellationToken cancellationToken)
         {
@@ -29,9 +32,26 @@ namespace ArquivoMate2.Application.Handlers
                     throw new KeyNotFoundException($"Document {request.DocumentId} not found");
                 }
 
-                //var text = await _documentTextExtractor.ExtractPdfTextAsync(, cancellationToken);
+                // read the file
+                var metadata = await fileMetadataService.ReadMetadataAsync(request.DocumentId, request.UserId);
+
+                if (metadata is null)
+                {
+                    _logger.LogWarning("Metadata for document {DocumentId} not found", request.DocumentId);
+                    throw new KeyNotFoundException($"Metadata for document {request.DocumentId} not found");
+                }
+
+                var path = pathService.GetDocumentUploadPath(request.UserId);
+                path = Path.Combine(path, $"{request.DocumentId}{metadata.Extension}");
+
+                using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan);
+
+                // get the content
+                var content = await ExtractTextAsync(stream, metadata, cancellationToken);
 
 
+
+               
                 doc.MarkAsProcessed();
                 _session.Events.Append(request.DocumentId, new DocumentProcessed(request.DocumentId, DateTime.UtcNow));
                 await _session.SaveChangesAsync(cancellationToken);
@@ -43,6 +63,21 @@ namespace ArquivoMate2.Application.Handlers
             {
                 _logger.LogError(ex, "Error processing document {DocumentId}", request.DocumentId);
                 throw;
+            }
+        }
+
+        private async Task<string> ExtractTextAsync(FileStream stream, DocumentMetadata metadata, CancellationToken cancellationToken)
+        {
+            // prüfen nach Dateiendung
+            switch (metadata.Extension.ToLowerInvariant())
+            {
+                case ".pdf":
+                    // PDF Text extrahieren
+                    return await _documentTextExtractor.ExtractPdfTextAsync(stream, metadata, false, cancellationToken);
+                default:
+                    _logger.LogError("Unsupported file type: {Extension}", metadata.Extension);
+                    return string.Empty;
+                   
             }
         }
     }

@@ -11,6 +11,6 @@ namespace ArquivoMate2.Shared.Models
     {
         public IFormFile File { get; set; } = default!;
 
-        public string? Language { get; set; } = default!;
+        public string[] Language { get; set; } = default!;
     }
 }

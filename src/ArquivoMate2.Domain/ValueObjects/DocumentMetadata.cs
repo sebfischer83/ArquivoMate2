@@ -14,7 +14,7 @@ namespace ArquivoMate2.Domain.ValueObjects
         string Extension,
         long Size,
         DateTime UploadedAt,
-        string Language
+        string[] Languages
     );
 
 }

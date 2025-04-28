@@ -11,6 +11,7 @@
     <DockerServiceUrl>localhost:5000/scalar</DockerServiceUrl>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="api.env" />
     <None Include="docker-compose.override.yml">
       <DependentUpon>docker-compose.yml</DependentUpon>
     </None>

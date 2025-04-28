@@ -18,7 +18,7 @@ namespace ArquivoMate2.Infrastructure.Configuration.StorageProvider
 
         public StorageProviderSettings GetsStorageProviderSettings()
         {
-            var section = _configuration.GetSection("FileProvider");
+            var section = _configuration.GetSection("StorageProvider");
             var type = section.GetValue<StorageProviderType?>("Type")
                        ?? throw new InvalidOperationException("FileProvider:Type ist nicht konfiguriert.");
 
@@ -28,7 +28,7 @@ namespace ArquivoMate2.Infrastructure.Configuration.StorageProvider
                 //                               ?? throw new InvalidOperationException("LocalFileProviderSettings fehlt."),
                 //FileProviderType.AzureBlob => section.Get<AzureBlobFileProviderSettings>()
                 //                               ?? throw new InvalidOperationException("AzureBlobFileProviderSettings fehlt."),
-                StorageProviderType.S3 => section.Get<S3StorageProviderSettings>()
+                StorageProviderType.S3 => section.GetSection("Args").Get<S3StorageProviderSettings>()
                                                ?? throw new InvalidOperationException("S3FileProviderSettings fehlt."),
                 //FileProviderType.NFS => section.Get<NfsFileProviderSettings>()
                 //                               ?? throw new InvalidOperationException("NfsFileProviderSettings fehlt."),

@@ -6,6 +6,8 @@ using ArquivoMate2.Infrastructure.Configuration.StorageProvider;
 using ArquivoMate2.Infrastructure.Persistance;
 using ArquivoMate2.Infrastructure.Services;
 using ArquivoMate2.Infrastructure.Services.StorageProvider;
+using FluentStorage;
+using FluentStorage.AWS.Blobs;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -75,8 +77,14 @@ namespace ArquivoMate2.Infrastructure.Configuration
             {
                 case S3StorageProviderSettings local:
                     services.Configure<S3StorageProviderSettings>(
-                         config.GetSection("StorageProvider"));
+                         config.GetSection("StorageProvider").GetSection("Args"));
                     services.AddScoped<IStorageProvider, S3StorageProvider>();
+                    StorageFactory.Modules.UseAwsStorage();
+                    services.AddScoped<IAwsS3BlobStorage>(sp =>
+                    {
+                        var options = sp.GetRequiredService<IOptions<S3StorageProviderSettings>>().Value;
+                        return (IAwsS3BlobStorage) StorageFactory.Blobs.FromConnectionString($"aws.s3://keyId={options.AccessKey};key={options.SecretKey};bucket={options.BucketName};serviceUrl={options.Endpoint}");
+                    });
                     break;
                 // … weitere Fälle …
                 default:

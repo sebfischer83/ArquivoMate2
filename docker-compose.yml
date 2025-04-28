@@ -11,6 +11,7 @@ services:
       - db
     environment:
       ASPNETCORE_ENVIRONMENT: Development
+      USER_SECRETS_ID: bb5e46f1-5f35-4a18-b8ac-a5d3eef93c99
       ConnectionStrings__Default: "Host=db;Port=5432;Database=arquivomate;Username=postgres;Password=yourpassword"
 
   redis:

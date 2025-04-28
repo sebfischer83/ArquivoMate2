@@ -5,6 +5,8 @@ using ArquivoMate2.Infrastructure.Configuration;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
@@ -22,6 +24,7 @@ namespace ArquivoMate2.API
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            //builder.Configuration.AddUserSecrets<Program>();
             builder.Configuration.AddEnvironmentVariables("AMate__");
             string connectionString = builder.Configuration.GetConnectionString("Default");
 

@@ -23,7 +23,7 @@ namespace ArquivoMate2.Infrastructure.Services
             get
             {
                 var user = _httpContextAccessor.HttpContext?.User;
-                var idClaim = user?.FindFirst("uid")?.Value;
+                var idClaim = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
                 if (string.IsNullOrEmpty(idClaim))
                 {

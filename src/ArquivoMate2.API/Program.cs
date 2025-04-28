@@ -22,6 +22,7 @@ namespace ArquivoMate2.API
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            builder.Configuration.AddEnvironmentVariables("AMate__");
             string connectionString = builder.Configuration.GetConnectionString("Default");
 
             builder.Host.UseSerilog((context, config) =>

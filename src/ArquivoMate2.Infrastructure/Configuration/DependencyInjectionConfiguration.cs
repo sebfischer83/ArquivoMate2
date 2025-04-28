@@ -2,8 +2,10 @@
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.ValueObjects;
+using ArquivoMate2.Infrastructure.Configuration.StorageProvider;
 using ArquivoMate2.Infrastructure.Persistance;
 using ArquivoMate2.Infrastructure.Services;
+using ArquivoMate2.Infrastructure.Services.StorageProvider;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -65,7 +67,21 @@ namespace ArquivoMate2.Infrastructure.Configuration
 
             services.AddSingleton(sp =>
                 sp.GetRequiredService<IOptions<Paths>>().Value);
-            
+
+            services.AddSingleton<StorageProviderSettingsFactory>();
+            var settings = new StorageProviderSettingsFactory(config).GetsStorageProviderSettings();
+
+            switch (settings)
+            {
+                case S3StorageProviderSettings local:
+                    services.Configure<S3StorageProviderSettings>(
+                         config.GetSection("StorageProvider"));
+                    services.AddScoped<IStorageProvider, S3StorageProvider>();
+                    break;
+                // … weitere Fälle …
+                default:
+                    throw new InvalidOperationException("Unsupported FileProviderSettings");
+            }
 
             return services;
         }

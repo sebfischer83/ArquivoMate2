@@ -10,6 +10,7 @@ namespace ArquivoMate2.Domain.ValueObjects
     {
         public string Working { get; set; } = string.Empty;
 
+        public string PathBuilderSecret { get; set; } = string.Empty;
         public Paths()
         {
             

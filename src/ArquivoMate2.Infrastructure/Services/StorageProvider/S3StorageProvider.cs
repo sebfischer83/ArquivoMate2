@@ -27,12 +27,15 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
             //_storage = (IAwsS3BlobStorage) StorageFactory.Blobs.FromConnectionString();
         }
 
-        public async Task SaveFile(string userId, Guid documentId, string filename, byte[] file)
+        public async Task<string> SaveFile(string userId, Guid documentId, string filename, byte[] file)
         {
             var mimeType = MimeTypeMap.GetMimeType(filename);
             using var stream = new MemoryStream(file);
 
-            await _storage.WriteAsync($"{userId}/{documentId}/{filename}", file);
+            string fullPath = $"{userId}/{documentId}/{filename}";
+            await _storage.WriteAsync(fullPath, file);
+
+            return fullPath;
         }
     }
 }

@@ -28,6 +28,7 @@ namespace ArquivoMate2.API.Controllers
         }
 
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
         public async Task<IActionResult> Upload([FromForm] UploadDocumentRequest request, CancellationToken cancellationToken, [FromServices] OcrSettings ocrSettings)
         {
             if (request.File is null || request.File.Length == 0)
@@ -35,7 +36,7 @@ namespace ArquivoMate2.API.Controllers
 
             var id = await _mediator.Send(new UploadDocumentCommand(request), cancellationToken);
 
-            BackgroundJob.Enqueue<DocumentProcessingService>(svc => svc.ProcessAsync(id, _currentUserService.UserId));
+            BackgroundJob.Enqueue<DocumentProcessingService>(svc => svc.ProcessAsync(id, _currentUserService.UserIdForPath));
 
             return CreatedAtAction(nameof(Upload), new { id }, null);
         }

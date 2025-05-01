@@ -81,7 +81,6 @@ namespace ArquivoMate2.Infrastructure.Services
                 img.Format = MagickFormat.Png;
                 img.Write(tmpImage);
 
-
                 _logger.LogInformation("Extracting text from image with Tesseract OCR: {ImagePath}", tmpImage);
                 // Call Tesseract CLI: Output to STDOUT
                 var psi = new ProcessStartInfo(_tesseractPath,

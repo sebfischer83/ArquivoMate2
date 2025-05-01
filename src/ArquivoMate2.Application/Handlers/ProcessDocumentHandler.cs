@@ -7,6 +7,8 @@ using MediatR;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ArquivoMate2.Application.Handlers
 {
@@ -18,10 +20,11 @@ namespace ArquivoMate2.Application.Handlers
         private readonly IFileMetadataService fileMetadataService;
         private readonly IPathService pathService;
         private readonly IStorageProvider _storage;
+        private readonly IThumbnailService _thumbnailService;
 
         public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger, IDocumentTextExtractor documentTextExtractor, IFileMetadataService fileMetadataService, IPathService pathService,
-            IStorageProvider storage)
-            => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage);
+            IStorageProvider storage, IThumbnailService thumbnailService)
+            => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService);
 
         async Task IRequestHandler<ProcessDocumentCommand>.Handle(ProcessDocumentCommand request, CancellationToken cancellationToken)
         {
@@ -54,7 +57,18 @@ namespace ArquivoMate2.Application.Handlers
 
                 _session.Events.Append(request.DocumentId, new DocumentContentExtracted(request.DocumentId, content,  DateTime.UtcNow));
 
-                await _storage.SaveFile(request.UserId, request.DocumentId, Path.GetFileName(path), File.ReadAllBytes(path));
+                var filePath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.GetFileName(path), File.ReadAllBytes(path));
+                var metaPath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.ChangeExtension(Path.GetFileName(path), "metadata"), JsonSerializer.SerializeToUtf8Bytes(metadata));
+
+                // thumbnail
+                var thumbnail =  _thumbnailService.GenerateThumbnail(stream);
+
+                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
+                string thumbnailFileName = $"{fileNameWithoutExtension}-thumb.webp";
+
+                var thumbPath = await _storage.SaveFile(request.UserId, request.DocumentId, thumbnailFileName, thumbnail);
+
+                _session.Events.Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, DateTime.UtcNow));
 
                 doc.MarkAsProcessed();
                 _session.Events.Append(request.DocumentId, new DocumentProcessed(request.DocumentId, DateTime.UtcNow));
@@ -66,7 +80,6 @@ namespace ArquivoMate2.Application.Handlers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing document {DocumentId}", request.DocumentId);
-                throw;
             }
         }
 

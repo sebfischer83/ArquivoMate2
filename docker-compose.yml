@@ -1,5 +1,7 @@
 version: '3.8'
 
+name: arquivomate2
+
 services:
   api:
     build:
@@ -9,6 +11,8 @@ services:
       - "5000:8081"
     depends_on:
       - db
+    # volumes:
+      # -  C:\\Data:/var/arquivomate2
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       USER_SECRETS_ID: bb5e46f1-5f35-4a18-b8ac-a5d3eef93c99
@@ -16,6 +20,7 @@ services:
 
   redis:
     image: redis/redis-stack:7.2.0-v8
+    container_name: cache
     volumes:
        - redis:/data
        - redis:/usr/local/etc/redis/redis.conf

@@ -3,17 +3,25 @@ using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.ValueObjects;
 using ArquivoMate2.Infrastructure.Configuration.StorageProvider;
+using ArquivoMate2.Infrastructure.Mapping;
 using ArquivoMate2.Infrastructure.Persistance;
 using ArquivoMate2.Infrastructure.Services;
 using ArquivoMate2.Infrastructure.Services.StorageProvider;
+using ArquivoMate2.Shared.Models;
+using AutoMapper;
+using EasyCaching.Core.Configurations;
+using EasyCaching.Serialization.SystemTextJson.Configurations;
 using FluentStorage;
 using FluentStorage.AWS.Blobs;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
+using Marten.Schema;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using MimeTypes;
+using Minio;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,31 +38,31 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddMarten(options =>
             {
                 // Verbindungszeichenfolge aus appsettings.json
-                options.Connection(config.GetConnectionString("Default"));
+                options.Connection(config.GetConnectionString("Default")!);
 
                 // Domain‑Events registrieren
                 options.Events.AddEventTypes(new[]
                 {
-                    typeof(DocumentUploaded)
+                    typeof(DocumentUploaded),
+                    typeof(DocumentProcessed),
+                    typeof(DocumentContentExtracted),
+                    typeof(DocumentFilesPrepared)
                     // hier weitere Event‑Typen hinzufügen…
                 });
 
-                // Stream‑Identity (GUIDs)
                 options.Events.StreamIdentity = StreamIdentity.AsGuid;
 
-                // Projektionen für Query‑Models
                 options.Projections.Add<DocumentProjection>(ProjectionLifecycle.Inline);
             });
 
-            // Für CQRS: Lightweight Sessions
             services.AddScoped<IDocumentSession>(sp => sp.GetRequiredService<IDocumentStore>().LightweightSession());
             services.AddScoped<IQuerySession>(sp => sp.GetRequiredService<IDocumentStore>().QuerySession());
 
-            // Services
             services.AddScoped<IDocumentTextExtractor, DocumentTextExtractor>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IFileMetadataService, FileMetadataService>();
             services.AddScoped<IPathService, PathService>();
+            services.AddScoped<IThumbnailService, ThumbnailService>();
 
 
             // config
@@ -79,17 +87,36 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     services.Configure<S3StorageProviderSettings>(
                          config.GetSection("StorageProvider").GetSection("Args"));
                     services.AddScoped<IStorageProvider, S3StorageProvider>();
-                    StorageFactory.Modules.UseAwsStorage();
-                    services.AddScoped<IAwsS3BlobStorage>(sp =>
-                    {
-                        var options = sp.GetRequiredService<IOptions<S3StorageProviderSettings>>().Value;
-                        return (IAwsS3BlobStorage) StorageFactory.Blobs.FromConnectionString($"aws.s3://keyId={options.AccessKey};key={options.SecretKey};bucket={options.BucketName};serviceUrl={options.Endpoint}");
-                    });
+
+                    var endpoint = local.Endpoint;
+
+                    services.AddMinio(configureClient => configureClient
+                        .WithEndpoint(endpoint)
+                        .WithCredentials(local.AccessKey, local.SecretKey)
+                        .WithSSL(true)
+                    .Build());
                     break;
                 // … weitere Fälle …
                 default:
                     throw new InvalidOperationException("Unsupported FileProviderSettings");
             }
+
+            services.AddScoped<IValueResolver<DocumentView, DocumentDto, string>, FilePathResolver>();
+            services.AddScoped<IValueResolver<DocumentView, DocumentDto, string>, ThumbnailPathResolver>();
+            services.AddScoped<IValueResolver<DocumentView, DocumentDto, string>, MetadataPathResolver>();
+
+            services.AddAutoMapper(typeof(Mapping.DocumentMapping).Assembly);
+
+            services.AddEasyCaching(x =>
+                            x.UseRedis(r =>
+                            {
+                                r.EnableLogging = false;
+                                r.DBConfig.KeyPrefix = "redis" + ":";
+                                r.SerializerName = "A";
+                                r.DBConfig.Endpoints.Add(new EasyCaching.Core.Configurations.ServerEndPoint("cache", int.Parse("6379")));
+                                r.DBConfig.AbortOnConnectFail = false;
+                            }).WithSystemTextJson("A")
+                        );
 
             return services;
         }

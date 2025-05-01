@@ -14,12 +14,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="14.0.0" />
+    <PackageReference Include="EasyCaching.Core" Version="1.9.2" />
+    <PackageReference Include="EasyCaching.Redis" Version="1.9.2" />
+    <PackageReference Include="EasyCaching.Serialization.SystemTextJson" Version="1.9.2" />
     <PackageReference Include="FluentStorage.AWS" Version="5.5.0" />
     <PackageReference Include="Marten" Version="7.40.0" />
     <PackageReference Include="Marten.AspNetCore" Version="7.40.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.4" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.4" />
     <PackageReference Include="MimeTypeMapOfficial" Version="1.0.17" />
+    <PackageReference Include="Minio" Version="6.0.4" />
     <PackageReference Include="PdfPig" Version="0.1.10" />
     <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.6.0" />
   </ItemGroup>
@@ -27,6 +32,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ArquivoMate2.Application\ArquivoMate2.Application.csproj" />
     <ProjectReference Include="..\ArquivoMate2.Domain\ArquivoMate2.Domain.csproj" />
+    <ProjectReference Include="..\ArquivoMate2.Shared\ArquivoMate2.Shared.csproj" />
   </ItemGroup>
 
 </Project>

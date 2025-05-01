@@ -8,14 +8,18 @@
 
         public string ThumbnailPath { get; private set; } = string.Empty;
 
+        public string MetadataPath { get; private set; } = string.Empty;
+
         public string UserId { get; private set; } = string.Empty;
         public bool Processed { get; private set; }
         public DateTime UploadedAt { get; private set; }
         public DateTime? ProcessedAt { get; private set; }
 
+        public string Content { get; private set; } = string.Empty;
+
         public bool Accepted { get; private set; }
 
-        public DateTime AcceptedAt { get; private set; } = DateTime.UtcNow;
+        public DateTime? AcceptedAt { get; private set; }
 
         public Document() { }
 
@@ -24,6 +28,18 @@
             Id = e.AggregateId;
             UploadedAt = e.OccurredOn;
             UserId = e.UserId;
+        }
+
+        public void Apply(DocumentContentExtracted documentContentExtracted)
+        {
+            Content = documentContentExtracted.Content;
+        }
+
+        public void Apply(DocumentFilesPrepared e)
+        {
+            FilePath = e.FilePath;
+            MetadataPath = e.MetadataPath;
+            ThumbnailPath = e.ThumbnailPath;
         }
 
         public void MarkAsProcessed()

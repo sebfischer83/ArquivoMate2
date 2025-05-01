@@ -3,6 +3,7 @@ using ArquivoMate2.Application.Configuration;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Services;
 using ArquivoMate2.Shared.Models;
+using AutoMapper;
 using Hangfire;
 using Marten;
 using MediatR;
@@ -19,12 +20,14 @@ namespace ArquivoMate2.API.Controllers
         private readonly IMediator _mediator;
         private readonly IWebHostEnvironment _env;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IMapper _mapper;
 
-        public DocumentsController(IMediator mediator, IWebHostEnvironment env, ICurrentUserService currentUserService)
+        public DocumentsController(IMediator mediator, IWebHostEnvironment env, ICurrentUserService currentUserService, IMapper mapper)
         {
             _mediator = mediator;
             _env = env;
             _currentUserService = currentUserService;
+            _mapper = mapper;
         }
 
         [HttpPost]
@@ -42,7 +45,7 @@ namespace ArquivoMate2.API.Controllers
         }
 
         [HttpGet("{id:guid}")]
-        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentDto))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentDto))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
         {
@@ -51,9 +54,12 @@ namespace ArquivoMate2.API.Controllers
             if (view is null)
                 return NotFound();
 
+            var events = await querySession.Events.FetchStreamAsync(id, token: cancellationToken);
+            var documentDto = _mapper.Map<DocumentDto>(view);
+
             // Mapping auf das API-DTO
+            return Ok(documentDto);
            
-            return Ok("");
         }
     }
 }

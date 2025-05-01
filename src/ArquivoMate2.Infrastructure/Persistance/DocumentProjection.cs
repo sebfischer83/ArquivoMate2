@@ -12,6 +12,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
         {
             view.Id = e.AggregateId;
             view.UploadedAt = e.OccurredOn;
+            view.UserId = e.UserId;
         }
 
         public void Apply(DocumentProcessed e, DocumentView view)
@@ -22,6 +23,14 @@ namespace ArquivoMate2.Infrastructure.Persistance
 
         public void Apply(DocumentContentExtracted e, DocumentView view)
         {
+            view.Content = e.Content;
+        }
+
+        public void Apply(DocumentFilesPrepared e, DocumentView view)
+        {
+            view.FilePath = e.FilePath;
+            view.MetadataPath = e.MetadataPath;
+            view.ThumbnailPath = e.ThumbnailPath;
         }
     }
 }

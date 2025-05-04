@@ -58,13 +58,13 @@ namespace ArquivoMate2.Application.Handlers
                 // get the content
                 var content = await ExtractTextAsync(stream, metadata, cancellationToken);
 
-                _session.Events.Append(request.DocumentId, new DocumentContentExtracted(request.DocumentId, content,  DateTime.UtcNow));
+                _session.Events.Append(request.DocumentId, new DocumentContentExtracted(request.DocumentId, content, DateTime.UtcNow));
 
                 var filePath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.GetFileName(path), File.ReadAllBytes(path));
                 var metaPath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.ChangeExtension(Path.GetFileName(path), "metadata"), JsonSerializer.SerializeToUtf8Bytes(metadata));
 
                 // thumbnail
-                var thumbnail =  _thumbnailService.GenerateThumbnail(stream);
+                var thumbnail = _thumbnailService.GenerateThumbnail(stream);
 
                 string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
                 string thumbnailFileName = $"{fileNameWithoutExtension}-thumb.webp";
@@ -104,6 +104,7 @@ namespace ArquivoMate2.Application.Handlers
                 return;
 
             var sender = chatbotResult.Sender;
+            Guid senderId = Guid.Empty;
 
             if (sender != null)
             {
@@ -112,15 +113,73 @@ namespace ArquivoMate2.Application.Handlers
                 .OrderByDescending(x => x.SearchText.NgramSearch(sender.SearchText))
                 .ToListAsync();
 
+
+
                 if (matches != null && matches.Count > 0)
                 {
                     var bestMatch = matches.FirstOrDefault();
                     if (bestMatch != null)
                     {
-                        
+                        senderId = bestMatch.Id;
                     }
                 }
+                else
+                {
+                    PartyInfo newSender = new PartyInfo()
+                    {
+                        Id = Guid.NewGuid(),
+                        City = sender.City,
+                        CompanyName = sender.CompanyName,
+                        FirstName = sender.FirstName,
+                        HouseNumber = sender.HouseNumber,
+                        LastName = sender.LastName,
+                        PostalCode = sender.PostalCode,
+                        Street = sender.Street,
+                    };
+                    _session.Store(newSender);
+                    senderId = newSender.Id;
+                }
             }
+
+            var recipient = chatbotResult.Recipient;
+            Guid recipientId = Guid.Empty;
+
+            if (recipient != null)
+            {
+                var matches = await _session.Query<PartyInfo>()
+                .Where(x => x.SearchText.NgramSearch(recipient.SearchText))
+                .OrderByDescending(x => x.SearchText.NgramSearch(recipient.SearchText))
+                .ToListAsync();
+
+
+
+                if (matches != null && matches.Count > 0)
+                {
+                    var bestMatch = matches.FirstOrDefault();
+                    if (bestMatch != null)
+                    {
+                        recipientId = bestMatch.Id;
+                    }
+                }
+                else
+                {
+                    PartyInfo newRecipient = new PartyInfo()
+                    {
+                        Id = Guid.NewGuid(),
+                        City = recipient.City,
+                        CompanyName = recipient.CompanyName,
+                        FirstName = recipient.FirstName,
+                        HouseNumber = recipient.HouseNumber,
+                        LastName = recipient.LastName,
+                        PostalCode = recipient.PostalCode,
+                        Street = recipient.Street,
+                    };
+                    _session.Store(newRecipient);
+                    recipientId = newRecipient.Id;
+                }
+            }
+
+            _session.Events.Append(documentId, null);
         }
 
         private async Task<string> ExtractTextAsync(FileStream stream, DocumentMetadata metadata, CancellationToken cancellationToken)
@@ -134,7 +193,7 @@ namespace ArquivoMate2.Application.Handlers
                 default:
                     _logger.LogError("Unsupported file type: {Extension}", metadata.Extension);
                     return string.Empty;
-                   
+
             }
         }
     }

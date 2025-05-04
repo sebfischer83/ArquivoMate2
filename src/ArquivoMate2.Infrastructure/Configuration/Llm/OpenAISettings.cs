@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ArquivoMate2.Infrastructure.Configuration.Llm
 {
-    public class OpenAIOptions
+    public class OpenAISettings : ChatBotSettings
     {
         public string ApiKey { get; set; } = string.Empty;
         public string Model { get; set; } = "gpt-4";

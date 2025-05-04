@@ -86,14 +86,25 @@ namespace ArquivoMate2.Infrastructure.Configuration
             });
 
             services.AddHttpClient();
-            services.Configure<OpenAIOptions>(config.GetSection("OpenAI"));
-            services.AddScoped<IChatBot, OpenAIChatBot>(service =>
+
+            services.AddSingleton<ChatBotSettingsFactory>();
+            var chatbotSettings = new ChatBotSettingsFactory(config).GetChatBotSettings();
+
+            if (chatbotSettings is OpenAISettings openAISettings)
             {
-                var opt = service.GetRequiredService<IOptions<OpenAIOptions>>().Value;
-                ChatClient client = new(model: opt.Model, apiKey: opt.ApiKey);
-                var bot = new OpenAIChatBot(client);
-                return bot;
-            });
+                services.AddSingleton(openAISettings);
+                services.AddScoped<IChatBot, OpenAIChatBot>(service =>
+                {
+                    var opt = service.GetRequiredService<IOptions<OpenAISettings>>().Value;
+                    ChatClient client = new(model: opt.Model, apiKey: opt.ApiKey);
+                    var bot = new OpenAIChatBot(client);
+                    return bot;
+                });
+            }
+            else
+            {
+                throw new InvalidOperationException("Unsupported ChatBotSettings");
+            }            
 
             // config
             services.Configure<OcrSettings>(

@@ -9,7 +9,5 @@ namespace ArquivoMate2.Application.Interfaces
     public interface IStorageProvider
     {
         public Task<string> SaveFile(string userId, Guid documentId, string filename, byte[] file);
-
-        public Task<string> GetAccessUrl(string fullPath);
     }
 }

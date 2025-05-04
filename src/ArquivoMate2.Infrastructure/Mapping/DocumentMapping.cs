@@ -25,9 +25,9 @@ namespace ArquivoMate2.Infrastructure.Mapping
 
     public class FilePathResolver : IValueResolver<DocumentView, DocumentDto, string>
     {
-        private readonly IStorageProvider _storageProvider;
+        private readonly IDeliveryProvider _storageProvider;
 
-        public FilePathResolver(IStorageProvider storageProvider)
+        public FilePathResolver(IDeliveryProvider storageProvider)
         {
             _storageProvider = storageProvider;
         }
@@ -44,9 +44,9 @@ namespace ArquivoMate2.Infrastructure.Mapping
 
     public class ThumbnailPathResolver : IValueResolver<DocumentView, DocumentDto, string>
     {
-        private readonly IStorageProvider _storageProvider;
+        private readonly IDeliveryProvider _storageProvider;
 
-        public ThumbnailPathResolver(IStorageProvider storageProvider)
+        public ThumbnailPathResolver(IDeliveryProvider storageProvider)
         {
             _storageProvider = storageProvider;
         }
@@ -63,9 +63,9 @@ namespace ArquivoMate2.Infrastructure.Mapping
 
     public class MetadataPathResolver : IValueResolver<DocumentView, DocumentDto, string>
     {
-        private readonly IStorageProvider _storageProvider;
+        private readonly IDeliveryProvider _storageProvider;
 
-        public MetadataPathResolver(IStorageProvider storageProvider)
+        public MetadataPathResolver(IDeliveryProvider storageProvider)
         {
             _storageProvider = storageProvider;
         }

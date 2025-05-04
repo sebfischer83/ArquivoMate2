@@ -15,11 +15,24 @@
         public DateTime UploadedAt { get; private set; }
         public DateTime? ProcessedAt { get; private set; }
 
-        public string Content { get; private set; } = string.Empty;
-
         public bool Accepted { get; private set; }
 
         public DateTime? AcceptedAt { get; private set; }
+
+        // content
+        public string Content { get; private set; } = string.Empty;
+
+        public Guid Sender { get; private set; } = Guid.Empty;
+
+        public Guid Recipient { get; private set; } = Guid.Empty;
+
+        public string Type { get; set; } = string.Empty;
+
+        public string CustomerNumber { get; private set; } = string.Empty;
+        public string InvoiceNumber { get; private set; } = string.Empty;
+        public decimal? TotalPrice { get; private set; }
+        public List<string> Keywords { get; private set; } = new List<string>();
+        public string Summary { get; private set; } = string.Empty;
 
         public Document() { }
 

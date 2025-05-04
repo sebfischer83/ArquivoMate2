@@ -1,5 +1,6 @@
 ﻿using ArquivoMate2.Application.Commands;
 using ArquivoMate2.Application.Interfaces;
+using ArquivoMate2.Application.Models;
 using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.ValueObjects;
 using Marten;
@@ -7,12 +8,13 @@ using MediatR;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace ArquivoMate2.Application.Handlers
 {
-    public class ProcessDocumentHandler : IRequestHandler<ProcessDocumentCommand>
+    public class ProcessDocumentHandler : IRequestHandler<ProcessDocumentCommand, Document?>
     {
         private readonly IDocumentSession _session;
         private readonly ILogger<ProcessDocumentHandler> _logger;
@@ -21,12 +23,13 @@ namespace ArquivoMate2.Application.Handlers
         private readonly IPathService pathService;
         private readonly IStorageProvider _storage;
         private readonly IThumbnailService _thumbnailService;
+        private readonly IChatBot _chatBot;
 
         public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger, IDocumentTextExtractor documentTextExtractor, IFileMetadataService fileMetadataService, IPathService pathService,
-            IStorageProvider storage, IThumbnailService thumbnailService)
-            => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService);
+            IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot)
+            => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService, _chatBot) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService, chatBot);
 
-        async Task IRequestHandler<ProcessDocumentCommand>.Handle(ProcessDocumentCommand request, CancellationToken cancellationToken)
+        public async Task<Document?> Handle(ProcessDocumentCommand request, CancellationToken cancellationToken)
         {
             var sw = Stopwatch.StartNew();
             try
@@ -70,16 +73,53 @@ namespace ArquivoMate2.Application.Handlers
 
                 _session.Events.Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, DateTime.UtcNow));
 
+                // chatbot
+                var chatbotResult = await _chatBot.AnalyzeDocumentContent(content, cancellationToken);
+
+                await ProcessChatbotResultAsync(request.DocumentId, chatbotResult);
+
                 doc.MarkAsProcessed();
                 _session.Events.Append(request.DocumentId, new DocumentProcessed(request.DocumentId, DateTime.UtcNow));
                 await _session.SaveChangesAsync(cancellationToken);
 
                 sw.Stop();
+
                 _logger.LogInformation("Processed document {DocumentId} in {ElapsedMs}ms", request.DocumentId, sw.ElapsedMilliseconds);
+
+                doc = await _session.Events.AggregateStreamAsync<Document>(request.DocumentId, token: cancellationToken);
+                return doc;
+
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing document {DocumentId}", request.DocumentId);
+            }
+
+            return null;
+        }
+
+        private async Task ProcessChatbotResultAsync(Guid documentId, DocumentAnalysisResult chatbotResult)
+        {
+            if (chatbotResult == null)
+                return;
+
+            var sender = chatbotResult.Sender;
+
+            if (sender != null)
+            {
+                var matches = await _session.Query<PartyInfo>()
+                .Where(x => x.SearchText.NgramSearch(sender.SearchText))
+                .OrderByDescending(x => x.SearchText.NgramSearch(sender.SearchText))
+                .ToListAsync();
+
+                if (matches != null && matches.Count > 0)
+                {
+                    var bestMatch = matches.FirstOrDefault();
+                    if (bestMatch != null)
+                    {
+                        
+                    }
+                }
             }
         }
 

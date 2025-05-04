@@ -1,11 +1,16 @@
 ﻿using ArquivoMate2.Application.Configuration;
 using ArquivoMate2.Application.Interfaces;
+using ArquivoMate2.Application.Models;
 using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.ValueObjects;
+using ArquivoMate2.Infrastructure.Configuration.DeliveryProvider;
+using ArquivoMate2.Infrastructure.Configuration.Llm;
 using ArquivoMate2.Infrastructure.Configuration.StorageProvider;
 using ArquivoMate2.Infrastructure.Mapping;
 using ArquivoMate2.Infrastructure.Persistance;
 using ArquivoMate2.Infrastructure.Services;
+using ArquivoMate2.Infrastructure.Services.DeliveryProvider;
+using ArquivoMate2.Infrastructure.Services.Llm;
 using ArquivoMate2.Infrastructure.Services.StorageProvider;
 using ArquivoMate2.Shared.Models;
 using AutoMapper;
@@ -13,21 +18,27 @@ using EasyCaching.Core.Configurations;
 using EasyCaching.Serialization.SystemTextJson.Configurations;
 using FluentStorage;
 using FluentStorage.AWS.Blobs;
+using JasperFx.Core;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Schema;
+using Meilisearch;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MimeTypes;
 using Minio;
+using OpenAI.Chat;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime;
 using System.Text;
 using System.Threading.Tasks;
+using Weasel.Core;
+using Weasel.Core.Migrations;
+using Weasel.Postgresql.Tables;
 
 namespace ArquivoMate2.Infrastructure.Configuration
 {
@@ -39,6 +50,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
             {
                 // Verbindungszeichenfolge aus appsettings.json
                 options.Connection(config.GetConnectionString("Default")!);
+                options.AutoCreateSchemaObjects = AutoCreate.All;
 
                 // Domain‑Events registrieren
                 options.Events.AddEventTypes(new[]
@@ -50,11 +62,16 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     // hier weitere Event‑Typen hinzufügen…
                 });
 
+                options.Schema.For<PartyInfo>();
+
                 options.Events.StreamIdentity = StreamIdentity.AsGuid;
+
+                options.Schema.For<PartyInfo>().NgramIndex(x => x.SearchText);
+                options.Advanced.UseNGramSearchWithUnaccent = true;
 
                 options.Projections.Add<DocumentProjection>(ProjectionLifecycle.Inline);
             });
-
+            
             services.AddScoped<IDocumentSession>(sp => sp.GetRequiredService<IDocumentStore>().LightweightSession());
             services.AddScoped<IQuerySession>(sp => sp.GetRequiredService<IDocumentStore>().QuerySession());
 
@@ -63,7 +80,20 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddScoped<IFileMetadataService, FileMetadataService>();
             services.AddScoped<IPathService, PathService>();
             services.AddScoped<IThumbnailService, ThumbnailService>();
+            services.AddScoped<MeilisearchClient>(sp =>
+            {
+                return new MeilisearchClient("http://meilisearch:7700", "supersecret");
+            });
 
+            services.AddHttpClient();
+            services.Configure<OpenAIOptions>(config.GetSection("OpenAI"));
+            services.AddScoped<IChatBot, OpenAIChatBot>(service =>
+            {
+                var opt = service.GetRequiredService<IOptions<OpenAIOptions>>().Value;
+                ChatClient client = new(model: opt.Model, apiKey: opt.ApiKey);
+                var bot = new OpenAIChatBot(client);
+                return bot;
+            });
 
             // config
             services.Configure<OcrSettings>(
@@ -80,6 +110,9 @@ namespace ArquivoMate2.Infrastructure.Configuration
 
             services.AddSingleton<StorageProviderSettingsFactory>();
             var settings = new StorageProviderSettingsFactory(config).GetsStorageProviderSettings();
+
+            services.AddSingleton<DeliveryProviderSettingsFactory>();
+            var deliverySettings = new DeliveryProviderSettingsFactory(config).GetDeliveryProviderSettings();
 
             switch (settings)
             {
@@ -101,6 +134,26 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     throw new InvalidOperationException("Unsupported FileProviderSettings");
             }
 
+            switch (deliverySettings)
+            {
+                case S3DeliveryProviderSettings s3:
+                    services.Configure<S3DeliveryProviderSettings>(
+                        config.GetSection("DeliveryProvider").GetSection("Args"));
+                    services.AddScoped<IDeliveryProvider, S3DeliveryProvider>();
+                    // currently s3 delivery must be the same settings than storage
+                    break;
+
+                case BunnyDeliveryProviderSettings bunny:
+                    services.Configure<BunnyDeliveryProviderSettings>(
+                        config.GetSection("DeliveryProvider").GetSection("Args"));
+                    //services.AddScoped<IDeliveryProvider, BunnyDeliveryProvider>();
+                    // Hier ggf. BunnyNet-Client registrieren
+                    break;
+
+                default:
+                    throw new InvalidOperationException("Unsupported DeliveryProviderSettings");
+            }
+
             services.AddScoped<IValueResolver<DocumentView, DocumentDto, string>, FilePathResolver>();
             services.AddScoped<IValueResolver<DocumentView, DocumentDto, string>, ThumbnailPathResolver>();
             services.AddScoped<IValueResolver<DocumentView, DocumentDto, string>, MetadataPathResolver>();
@@ -116,9 +169,28 @@ namespace ArquivoMate2.Infrastructure.Configuration
                                 r.DBConfig.Endpoints.Add(new EasyCaching.Core.Configurations.ServerEndPoint("cache", int.Parse("6379")));
                                 r.DBConfig.AbortOnConnectFail = false;
                             }).WithSystemTextJson("A")
-                        );
+            );
 
             return services;
+        }
+    }
+    public class MartenRegistry : FeatureSchemaBase
+    {
+        public MartenRegistry()
+        {
+            // Registriere das Party-Dokument
+            For<Party>()
+                // Indiziere die berechnete SearchText-Property mit GIN+trigram
+                .Index(x => x.SearchText, idx =>
+                {
+                    idx.Method = IndexMethod.Gin;
+                    idx.Using = IndexUsing.GinTrgmOps;
+                });
+        }
+
+        protected override IEnumerable<ISchemaObject> schemaObjects()
+        {
+            throw new NotImplementedException();
         }
     }
 }

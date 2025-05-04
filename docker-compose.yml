@@ -59,10 +59,22 @@ services:
     volumes:
       - seq:/data
 
+  meilisearch:
+    image: getmeili/meilisearch:v1.5
+    container_name: meilisearch
+    ports:
+      - "7700:7700"
+    environment:
+      - MEILI_MASTER_KEY=supersecret
+    volumes:
+      - meili_data:/meili_data
+
 volumes:
   db_data:
     driver: local
   redis:
     driver: local
   seq:
+    driver: local
+  meili_data:
     driver: local

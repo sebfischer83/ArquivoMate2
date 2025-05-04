@@ -36,32 +36,6 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
             _cache = easyCachingProviderFactory.GetCachingProvider(EasyCachingConstValue.DefaultRedisName);
         }
 
-        public async Task<string> GetAccessUrl(string fullPath)
-        {
-            if (_settings.IsPublic)
-            {
-
-            }
-            var cacheKey = $"s3url:{fullPath}";
-            var cachedUrl = await _cache.GetAsync<string>(cacheKey);
-
-            if (cachedUrl.HasValue)
-            {
-                return cachedUrl.Value;
-            }
-
-            var args = new PresignedGetObjectArgs()
-                .WithBucket(_settings.BucketName)
-                .WithObject(fullPath)
-                .WithExpiry((int)TimeSpan.FromHours(1).TotalMinutes);
-
-            var presignedUrl = await _storage.PresignedGetObjectAsync(args);
-
-            await _cache.SetAsync(cacheKey, presignedUrl, TimeSpan.FromMinutes(50));
-
-            return presignedUrl;
-        }
-
         public async Task<string> SaveFile(string userId, Guid documentId, string filename, byte[] file)
         {
             var mimeType = MimeTypeMap.GetMimeType(filename);

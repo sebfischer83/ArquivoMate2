@@ -18,8 +18,13 @@ namespace ArquivoMate2.Application.Services
         public async Task ProcessAsync(Guid documentId, string userId)
         {
             _logger.LogInformation("Starting document processing for Document ID: {DocumentId}, User ID: {UserId}", documentId, userId);
-            await _mediator.Send(new ProcessDocumentCommand(documentId, userId));
+            var doc = await _mediator.Send(new ProcessDocumentCommand(documentId, userId));
             // Post-processing actions (notifications, indexing)
+
+            if (doc == null)
+            {
+
+            }
 
             // Delete the temp uploaded file after processing
         }

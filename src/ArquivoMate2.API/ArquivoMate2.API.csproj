@@ -47,4 +47,8 @@
     <ProjectReference Include="..\ArquivoMate2.Shared\ArquivoMate2.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="logs\" />
+  </ItemGroup>
+
 </Project>

@@ -2,7 +2,7 @@
 {
     public class DocumentAnalysisResult
     {
-        public DateTime Date { get; set; }
+        public string Date { get; set; } = string.Empty;
         public string DocumentType { get; set; } = string.Empty;
         public PartyInfo Sender { get; set; } = new PartyInfo();
         public PartyInfo Recipient { get; set; } = new PartyInfo();

@@ -22,6 +22,8 @@
         // content
         public string Content { get; private set; } = string.Empty;
 
+        public DateTime? Date { get; private set; } = null;
+
         public Guid Sender { get; private set; } = Guid.Empty;
 
         public Guid Recipient { get; private set; } = Guid.Empty;
@@ -60,6 +62,19 @@
             if (Processed) throw new InvalidOperationException("Document is already processed.");
             Processed = true;
             ProcessedAt = DateTime.UtcNow;
+        }
+
+        public void Apply(DocumentChatBotDataReceived e)
+        {
+            Sender = e.SenderId;
+            Recipient = e.RecipientId;
+            Date = e.Date;
+            Type = e.Type;
+            CustomerNumber = e.CustomerNumber;
+            InvoiceNumber = e.InvoiceNumber;
+            TotalPrice = e.TotalPrice;
+            Keywords = e.Keywords;
+            Summary = e.Summary;
         }
     }
 }

@@ -95,7 +95,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 services.AddSingleton(openAISettings);
                 services.AddScoped<IChatBot, OpenAIChatBot>(service =>
                 {
-                    var opt = service.GetRequiredService<IOptions<OpenAISettings>>().Value;
+                    var opt = service.GetRequiredService<OpenAISettings>();
                     ChatClient client = new(model: opt.Model, apiKey: opt.ApiKey);
                     var bot = new OpenAIChatBot(client);
                     return bot;
@@ -171,6 +171,8 @@ namespace ArquivoMate2.Infrastructure.Configuration
 
             services.AddAutoMapper(typeof(Mapping.DocumentMapping).Assembly);
 
+            services.AddHostedService<DatabaseMigrationService>();
+
             services.AddEasyCaching(x =>
                             x.UseRedis(r =>
                             {
@@ -183,25 +185,6 @@ namespace ArquivoMate2.Infrastructure.Configuration
             );
 
             return services;
-        }
-    }
-    public class MartenRegistry : FeatureSchemaBase
-    {
-        public MartenRegistry()
-        {
-            // Registriere das Party-Dokument
-            For<Party>()
-                // Indiziere die berechnete SearchText-Property mit GIN+trigram
-                .Index(x => x.SearchText, idx =>
-                {
-                    idx.Method = IndexMethod.Gin;
-                    idx.Using = IndexUsing.GinTrgmOps;
-                });
-        }
-
-        protected override IEnumerable<ISchemaObject> schemaObjects()
-        {
-            throw new NotImplementedException();
         }
     }
 }

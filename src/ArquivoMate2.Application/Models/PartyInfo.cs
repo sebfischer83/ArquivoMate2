@@ -25,6 +25,6 @@ namespace ArquivoMate2.Application.Models
             }
         }
 
-        public Guid Id { get; internal set; }
+        public Guid Id { get; set; }
     }
 }

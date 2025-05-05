@@ -41,7 +41,7 @@ namespace ArquivoMate2.API.Controllers
 
             BackgroundJob.Enqueue<DocumentProcessingService>(svc => svc.ProcessAsync(id, _currentUserService.UserIdForPath));
 
-            return CreatedAtAction(nameof(Upload), new { id }, null);
+            return CreatedAtAction(nameof(Upload), new { id }, id);
         }
 
         [HttpGet("{id:guid}")]

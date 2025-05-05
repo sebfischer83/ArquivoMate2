@@ -103,17 +103,16 @@ namespace ArquivoMate2.Application.Handlers
             if (chatbotResult == null)
                 return;
 
+            var all = _session.Query<PartyInfo>().ToList();
+
             var sender = chatbotResult.Sender;
             Guid senderId = Guid.Empty;
 
             if (sender != null)
             {
                 var matches = await _session.Query<PartyInfo>()
-                .Where(x => x.SearchText.NgramSearch(sender.SearchText))
-                .OrderByDescending(x => x.SearchText.NgramSearch(sender.SearchText))
+                .Where(x => x.SearchText.NgramSearch(sender.CompanyName + " " + sender.FirstName + " " + sender.LastName))
                 .ToListAsync();
-
-
 
                 if (matches != null && matches.Count > 0)
                 {
@@ -125,6 +124,7 @@ namespace ArquivoMate2.Application.Handlers
                 }
                 else
                 {
+                    using var newSession = _session.DocumentStore.LightweightSession();
                     PartyInfo newSender = new PartyInfo()
                     {
                         Id = Guid.NewGuid(),
@@ -136,8 +136,9 @@ namespace ArquivoMate2.Application.Handlers
                         PostalCode = sender.PostalCode,
                         Street = sender.Street,
                     };
-                    _session.Store(newSender);
+                    newSession.Store(newSender);
                     senderId = newSender.Id;
+                    await newSession.SaveChangesAsync();
                 }
             }
 
@@ -147,11 +148,8 @@ namespace ArquivoMate2.Application.Handlers
             if (recipient != null)
             {
                 var matches = await _session.Query<PartyInfo>()
-                .Where(x => x.SearchText.NgramSearch(recipient.SearchText))
-                .OrderByDescending(x => x.SearchText.NgramSearch(recipient.SearchText))
+                .Where(x => x.SearchText.NgramSearch(recipient.CompanyName + " " + recipient.FirstName + " " + recipient.LastName))
                 .ToListAsync();
-
-
 
                 if (matches != null && matches.Count > 0)
                 {
@@ -163,6 +161,7 @@ namespace ArquivoMate2.Application.Handlers
                 }
                 else
                 {
+                    using var newSession = _session.DocumentStore.LightweightSession();
                     PartyInfo newRecipient = new PartyInfo()
                     {
                         Id = Guid.NewGuid(),
@@ -176,10 +175,13 @@ namespace ArquivoMate2.Application.Handlers
                     };
                     _session.Store(newRecipient);
                     recipientId = newRecipient.Id;
+                    newSession.Store(newRecipient);
+                    await newSession.SaveChangesAsync();
                 }
             }
-
-            _session.Events.Append(documentId, null);
+            
+            _session.Events.Append(documentId, new DocumentChatBotDataReceived(documentId, senderId, recipientId, null, DateTime.Now,
+                chatbotResult.DocumentType, chatbotResult.CustomerNumber, chatbotResult.InvoiceNumber, chatbotResult.TotalPrice, chatbotResult.Keywords, chatbotResult.Summary));
         }
 
         private async Task<string> ExtractTextAsync(FileStream stream, DocumentMetadata metadata, CancellationToken cancellationToken)

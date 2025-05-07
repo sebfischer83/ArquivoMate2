@@ -8,6 +8,6 @@ namespace ArquivoMate2.Application.Interfaces
 {
     public interface ICurrentUserService
     {
-        string UserIdForPath { get; }
+        string UserId { get; }
     }
 }

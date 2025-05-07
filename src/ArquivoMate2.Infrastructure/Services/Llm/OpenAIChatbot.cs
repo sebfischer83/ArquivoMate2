@@ -24,54 +24,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
         }
 
         public async Task<DocumentAnalysisResult> AnalyzeDocumentContent(string content, CancellationToken cancellationToken)
-        {
-            var schemaJson = """
-    {
-        "type": "object",
-        "properties": {
-            "date": { "type": "string" },
-            "documentType": { "type": "string" },
-            "sender": {
-                "type": "object",
-                "properties": {
-                    "firstName": { "type": "string" },
-                    "lastName": { "type": "string" },
-                    "companyName": { "type": "string" },
-                    "street": { "type": "string" },
-                    "houseNumber": { "type": "string" },
-                    "postalCode": { "type": "string" },
-                    "city": { "type": "string" }
-                },            "required": ["firstName","lastName","companyName","street","houseNumber","postalCode","city"],
-                "additionalProperties": false
-            },
-            "recipient": {
-                "type": "object",
-                "properties": {
-                    "firstName": { "type": "string" },
-                    "lastName": { "type": "string" },
-                    "companyName": { "type": "string" },
-                    "street": { "type": "string" },
-                    "houseNumber": { "type": "string" },
-                    "postalCode": { "type": "string" },
-                    "city": { "type": "string" }
-                },
-                "required": ["firstName","lastName","companyName","street","houseNumber","postalCode","city"],
-                "additionalProperties": false
-            },
-            "customerNumber": { "type": "string" },
-            "invoiceNumber": { "type": "string" },
-            "totalPrice": { "type": "number" },
-            "keywords": {
-                "type": "array",
-                "items": { "type": "string" }
-            },
-            "summary": { "type": "string" }
-        },
-        "required": ["date","documentType","sender","recipient","customerNumber","invoiceNumber","totalPrice","keywords","summary"],
-        "additionalProperties": false
-    }
-    """;
-
+        {   
             var messages = new List<ChatMessage>
                 {
                     new SystemChatMessage("You are an assistant that analyzes the document and ALWAYS returns JSON according to the defined schema.Respond in de."),
@@ -82,7 +35,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             {
                 ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
                     jsonSchemaFormatName: "analyze_document",
-                    jsonSchema: BinaryData.FromString(schemaJson),
+                    jsonSchema: BinaryData.FromString(OpenAIHelper.SchemaJson),
                     jsonSchemaIsStrict: true)
             };
 

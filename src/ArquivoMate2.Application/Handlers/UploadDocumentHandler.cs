@@ -33,7 +33,7 @@ namespace ArquivoMate2.Application.Handlers
 
         public async Task<Guid> Handle(UploadDocumentCommand request, CancellationToken cancellationToken)
         {
-            var userFolder = _pathService.GetDocumentUploadPath(_currentUserService.UserIdForPath);
+            var userFolder = _pathService.GetDocumentUploadPath(_currentUserService.UserId);
             Directory.CreateDirectory(userFolder);
 
             var fileId = Guid.NewGuid();
@@ -44,7 +44,7 @@ namespace ArquivoMate2.Application.Handlers
             await using var fs = new FileStream(filePath, FileMode.Create);
             await request.request.File.CopyToAsync(fs, cancellationToken);
 
-            var @event = new DocumentUploaded(fileId, _currentUserService.UserIdForPath, DateTime.UtcNow);
+            var @event = new DocumentUploaded(fileId, _currentUserService.UserId, DateTime.UtcNow);
             _session.Events.StartStream<Document>(@event.AggregateId, @event);
             await _session.SaveChangesAsync(cancellationToken);
 
@@ -54,7 +54,7 @@ namespace ArquivoMate2.Application.Handlers
 
             var metadata = new DocumentMetadata(
                 fileId,
-                _currentUserService.UserIdForPath,
+                _currentUserService.UserId,
                 request.request.File.FileName,
                 request.request.File.ContentType!,
                 ext,

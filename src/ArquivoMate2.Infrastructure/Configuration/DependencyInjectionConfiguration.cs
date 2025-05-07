@@ -29,6 +29,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MimeTypes;
 using Minio;
+using OpenAI.Batch;
 using OpenAI.Chat;
 using System;
 using System.Collections.Generic;
@@ -71,7 +72,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
 
                 options.Projections.Add<DocumentProjection>(ProjectionLifecycle.Inline);
             });
-            
+
             services.AddScoped<IDocumentSession>(sp => sp.GetRequiredService<IDocumentStore>().LightweightSession());
             services.AddScoped<IQuerySession>(sp => sp.GetRequiredService<IDocumentStore>().QuerySession());
 
@@ -93,18 +94,31 @@ namespace ArquivoMate2.Infrastructure.Configuration
             if (chatbotSettings is OpenAISettings openAISettings)
             {
                 services.AddSingleton(openAISettings);
-                services.AddScoped<IChatBot, OpenAIChatBot>(service =>
+                if (openAISettings.UseBatch)
                 {
-                    var opt = service.GetRequiredService<OpenAISettings>();
-                    ChatClient client = new(model: opt.Model, apiKey: opt.ApiKey);
-                    var bot = new OpenAIChatBot(client);
-                    return bot;
-                });
+                    services.AddScoped<IChatBot, OpenAIBatchChatBot>(service =>
+                    {
+                        var opt = service.GetRequiredService<OpenAISettings>();
+                        BatchClient client = new BatchClient(openAISettings.ApiKey);
+                        var bot = new OpenAIBatchChatBot(client);
+                        return bot;
+                    });
+                }
+                else
+                {
+                    services.AddScoped<IChatBot, OpenAIChatBot>(service =>
+                    {
+                        var opt = service.GetRequiredService<OpenAISettings>();
+                        ChatClient client = new(model: opt.Model, apiKey: opt.ApiKey);
+                        var bot = new OpenAIChatBot(client);
+                        return bot;
+                    });
+                }
             }
             else
             {
                 throw new InvalidOperationException("Unsupported ChatBotSettings");
-            }            
+            }
 
             // config
             services.Configure<OcrSettings>(
@@ -136,9 +150,9 @@ namespace ArquivoMate2.Infrastructure.Configuration
 
                     services.AddMinio(configureClient => configureClient
                         .WithEndpoint(endpoint)
-                        .WithCredentials(local.AccessKey, local.SecretKey)
-                        .WithSSL(true)
-                    .Build());
+                                        .WithCredentials(local.AccessKey, local.SecretKey)
+                                        .WithSSL(true)
+                                    .Build());
                     break;
                 // … weitere Fälle …
                 default:

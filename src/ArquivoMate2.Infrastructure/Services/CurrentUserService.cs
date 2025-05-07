@@ -22,7 +22,7 @@ namespace ArquivoMate2.Infrastructure.Services
             _paths = paths;
         }
 
-        public string UserIdForPath
+        public string UserId
         {
             get
             {

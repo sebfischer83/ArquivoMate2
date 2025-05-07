@@ -10,5 +10,7 @@ namespace ArquivoMate2.Infrastructure.Configuration.Llm
     {
         public string ApiKey { get; set; } = string.Empty;
         public string Model { get; set; } = "gpt-4";
+
+        public bool UseBatch { get; set; } = false;
     }
 }

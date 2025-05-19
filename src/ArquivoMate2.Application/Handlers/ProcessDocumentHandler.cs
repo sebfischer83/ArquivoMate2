@@ -18,14 +18,14 @@ namespace ArquivoMate2.Application.Handlers
     {
         private readonly IDocumentSession _session;
         private readonly ILogger<ProcessDocumentHandler> _logger;
-        private readonly IDocumentTextExtractor _documentTextExtractor;
+        private readonly IDocumentProcessor _documentTextExtractor;
         private readonly IFileMetadataService fileMetadataService;
         private readonly IPathService pathService;
         private readonly IStorageProvider _storage;
         private readonly IThumbnailService _thumbnailService;
         private readonly IChatBot _chatBot;
 
-        public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger, IDocumentTextExtractor documentTextExtractor, IFileMetadataService fileMetadataService, IPathService pathService,
+        public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger, IDocumentProcessor documentTextExtractor, IFileMetadataService fileMetadataService, IPathService pathService,
             IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot)
             => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService, _chatBot) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService, chatBot);
 
@@ -73,7 +73,14 @@ namespace ArquivoMate2.Application.Handlers
 
                 var thumbPath = await _storage.SaveFile(request.UserId, request.DocumentId, thumbnailFileName, thumbnail);
 
-                _session.Events.Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, DateTime.UtcNow));
+                // preview Pdf
+                var previewPdf = await _documentTextExtractor.GeneratePreviewPdf(stream, metadata, cancellationToken);
+
+                string previewPdfFileName = $"{fileNameWithoutExtension}-preview.pdf";
+                var previewPath = await _storage.SaveFile(request.UserId, request.DocumentId, previewPdfFileName, previewPdf);
+
+                _session.Events.Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, DateTime.UtcNow));
+
 
                 // chatbot
                 var chatbotResult = await _chatBot.AnalyzeDocumentContent(content, cancellationToken);

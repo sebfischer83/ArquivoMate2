@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 
 namespace ArquivoMate2.Application.Interfaces
 {
-    public interface IDocumentTextExtractor
+    public interface IDocumentProcessor
     {
         Task<string> ExtractPdfTextAsync(Stream documentStream, Domain.ValueObjects.DocumentMetadata documentMetadata, bool forceOcr, CancellationToken cancellationToken = default);
+
+        Task<byte[]> GeneratePreviewPdf(Stream documentStream, Domain.ValueObjects.DocumentMetadata documentMetadata, CancellationToken cancellationToken = default);
     }
 }

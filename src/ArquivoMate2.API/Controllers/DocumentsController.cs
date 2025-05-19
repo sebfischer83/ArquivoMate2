@@ -64,6 +64,26 @@ namespace ArquivoMate2.API.Controllers
             return CreatedAtAction(nameof(Upload), new { id }, id);
         }
 
+        [HttpGet()]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentDto[]))]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Get(CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
+        {
+            var userId = _currentUserService.UserId;
+            var view = await querySession.QueryAsync<Infrastructure.Persistance.DocumentView>("where data ->> 'UserId' = ?", userId);
+            if (view is null)
+                return NotFound();
+
+            if (view.Count == 0)
+                return NotFound();
+
+            var documentDto = _mapper.Map<DocumentDto[]>(view);
+
+            return Ok(documentDto);
+
+        }
+
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]

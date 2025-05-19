@@ -38,6 +38,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
             view.FilePath = e.FilePath;
             view.MetadataPath = e.MetadataPath;
             view.ThumbnailPath = e.ThumbnailPath;
+            view.PreviewPath = e.PreviewPath;
         }
     }
 }

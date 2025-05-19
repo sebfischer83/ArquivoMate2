@@ -68,8 +68,10 @@ namespace ArquivoMate2.Infrastructure.Configuration
 
                 options.Events.StreamIdentity = StreamIdentity.AsGuid;
 
-                options.Schema.For<PartyInfo>().NgramIndex(x => x.SearchText);
-                options.Advanced.UseNGramSearchWithUnaccent = true;
+                //options.Schema.For<PartyInfo>().NgramIndex(x => x.SearchText);
+                options.Schema.For<Document>()
+                    .Index(d => d.UserId);
+                //options.Advanced.UseNGramSearchWithUnaccent = true;
 
                 options.Projections.Add<DocumentProjection>(ProjectionLifecycle.Inline);
             });
@@ -77,7 +79,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddScoped<IDocumentSession>(sp => sp.GetRequiredService<IDocumentStore>().LightweightSession());
             services.AddScoped<IQuerySession>(sp => sp.GetRequiredService<IDocumentStore>().QuerySession());
 
-            services.AddScoped<IDocumentTextExtractor, DocumentTextExtractor>();
+            services.AddScoped<IDocumentProcessor, DocumentProcessor>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IFileMetadataService, FileMetadataService>();
             services.AddScoped<IPathService, PathService>();
@@ -180,9 +182,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     throw new InvalidOperationException("Unsupported DeliveryProviderSettings");
             }
 
-            services.AddScoped<IValueResolver<DocumentView, DocumentDto, string>, FilePathResolver>();
-            services.AddScoped<IValueResolver<DocumentView, DocumentDto, string>, ThumbnailPathResolver>();
-            services.AddScoped<IValueResolver<DocumentView, DocumentDto, string>, MetadataPathResolver>();
+            services.AddScoped<IMemberValueResolver<DocumentView, DocumentDto, string, string>, PathResolver>();
 
             services.AddAutoMapper(typeof(Mapping.DocumentMapping).Assembly);
 

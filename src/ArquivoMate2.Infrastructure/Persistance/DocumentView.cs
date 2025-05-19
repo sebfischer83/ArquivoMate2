@@ -10,6 +10,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
         public string ThumbnailPath { get; set; } = string.Empty;
 
         public string MetadataPath { get; set; } = string.Empty;
+        public string PreviewPath { get; set; } = string.Empty;
 
         public string UserId { get; set; } = string.Empty;
         public ProcessingStatus Status { get; set; }

@@ -4,6 +4,7 @@ using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Infrastructure.Configuration;
 using Hangfire;
 using Hangfire.PostgreSql;
+using JasperFx.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -16,6 +17,7 @@ using OpenTelemetry.Trace;
 using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Configuration;
+using System.Text.Json.Serialization;
 
 namespace ArquivoMate2.API
 {
@@ -52,7 +54,11 @@ namespace ArquivoMate2.API
                   });
               });
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddJsonOptions(configure =>
+            {
+                var enumConverter = new JsonStringEnumConverter();
+                configure.JsonSerializerOptions.Converters.Add(enumConverter);
+            });
             builder.Services.AddInfrastructure(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
 

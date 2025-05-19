@@ -16,6 +16,8 @@ namespace ArquivoMate2.Shared.Models
 
         public string MetadataPath { get; set; } = string.Empty;
 
+        public string PreviewPath { get; set; } = string.Empty;
+
         public string UserId { get; set; } = string.Empty;
 
         public bool Processed { get; set; }
@@ -29,5 +31,7 @@ namespace ArquivoMate2.Shared.Models
         public bool Accepted { get; set; }
 
         public DateTime AcceptedAt { get; set; }
+
+        public ProcessingStatus Status { get; set; } = ProcessingStatus.Pending;
     }
 }

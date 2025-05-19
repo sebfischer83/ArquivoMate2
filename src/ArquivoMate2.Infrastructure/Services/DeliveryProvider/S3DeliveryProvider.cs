@@ -50,7 +50,7 @@ namespace ArquivoMate2.Infrastructure.Services.DeliveryProvider
             var args = new PresignedGetObjectArgs()
                 .WithBucket(_settings.BucketName)
                 .WithObject(fullPath)
-                .WithExpiry((int)TimeSpan.FromHours(1).TotalMinutes);
+                .WithExpiry((int)TimeSpan.FromHours(1).TotalSeconds);
 
             var presignedUrl = await _storage.PresignedGetObjectAsync(args);
             await _cache.SetAsync(cacheKey, presignedUrl, TimeSpan.FromMinutes(55));

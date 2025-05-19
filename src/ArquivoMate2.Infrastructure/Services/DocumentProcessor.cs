@@ -2,6 +2,7 @@
 using ArquivoMate2.Domain.ValueObjects;
 using ImageMagick;
 using JasperFx.Core;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -17,16 +18,16 @@ namespace ArquivoMate2.Infrastructure.Services
     /// Service for extracting text from PDF documents.
     /// Supports both direct text extraction and OCR (Optical Character Recognition) for image-based PDFs.
     /// </summary>
-    public class DocumentTextExtractor : IDocumentTextExtractor
+    public class DocumentProcessor : IDocumentProcessor
     {
         private readonly string _tesseractPath = "tesseract"; // Path to the Tesseract CLI tool.
-        private readonly ILogger<DocumentTextExtractor> _logger;
+        private readonly ILogger<DocumentProcessor> _logger;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DocumentTextExtractor"/> class.
+        /// Initializes a new instance of the <see cref="DocumentProcessor"/> class.
         /// </summary>
         /// <param name="logger">Logger for logging information and warnings.</param>
-        public DocumentTextExtractor(ILogger<DocumentTextExtractor> logger)
+        public DocumentProcessor(ILogger<DocumentProcessor> logger)
         {
             _logger = logger;
         }
@@ -103,6 +104,73 @@ namespace ArquivoMate2.Infrastructure.Services
                 File.Delete(tmpImage);
             }
             return result.ToString();
+        }
+
+        public async Task<byte[]> GeneratePreviewPdf(Stream documentStream, DocumentMetadata documentMetadata, CancellationToken cancellationToken = default)
+        {
+            var tempInput = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".pdf");
+            var tempOutputBase = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            var tempOutput = tempOutputBase + ".pdf";
+
+            try
+            {
+                // Input-Stream in Datei schreiben
+                documentStream.Position = 0;
+                using (var fs = new FileStream(tempInput, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    await documentStream.CopyToAsync(fs, 81920, cancellationToken).ConfigureAwait(false);
+                }
+
+                // pdftocairo-Argumente zusammenstellen
+                // Beispiel: 72 dpi, JPEG-Qualität 50
+                int dpi = 72;
+                int quality = 50;
+
+                var args = $"-sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dQUIET -dBATCH -sOutputFile=\"{tempOutput}\" \"{tempInput}\" ";
+
+                // Process starten
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "gs",
+                    Arguments = args,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using (var proc = new Process { StartInfo = psi })
+                {
+                    proc.Start();
+
+                    string stdOut = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
+                    string stdErr = await proc.StandardError.ReadToEndAsync().ConfigureAwait(false);
+
+                    using (cancellationToken.Register(() => proc.Kill()))
+                    {
+                        await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+                    }
+
+                    if (proc.ExitCode != 0)
+                    {
+                        throw new InvalidOperationException($"pdftocairo failed (Exit {proc.ExitCode}): {stdErr}");
+                    }
+                }
+
+                // Ausgabe lesen
+                byte[] result = await File.ReadAllBytesAsync(tempOutput, cancellationToken).ConfigureAwait(false);
+                return result;
+            }
+            finally
+            {
+                // Aufräumen
+                TryDelete(tempInput);
+                TryDelete(tempOutput);
+            }
+        }
+        private void TryDelete(string path)
+        {
+            try { if (File.Exists(path)) File.Delete(path); } catch { /* Ignorieren */ }
         }
     }
 }

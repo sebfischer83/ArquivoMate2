@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using ArquivoMate2.Application.Interfaces;
 using StackExchange.Redis;
+using System.IO;
 
 namespace ArquivoMate2.Infrastructure.Mapping
 {
@@ -16,67 +17,29 @@ namespace ArquivoMate2.Infrastructure.Mapping
         public DocumentMapping()
         {
             CreateMap<DocumentView, DocumentDto>()
-                    .ForMember(dest => dest.FilePath, opt => opt.MapFrom<FilePathResolver>())
-                    .ForMember(dest => dest.ThumbnailPath, opt => opt.MapFrom<ThumbnailPathResolver>())
-                    .ForMember(dest => dest.MetadataPath, opt => opt.MapFrom<MetadataPathResolver>());
+                    .ForMember(dest => dest.FilePath, opt => opt.MapFrom<PathResolver, string>(src => src.FilePath))
+                    .ForMember(dest => dest.ThumbnailPath, opt => opt.MapFrom<PathResolver, string>(src => src.ThumbnailPath))
+                    .ForMember(dest => dest.MetadataPath, opt => opt.MapFrom<PathResolver, string>(src => src.MetadataPath))
+                    .ForMember(dest => dest.PreviewPath, opt => opt.MapFrom<PathResolver, string>(src => src.PreviewPath));
         }
 
     }
 
-    public class FilePathResolver : IValueResolver<DocumentView, DocumentDto, string>
+    public class PathResolver : IMemberValueResolver<DocumentView, DocumentDto, string, string>
     {
         private readonly IDeliveryProvider _storageProvider;
 
-        public FilePathResolver(IDeliveryProvider storageProvider)
+        public PathResolver(IDeliveryProvider storageProvider)
         {
             _storageProvider = storageProvider;
         }
 
-        public string Resolve(DocumentView source, DocumentDto destination, string destMember, ResolutionContext context)
+        public string Resolve(DocumentView source, DocumentDto destination, string sourceMember, string destMember, ResolutionContext context)
         {
-            if (string.IsNullOrEmpty(source.FilePath))
+            if (string.IsNullOrEmpty(sourceMember))
                 return string.Empty;
 
-            return Task.Run(async () => await _storageProvider.GetAccessUrl(source.FilePath))
-                    .Result;
-        }
-    }
-
-    public class ThumbnailPathResolver : IValueResolver<DocumentView, DocumentDto, string>
-    {
-        private readonly IDeliveryProvider _storageProvider;
-
-        public ThumbnailPathResolver(IDeliveryProvider storageProvider)
-        {
-            _storageProvider = storageProvider;
-        }
-
-        public string Resolve(DocumentView source, DocumentDto destination, string destMember, ResolutionContext context)
-        {
-            if (string.IsNullOrEmpty(source.ThumbnailPath))
-                return string.Empty;
-
-            return Task.Run(async () => await _storageProvider.GetAccessUrl(source.ThumbnailPath))
-                    .Result;
-        }
-    }
-
-    public class MetadataPathResolver : IValueResolver<DocumentView, DocumentDto, string>
-    {
-        private readonly IDeliveryProvider _storageProvider;
-
-        public MetadataPathResolver(IDeliveryProvider storageProvider)
-        {
-            _storageProvider = storageProvider;
-        }
-
-        public string Resolve(DocumentView source, DocumentDto destination, string destMember, ResolutionContext context)
-        {
-            if (string.IsNullOrEmpty(source.MetadataPath))
-                return string.Empty;
-
-            return Task.Run(async () => await _storageProvider.GetAccessUrl(source.MetadataPath))
-                    .Result;
+            return _storageProvider.GetAccessUrl(sourceMember).GetAwaiter().GetResult();
         }
     }
 }

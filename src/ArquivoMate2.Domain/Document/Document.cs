@@ -12,6 +12,8 @@ namespace ArquivoMate2.Domain.Document
 
         public string MetadataPath { get; private set; } = string.Empty;
 
+        public string PreviewPath { get; private set; } = string.Empty;
+
         public string UserId { get; private set; } = string.Empty;
         public bool Processed { get; private set; }
         public DateTime UploadedAt { get; private set; }
@@ -60,6 +62,7 @@ namespace ArquivoMate2.Domain.Document
             FilePath = e.FilePath;
             MetadataPath = e.MetadataPath;
             ThumbnailPath = e.ThumbnailPath;
+            PreviewPath = e.PreviewPath;
         }
 
         public void Apply(DocumentStartProcessing e)

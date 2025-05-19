@@ -65,7 +65,11 @@ namespace ArquivoMate2.API
                 config.UsePostgreSqlStorage(opt => opt.UseNpgsqlConnection(connectionString));
             });
 
-            builder.Services.AddHangfireServer();
+            builder.Services.AddHangfireServer(options =>
+            {
+                options.Queues = new[] { "documents" };
+                options.WorkerCount = 5;
+            });
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
@@ -82,11 +86,11 @@ namespace ArquivoMate2.API
                     // Optional: Feineinstellungen
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
-                        ValidateIssuer = true,
+                        ValidateIssuer = false,
                         ValidIssuer = "https://auth2.modellfrickler.online/application/o/arquivomate2/",
-                        ValidateAudience = true,
+                        ValidateAudience = false,
                         ValidAudience = "egrVGZZH9GkuULNmnpux9Yr9neRhHXyaVup0pEUh",
-                        ValidateLifetime = true
+                        ValidateLifetime = false
                     };
                 });
 

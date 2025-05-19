@@ -1,4 +1,6 @@
-﻿namespace ArquivoMate2.Domain.Document
+﻿using ArquivoMate2.Shared.Models;
+
+namespace ArquivoMate2.Domain.Document
 {
 
     public class Document
@@ -18,6 +20,8 @@
         public bool Accepted { get; private set; }
 
         public DateTime? AcceptedAt { get; private set; }
+
+        public ProcessingStatus Status { get; private set; } = ProcessingStatus.Pending;
 
         // content
         public string Content { get; private set; } = string.Empty;
@@ -43,6 +47,7 @@
             Id = e.AggregateId;
             UploadedAt = e.OccurredOn;
             UserId = e.UserId;
+            Status = ProcessingStatus.Pending;
         }
 
         public void Apply(DocumentContentExtracted documentContentExtracted)
@@ -57,11 +62,17 @@
             ThumbnailPath = e.ThumbnailPath;
         }
 
+        public void Apply(DocumentStartProcessing e)
+        {
+            Status = ProcessingStatus.InProgress;
+        }
+
         public void MarkAsProcessed()
         {
             if (Processed) throw new InvalidOperationException("Document is already processed.");
             Processed = true;
             ProcessedAt = DateTime.UtcNow;
+            Status = ProcessingStatus.Completed;
         }
 
         public void Apply(DocumentChatBotDataReceived e)

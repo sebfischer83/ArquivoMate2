@@ -37,13 +37,13 @@ namespace ArquivoMate2.API.Controllers
             var userId = _currentUserService.UserId;
 
             var pendingDocuments = await querySession.Query<Infrastructure.Persistance.DocumentView>()
-                .Where(doc => !doc.Processed && doc.UserId == userId)
+                .Where(doc => (doc.Status != ProcessingStatus.Completed && doc.Status != ProcessingStatus.Failed) && doc.UserId == userId)
                 .ToListAsync(cancellationToken);
 
             var result = pendingDocuments.Select(doc => new DocumentStatusDto
             {
                 DocumentId = doc.Id,
-                IsProcessed = doc.Processed,
+                Status = doc.Status,
                 UploadedAt = doc.UploadedAt
             }).ToList();
 
@@ -59,7 +59,7 @@ namespace ArquivoMate2.API.Controllers
 
             var id = await _mediator.Send(new UploadDocumentCommand(request), cancellationToken);
 
-            BackgroundJob.Enqueue<DocumentProcessingService>(svc => svc.ProcessAsync(id, _currentUserService.UserId));
+            BackgroundJob.Enqueue<DocumentProcessingService>("documents", svc => svc.ProcessAsync(id, _currentUserService.UserId));
 
             return CreatedAtAction(nameof(Upload), new { id }, id);
         }
@@ -71,19 +71,16 @@ namespace ArquivoMate2.API.Controllers
         public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
         {
             var userId = _currentUserService.UserId;
-            // Dokument aus dem Marten-Read-Model laden
             var view = await querySession.LoadAsync<Infrastructure.Persistance.DocumentView>(id, cancellationToken);
             if (view is null)
                 return NotFound();
 
-            // Überprüfen, ob der Benutzer Zugriff auf das Dokument hat
             if (view.UserId != userId)
                 return Forbid();
 
             var events = await querySession.Events.FetchStreamAsync(id, token: cancellationToken);
             var documentDto = _mapper.Map<DocumentDto>(view);
 
-            // Mapping auf das API-DTO
             return Ok(documentDto);
            
         }

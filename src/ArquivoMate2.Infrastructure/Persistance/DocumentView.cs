@@ -1,4 +1,6 @@
-﻿namespace ArquivoMate2.Infrastructure.Persistance
+﻿using ArquivoMate2.Shared.Models;
+
+namespace ArquivoMate2.Infrastructure.Persistance
 {
     public class DocumentView
     {
@@ -10,7 +12,7 @@
         public string MetadataPath { get; set; } = string.Empty;
 
         public string UserId { get; set; } = string.Empty;
-        public bool Processed { get; set; }
+        public ProcessingStatus Status { get; set; }
         public DateTime UploadedAt { get; set; }
         public DateTime? ProcessedAt { get; set; }
 

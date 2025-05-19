@@ -11,8 +11,6 @@ services:
       - "5000:8081"
     depends_on:
       - db
-    # volumes:
-      # -  C:\\Data:/var/arquivomate2
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       USER_SECRETS_ID: bb5e46f1-5f35-4a18-b8ac-a5d3eef93c99
@@ -59,9 +57,9 @@ services:
     volumes:
       - seq:/data
 
-  meilisearch:
-    image: getmeili/meilisearch:v1.5
-    container_name: meilisearch
+  meili:
+    image: getmeili/meilisearch:v1.15.0-rc.0
+    container_name: meili
     ports:
       - "7700:7700"
     environment:

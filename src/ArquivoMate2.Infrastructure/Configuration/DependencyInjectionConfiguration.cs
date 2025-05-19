@@ -59,7 +59,8 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     typeof(DocumentUploaded),
                     typeof(DocumentProcessed),
                     typeof(DocumentContentExtracted),
-                    typeof(DocumentFilesPrepared)
+                    typeof(DocumentFilesPrepared),
+                    typeof(DocumentStartProcessing),
                     // hier weitere Event‑Typen hinzufügen…
                 });
 
@@ -83,7 +84,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddScoped<IThumbnailService, ThumbnailService>();
             services.AddScoped<MeilisearchClient>(sp =>
             {
-                return new MeilisearchClient("http://meilisearch:7700", "supersecret");
+                return new MeilisearchClient(config["Meilisearch:Url"], "supersecret");
             });
 
             services.AddHttpClient();

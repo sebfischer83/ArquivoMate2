@@ -21,12 +21,40 @@ namespace ArquivoMate2.Application.Services
             var doc = await _mediator.Send(new ProcessDocumentCommand(documentId, userId));
             // Post-processing actions (notifications, indexing)
 
-            if (doc == null)
+            if (doc.Document == null)
             {
-
+                // Optional: Fehlerbehandlung oder Logging
             }
 
-            // Delete the temp uploaded file after processing
+            if (!string.IsNullOrWhiteSpace(doc.TempFilePath))
+            {
+                try
+                {
+                    var directory = Path.GetDirectoryName(doc.TempFilePath);
+                    var fileNameWithoutExt = Path.GetFileNameWithoutExtension(doc.TempFilePath);
+
+                    if (directory != null && fileNameWithoutExt != null)
+                    {
+                        var files = Directory.GetFiles(directory, $"{fileNameWithoutExt}.*");
+                        foreach (var file in files)
+                        {
+                            try
+                            {
+                                File.Delete(file);
+                                _logger.LogInformation("Deleted temp file: {FilePath}", file);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogWarning(ex, "Failed to delete temp file: {FilePath}", file);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error while deleting temp files for: {TempFilePath}", doc.TempFilePath);
+                }
+            }
         }
     }
 }

@@ -10,6 +10,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
     {
         public void Apply(DocumentUploaded e, DocumentView view)
         {
+            view.Status = Shared.Models.ProcessingStatus.Pending;
             view.Id = e.AggregateId;
             view.UploadedAt = e.OccurredOn;
             view.UserId = e.UserId;
@@ -17,7 +18,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
 
         public void Apply(DocumentProcessed e, DocumentView view)
         {
-            view.Processed = true;
+            view.Status = Shared.Models.ProcessingStatus.Completed;
             view.ProcessedAt = e.OccurredOn;
         }
 
@@ -25,6 +26,12 @@ namespace ArquivoMate2.Infrastructure.Persistance
         {
             view.Content = e.Content;
         }
+
+        public void Apply(DocumentStartProcessing e, DocumentView view)
+        {
+            view.Status = Shared.Models.ProcessingStatus.InProgress;
+        }
+
 
         public void Apply(DocumentFilesPrepared e, DocumentView view)
         {

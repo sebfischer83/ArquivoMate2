@@ -14,7 +14,7 @@ using System.Text.Json.Serialization;
 
 namespace ArquivoMate2.Application.Handlers
 {
-    public class ProcessDocumentHandler : IRequestHandler<ProcessDocumentCommand, Document?>
+    public class ProcessDocumentHandler : IRequestHandler<ProcessDocumentCommand, (Document? Document, string? TempFilePath)>
     {
         private readonly IDocumentSession _session;
         private readonly ILogger<ProcessDocumentHandler> _logger;
@@ -29,7 +29,7 @@ namespace ArquivoMate2.Application.Handlers
             IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot)
             => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService, _chatBot) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService, chatBot);
 
-        public async Task<Document?> Handle(ProcessDocumentCommand request, CancellationToken cancellationToken)
+        public async Task<(Document? Document, string? TempFilePath)> Handle(ProcessDocumentCommand request, CancellationToken cancellationToken)
         {
             var sw = Stopwatch.StartNew();
             try
@@ -49,6 +49,8 @@ namespace ArquivoMate2.Application.Handlers
                     _logger.LogWarning("Metadata for document {DocumentId} not found", request.DocumentId);
                     throw new KeyNotFoundException($"Metadata for document {request.DocumentId} not found");
                 }
+
+                _session.Events.Append(request.DocumentId, new DocumentStartProcessing(request.DocumentId, DateTime.UtcNow));
 
                 var path = pathService.GetDocumentUploadPath(request.UserId);
                 path = Path.Combine(path, $"{request.DocumentId}{metadata.Extension}");
@@ -87,15 +89,15 @@ namespace ArquivoMate2.Application.Handlers
                 _logger.LogInformation("Processed document {DocumentId} in {ElapsedMs}ms", request.DocumentId, sw.ElapsedMilliseconds);
 
                 doc = await _session.Events.AggregateStreamAsync<Document>(request.DocumentId, token: cancellationToken);
-                return doc;
 
+                return (doc, path);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing document {DocumentId}", request.DocumentId);
             }
 
-            return null;
+            return (null, null);
         }
 
         private async Task ProcessChatbotResultAsync(Guid documentId, DocumentAnalysisResult chatbotResult)

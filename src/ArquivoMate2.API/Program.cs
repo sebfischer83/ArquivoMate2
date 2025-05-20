@@ -2,6 +2,7 @@
 using ArquivoMate2.Application.Handlers;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Infrastructure.Configuration;
+using ArquivoMate2.Infrastructure.Configuration.Auth;
 using Hangfire;
 using Hangfire.PostgreSql;
 using JasperFx.Core;
@@ -30,9 +31,16 @@ namespace ArquivoMate2.API
             builder.Configuration.AddEnvironmentVariables("AMate__");
             string connectionString = builder.Configuration.GetConnectionString("Default");
 
+            var seqUrl = builder.Configuration["Seq:ServerUrl"];
+            var seqApiKey = builder.Configuration["Seq:ApiKey"];
+
             builder.Host.UseSerilog((context, config) =>
             {
                 config.ReadFrom.Configuration(context.Configuration);
+                if (!string.IsNullOrWhiteSpace(seqUrl))
+                {
+                    config.WriteTo.Seq(seqUrl, apiKey: seqApiKey);
+                }
                 config.Enrich.FromLogContext();
                 config.Enrich.WithProperty("Application", typeof(Program).Assembly.GetName().Name);
             });
@@ -46,12 +54,17 @@ namespace ArquivoMate2.API
                   tracing.AddHttpClientInstrumentation();
                   tracing.AddConsoleExporter(); 
                   tracing.AddSource("Marten");
-                  //tracing.AddNpgsql();
-                  tracing.AddOtlpExporter(opt =>
+
+                  if (!string.IsNullOrWhiteSpace(seqUrl))
                   {
-                      opt.Endpoint = new Uri("http://seq:5341/ingest/otlp/v1/traces");
-                      opt.Protocol = OtlpExportProtocol.HttpProtobuf;
-                  });
+                      tracing.AddOtlpExporter(opt =>
+                      {
+                          opt.Endpoint = new Uri("http://seq:5341/ingest/otlp/v1/traces");
+                          opt.Protocol = OtlpExportProtocol.HttpProtobuf;
+                          opt.Headers = $"X-Seq-ApiKey={seqApiKey}";
+                      });
+                  }
+                 
               });
 
             builder.Services.AddControllers().AddJsonOptions(configure =>
@@ -80,28 +93,7 @@ namespace ArquivoMate2.API
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    // URL deines Authentik-OIDC-Endpoints (.well-known/openid-configuration)
-                    options.Authority = "https://auth2.modellfrickler.online/application/o/arquivomate2/";
-                    // Audience genauso wie in deiner Authentik-Application definiert
-                    options.Audience = "egrVGZZH9GkuULNmnpux9Yr9neRhHXyaVup0pEUh";
-                    options.RequireHttpsMetadata = true;
-
-                    // Optional: Feineinstellungen
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = false,
-                        ValidIssuer = "https://auth2.modellfrickler.online/application/o/arquivomate2/",
-                        ValidateAudience = false,
-                        ValidAudience = "egrVGZZH9GkuULNmnpux9Yr9neRhHXyaVup0pEUh",
-                        ValidateLifetime = false
-                    };
-                });
-
-
-            builder.Services.AddAuthorization();
+            AddAuth(builder, builder.Configuration);
 
             var app = builder.Build();
 
@@ -126,6 +118,40 @@ namespace ArquivoMate2.API
             app.MapControllers();
             app.MapHangfireDashboard();
             app.Run();
+        }
+
+        private static void AddAuth(WebApplicationBuilder builder, ConfigurationManager configuration)
+        {
+            var config = new AuthSettingsFactory(configuration).GetAuthSettings();
+
+            if (config.Type == AuthType.OIDC)
+            {
+                var oidcSettings = config as OIDCSettings;
+
+                builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                              .AddJwtBearer(options =>
+                              {
+                                  // URL deines Authentik-OIDC-Endpoints (.well-known/openid-configuration)
+                                  options.Authority = oidcSettings.Authority;
+                                  // Audience genauso wie in deiner Authentik-Application definiert
+                                  options.Audience = oidcSettings.Audience;
+                                  options.RequireHttpsMetadata = true;
+
+                                  // Optional: Feineinstellungen
+                                  options.TokenValidationParameters = new TokenValidationParameters
+                                  {
+                                      ValidateIssuer = false,
+                                      ValidIssuer = oidcSettings.Issuer,
+                                      ValidateAudience = false,
+                                      ValidAudience = oidcSettings.Audience,
+                                      ValidateLifetime = false
+                                  };
+                              });
+            }
+
+
+
+            builder.Services.AddAuthorization();
         }
     }
 }

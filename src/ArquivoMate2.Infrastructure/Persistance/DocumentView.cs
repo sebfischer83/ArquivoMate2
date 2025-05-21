@@ -22,5 +22,14 @@ namespace ArquivoMate2.Infrastructure.Persistance
         public bool Accepted { get; set; }
 
         public DateTime AcceptedAt { get; set; } = DateTime.UtcNow;
+
+        public string Type { get; set; } = string.Empty;
+
+        public string CustomerNumber { get; set; } = string.Empty;
+        public string InvoiceNumber { get; set; } = string.Empty;
+        public decimal? TotalPrice { get; set; }
+        public List<string> Keywords { get; set; } = new List<string>();
+        public string Summary { get; set; } = string.Empty;
+        public DateTime? Date { get; set; }
     }
 }

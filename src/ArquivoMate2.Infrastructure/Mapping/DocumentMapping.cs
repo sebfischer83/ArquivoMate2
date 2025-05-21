@@ -12,6 +12,15 @@ using System.IO;
 
 namespace ArquivoMate2.Infrastructure.Mapping
 {
+    public class DocumentListItemMapping : Profile
+    {
+        public DocumentListItemMapping()
+        {
+            CreateMap<DocumentView, DocumentListItemDto>()
+                    .ForMember(dest => dest.ThumbnailPath, opt => opt.MapFrom<PathResolver, string>(src => src.ThumbnailPath));
+        }
+    }
+
     public class DocumentMapping : Profile
     {
         public DocumentMapping()
@@ -25,7 +34,7 @@ namespace ArquivoMate2.Infrastructure.Mapping
 
     }
 
-    public class PathResolver : IMemberValueResolver<DocumentView, DocumentDto, string, string>
+    public class PathResolver : IMemberValueResolver<DocumentView, BaseDto, string, string>
     {
         private readonly IDeliveryProvider _storageProvider;
 
@@ -34,7 +43,7 @@ namespace ArquivoMate2.Infrastructure.Mapping
             _storageProvider = storageProvider;
         }
 
-        public string Resolve(DocumentView source, DocumentDto destination, string sourceMember, string destMember, ResolutionContext context)
+        public string Resolve(DocumentView source, BaseDto destination, string sourceMember, string destMember, ResolutionContext context)
         {
             if (string.IsNullOrEmpty(sourceMember))
                 return string.Empty;

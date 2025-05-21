@@ -32,6 +32,16 @@ namespace ArquivoMate2.Infrastructure.Persistance
             view.Status = Shared.Models.ProcessingStatus.InProgress;
         }
 
+        public void Apply(DocumentChatBotDataReceived e, DocumentView view)
+        {
+            view.Keywords = e.Keywords; 
+            view.Summary = e.Summary;
+            view.CustomerNumber = e.CustomerNumber;
+            view.InvoiceNumber = e.InvoiceNumber;
+            view.TotalPrice = e.TotalPrice;
+            view.Type = e.Type;
+            view.Date = e.Date;
+        }
 
         public void Apply(DocumentFilesPrepared e, DocumentView view)
         {

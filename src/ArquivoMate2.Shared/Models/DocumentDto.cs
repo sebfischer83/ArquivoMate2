@@ -6,10 +6,14 @@ using System.Threading.Tasks;
 
 namespace ArquivoMate2.Shared.Models
 {
-    public class DocumentDto
+    public class BaseDto
     {
         public Guid Id { get; set; }
+    }
 
+
+    public class DocumentDto : BaseDto
+    {
         public string FilePath { get; set; } = string.Empty;
 
         public string ThumbnailPath { get; set; } = string.Empty;
@@ -33,5 +37,14 @@ namespace ArquivoMate2.Shared.Models
         public DateTime AcceptedAt { get; set; }
 
         public ProcessingStatus Status { get; set; } = ProcessingStatus.Pending;
+
+        public string Type { get; set; } = string.Empty;
+
+        public string CustomerNumber { get; set; } = string.Empty;
+        public string InvoiceNumber { get; set; } = string.Empty;
+        public decimal? TotalPrice { get; set; }
+        public List<string> Keywords { get; set; } = new List<string>();
+        public string Summary { get; set; } = string.Empty;
+
     }
 }

@@ -2,10 +2,12 @@
 using ArquivoMate2.Application.Configuration;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Services;
+using ArquivoMate2.Infrastructure.Persistance;
 using ArquivoMate2.Shared.Models;
 using AutoMapper;
 using Hangfire;
 using Marten;
+using Marten.Pagination;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -65,22 +67,34 @@ namespace ArquivoMate2.API.Controllers
         }
 
         [HttpGet()]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentDto[]))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentListDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Get(CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
+        public async Task<IActionResult> Get([FromQuery] DocumentListRequestDto requestDto, 
+            CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
         {
             var userId = _currentUserService.UserId;
-            var view = await querySession.QueryAsync<Infrastructure.Persistance.DocumentView>("where data ->> 'UserId' = ?", userId);
+            var view = await querySession.Query<Infrastructure.Persistance.DocumentView>().Where(d => d.UserId == userId).
+                ToPagedListAsync(requestDto.Page, requestDto.PageSize);
             if (view is null)
                 return NotFound();
-
             if (view.Count == 0)
                 return NotFound();
 
-            var documentDto = _mapper.Map<DocumentDto[]>(view);
 
-            return Ok(documentDto);
+            DocumentListDto documentListDto = new();
+            var documents = _mapper.Map<DocumentListItemDto[]>(view);
+            documentListDto.Documents = documents;
+
+            documentListDto.TotalCount = view.TotalItemCount;
+            documentListDto.HasNextPage = view.HasNextPage;
+            documentListDto.PageCount = view.PageCount;
+            documentListDto.HasPreviousPage = view.HasPreviousPage;
+            documentListDto.IsLastPage = view.IsLastPage;
+            documentListDto.IsFirstPage = view.IsFirstPage;
+            documentListDto.CurrentPage = requestDto.Page;
+
+            return Ok(documentListDto);
 
         }
 
@@ -102,7 +116,7 @@ namespace ArquivoMate2.API.Controllers
             var documentDto = _mapper.Map<DocumentDto>(view);
 
             return Ok(documentDto);
-           
+
         }
     }
 }

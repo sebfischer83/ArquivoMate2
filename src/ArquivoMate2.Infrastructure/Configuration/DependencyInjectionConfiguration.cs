@@ -61,6 +61,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     typeof(DocumentContentExtracted),
                     typeof(DocumentFilesPrepared),
                     typeof(DocumentStartProcessing),
+                    typeof(DocumentChatBotDataReceived),
                     // hier weitere Event‑Typen hinzufügen…
                 });
 
@@ -182,7 +183,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     throw new InvalidOperationException("Unsupported DeliveryProviderSettings");
             }
 
-            services.AddScoped<IMemberValueResolver<DocumentView, DocumentDto, string, string>, PathResolver>();
+            services.AddScoped<IMemberValueResolver<DocumentView, BaseDto, string, string>, PathResolver>();
 
             services.AddAutoMapper(typeof(Mapping.DocumentMapping).Assembly);
 

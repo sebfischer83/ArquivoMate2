@@ -32,6 +32,36 @@ namespace ArquivoMate2.Infrastructure.Persistance
             view.Status = Shared.Models.ProcessingStatus.InProgress;
         }
 
+        public void Apply(DocumentUpdated e, DocumentView view)
+        {
+            var type = view.GetType();
+            foreach (var kvp in e.Values)
+            {
+                var prop = type.GetProperty(kvp.Key);
+                if (prop != null && prop.CanWrite)
+                {
+                    if (prop.PropertyType == typeof(List<string>) && kvp.Value is IEnumerable<string> enumerable)
+                    {
+                        prop.SetValue(view, enumerable.ToList());
+                    }
+                    else if (prop.PropertyType.IsEnum && kvp.Value is string enumString)
+                    {
+                        var enumValue = Enum.Parse(prop.PropertyType, enumString);
+                        prop.SetValue(view, enumValue);
+                    }
+                    else if (kvp.Value == null || prop.PropertyType.IsInstanceOfType(kvp.Value))
+                    {
+                        prop.SetValue(view, kvp.Value);
+                    }
+                    else
+                    {
+                        var converted = Convert.ChangeType(kvp.Value, prop.PropertyType);
+                        prop.SetValue(view, converted);
+                    }
+                }
+            }
+        }
+
         public void Apply(DocumentChatBotDataReceived e, DocumentView view)
         {
             view.Keywords = e.Keywords; 

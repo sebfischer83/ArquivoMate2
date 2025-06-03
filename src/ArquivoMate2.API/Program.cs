@@ -67,11 +67,7 @@ namespace ArquivoMate2.API
                  
               });
 
-            builder.Services.AddControllers().AddJsonOptions(configure =>
-            {
-                var enumConverter = new JsonStringEnumConverter();
-                configure.JsonSerializerOptions.Converters.Add(enumConverter);
-            });
+            builder.Services.AddControllers().AddNewtonsoftJson();
             builder.Services.AddInfrastructure(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
 

@@ -17,11 +17,7 @@ namespace ArquivoMate2.Domain.Document
         public string UserId { get; private set; } = string.Empty;
         public bool Processed { get; private set; }
         public DateTime UploadedAt { get; private set; }
-        public DateTime? ProcessedAt { get; private set; }
-
         public bool Accepted { get; private set; }
-
-        public DateTime? AcceptedAt { get; private set; }
 
         public ProcessingStatus Status { get; private set; } = ProcessingStatus.Pending;
 
@@ -42,6 +38,10 @@ namespace ArquivoMate2.Domain.Document
         public List<string> Keywords { get; private set; } = new List<string>();
         public string Summary { get; private set; } = string.Empty;
 
+        public string Title { get; private set; } = string.Empty;
+
+        public DateTime? LastEventOccurredOn { get; private set; }
+
         public Document() { }
 
         public void Apply(DocumentUploaded e)
@@ -50,11 +50,13 @@ namespace ArquivoMate2.Domain.Document
             UploadedAt = e.OccurredOn;
             UserId = e.UserId;
             Status = ProcessingStatus.Pending;
+            LastEventOccurredOn = e.OccurredOn;
         }
 
         public void Apply(DocumentContentExtracted documentContentExtracted)
         {
             Content = documentContentExtracted.Content;
+            LastEventOccurredOn = documentContentExtracted.OccurredOn;
         }
 
         public void Apply(DocumentFilesPrepared e)
@@ -63,18 +65,19 @@ namespace ArquivoMate2.Domain.Document
             MetadataPath = e.MetadataPath;
             ThumbnailPath = e.ThumbnailPath;
             PreviewPath = e.PreviewPath;
+            LastEventOccurredOn = e.OccurredOn;
         }
 
         public void Apply(DocumentStartProcessing e)
         {
             Status = ProcessingStatus.InProgress;
+            LastEventOccurredOn = e.OccurredOn;
         }
 
         public void MarkAsProcessed()
         {
             if (Processed) throw new InvalidOperationException("Document is already processed.");
             Processed = true;
-            ProcessedAt = DateTime.UtcNow;
             Status = ProcessingStatus.Completed;
         }
 
@@ -89,6 +92,40 @@ namespace ArquivoMate2.Domain.Document
             TotalPrice = e.TotalPrice;
             Keywords = e.Keywords;
             Summary = e.Summary;
+            LastEventOccurredOn = e.OccurredOn;
+        }
+
+        public void Apply(DocumentUpdated e)
+        {
+            var type = this.GetType();
+            foreach (var kvp in e.Values)
+            {
+                var prop = type.GetProperty(kvp.Key);
+                if (prop != null && prop.CanWrite)
+                {
+                    // Handle List<string> conversion if needed
+                    if (prop.PropertyType == typeof(List<string>) && kvp.Value is IEnumerable<string> enumerable)
+                    {
+                        prop.SetValue(this, enumerable.ToList());
+                    }
+                    else if (prop.PropertyType.IsEnum && kvp.Value is string enumString)
+                    {
+                        var enumValue = Enum.Parse(prop.PropertyType, enumString);
+                        prop.SetValue(this, enumValue);
+                    }
+                    else if (kvp.Value == null || prop.PropertyType.IsInstanceOfType(kvp.Value))
+                    {
+                        prop.SetValue(this, kvp.Value);
+                    }
+                    else
+                    {
+                        // Try to convert value to property type
+                        var converted = Convert.ChangeType(kvp.Value, prop.PropertyType);
+                        prop.SetValue(this, converted);
+                    }
+                }
+            }
+            LastEventOccurredOn = e.OccurredOn;
         }
     }
 }

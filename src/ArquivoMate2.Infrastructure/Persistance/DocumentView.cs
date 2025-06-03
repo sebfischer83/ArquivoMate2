@@ -31,5 +31,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
         public List<string> Keywords { get; set; } = new List<string>();
         public string Summary { get; set; } = string.Empty;
         public DateTime? Date { get; set; }
+
+        public string Title { get; set; } = string.Empty;
     }
 }

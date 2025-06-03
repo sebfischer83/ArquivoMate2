@@ -17,6 +17,8 @@ namespace ArquivoMate2.Shared.Models
 
         public bool Accepted { get; set; }
 
+        public string Title { get; set; } = string.Empty;
+
         public DateTime UploadedAt { get; set; }
     }
 }

@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using System.Threading;
+using Weasel.Postgresql.Views;
 
 namespace ArquivoMate2.API.Controllers
 {
@@ -77,14 +78,32 @@ namespace ArquivoMate2.API.Controllers
                 return BadRequest("No fields provided.");
 
             // Prüfen, ob das Dokument existiert
+            var userId = _currentUserService.UserId;
             var document = await querySession.LoadAsync<Infrastructure.Persistance.DocumentView>(id, cancellationToken);
             if (document == null)
                 return NotFound($"Document with ID {id} was not found.");
 
+            if (view.UserId != userId)
+                return Forbid();
+
             try
             {
                 var result = await _mediator.Send(new UpdateDocumentCommand(id, json), cancellationToken);
-                return Ok();
+            
+                switch (result)
+                {
+                    case PatchResult.Success:
+                        document = await querySession.LoadAsync<Infrastructure.Persistance.DocumentView>(id, cancellationToken);
+                        return Ok("Fields updated successfully.");
+                    case PatchResult.Forbidden:
+                        return Forbid("Some fields are not allowed to update.");
+                    case PatchResult.Failed:
+                        return BadRequest("Failed to update fields. Please try again.");
+                    case PatchResult.Invalid:
+                        return BadRequest("Invalid fields provided for update.");
+                    default:
+                        return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred.");
+                }
             }
             catch (Exception ex)
             {

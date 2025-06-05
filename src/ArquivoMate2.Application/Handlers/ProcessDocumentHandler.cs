@@ -87,7 +87,6 @@ namespace ArquivoMate2.Application.Handlers
 
                 await ProcessChatbotResultAsync(request.DocumentId, chatbotResult);
 
-                doc.MarkAsProcessed();
                 _session.Events.Append(request.DocumentId, new DocumentProcessed(request.DocumentId, DateTime.UtcNow));
                 await _session.SaveChangesAsync(cancellationToken);
 

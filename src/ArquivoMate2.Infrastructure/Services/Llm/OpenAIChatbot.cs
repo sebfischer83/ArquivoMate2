@@ -28,7 +28,8 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             var messages = new List<ChatMessage>
                 {
                     new SystemChatMessage($"You are an assistant that analyzes the document and ALWAYS returns JSON according to the defined schema.Respond in German. " +
-                    $"Suggest maximum of 5 keywords. The summary should not exceed 500 characters.Let fields empty if you can't fill them."),
+                    $"Suggest maximum of 5 keywords. The summary should not exceed 500 characters.Let fields empty if you can't fill them. " + 
+                    "The title should be a very short description of the content."),
                     new UserChatMessage($"Document text:\n{content}")
                 };
 

@@ -18,7 +18,7 @@ namespace ArquivoMate2.Application.Handlers
         private readonly IDocumentSession _session;
         private readonly ILogger<UpdateDocumentHandler> _logger;
         private static readonly string[] DisallowedProperties = { "Id", "UserId", "FilePath", "ThumbnailPath", "MetadataPath",
-        "PreviewPath", "LastEventOccurredOn" };
+        "PreviewPath", "OccurredOn" };
 
         public UpdateDocumentHandler(IDocumentSession session, ILogger<UpdateDocumentHandler> logger)
         {

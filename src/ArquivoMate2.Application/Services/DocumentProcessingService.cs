@@ -1,4 +1,6 @@
 ﻿using ArquivoMate2.Application.Commands;
+using ArquivoMate2.Application.Interfaces;
+using Marten;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -8,23 +10,29 @@ namespace ArquivoMate2.Application.Services
     {
         private readonly IMediator _mediator;
         private readonly ILogger<DocumentProcessingService> _logger;
+        private readonly ISearchClient _searchClient;
 
-        public DocumentProcessingService(IMediator mediator, Microsoft.Extensions.Logging.ILogger<DocumentProcessingService> logger)
+        public DocumentProcessingService(IMediator mediator, ILogger<DocumentProcessingService> logger, IDocumentSession documentSession, ISearchClient searchClient)
         {
             _mediator = mediator;
             _logger = logger;
+            _searchClient = searchClient;
         }
 
         public async Task ProcessAsync(Guid documentId, string userId)
         {
             _logger.LogInformation("Starting document processing for Document ID: {DocumentId}, User ID: {UserId}", documentId, userId);
             var doc = await _mediator.Send(new ProcessDocumentCommand(documentId, userId));
-            // Post-processing actions (notifications, indexing)
 
             if (doc.Document == null)
             {
-                // Optional: Fehlerbehandlung oder Logging
+                _logger.LogError("Document processing returned null for Document ID: {DocumentId}, User ID: {UserId}", documentId, userId);
             }
+            else
+            {
+                await _searchClient.AddDocument(doc.Document!);
+            }
+            _logger.LogInformation("End document processing for Document ID: {DocumentId}, User ID: {UserId}", documentId, userId);
 
             if (!string.IsNullOrWhiteSpace(doc.TempFilePath))
             {

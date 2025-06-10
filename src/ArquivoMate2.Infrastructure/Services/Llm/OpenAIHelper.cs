@@ -38,13 +38,14 @@
             "customerNumber": { "type": "string" },
             "invoiceNumber": { "type": "string" },
             "totalPrice": { "type": "number" },
+            "title": { "type": "string" },
             "keywords": {
                 "type": "array",
                 "items": { "type": "string" }
             },
             "summary": { "type": "string" }
         },
-        "required": ["date","documentType","sender","recipient","customerNumber","invoiceNumber","totalPrice","keywords","summary"],
+        "required": ["date","documentType","sender","recipient","customerNumber","invoiceNumber","totalPrice","title","keywords","summary"],
         "additionalProperties": false
     }
     """;

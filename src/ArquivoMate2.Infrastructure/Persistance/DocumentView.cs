@@ -17,6 +17,8 @@ namespace ArquivoMate2.Infrastructure.Persistance
         public DateTime UploadedAt { get; set; }
         public DateTime? ProcessedAt { get; set; }
 
+        public DateTime? OccurredOn { get; set; } = null;
+
         public string Content { get; set; } = string.Empty;
 
         public bool Accepted { get; set; }

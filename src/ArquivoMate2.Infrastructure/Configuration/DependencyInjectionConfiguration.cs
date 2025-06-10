@@ -11,6 +11,7 @@ using ArquivoMate2.Infrastructure.Persistance;
 using ArquivoMate2.Infrastructure.Services;
 using ArquivoMate2.Infrastructure.Services.DeliveryProvider;
 using ArquivoMate2.Infrastructure.Services.Llm;
+using ArquivoMate2.Infrastructure.Services.Search;
 using ArquivoMate2.Infrastructure.Services.StorageProvider;
 using ArquivoMate2.Shared.Models;
 using AutoMapper;
@@ -89,6 +90,8 @@ namespace ArquivoMate2.Infrastructure.Configuration
             {
                 return new MeilisearchClient(config["Meilisearch:Url"], "supersecret");
             });
+
+            services.AddScoped<ISearchClient, SearchClient>();
 
             services.AddHttpClient();
 

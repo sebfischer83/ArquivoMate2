@@ -14,22 +14,26 @@ namespace ArquivoMate2.Infrastructure.Persistance
             view.Id = e.AggregateId;
             view.UploadedAt = e.OccurredOn;
             view.UserId = e.UserId;
+            view.OccurredOn = e.OccurredOn;
         }
 
         public void Apply(DocumentProcessed e, DocumentView view)
         {
             view.Status = Shared.Models.ProcessingStatus.Completed;
             view.ProcessedAt = e.OccurredOn;
+            view.OccurredOn = e.OccurredOn;
         }
 
         public void Apply(DocumentContentExtracted e, DocumentView view)
         {
             view.Content = e.Content;
+            view.OccurredOn = e.OccurredOn;
         }
 
         public void Apply(DocumentStartProcessing e, DocumentView view)
         {
             view.Status = Shared.Models.ProcessingStatus.InProgress;
+            view.OccurredOn = e.OccurredOn;
         }
 
         public void Apply(DocumentUpdated e, DocumentView view)
@@ -71,6 +75,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
             view.TotalPrice = e.TotalPrice;
             view.Type = e.Type;
             view.Date = e.Date;
+            view.OccurredOn = e.OccurredOn;
         }
 
         public void Apply(DocumentFilesPrepared e, DocumentView view)
@@ -79,6 +84,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
             view.MetadataPath = e.MetadataPath;
             view.ThumbnailPath = e.ThumbnailPath;
             view.PreviewPath = e.PreviewPath;
+            view.OccurredOn = e.OccurredOn;
         }
     }
 }

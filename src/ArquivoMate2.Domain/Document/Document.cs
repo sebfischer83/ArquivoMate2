@@ -15,7 +15,6 @@ namespace ArquivoMate2.Domain.Document
         public string PreviewPath { get; private set; } = string.Empty;
 
         public string UserId { get; private set; } = string.Empty;
-        public bool Processed { get; private set; }
         public DateTime UploadedAt { get; private set; }
         public bool Accepted { get; private set; }
 
@@ -40,7 +39,7 @@ namespace ArquivoMate2.Domain.Document
 
         public string Title { get; private set; } = string.Empty;
 
-        public DateTime? LastEventOccurredOn { get; private set; }
+        public DateTime? OccurredOn { get; private set; }
 
         public Document() { }
 
@@ -50,13 +49,13 @@ namespace ArquivoMate2.Domain.Document
             UploadedAt = e.OccurredOn;
             UserId = e.UserId;
             Status = ProcessingStatus.Pending;
-            LastEventOccurredOn = e.OccurredOn;
+            OccurredOn = e.OccurredOn;
         }
 
         public void Apply(DocumentContentExtracted documentContentExtracted)
         {
             Content = documentContentExtracted.Content;
-            LastEventOccurredOn = documentContentExtracted.OccurredOn;
+            OccurredOn = documentContentExtracted.OccurredOn;
         }
 
         public void Apply(DocumentFilesPrepared e)
@@ -65,20 +64,20 @@ namespace ArquivoMate2.Domain.Document
             MetadataPath = e.MetadataPath;
             ThumbnailPath = e.ThumbnailPath;
             PreviewPath = e.PreviewPath;
-            LastEventOccurredOn = e.OccurredOn;
+            OccurredOn = e.OccurredOn;
         }
 
         public void Apply(DocumentStartProcessing e)
         {
             Status = ProcessingStatus.InProgress;
-            LastEventOccurredOn = e.OccurredOn;
+            OccurredOn = e.OccurredOn;
         }
 
-        public void MarkAsProcessed()
+        public void Apply(DocumentProcessed e)
         {
-            if (Processed) throw new InvalidOperationException("Document is already processed.");
-            Processed = true;
+            if (Status == ProcessingStatus.Completed) throw new InvalidOperationException("Document is already processed.");
             Status = ProcessingStatus.Completed;
+            OccurredOn = e.OccurredOn;
         }
 
         public void Apply(DocumentChatBotDataReceived e)
@@ -92,7 +91,7 @@ namespace ArquivoMate2.Domain.Document
             TotalPrice = e.TotalPrice;
             Keywords = e.Keywords;
             Summary = e.Summary;
-            LastEventOccurredOn = e.OccurredOn;
+            OccurredOn = e.OccurredOn;
         }
 
         public void Apply(DocumentUpdated e)
@@ -125,7 +124,7 @@ namespace ArquivoMate2.Domain.Document
                     }
                 }
             }
-            LastEventOccurredOn = e.OccurredOn;
+            OccurredOn = e.OccurredOn;
         }
     }
 }

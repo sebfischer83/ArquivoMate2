@@ -1,0 +1,4 @@
+{
+  "input": "src/api.json",
+  "output": "src/app/client"
+}

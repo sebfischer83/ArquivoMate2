@@ -23,8 +23,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Projektmappenelemente", "Pr
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{81DDED9D-158B-E303-5F62-77A2896D2A5A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArquivoMate2.Blazor", "src\ArquivoMate2.Blazor\ArquivoMate2.Blazor.csproj", "{69B15777-D735-466D-8C94-CC79DE6DAB7A}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9024DD9F-A6C2-47FE-BFFA-4307799E2C27}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
@@ -64,10 +62,6 @@ Global
 		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{69B15777-D735-466D-8C94-CC79DE6DAB7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{69B15777-D735-466D-8C94-CC79DE6DAB7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{69B15777-D735-466D-8C94-CC79DE6DAB7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{69B15777-D735-466D-8C94-CC79DE6DAB7A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -79,7 +73,6 @@ Global
 		{C502340E-0433-4BAC-8225-52C9C0203E95} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{0FD2AD58-F2E5-449A-934A-CDB766D3C340} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{9DB4C1E6-DDF9-4122-8708-F9B500BDF391} = {0C9B3825-AA48-4875-82BB-AA785E888D78}
-		{69B15777-D735-466D-8C94-CC79DE6DAB7A} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {81D83805-8D95-4B36-989A-46692749969B}

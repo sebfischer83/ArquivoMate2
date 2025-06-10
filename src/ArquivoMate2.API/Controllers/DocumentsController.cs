@@ -83,7 +83,7 @@ namespace ArquivoMate2.API.Controllers
             if (document == null)
                 return NotFound($"Document with ID {id} was not found.");
 
-            if (view.UserId != userId)
+            if (document.UserId != userId)
                 return Forbid();
 
             try

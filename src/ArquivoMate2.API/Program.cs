@@ -86,6 +86,16 @@ namespace ArquivoMate2.API
                 options.WorkerCount = 5;
             });
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
+            });
+
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
@@ -110,6 +120,8 @@ namespace ArquivoMate2.API
 
             app.UseHangfireDashboard("/hangfire", new DashboardOptions { });
             app.UseSerilogRequestLogging();
+
+            app.UseCors("AllowAll");
 
             app.MapControllers();
             app.MapHangfireDashboard();

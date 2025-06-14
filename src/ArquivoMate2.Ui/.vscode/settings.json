@@ -5,7 +5,11 @@
             "externalTemplate": true
         },
         "angular-component": {
-            "skipDisplayBlock": true
+            "skipDisplayBlock": true,
+            "ngOnInit": false
+        },
+        "angular-page": {
+            "skipNgOnInit": false
         }
     }
 }

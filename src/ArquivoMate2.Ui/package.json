@@ -30,6 +30,8 @@
     "@taiga-ui/kit": "^4.39.2",
     "@taiga-ui/layout": "^4.39.2",
     "angular-oauth2-oidc": "^20.0.0",
+    "filepond": "^4.32.8",
+    "ngx-filepond": "^7.0.3",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

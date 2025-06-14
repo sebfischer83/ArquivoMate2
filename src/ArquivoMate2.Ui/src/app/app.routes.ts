@@ -8,6 +8,18 @@ export const routes: Routes = [
         path: 'app',
         canActivate: [AuthGuard],
         loadComponent: () =>
-            import('./main/main-area/main-area.component').then(m => m.MainAreaComponent)
-    }
+            import('./main/main-area/main-area.page').then(m => m.MainAreaComponent),
+        children: [
+            {
+                path: '',
+                redirectTo: 'dashboard',
+                pathMatch: 'full'
+            },
+            {
+                path: 'dashboard',
+                loadComponent: () =>
+                    import('./main/dashboard/dashboard.component').then(m => m.DashboardComponent)
+            }
+        ]
+    },
 ];

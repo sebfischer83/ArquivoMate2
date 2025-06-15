@@ -55,6 +55,7 @@ namespace ArquivoMate2.Domain.Document
         public void Apply(DocumentContentExtracted documentContentExtracted)
         {
             Content = documentContentExtracted.Content;
+
             OccurredOn = documentContentExtracted.OccurredOn;
         }
 

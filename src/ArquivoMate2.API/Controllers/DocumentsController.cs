@@ -143,6 +143,35 @@ namespace ArquivoMate2.API.Controllers
 
         }
 
+        [HttpGet("stats")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentStatsDto))]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> StatsAsync(CancellationToken cancellationToken, [FromServices] IQuerySession querySession, [FromServices] ISearchClient searchClient)
+        {
+            var userId = _currentUserService.UserId;
+
+            var count = await querySession.Query<DocumentView>().Where(d => d.UserId == userId).CountAsync(cancellationToken);
+            var notAccepted = await querySession.Query<DocumentView>().Where(d => d.UserId == userId && !d.Accepted ).CountAsync(cancellationToken);
+            var characters = await querySession.Query<DocumentView>().Where(d => d.UserId == userId).SumAsync(d => d.ContentLength, cancellationToken);
+
+            var facets = await searchClient.GetFacetsAsync(userId, cancellationToken);
+
+            //var x = await searchClient.ListUserIdsAsync(cancellationToken);
+
+            DocumentStatsDto stats = new DocumentStatsDto
+            {
+                Id = Guid.Empty,
+                Documents = count,
+                NotAccepted = notAccepted,
+                Characters = characters,
+                Facets = facets
+            };
+
+            return Ok(stats);
+        }
+
+
+
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]

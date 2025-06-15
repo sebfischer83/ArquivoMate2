@@ -1,5 +1,7 @@
-﻿using Marten;
+﻿using ArquivoMate2.Infrastructure.Persistance;
+using Marten;
 using Meilisearch;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
@@ -21,6 +23,9 @@ namespace ArquivoMate2.Infrastructure.Configuration
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+            using var daemon = await _store.BuildProjectionDaemonAsync();
+            await daemon.RebuildProjectionAsync<DocumentView>(CancellationToken.None);
         }
 
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
@@ -28,26 +33,30 @@ namespace ArquivoMate2.Infrastructure.Configuration
 
     public class MeiliInitService : IHostedService
     {
-        private readonly MeilisearchClient _client;
+        private readonly IServiceProvider _serviceProvider;
 
-        public MeiliInitService(MeilisearchClient client)
+        public MeiliInitService(IServiceProvider serviceProvider)
         {
-            _client = client;
+            _serviceProvider = serviceProvider;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            var stat = await _client.CreateIndexAsync("documents", "id");
-            await _client.WaitForTaskAsync(stat.TaskUid, TimeSpan.FromMinutes(5).TotalMilliseconds);
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var client = scope.ServiceProvider.GetRequiredService<MeilisearchClient>();
+                var stat = await client.CreateIndexAsync("documents", "id");
+                await client.WaitForTaskAsync(stat.TaskUid, TimeSpan.FromMinutes(5).TotalMilliseconds);
 
-            var index = await _client.GetIndexAsync("documents");
-            var updateTask = await index.UpdateSettingsAsync(
-                new Meilisearch.Settings()
-                {
-                    FilterableAttributes = new List<string>() { "keywords", "userid" },
-                    SearchableAttributes = new List<string>() { "content", "summary", "title" },
-                });
-            await _client.WaitForTaskAsync(updateTask.TaskUid);
+                var index = await client.GetIndexAsync("documents");
+                var updateTask = await index.UpdateSettingsAsync(
+                    new Meilisearch.Settings()
+                    {
+                        FilterableAttributes = new List<string>() { "keywords", "userId" },
+                        SearchableAttributes = new List<string>() { "content", "summary", "title" },
+                    });
+                await client.WaitForTaskAsync(updateTask.TaskUid);
+            }
         }
 
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

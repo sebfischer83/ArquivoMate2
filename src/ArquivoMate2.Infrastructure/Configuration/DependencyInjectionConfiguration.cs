@@ -191,6 +191,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddAutoMapper(typeof(Mapping.DocumentMapping).Assembly);
 
             services.AddHostedService<DatabaseMigrationService>();
+            services.AddHostedService<MeiliInitService>();
 
             services.AddEasyCaching(x =>
                             x.UseRedis(r =>

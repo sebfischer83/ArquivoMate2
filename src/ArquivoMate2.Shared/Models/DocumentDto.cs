@@ -26,12 +26,14 @@ namespace ArquivoMate2.Shared.Models
         public string UserId { get; set; } = string.Empty;
 
         public bool Processed { get; set; }
-
+        
         public DateTime UploadedAt { get; set; }
 
         public DateTime? ProcessedAt { get; set; }
 
         public string Content { get; set; } = string.Empty;
+
+        public int ContentLength { get; set; }
 
         public bool Accepted { get; set; }
 

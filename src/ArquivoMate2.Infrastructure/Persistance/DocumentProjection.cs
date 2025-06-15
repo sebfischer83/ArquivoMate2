@@ -27,6 +27,8 @@ namespace ArquivoMate2.Infrastructure.Persistance
         public void Apply(DocumentContentExtracted e, DocumentView view)
         {
             view.Content = e.Content;
+            //view.Content = "gdsgfdfa";
+            view.ContentLength = e.Content?.Length ?? 0;
             view.OccurredOn = e.OccurredOn;
         }
 

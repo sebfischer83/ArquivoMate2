@@ -1,5 +1,5 @@
-import { TuiRoot } from "@taiga-ui/core";
-import { Component } from '@angular/core';
+import { TUI_DARK_MODE, TuiRoot } from "@taiga-ui/core";
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { OAuthService } from "angular-oauth2-oidc";
 import { getAuthConfig } from "./app.config";
@@ -12,6 +12,7 @@ import { getAuthConfig } from "./app.config";
 })
 export class App {
   protected title = 'ArquivoMate2.Ui';
+  protected readonly darkMode = inject(TUI_DARK_MODE);
 
   constructor(private oauthService: OAuthService) {
     this.oauthService.configure(getAuthConfig());

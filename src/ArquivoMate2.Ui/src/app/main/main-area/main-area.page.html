@@ -1,6 +1,6 @@
-<tui-root style="height:100vh"  [attr.tuiTheme]="darkMode() ? 'dark' : null">
+
 <!-- Ignore this part, it is only here to position drawer inside the example block -->
-<div class="custom-portal"><ng-container #viewContainer /></div>
+	<div class="custom-portal"><ng-container #viewContainer /></div>
 <header tuiNavigationHeader>
     <button
         title="Menu"
@@ -115,13 +115,13 @@
         <tui-badge-notification />
     </button>
     <button
-        iconStart="@tui.ellipsis"
+        iconStart="@tui.sun"
         tuiIconButton
         type="button"
+        (click)="toggleDarkmode()"
     >
-        More
+        
     </button>
-    <tui-avatar src="AI" />
 </header>
 <div [style.display]="'flex'">
     <aside
@@ -139,7 +139,7 @@
             </button>
         </header>
         <button
-            iconStart="@tui.search"
+            iconStart="@tui.sun"
             tuiAsideItem
             type="button"
         >
@@ -246,7 +246,7 @@
         </button>
         <hr />
         <button
-            iconStart="@tui.plus"
+            iconStart="@tui.sun"
             tuiAsideItem
             type="button"
         >
@@ -267,4 +267,3 @@
         <router-outlet />
     </main>
 </div>
-</tui-root>

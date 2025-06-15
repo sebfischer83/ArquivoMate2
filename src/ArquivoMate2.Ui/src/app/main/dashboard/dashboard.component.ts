@@ -63,6 +63,10 @@ export class DashboardComponent {
 
   pondHandleProcessFile(event: any) {
     // Entferne die Datei nach erfolgreichem Upload
+    if (event.error)
+    {
+      return;
+    }
     if (event && event.file && this.myPond && this.myPond['pond']) {
       this.myPond['pond'].removeFile(event.file.id);
     }

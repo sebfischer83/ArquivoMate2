@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, OnInit, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { DocumentsService } from '../../client/services/documents.service';
 import { WeatherForecastService } from '../../client/services/weather-forecast.service';
 import { KeyValuePipe, NgForOf, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { tuiAsPortal, TuiPortals } from '@taiga-ui/cdk';
+import { tuiAsPortal, TuiPortals, TuiThemeColorService } from '@taiga-ui/cdk';
 import {
   TuiAppearance,
   TuiButton,
@@ -68,12 +68,13 @@ const ICON =
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [TuiDropdownService, tuiAsPortal(TuiDropdownService)],
 })
-export class MainAreaComponent {
+export class MainAreaComponent implements OnInit {
   private readonly key = inject(TUI_DARK_MODE_KEY);
   private readonly storage = inject(WA_LOCAL_STORAGE);
   private readonly media = inject(WA_WINDOW).matchMedia('(prefers-color-scheme: dark)');
   private documentsService = inject(DocumentsService);
   protected readonly darkMode = inject(TUI_DARK_MODE);
+  private readonly themeService = inject(TuiThemeColorService);
 
   protected expanded = signal(false);
   protected open = false;
@@ -93,46 +94,35 @@ export class MainAreaComponent {
     ],
   };
 
+  /**
+   *
+   */
+  constructor() {
+    this.darkMode.set(this.storage.getItem(this.key) === 'true' || this.media.matches);
+
+    effect(() => {
+      if (this.darkMode()) {
+        this.storage.setItem(this.key, 'true');
+        this.themeService.color = "black";
+      } else {
+        this.storage.removeItem(this.key);
+        this.storage.setItem(this.key, 'false');
+        this.themeService.color = "var(--tui-background-accent-1)";
+      }
+    });
+
+  }
+
+  toggleDarkmode(): void {
+    this.darkMode.set(!this.darkMode());
+  }
+
+  ngOnInit(): void {
+   
+  }
+
   protected handleToggle(): void {
     this.expanded.update((e) => !e);
   }
 
-  // public doit() {
-  //   console.log('Button clicked!');
-
-  //   // Test WeatherForecast zuerst (meist ohne Auth)
-  //   console.log('Testing WeatherForecast API...');
-  //   this.weatherService.getWeatherForecast$Json().subscribe({
-  //     next: (data) => {
-  //       console.log('WeatherForecast SUCCESS:', data);
-
-  //       // Dann teste Documents API
-  //       console.log('Testing Documents API...');
-  //       this.documentsService.apiDocumentsGet$Json({ Page: 1, PageSize: 15 }).subscribe({
-  //         next: (documents) => {
-  //           console.log('Documents SUCCESS:', documents);
-  //         },
-  //         error: (error) => {
-  //           console.error('Documents ERROR:', error);
-  //           this.logDetailedError(error);
-  //         }
-  //       });
-  //     },
-  //     error: (error) => {
-  //       console.error('WeatherForecast ERROR:', error);
-  //       this.logDetailedError(error);
-  //     }
-  //   });
-  // }
-
-  private logDetailedError(error: any) {
-    console.error('Detailed error info:', {
-      status: error.status,
-      statusText: error.statusText,
-      url: error.url,
-      message: error.message,
-      errorBody: error.error,
-      headers: error.headers
-    });
-  }
 }

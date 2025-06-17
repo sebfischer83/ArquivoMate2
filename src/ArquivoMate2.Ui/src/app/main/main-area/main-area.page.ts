@@ -66,7 +66,6 @@ const ICON =
   templateUrl: './main-area.page.html',
   styleUrl: './main-area.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [TuiDropdownService, tuiAsPortal(TuiDropdownService)],
 })
 export class MainAreaComponent implements OnInit {
   private readonly key = inject(TUI_DARK_MODE_KEY);

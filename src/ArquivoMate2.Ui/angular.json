@@ -54,6 +54,11 @@
               ],
               "outputHashing": "all"
             },
+            "analyze-bundle": {
+              "sourceMap": true,
+              "outputHashing": "none",
+              "namedChunks": true
+            },
             "development": {
               "optimization": false,
               "extractLicenses": false,
@@ -61,7 +66,8 @@
             }
           },
           "defaultConfiguration": "production"
-        },        "serve": {
+        },
+        "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {

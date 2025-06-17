@@ -4,14 +4,12 @@
 
 .filepond--wrapper {
     margin-top: 15px;
-    border-radius: 25px;
 }
 
 /* the text color of the drop label*/
 .filepond--drop-label {
     background-color: var(--tui-background-base-alt);
     color: var(--tui-text-secondary) !important;
-    border-radius: 25px;
 }
 
 /* underline color for "Browse" button */
@@ -23,16 +21,11 @@
 .filepond--panel-root {
     background-color: var(--tui-background-base-alt) !important;
     color: var(--tui-text-secondary) !important;
-}
-
-/* the border radius of the drop area */
-.filepond--panel-root {
-    border-radius: 0.5em;
+     border-radius: 0 !important;
 }
 
 /* the border radius of the file item */
 .filepond--item-panel {
-    border-radius: 0.5em;
 }
 
 /* the background color of the file and file panel (used when dropping an image) */
@@ -78,8 +71,7 @@
 
 /* bordered drop area */
 .filepond--panel-root {
-    background-color: transparent;
-    border: 1px solid rgb(107 114 128);
+
 }
 
 .filepond--list-scroller {

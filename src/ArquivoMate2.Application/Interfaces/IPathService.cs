@@ -10,5 +10,7 @@ namespace ArquivoMate2.Application.Interfaces
     {
         string GetDocumentUploadPath(string userId);
 
+        string[] GetStoragePath(string userId, Guid documentId, string fileName);
+
     }
 }

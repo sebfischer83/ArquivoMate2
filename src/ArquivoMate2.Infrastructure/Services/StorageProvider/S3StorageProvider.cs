@@ -25,14 +25,16 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
         private readonly IMinioClient _storage;
         private readonly IMinioClientFactory _minioClientFactory;
         private readonly IEasyCachingProviderFactory _easyCachingProviderFactory;
+        private readonly IPathService _pathService;
         private readonly IEasyCachingProvider _cache;
 
-        public S3StorageProvider(IOptions<S3StorageProviderSettings> opts, IMinioClientFactory minioClientFactory, IEasyCachingProviderFactory easyCachingProviderFactory)
+        public S3StorageProvider(IOptions<S3StorageProviderSettings> opts, IMinioClientFactory minioClientFactory, IEasyCachingProviderFactory easyCachingProviderFactory, IPathService pathService)
         {
             _settings = opts.Value;
             _storage = minioClientFactory.CreateClient();
             _minioClientFactory = minioClientFactory;
             _easyCachingProviderFactory = easyCachingProviderFactory;
+            _pathService = pathService;
             _cache = easyCachingProviderFactory.GetCachingProvider(EasyCachingConstValue.DefaultRedisName);
         }
 
@@ -41,7 +43,7 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
             var mimeType = MimeTypeMap.GetMimeType(filename);
             using var stream = new MemoryStream(file);
 
-            string fullPath = $"{userId}/{documentId}/{filename}";
+            string fullPath = string.Join('/', _pathService.GetStoragePath(userId, documentId, filename));
             var putObjectArgs = new PutObjectArgs()
                     .WithBucket(_settings.BucketName)
                     .WithObject(fullPath)

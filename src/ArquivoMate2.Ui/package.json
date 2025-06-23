@@ -1,6 +1,6 @@
 {
   "name": "arquivo-mate2.ui",
-   "sideEffects": false,
+  "sideEffects": false,
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
@@ -20,6 +20,7 @@
     "@angular/forms": "^20.0.0",
     "@angular/platform-browser": "^20.0.0",
     "@angular/router": "^20.0.0",
+    "@microsoft/signalr": "^8.0.7",
     "@taiga-ui/addon-charts": "^4.39.2",
     "@taiga-ui/addon-commerce": "^4.39.2",
     "@taiga-ui/addon-doc": "^4.39.2",

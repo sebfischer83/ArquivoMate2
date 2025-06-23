@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { DocumentsService } from '../../client/services/documents.service';
 import { WeatherForecastService } from '../../client/services/weather-forecast.service';
@@ -30,6 +30,7 @@ import {
 import { TuiNavigation } from '@taiga-ui/layout';
 import { WA_LOCAL_STORAGE, WA_WINDOW } from '@ng-web-apis/common';
 import { TUI_DARK_MODE, TUI_DARK_MODE_KEY } from '@taiga-ui/core';
+import { SignalrService } from '../../services/signalr.service';
 
 
 const ICON =
@@ -67,13 +68,14 @@ const ICON =
   styleUrl: './main-area.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MainAreaComponent implements OnInit {
+export class MainAreaComponent implements OnInit, OnDestroy {
   private readonly key = inject(TUI_DARK_MODE_KEY);
   private readonly storage = inject(WA_LOCAL_STORAGE);
   private readonly media = inject(WA_WINDOW).matchMedia('(prefers-color-scheme: dark)');
   private documentsService = inject(DocumentsService);
   protected readonly darkMode = inject(TUI_DARK_MODE);
   private readonly themeService = inject(TuiThemeColorService);
+  private readonly signalRService = inject(SignalrService);
 
   protected expanded = signal(false);
   protected open = false;
@@ -117,7 +119,14 @@ export class MainAreaComponent implements OnInit {
   }
 
   ngOnInit(): void {
-   
+    this.signalRService.startConnection('http://localhost:5000/hubs/documents');
+    this.signalRService.on<string>('ReceiveMessage', (message) => {
+      console.log('Nachricht empfangen:', message);
+    });
+  }
+
+    ngOnDestroy(): void {
+    this.signalRService.stopConnection();
   }
 
   protected handleToggle(): void {

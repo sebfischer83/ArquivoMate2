@@ -1,4 +1,6 @@
 
+using ArquivoMate2.API.Hubs;
+using ArquivoMate2.API.Notifications;
 using ArquivoMate2.Application.Handlers;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Infrastructure.Configuration;
@@ -71,6 +73,9 @@ namespace ArquivoMate2.API
             builder.Services.AddInfrastructure(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
 
+            builder.Services.AddSignalR();
+            builder.Services.AddScoped<IDocumentProcessingNotifier, SignalRDocumentProcessingNotifier>();
+
             // Replace the problematic line with the following:
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(UploadDocumentHandler).Assembly));
             builder.Services.AddHangfire(config =>
@@ -117,6 +122,8 @@ namespace ArquivoMate2.API
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.MapHub<DocumentProcessingHub>("/hubs/documents");
 
             app.UseHangfireDashboard("/hangfire", new DashboardOptions { });
             app.UseSerilogRequestLogging();

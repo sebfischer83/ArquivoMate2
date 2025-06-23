@@ -31,6 +31,7 @@ import { TuiNavigation } from '@taiga-ui/layout';
 import { WA_LOCAL_STORAGE, WA_WINDOW } from '@ng-web-apis/common';
 import { TUI_DARK_MODE, TUI_DARK_MODE_KEY } from '@taiga-ui/core';
 import { SignalrService } from '../../services/signalr.service';
+import { OAuthService } from 'angular-oauth2-oidc';
 
 
 const ICON =
@@ -73,9 +74,11 @@ export class MainAreaComponent implements OnInit, OnDestroy {
   private readonly storage = inject(WA_LOCAL_STORAGE);
   private readonly media = inject(WA_WINDOW).matchMedia('(prefers-color-scheme: dark)');
   private documentsService = inject(DocumentsService);
+  private weatherService = inject(WeatherForecastService);
+  private signalRService = inject(SignalrService);
+  private auth = inject(OAuthService);
   protected readonly darkMode = inject(TUI_DARK_MODE);
   private readonly themeService = inject(TuiThemeColorService);
-  private readonly signalRService = inject(SignalrService);
 
   protected expanded = signal(false);
   protected open = false;
@@ -119,10 +122,139 @@ export class MainAreaComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.signalRService.startConnection('http://localhost:5000/hubs/documents');
-    this.signalRService.on<string>('ReceiveMessage', (message) => {
-      console.log('Nachricht empfangen:', message);
+    this.debugSignalR();
+  }
+
+  private async debugSignalR(): Promise<void> {
+    console.log('🔍 Starting SignalR Debug...');
+    console.log('Frontend Origin:', window.location.origin);
+    
+    // 1. Teste Backend-Erreichbarkeit erst
+    const baseUrls = [
+      'https://localhost:5000'
+    ];
+
+    for (const baseUrl of baseUrls) {
+      console.log(`\n🌐 Testing server: ${baseUrl}`);
+      
+      try {
+        // Teste einfachen API-Call
+        const healthResponse = await fetch(`${baseUrl}/api/health`, {
+          method: 'GET',
+          mode: 'cors',
+          credentials: 'include'
+        });
+        console.log(`✅ Health check: ${healthResponse.status} ${healthResponse.statusText}`);
+        
+        // Teste CORS preflight für SignalR
+        const corsTest = await fetch(`${baseUrl}/hubs/documents/negotiate`, {
+          method: 'OPTIONS',
+          mode: 'cors',
+          credentials: 'include',
+          headers: {
+            'Access-Control-Request-Method': 'POST',
+            'Access-Control-Request-Headers': 'content-type'
+          }
+        });
+        console.log(`🔄 CORS preflight: ${corsTest.status}`, corsTest.headers);
+        
+        // Teste SignalR negotiate
+        const negotiateResponse = await fetch(`${baseUrl}/hubs/documents/negotiate?negotiateVersion=1`, {
+          method: 'POST',
+          mode: 'cors',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.auth.getAccessToken() || ''}`
+          }
+        });
+        console.log(`🤝 Negotiate: ${negotiateResponse.status}`, await negotiateResponse.text());
+        
+        if (negotiateResponse.ok) {
+          await this.connectSignalR(`${baseUrl}/hubs/documents`);
+          return;
+        }
+        
+      } catch (error) {
+        console.log(`❌ Failed: ${baseUrl}`, error);
+      }
+    }
+    
+    console.error('❌ No working SignalR endpoint found');
+    console.log('💡 Check backend CORS configuration and ensure server is running');
+  }
+
+  private async connectSignalR(url: string): Promise<void> {
+    try {
+      await this.signalRService.startConnection(url);
+      this.setupSignalREventHandlers();
+      console.log('✅ SignalR connected successfully');
+    } catch (error) {
+      console.error('❌ SignalR connection failed:', error);
+    }
+  }
+
+  private setupSignalREventHandlers(): void {
+    const currentUserId = this.getCurrentUserId();
+    console.log('👤 Setting up SignalR handlers for user:', currentUserId);
+
+    // Event Handler für allgemeine Dokumenten-Updates
+    this.signalRService.on<any>('DocumentProcessed', (data) => {
+      console.log('📄 Document processed:', data);
+      this.handleDocumentProcessed(data);
     });
+
+    // Event Handler für Upload-Status Updates
+    this.signalRService.on<any>('DocumentUploadProgress', (data) => {
+      console.log('📤 Upload progress:', data);
+      this.handleUploadProgress(data);
+    });
+
+    // Event Handler für Verarbeitungsfehler
+    this.signalRService.on<any>('DocumentProcessingError', (data) => {
+      console.log('❌ Processing error:', data);
+      this.handleProcessingError(data);
+    });
+
+    // Event Handler für User-spezifische Benachrichtigungen
+    this.signalRService.on<any>('UserNotification', (data) => {
+      console.log('🔔 User notification:', data);
+      this.handleUserNotification(data);
+    });
+  }
+
+  private getCurrentUserId(): string | null {
+    // Hole User ID aus JWT Token Claims
+    const token = this.auth.getAccessToken();
+    if (!token) return null;
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.sub || payload.userId || payload.id || null;
+    } catch {
+      return null;
+    }
+  }
+
+  private handleDocumentProcessed(data: any): void {
+    // Zeige Toast-Notification oder update UI
+    console.log('✅ Document processing completed:', data);
+    // Hier könntest du z.B. eine Taiga UI Notification anzeigen
+  }
+
+  private handleUploadProgress(data: any): void {
+    // Update Progress Bar oder Status
+    console.log('⏳ Upload progress:', data.progress + '%');
+  }
+
+  private handleProcessingError(data: any): void {
+    // Zeige Error-Notification
+    console.error('❌ Document processing failed:', data.error);
+  }
+
+  private handleUserNotification(data: any): void {
+    // Allgemeine User-Benachrichtigung
+    console.log('📱 Notification for user:', data);
   }
 
     ngOnDestroy(): void {

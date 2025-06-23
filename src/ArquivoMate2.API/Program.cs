@@ -93,11 +93,13 @@ namespace ArquivoMate2.API
 
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAll", policy =>
+                options.AddPolicy("AllowAllOrigins", policy =>
                 {
-                    policy.AllowAnyOrigin()
-                          .AllowAnyHeader()
-                          .AllowAnyMethod();
+                    policy
+                        .WithOrigins("https://localhost:4200", "http://localhost:4200")
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
                 });
             });
 
@@ -119,19 +121,24 @@ namespace ArquivoMate2.API
             }
 
             app.UseHttpsRedirection();
-
+            app.UseCors("AllowAllOrigins");
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.MapHub<DocumentProcessingHub>("/hubs/documents");
+
 
             app.UseHangfireDashboard("/hangfire", new DashboardOptions { });
             app.UseSerilogRequestLogging();
 
-            app.UseCors("AllowAll");
+
 
             app.MapControllers();
             app.MapHangfireDashboard();
+
+            app.MapHub<DocumentProcessingHub>("/hubs/documents", opt =>
+            {
+
+            }).RequireCors("AllowAllOrigins");
             app.Run();
         }
 

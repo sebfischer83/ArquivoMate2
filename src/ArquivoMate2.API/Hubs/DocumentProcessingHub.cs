@@ -39,4 +39,5 @@ namespace ArquivoMate2.API.Hubs
             }
             await base.OnDisconnectedAsync(exception);
         }
+    }
 }

@@ -46,7 +46,12 @@
     <ProjectReference Include="..\ArquivoMate2.Application\ArquivoMate2.Application.csproj" />
     <ProjectReference Include="..\ArquivoMate2.Infrastructure\ArquivoMate2.Infrastructure.csproj" />
     <ProjectReference Include="..\ArquivoMate2.Shared\ArquivoMate2.Shared.csproj" />
+    <Content Update="Resources\localization.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
+
+
 
   <ItemGroup>
     <Folder Include="logs\" />

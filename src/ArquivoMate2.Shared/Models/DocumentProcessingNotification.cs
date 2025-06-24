@@ -26,5 +26,20 @@ namespace ArquivoMate2.Shared.Models
             Message = message;
             Timestamp = DateTime.UtcNow;
         }
+
+        public static DocumentProcessingNotification InProgress(string documentId, string message)
+        {
+            return new DocumentProcessingNotification(documentId, DocumentProcessingStatus.InProgress, message);
+        }
+
+        public static DocumentProcessingNotification Completed(string documentId, string message)
+        {
+            return new DocumentProcessingNotification(documentId, DocumentProcessingStatus.Completed, message);
+        }
+
+        public static DocumentProcessingNotification Failed(string documentId, string message)
+        {
+            return new DocumentProcessingNotification(documentId, DocumentProcessingStatus.Failed, message);
+        }
     }
 }

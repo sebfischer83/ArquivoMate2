@@ -9,6 +9,7 @@ namespace ArquivoMate2.API.Notifications
     public class SignalRDocumentProcessingNotifier : IDocumentProcessingNotifier
     {
         private readonly IHubContext<DocumentProcessingHub> _hubContext;
+
         public SignalRDocumentProcessingNotifier(IHubContext<DocumentProcessingHub> hubContext)
         {
             _hubContext = hubContext;

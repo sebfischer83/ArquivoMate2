@@ -1,4 +1,5 @@
 ﻿using Amazon.Runtime.Internal;
+using ArquivoMate2.API.Resources;
 using ArquivoMate2.Application.Commands;
 using ArquivoMate2.Application.Configuration;
 using ArquivoMate2.Application.Interfaces;
@@ -13,6 +14,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Newtonsoft.Json.Linq;
 using System.Threading;
 using Weasel.Postgresql.Views;
@@ -28,13 +30,20 @@ namespace ArquivoMate2.API.Controllers
         private readonly IWebHostEnvironment _env;
         private readonly ICurrentUserService _currentUserService;
         private readonly IMapper _mapper;
+        private readonly IStringLocalizer<LocalizationResource> _localizer;
 
-        public DocumentsController(IMediator mediator, IWebHostEnvironment env, ICurrentUserService currentUserService, IMapper mapper)
+        public DocumentsController(
+            IMediator mediator, 
+            IWebHostEnvironment env, 
+            ICurrentUserService currentUserService, 
+            IMapper mapper,
+            IStringLocalizer<LocalizationResource> localizer)
         {
             _mediator = mediator;
             _env = env;
             _currentUserService = currentUserService;
             _mapper = mapper;
+            _localizer = localizer;
         }
 
         [HttpGet("pending")]
@@ -63,6 +72,10 @@ namespace ArquivoMate2.API.Controllers
         {
             if (request.File is null || request.File.Length == 0)
                 return BadRequest();
+
+            // Test der Lokalisierung
+            var translatedText = _localizer["BaseName1"];
+            Console.WriteLine($"Localized text: {translatedText}");
 
             var id = await _mediator.Send(new UploadDocumentCommand(request), cancellationToken);
 

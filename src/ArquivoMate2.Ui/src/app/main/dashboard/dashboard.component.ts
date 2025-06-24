@@ -23,7 +23,7 @@ export class DashboardComponent {
     name: "file",
     server: {
       process: {
-        url: 'https://localhost:5000/api/documents',
+        url: 'http://localhost:5000/api/documents',
         method: 'POST',
         headers: {
           'X-Requested-With': 'XMLHttpRequest',

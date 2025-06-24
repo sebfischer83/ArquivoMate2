@@ -1,4 +1,3 @@
-
 using ArquivoMate2.API.Hubs;
 using ArquivoMate2.API.Notifications;
 using ArquivoMate2.Application.Handlers;
@@ -10,6 +9,7 @@ using Hangfire.PostgreSql;
 using JasperFx.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -20,6 +20,8 @@ using OpenTelemetry.Trace;
 using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Configuration;
+using System.Globalization;
+using System.Text;
 using System.Text.Json.Serialization;
 
 namespace ArquivoMate2.API
@@ -48,7 +50,7 @@ namespace ArquivoMate2.API
             });
 
             builder.Services.AddOpenTelemetry()
-              .ConfigureResource(r => r.AddService("My Service"))
+              .ConfigureResource(r => r.AddService("ArquivoMate2"))
               .WithTracing(tracing =>
               {
                   tracing.AddSource(typeof(Program).Assembly.GetName().Name);
@@ -79,7 +81,7 @@ namespace ArquivoMate2.API
             });
             builder.Services.AddScoped<IDocumentProcessingNotifier, SignalRDocumentProcessingNotifier>();
 
-            // Replace the problematic line with the following:
+
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(UploadDocumentHandler).Assembly));
             builder.Services.AddHangfire(config =>
             {
@@ -119,21 +121,23 @@ namespace ArquivoMate2.API
                 app.MapOpenApi();
                 app.MapScalarApiReference(opt =>
                 {
-                    opt.AddServer("https://localhost:5000", "Local Development");
+                    opt.AddServer("http://localhost:5000", "Local Development");
                 });
             }
 
-            app.UseHttpsRedirection();
             app.UseCors("AllowAllOrigins");
             app.UseAuthentication();
             app.UseAuthorization();
 
-
+            app.UseRequestLocalization(opt =>
+            {
+                opt.AddSupportedCultures("en-US", "de-DE");
+                opt.AddSupportedUICultures("en-US", "de-DE");
+                opt.SetDefaultCulture("en-US");
+            });
 
             app.UseHangfireDashboard("/hangfire", new DashboardOptions { });
             app.UseSerilogRequestLogging();
-
-
 
             app.MapControllers();
             app.MapHangfireDashboard();
@@ -143,6 +147,7 @@ namespace ArquivoMate2.API
 
             }).RequireCors("AllowAllOrigins");
             app.Run();
+          
         }
 
         private static void AddAuth(WebApplicationBuilder builder, ConfigurationManager configuration)
@@ -171,10 +176,23 @@ namespace ArquivoMate2.API
                                       ValidAudience = oidcSettings.Audience,
                                       ValidateLifetime = false
                                   };
+
+                                  options.Events = new JwtBearerEvents
+                                  {
+                                      OnMessageReceived = context =>
+                                      {
+                                          var accessToken = context.Request.Query["access_token"];
+                                          var path = context.HttpContext.Request.Path;
+                                          // Prüfen, ob es sich um den SignalR Hub handelt
+                                          if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/documents"))
+                                          {
+                                              context.Token = accessToken;
+                                          }
+                                          return Task.CompletedTask;
+                                      }
+                                  };
                               });
             }
-
-
 
             builder.Services.AddAuthorization();
         }

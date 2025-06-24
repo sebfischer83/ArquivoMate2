@@ -3,9 +3,11 @@ using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Models;
 using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.ValueObjects;
+using ArquivoMate2.Shared.Models;
 using Marten;
 using MediatR;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.IO;
@@ -24,10 +26,12 @@ namespace ArquivoMate2.Application.Handlers
         private readonly IStorageProvider _storage;
         private readonly IThumbnailService _thumbnailService;
         private readonly IChatBot _chatBot;
+        private readonly IDocumentProcessingNotifier _documentProcessingNotifier;
+        private readonly IStringLocalizer _localizer;
 
         public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger, IDocumentProcessor documentTextExtractor, IFileMetadataService fileMetadataService, IPathService pathService,
-            IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot)
-            => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService, _chatBot) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService, chatBot);
+            IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot, IDocumentProcessingNotifier documentProcessingNotifier, ICurrentUserService currentUserService, IStringLocalizer localizer)
+            => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService, _chatBot, _documentProcessingNotifier, _localizer) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService, chatBot, documentProcessingNotifier, localizer);
 
         public async Task<(Document? Document, string? TempFilePath)> Handle(ProcessDocumentCommand request, CancellationToken cancellationToken)
         {
@@ -40,6 +44,8 @@ namespace ArquivoMate2.Application.Handlers
                     _logger.LogWarning("Document {DocumentId} not found", request.DocumentId);
                     throw new KeyNotFoundException($"Document {request.DocumentId} not found");
                 }
+
+                await _documentProcessingNotifier.NotifyStatusChangedAsync(doc.UserId, DocumentProcessingNotification.InProgress(doc.Id.ToString(), _localizer.GetString("ReadFile")));
 
                 // read the file
                 var metadata = await fileMetadataService.ReadMetadataAsync(request.DocumentId, request.UserId);

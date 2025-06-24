@@ -13,6 +13,7 @@ import {
   TuiDropdownService,
   TuiIcon,
   TuiLink,
+  TuiPopup,
   TuiRoot,
   TuiTextfield,
 } from '@taiga-ui/core';
@@ -23,6 +24,7 @@ import {
   TuiBreadcrumbs,
   TuiChevron,
   TuiDataListDropdownManager,
+  TuiDrawer,
   TuiFade,
   TuiSwitch,
   TuiTabs,
@@ -64,6 +66,8 @@ const ICON =
     TuiSwitch,
     TuiTabs,
     TuiTextfield,
+    TuiDrawer,
+    TuiPopup
   ],
   templateUrl: './main-area.page.html',
   styleUrl: './main-area.page.scss',
@@ -74,14 +78,13 @@ export class MainAreaComponent implements OnInit, OnDestroy {
   private readonly storage = inject(WA_LOCAL_STORAGE);
   private readonly media = inject(WA_WINDOW).matchMedia('(prefers-color-scheme: dark)');
   private documentsService = inject(DocumentsService);
-  private weatherService = inject(WeatherForecastService);
   private signalRService = inject(SignalrService);
   private auth = inject(OAuthService);
   protected readonly darkMode = inject(TUI_DARK_MODE);
   private readonly themeService = inject(TuiThemeColorService);
 
   protected expanded = signal(false);
-  protected open = false;
+  protected openDrawer = signal(false);
   protected switch = false;
   protected readonly routes: any = {};
 

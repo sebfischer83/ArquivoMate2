@@ -1,7 +1,8 @@
-using System.Threading.Tasks;
-using ArquivoMate2.Application.Interfaces;
-using Microsoft.AspNetCore.SignalR;
 using ArquivoMate2.API.Hubs;
+using ArquivoMate2.Application.Interfaces;
+using ArquivoMate2.Shared.Models;
+using Microsoft.AspNetCore.SignalR;
+using System.Threading.Tasks;
 
 namespace ArquivoMate2.API.Notifications
 {
@@ -13,16 +14,11 @@ namespace ArquivoMate2.API.Notifications
             _hubContext = hubContext;
         }
 
-        public Task NotifyStatusChangedAsync(Guid documentId, string userId, string status, bool finished = false, bool error = false)
+        public Task NotifyStatusChangedAsync(string userId, DocumentProcessingNotification processingNotification)
         {
-            return _hubContext.Clients.User(userId).SendAsync(
-                "ProcessingUpdate",
-                new {
-                    DocumentId = documentId,
-                    Status = status,
-                    Finished = finished,
-                    Error = error
-                }
+            return _hubContext.Clients.Group(userId).SendAsync(
+                "DocumentProcessingNotification",
+                   processingNotification
             );
         }
     }

@@ -22,6 +22,33 @@ namespace ArquivoMate2.Infrastructure.Services
             _paths = paths;
         }
 
+        public string GetUserIdByClaimPrincipal(ClaimsPrincipal user)
+        {
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user), "User cannot be null.");
+            }
+
+            var idClaim = user?.FindFirst(ClaimTypes.Email)?.Value;
+
+            if (string.IsNullOrEmpty(idClaim))
+            {
+                throw new InvalidOperationException("User ID claim is missing or empty.");
+            }
+
+            var normalized = idClaim.Trim().ToLowerInvariant();
+            var data = Encoding.UTF8.GetBytes(normalized);
+
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_paths.PathBuilderSecret));
+            var hash = hmac.ComputeHash(data);
+
+            var sb = new StringBuilder(hash.Length * 2);
+            foreach (var b in hash)
+                sb.Append(b.ToString("x2"));
+
+            return sb.ToString();
+        }
+
         public string UserId
         {
             get

@@ -73,7 +73,10 @@ namespace ArquivoMate2.API
             builder.Services.AddInfrastructure(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
 
-            builder.Services.AddSignalR();
+            builder.Services.AddSignalR().AddJsonProtocol(options =>
+            {
+                options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            });
             builder.Services.AddScoped<IDocumentProcessingNotifier, SignalRDocumentProcessingNotifier>();
 
             // Replace the problematic line with the following:

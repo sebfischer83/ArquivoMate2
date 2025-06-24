@@ -1,50 +1,22 @@
 
 <!-- Ignore this part, it is only here to position drawer inside the example block -->
 	<div class="custom-portal"><ng-container #viewContainer /></div>
+	<tui-drawer *tuiPopup="openDrawer()" style="width: 200px; padding: 1rem;">
+      <header>
+        <h2 tuiHeader>
+            <div tuiTitle>
+                <span tuiCaption>Caption・caption</span>
+               
+            </div>
+ 
+        </h2>
+    </header>
+  
+    <footer>
+      
+    </footer>
+</tui-drawer>
 <header tuiNavigationHeader>
-    <button
-        title="Menu"
-        tuiIconButton
-        tuiNavigationDrawer
-        type="button"
-        [(open)]="open"
-    >
-        <tui-data-list>
-            <tui-opt-group
-                *ngFor="let group of drawer | keyvalue"
-                [label]="group.key"
-            >
-                <button
-                    *ngFor="let item of group.value"
-                    tuiOption
-                    type="button"
-                    (click)="open = false"
-                >
-                    <img
-                        alt="icon"
-                        [src]="item.icon"
-                    />
-                    {{ item.name }}
-                </button>
-            </tui-opt-group>
-            <tui-opt-group>
-                <label tuiOption>
-                    <input
-                        size="s"
-                        tuiSwitch
-                        type="checkbox"
-                        [(ngModel)]="switch"
-                    />
-                    Dark mode
-                </label>
-            </tui-opt-group>
-        </tui-data-list>
-    </button>
-    <span tuiNavigationLogo>
-        <tui-icon icon="@tui.home" />
-        <span tuiFade>A very very long product name</span>
-        <tui-badge>Test</tui-badge>
-    </span>
     <span tuiNavigationSegments>
         <button
             appearance="secondary-grayscale"
@@ -122,6 +94,12 @@
     >
         
     </button>
+    <button
+    tuiButton
+    type="button"
+    (click)="openDrawer.set(!openDrawer())"
+    >Toggle
+</button>
 </header>
 <div [style.display]="'flex'">
     <aside

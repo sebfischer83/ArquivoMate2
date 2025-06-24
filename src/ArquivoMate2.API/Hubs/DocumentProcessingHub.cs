@@ -1,6 +1,7 @@
 using ArquivoMate2.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using System.Security.Claims;
 
 namespace ArquivoMate2.API.Hubs
 {
@@ -14,14 +15,28 @@ namespace ArquivoMate2.API.Hubs
             _currentUserService = currentUserService;
         }
 
-        public override Task OnConnectedAsync()
+        public override async Task OnConnectedAsync()
         {
-            var userId = Context.UserIdentifier;
-            var userName = Context.User?.Identity?.Name;
-            var connectionId = _currentUserService.UserId;
+            var userId = _currentUserService.GetUserIdByClaimPrincipal(Context.User!);
 
+            if (string.IsNullOrEmpty(userId))
+            {
+                Context.Abort();
+                return;
+            }
 
-            return base.OnConnectedAsync();
+            await Groups.AddToGroupAsync(Context.ConnectionId, userId);
+
+            await base.OnConnectedAsync();
         }
-    }
+
+        public override async Task OnDisconnectedAsync(Exception? exception)
+        {
+            var userId = _currentUserService.GetUserIdByClaimPrincipal(Context.User!);
+            if (!string.IsNullOrEmpty(userId))
+            {
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, userId);
+            }
+            await base.OnDisconnectedAsync(exception);
+        }
 }

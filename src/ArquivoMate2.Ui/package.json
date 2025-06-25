@@ -9,6 +9,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "generate-api": "ng-openapi-gen",
+    "generate-api2": "openapi-generator-cli generate -i src/api.json -g typescript-angular -o src/app/api",
     "build:analyze": "ng build --configuration=analyze-bundle && source-map-explorer dist/**/*.js --no-border-checks"
   },
   "private": true,

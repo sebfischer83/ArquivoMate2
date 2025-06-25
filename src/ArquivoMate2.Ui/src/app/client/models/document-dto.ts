@@ -8,6 +8,7 @@ export interface DocumentDto {
   accepted?: boolean;
   acceptedAt?: string;
   content?: string;
+  contentLength?: number;
   customerNumber?: string;
   filePath?: string;
   history?: Array<DocumentEventDto>;

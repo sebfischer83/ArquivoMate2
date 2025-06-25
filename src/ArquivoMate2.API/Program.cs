@@ -71,7 +71,7 @@ namespace ArquivoMate2.API
                  
               });
 
-            builder.Services.AddControllers().AddNewtonsoftJson();
+            builder.Services.AddControllers();
             builder.Services.AddInfrastructure(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
 
@@ -95,7 +95,7 @@ namespace ArquivoMate2.API
                 options.Queues = new[] { "documents" };
                 options.WorkerCount = 5;
             });
-
+            builder.Services.AddMemoryCache();
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAllOrigins", policy =>
@@ -112,6 +112,16 @@ namespace ArquivoMate2.API
             builder.Services.AddOpenApi();
 
             AddAuth(builder, builder.Configuration);
+
+            builder.Services.AddPortableObjectLocalization(options =>
+            {
+                options.ResourcesPath = "Localization";
+            });
+
+            builder.Services.AddLocalization(options =>
+            {
+                options.ResourcesPath = "Localization";
+            });
 
             var app = builder.Build();
 
@@ -146,6 +156,15 @@ namespace ArquivoMate2.API
             {
 
             }).RequireCors("AllowAllOrigins");
+
+            var supportedCultures = new[] { "en", "de" };
+            var localizationOptions = new RequestLocalizationOptions()
+                .SetDefaultCulture("de")
+                .AddSupportedCultures(supportedCultures)
+                .AddSupportedUICultures(supportedCultures);
+
+            app.UseRequestLocalization(localizationOptions);
+
             app.Run();
           
         }
@@ -161,9 +180,7 @@ namespace ArquivoMate2.API
                 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                               .AddJwtBearer(options =>
                               {
-                                  // URL deines Authentik-OIDC-Endpoints (.well-known/openid-configuration)
                                   options.Authority = oidcSettings.Authority;
-                                  // Audience genauso wie in deiner Authentik-Application definiert
                                   options.Audience = oidcSettings.Audience;
                                   options.RequireHttpsMetadata = true;
 
@@ -183,7 +200,7 @@ namespace ArquivoMate2.API
                                       {
                                           var accessToken = context.Request.Query["access_token"];
                                           var path = context.HttpContext.Request.Path;
-                                          // Prüfen, ob es sich um den SignalR Hub handelt
+
                                           if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/documents"))
                                           {
                                               context.Token = accessToken;

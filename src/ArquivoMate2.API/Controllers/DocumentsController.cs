@@ -1,9 +1,9 @@
 ﻿using Amazon.Runtime.Internal;
-using ArquivoMate2.API.Resources;
 using ArquivoMate2.Application.Commands;
 using ArquivoMate2.Application.Configuration;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Services;
+using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Infrastructure.Persistance;
 using ArquivoMate2.Shared.Models;
 using AutoMapper;
@@ -30,14 +30,14 @@ namespace ArquivoMate2.API.Controllers
         private readonly IWebHostEnvironment _env;
         private readonly ICurrentUserService _currentUserService;
         private readonly IMapper _mapper;
-        private readonly IStringLocalizer<LocalizationResource> _localizer;
+        private readonly IStringLocalizer<DocumentsController> _localizer;
 
         public DocumentsController(
             IMediator mediator, 
             IWebHostEnvironment env, 
             ICurrentUserService currentUserService, 
             IMapper mapper,
-            IStringLocalizer<LocalizationResource> localizer)
+            IStringLocalizer<DocumentsController> localizer)
         {
             _mediator = mediator;
             _env = env;
@@ -73,10 +73,6 @@ namespace ArquivoMate2.API.Controllers
             if (request.File is null || request.File.Length == 0)
                 return BadRequest();
 
-            // Test der Lokalisierung
-            var translatedText = _localizer["BaseName1"];
-            Console.WriteLine($"Localized text: {translatedText}");
-
             var id = await _mediator.Send(new UploadDocumentCommand(request), cancellationToken);
 
             BackgroundJob.Enqueue<DocumentProcessingService>("documents", svc => svc.ProcessAsync(id, _currentUserService.UserId));
@@ -85,37 +81,42 @@ namespace ArquivoMate2.API.Controllers
         }
 
         [HttpPatch("{id}/update-fields")]
-        public async Task<IActionResult> UpdateFields(Guid id, [FromBody] JObject json, CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentDto))]
+        public async Task<IActionResult> UpdateFields(Guid id, [FromBody] UpdateDocumentFieldsDto dto, CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
         {
-            if (json == null || !json.Properties().Any())
-                return BadRequest("No fields provided.");
+            if (dto == null || !dto.Fields.Any())
+                return BadRequest(_localizer.GetString("No fields provided.").Value);
 
             // Prüfen, ob das Dokument existiert
             var userId = _currentUserService.UserId;
             var document = await querySession.LoadAsync<Infrastructure.Persistance.DocumentView>(id, cancellationToken);
             if (document == null)
-                return NotFound($"Document with ID {id} was not found.");
+                return NotFound(_localizer.GetString("Document with ID {0} was not found.", id).Value);
 
             if (document.UserId != userId)
                 return Forbid();
 
             try
             {
-                var result = await _mediator.Send(new UpdateDocumentCommand(id, json), cancellationToken);
-            
+                var result = await _mediator.Send(new UpdateDocumentCommand(id, dto), cancellationToken);
+
                 switch (result)
                 {
                     case PatchResult.Success:
+                        var rawDoc = await querySession.Events.AggregateStreamAsync<Document>(id);
+                        // update index
+                        await _mediator.Send(new UpdateIndexCommand(id, rawDoc!), cancellationToken);
+
                         document = await querySession.LoadAsync<Infrastructure.Persistance.DocumentView>(id, cancellationToken);
-                        return Ok("Fields updated successfully.");
+                        return Ok(_mapper.Map<DocumentDto>(document));
                     case PatchResult.Forbidden:
-                        return Forbid("Some fields are not allowed to update.");
+                        return Forbid(_localizer.GetString("Some fields are not allowed to update.").Value);
                     case PatchResult.Failed:
-                        return BadRequest("Failed to update fields. Please try again.");
+                        return BadRequest(_localizer.GetString("Failed to update fields. Please try again.").Value);
                     case PatchResult.Invalid:
-                        return BadRequest("Invalid fields provided for update.");
+                        return BadRequest(_localizer.GetString("Invalid fields provided for update.").Value);
                     default:
-                        return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred.");
+                        return StatusCode(StatusCodes.Status500InternalServerError, _localizer.GetString("An unexpected error occurred.").Value);
                 }
             }
             catch (Exception ex)
@@ -168,8 +169,6 @@ namespace ArquivoMate2.API.Controllers
             var characters = await querySession.Query<DocumentView>().Where(d => d.UserId == userId).SumAsync(d => d.ContentLength, cancellationToken);
 
             var facets = await searchClient.GetFacetsAsync(userId, cancellationToken);
-
-            //var x = await searchClient.ListUserIdsAsync(cancellationToken);
 
             DocumentStatsDto stats = new DocumentStatsDto
             {

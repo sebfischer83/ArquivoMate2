@@ -1,0 +1,27 @@
+msgctxt "ArquivoMate2.API.Controllers.DocumentsController"
+msgid "Document with ID {0} was not found."
+msgstr "Document with ID {0} was not found."
+
+msgctxt "ArquivoMate2.API.Controllers.DocumentsController"
+msgid "Fields updated successfully."
+msgstr "Fields updated successfully."
+
+msgctxt "ArquivoMate2.API.Controllers.DocumentsController"
+msgid "No fields provided."
+msgstr "No fields provided."
+
+msgctxt "ArquivoMate2.API.Controllers.DocumentsController"
+msgid "Some fields are not allowed to update."
+msgstr "Some fields are not allowed to update."
+
+msgctxt "ArquivoMate2.API.Controllers.DocumentsController"
+msgid "Failed to update fields. Please try again."
+msgstr "Failed to update fields. Please try again."
+
+msgctxt "ArquivoMate2.API.Controllers.DocumentsController"
+msgid "Invalid fields provided for update."
+msgstr "Invalid fields provided for update."
+
+msgctxt "ArquivoMate2.API.Controllers.DocumentsController"
+msgid "An unexpected error occurred."
+msgstr "An unexpected error occurred."

@@ -1,7 +1,7 @@
 
 <!-- Ignore this part, it is only here to position drawer inside the example block -->
 	<div class="custom-portal"><ng-container #viewContainer /></div>
-	<tui-drawer *tuiPopup="openDrawer()" style="width: 200px; padding: 1rem;">
+	<tui-drawer *tuiPopup="openDrawer()" style="width: 320px; padding: 0.25rem;">
       <header>
         <h2 tuiHeader>
             <div tuiTitle>
@@ -11,7 +11,7 @@
  
         </h2>
     </header>
-  
+        <app-tasks></app-tasks>
     <footer>
       
     </footer>
@@ -123,9 +123,6 @@
         >
             Search
 
-            <ng-container *ngIf="expanded()">
-                <tui-badge appearance="accent">12</tui-badge>
-            </ng-container>
         </button>
         <tui-aside-group>
             <button

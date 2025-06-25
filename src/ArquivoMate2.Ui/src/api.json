@@ -6,10 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://[::]:8080"
-    },
-    {
-      "url": "https://[::]:8081"
+      "url": "http://0.0.0.0:8081"
     }
   ],
   "paths": {
@@ -189,46 +186,22 @@
           "content": {
             "application/json-patch+json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
+                "$ref": "#/components/schemas/UpdateDocumentFieldsDto"
               }
             },
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
+                "$ref": "#/components/schemas/UpdateDocumentFieldsDto"
               }
             },
             "text/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
+                "$ref": "#/components/schemas/UpdateDocumentFieldsDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
+                "$ref": "#/components/schemas/UpdateDocumentFieldsDto"
               }
             }
           },
@@ -237,6 +210,55 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/documents/stats": {
+      "get": {
+        "tags": [
+          "Documents"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentStatsDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentStatsDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentStatsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         }
       }
@@ -320,45 +342,6 @@
           }
         }
       }
-    },
-    "/WeatherForecast": {
-      "get": {
-        "tags": [
-          "WeatherForecast"
-        ],
-        "operationId": "GetWeatherForecast",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WeatherForecast"
-                  }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WeatherForecast"
-                  }
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WeatherForecast"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
@@ -395,6 +378,10 @@
           },
           "content": {
             "type": "string"
+          },
+          "contentLength": {
+            "type": "integer",
+            "format": "int32"
           },
           "accepted": {
             "type": "boolean"
@@ -533,6 +520,34 @@
           }
         }
       },
+      "DocumentStatsDto": {
+        "type": "object",
+        "properties": {
+          "characters": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notAccepted": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "documents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "facets": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
       "DocumentStatusDto": {
         "type": "object",
         "properties": {
@@ -582,24 +597,11 @@
       "ProcessingStatus": {
         "type": "integer"
       },
-      "WeatherForecast": {
+      "UpdateDocumentFieldsDto": {
         "type": "object",
         "properties": {
-          "date": {
-            "type": "string",
-            "format": "date"
-          },
-          "temperatureC": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "temperatureF": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "summary": {
-            "type": "string",
-            "nullable": true
+          "fields": {
+            "type": "object"
           }
         }
       }
@@ -608,9 +610,6 @@
   "tags": [
     {
       "name": "Documents"
-    },
-    {
-      "name": "WeatherForecast"
     }
   ]
 }

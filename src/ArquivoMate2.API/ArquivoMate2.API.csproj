@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -27,6 +27,7 @@
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.11.2" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.11.1" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.11.1" />
+    <PackageReference Include="OrchardCore.Localization.Core" Version="2.1.7" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.1.17" />
     <PackageReference Include="Serilog" Version="4.2.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
@@ -46,11 +47,12 @@
     <ProjectReference Include="..\ArquivoMate2.Application\ArquivoMate2.Application.csproj" />
     <ProjectReference Include="..\ArquivoMate2.Infrastructure\ArquivoMate2.Infrastructure.csproj" />
     <ProjectReference Include="..\ArquivoMate2.Shared\ArquivoMate2.Shared.csproj" />
-    <Content Update="Resources\localization.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Localization\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-
 
 
   <ItemGroup>

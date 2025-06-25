@@ -6,6 +6,7 @@ using ArquivoMate2.Domain.ValueObjects;
 using JasperFx.CodeGeneration.Frames;
 using Marten;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,25 @@ using System.Threading.Tasks;
 
 namespace ArquivoMate2.Application.Handlers
 {
+    public class UpdateIndexHandler : IRequestHandler<UpdateIndexCommand, bool>
+    {
+        private readonly ISearchClient _searchClient;
+        private readonly ILogger<UpdateIndexHandler> _logger;
+
+        public UpdateIndexHandler(ISearchClient searchClient, ILogger<UpdateIndexHandler> logger)
+        {
+            _searchClient = searchClient;
+            _logger = logger;
+        }
+
+        public async Task<bool> Handle(UpdateIndexCommand request, CancellationToken cancellationToken)
+        {
+            await _searchClient.UpdateDocument(request.Document);   
+
+            return true;
+        }
+    }
+
     public class UploadDocumentHandler : IRequestHandler<UploadDocumentCommand, Guid>
     {
         private readonly IDocumentSession _session;

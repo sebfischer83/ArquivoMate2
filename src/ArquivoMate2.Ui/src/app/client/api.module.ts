@@ -7,7 +7,6 @@ import { HttpClient } from '@angular/common/http';
 import { ApiConfiguration, ApiConfigurationParams } from './api-configuration';
 
 import { DocumentsService } from './services/documents.service';
-import { WeatherForecastService } from './services/weather-forecast.service';
 
 /**
  * Module that provides all services and configuration.
@@ -18,7 +17,6 @@ import { WeatherForecastService } from './services/weather-forecast.service';
   declarations: [],
   providers: [
     DocumentsService,
-    WeatherForecastService,
     ApiConfiguration
   ],
 })

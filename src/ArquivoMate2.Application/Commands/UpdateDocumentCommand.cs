@@ -1,9 +1,10 @@
-﻿using MediatR;
+﻿using ArquivoMate2.Shared.Models;
+using MediatR;
 using Newtonsoft.Json.Linq;
 
 namespace ArquivoMate2.Application.Commands
 {
-    public record UpdateDocumentCommand(Guid DocumentId, JObject Json): IRequest<PatchResult>;
+    public record UpdateDocumentCommand(Guid DocumentId, UpdateDocumentFieldsDto Dto): IRequest<PatchResult>;
 
     public enum PatchResult
     {

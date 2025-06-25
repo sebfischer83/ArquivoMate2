@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace ArquivoMate2.Application.Handlers
@@ -32,28 +33,66 @@ namespace ArquivoMate2.Application.Handlers
 
             var changes = new Dictionary<string, object>();
 
-            _logger.LogInformation("Starting update for document {documentId}. {count} properties will be changed.", request.DocumentId, request.Json.Properties().Count());
+            if (request.Dto == null || request.Dto.Fields == null)
+            {
+                _logger.LogError("No fields provided for update.");
+                return PatchResult.Invalid;
+            }
 
-            var disallowed = request.Json.Properties().Where(p => DisallowedProperties.Contains(p.Name)).Select(x => x.Name).ToArray();
-            if (disallowed != null && disallowed.Any())
+            _logger.LogInformation("Starting update for document {documentId}. {count} properties will be changed.", request.DocumentId, request.Dto.Fields.Count);
+
+            var disallowed = request.Dto.Fields.Keys.Where(k => DisallowedProperties.Contains(k)).ToArray();
+            if (disallowed.Any())
             {
                 _logger.LogError("Disallowed properties attempted to update: {@disallowed}", disallowed);
                 return PatchResult.Forbidden;
             }
 
-            foreach (var prop in request.Json.Properties())
+            foreach (var kvp in request.Dto.Fields)
             {
-                var propertyInfo = typeof(Document).GetProperty(prop.Name);
+                var propertyInfo = typeof(Document).GetProperty(kvp.Key);
                 if (propertyInfo == null)
                 {
-                    _logger.LogError("Property {property} doesnt exist on {document}.", prop.Name, nameof(Document));
+                    _logger.LogError("Property {property} doesnt exist on {document}.", kvp.Key, nameof(Document));
                     return PatchResult.Invalid;
                 }
                 try
                 {
                     var targetType = Nullable.GetUnderlyingType(propertyInfo.PropertyType) ?? propertyInfo.PropertyType;
-                    var value = prop.Value.ToObject(targetType);
-                    changes.Add(prop.Name, value);
+                    object? value = null;
+                    if (kvp.Value == null)
+                    {
+                        value = null;
+                    }
+                    else if (targetType == typeof(string))
+                    {
+                        // Robust: Prüfe, ob der Wert wirklich ein String ist und kein Array/Objekt
+                        if (kvp.Value is string s)
+                        {
+                            value = s;
+                        }
+                        else if (kvp.Value is System.Text.Json.JsonElement je && je.ValueKind == JsonValueKind.String)
+                        {
+                            value = je.GetString();
+                        }
+                        else
+                        {
+                            _logger.LogError("Type mismatch: Property {property} expects a string but got {type}.", kvp.Key, kvp.Value.GetType().Name);
+                            return PatchResult.Invalid;
+                        }
+                    }
+                    else
+                    {
+                        // Zusätzliche Prüfung: Wenn Ziel kein Array/List ist, aber Wert ein Array, Fehler
+                        if (kvp.Value is System.Text.Json.JsonElement je && je.ValueKind == JsonValueKind.Array && !targetType.IsArray && !(targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(List<>)))
+                        {
+                            _logger.LogError("Type mismatch: Property {property} expects {targetType} but got array.", kvp.Key, targetType.Name);
+                            return PatchResult.Invalid;
+                        }
+                        var json = JsonSerializer.Serialize(kvp.Value);
+                        value = JsonSerializer.Deserialize(json, targetType);
+                    }
+                    changes.Add(kvp.Key, value);
                 }
                 catch (Exception ex)
                 {

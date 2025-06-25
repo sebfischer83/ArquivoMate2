@@ -47,20 +47,13 @@ namespace ArquivoMate2.Infrastructure.Services.Search
             throw new InvalidOperationException("No facets found for the specified user.");
         }
 
-        public async Task<List<string>> ListUserIdsAsync(CancellationToken cancellationToken)
+        public async Task<bool> UpdateDocument(Document document)
         {
             var index = _meilisearchClient.Index("documents");
-            var searchResult = await index.SearchAsync<SearchDocument>("", new SearchQuery
-            {
-                Limit = 1000, // adjust as needed for your dataset size
-                AttributesToRetrieve = new List<string> { "userId" }
-            }, cancellationToken);
+            var task = await index.UpdateDocumentsAsync([SearchDocument.FromDocument(document)], "id");
+            var res = await _meilisearchClient.WaitForTaskAsync(task.TaskUid);
 
-            return searchResult.Hits
-                .Select(doc => (doc as SearchDocument)?.UserId)
-                .Where(uid => !string.IsNullOrEmpty(uid))
-                .Distinct()
-                .ToList();
+            return res.Status == TaskInfoStatus.Succeeded;
         }
     }
 }

@@ -12,8 +12,6 @@ export class StateService {
   private isInitialized = false;
 
   constructor() {
-    // Event-Handler werden nicht sofort registriert
-    console.log('✅ StateService initialized (handlers will be registered on demand)');
   }
 
   /**
@@ -33,7 +31,6 @@ export class StateService {
       });
 
       this.isInitialized = true;
-      console.log('✅ StateService event handlers initialized');
     } catch (error) {
       console.warn('⚠️ Could not initialize StateService event handlers:', error);
     }

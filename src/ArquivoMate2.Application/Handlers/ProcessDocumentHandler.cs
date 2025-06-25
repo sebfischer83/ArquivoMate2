@@ -27,11 +27,10 @@ namespace ArquivoMate2.Application.Handlers
         private readonly IThumbnailService _thumbnailService;
         private readonly IChatBot _chatBot;
         private readonly IDocumentProcessingNotifier _documentProcessingNotifier;
-        private readonly IStringLocalizer _localizer;
 
         public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger, IDocumentProcessor documentTextExtractor, IFileMetadataService fileMetadataService, IPathService pathService,
-            IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot, IDocumentProcessingNotifier documentProcessingNotifier, ICurrentUserService currentUserService, IStringLocalizer localizer)
-            => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService, _chatBot, _documentProcessingNotifier, _localizer) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService, chatBot, documentProcessingNotifier, localizer);
+            IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot, IDocumentProcessingNotifier documentProcessingNotifier, ICurrentUserService currentUserService)
+            => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService, _chatBot, _documentProcessingNotifier) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService, chatBot, documentProcessingNotifier);
 
         public async Task<(Document? Document, string? TempFilePath)> Handle(ProcessDocumentCommand request, CancellationToken cancellationToken)
         {
@@ -45,7 +44,7 @@ namespace ArquivoMate2.Application.Handlers
                     throw new KeyNotFoundException($"Document {request.DocumentId} not found");
                 }
 
-                await _documentProcessingNotifier.NotifyStatusChangedAsync(doc.UserId, DocumentProcessingNotification.InProgress(doc.Id.ToString(), _localizer.GetString("ReadFile")));
+                //await _documentProcessingNotifier.NotifyStatusChangedAsync(doc.UserId, DocumentProcessingNotification.InProgress(doc.Id.ToString(), _localizer.GetString("ReadFile")));
 
                 // read the file
                 var metadata = await fileMetadataService.ReadMetadataAsync(request.DocumentId, request.UserId);

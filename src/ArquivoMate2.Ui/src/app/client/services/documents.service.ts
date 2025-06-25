@@ -27,8 +27,13 @@ import { apiDocumentsPendingGet$Plain } from '../fn/documents/api-documents-pend
 import { ApiDocumentsPendingGet$Plain$Params } from '../fn/documents/api-documents-pending-get-plain';
 import { apiDocumentsPost } from '../fn/documents/api-documents-post';
 import { ApiDocumentsPost$Params } from '../fn/documents/api-documents-post';
+import { apiDocumentsStatsGet$Json } from '../fn/documents/api-documents-stats-get-json';
+import { ApiDocumentsStatsGet$Json$Params } from '../fn/documents/api-documents-stats-get-json';
+import { apiDocumentsStatsGet$Plain } from '../fn/documents/api-documents-stats-get-plain';
+import { ApiDocumentsStatsGet$Plain$Params } from '../fn/documents/api-documents-stats-get-plain';
 import { DocumentDto } from '../models/document-dto';
 import { DocumentListDto } from '../models/document-list-dto';
+import { DocumentStatsDto } from '../models/document-stats-dto';
 import { DocumentStatusDto } from '../models/document-status-dto';
 
 @Injectable({ providedIn: 'root' })
@@ -178,6 +183,53 @@ export class DocumentsService extends BaseService {
   apiDocumentsIdUpdateFieldsPatch(params: ApiDocumentsIdUpdateFieldsPatch$Params, context?: HttpContext): Observable<void> {
     return this.apiDocumentsIdUpdateFieldsPatch$Response(params, context).pipe(
       map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `apiDocumentsStatsGet()` */
+  static readonly ApiDocumentsStatsGetPath = '/api/documents/stats';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiDocumentsStatsGet$Plain()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiDocumentsStatsGet$Plain$Response(params?: ApiDocumentsStatsGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentStatsDto>> {
+    return apiDocumentsStatsGet$Plain(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiDocumentsStatsGet$Plain$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiDocumentsStatsGet$Plain(params?: ApiDocumentsStatsGet$Plain$Params, context?: HttpContext): Observable<DocumentStatsDto> {
+    return this.apiDocumentsStatsGet$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<DocumentStatsDto>): DocumentStatsDto => r.body)
+    );
+  }
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiDocumentsStatsGet$Json()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiDocumentsStatsGet$Json$Response(params?: ApiDocumentsStatsGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentStatsDto>> {
+    return apiDocumentsStatsGet$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiDocumentsStatsGet$Json$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiDocumentsStatsGet$Json(params?: ApiDocumentsStatsGet$Json$Params, context?: HttpContext): Observable<DocumentStatsDto> {
+    return this.apiDocumentsStatsGet$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<DocumentStatsDto>): DocumentStatsDto => r.body)
     );
   }
 

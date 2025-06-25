@@ -65,13 +65,7 @@ export class SignalrService {
     });    return this.hubConnection
       .start()
       .then(() => {
-        console.log('✅ SignalR Connected successfully');
-        console.log('📊 Connection details:', {
-          state: this.hubConnection.state,
-          connectionId: this.hubConnection.connectionId,
-          baseUrl: hubUrl
-        });
-        
+       
         // Registriere zwischengespeicherte Handler
         this.registerPendingHandlers();
       })

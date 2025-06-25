@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { DocumentsService } from '../../client/services/documents.service';
-import { WeatherForecastService } from '../../client/services/weather-forecast.service';
 import { KeyValuePipe, NgForOf, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { tuiAsPortal, TuiPortals, TuiThemeColorService } from '@taiga-ui/cdk';
@@ -35,6 +34,7 @@ import { TUI_DARK_MODE, TUI_DARK_MODE_KEY } from '@taiga-ui/core';
 import { SignalrService } from '../../services/signalr.service';
 import { StateService } from '../../services/state.service';
 import { OAuthService } from 'angular-oauth2-oidc';
+import { TasksComponent } from "../sidebar/tasks/tasks.component";
 
 
 const ICON =
@@ -46,14 +46,9 @@ const ICON =
   selector: 'app-main-area',
   imports: [RouterOutlet,
     FormsModule,
-    TuiRoot,
-    KeyValuePipe,
-    NgForOf,
-    NgIf,
     RouterLink,
     RouterLinkActive,
     TuiAppearance,
-    TuiAvatar,
     TuiBadge,
     TuiBadgeNotification,
     TuiButton,
@@ -64,12 +59,10 @@ const ICON =
     TuiFade,
     TuiIcon,
     TuiNavigation,
-    TuiSwitch,
     TuiTabs,
     TuiTextfield,
     TuiDrawer,
-    TuiPopup
-  ],
+    TuiPopup, TasksComponent],
   templateUrl: './main-area.page.html',
   styleUrl: './main-area.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

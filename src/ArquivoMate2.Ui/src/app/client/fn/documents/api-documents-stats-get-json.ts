@@ -8,13 +8,13 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { WeatherForecast } from '../../models/weather-forecast';
+import { DocumentStatsDto } from '../../models/document-stats-dto';
 
-export interface GetWeatherForecast$Json$Params {
+export interface ApiDocumentsStatsGet$Json$Params {
 }
 
-export function getWeatherForecast$Json(http: HttpClient, rootUrl: string, params?: GetWeatherForecast$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<WeatherForecast>>> {
-  const rb = new RequestBuilder(rootUrl, getWeatherForecast$Json.PATH, 'get');
+export function apiDocumentsStatsGet$Json(http: HttpClient, rootUrl: string, params?: ApiDocumentsStatsGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentStatsDto>> {
+  const rb = new RequestBuilder(rootUrl, apiDocumentsStatsGet$Json.PATH, 'get');
   if (params) {
   }
 
@@ -23,9 +23,9 @@ export function getWeatherForecast$Json(http: HttpClient, rootUrl: string, param
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Array<WeatherForecast>>;
+      return r as StrictHttpResponse<DocumentStatsDto>;
     })
   );
 }
 
-getWeatherForecast$Json.PATH = '/WeatherForecast';
+apiDocumentsStatsGet$Json.PATH = '/api/documents/stats';

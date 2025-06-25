@@ -10,7 +10,8 @@ namespace ArquivoMate2.Application.Interfaces
     public interface ISearchClient
     {
         Task<bool> AddDocument(Document document);
+
+        Task<bool> UpdateDocument(Document document);
         Task<Dictionary<string, int>> GetFacetsAsync(string userId, CancellationToken cancellationToken);
-        Task<List<string>> ListUserIdsAsync(CancellationToken cancellationToken);
     }
 }

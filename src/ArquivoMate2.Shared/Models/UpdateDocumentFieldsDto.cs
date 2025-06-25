@@ -2,6 +2,6 @@ namespace ArquivoMate2.Shared.Models
 {
     public class UpdateDocumentFieldsDto
     {
-        public Dictionary<string, object> Fields { get; set; }
+        public required Dictionary<string, object> Fields { get; set; }
     }
 }

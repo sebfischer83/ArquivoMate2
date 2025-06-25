@@ -2,6 +2,7 @@
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Models;
 using ArquivoMate2.Domain.Document;
+using ArquivoMate2.Domain.Import;
 using ArquivoMate2.Domain.ValueObjects;
 using ArquivoMate2.Infrastructure.Configuration.DeliveryProvider;
 using ArquivoMate2.Infrastructure.Configuration.Llm;
@@ -58,11 +59,14 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 options.Events.AddEventTypes(new[]
                 {
                     typeof(DocumentUploaded),
-                    typeof(DocumentProcessed),
                     typeof(DocumentContentExtracted),
                     typeof(DocumentFilesPrepared),
-                    typeof(DocumentStartProcessing),
                     typeof(DocumentChatBotDataReceived),
+                    typeof(InitDocumentImport),
+                    typeof(MarkFailedDocumentImport),
+                    typeof(MarkSuccededDocumentImport),
+                    typeof(StartDocumentImport),
+                    typeof(DocumentProcessed)
                     // hier weitere Event‑Typen hinzufügen…
                 });
 
@@ -72,10 +76,13 @@ namespace ArquivoMate2.Infrastructure.Configuration
 
                 //options.Schema.For<PartyInfo>().NgramIndex(x => x.SearchText);
                 options.Schema.For<Document>()
-                    .Index(d => d.UserId);
+                    .Index(d => d.UserId).Index(d => d.Hash);
+
+                options.Schema.For<ImportProcess>().Index(d => d.UserId);   
                 //options.Advanced.UseNGramSearchWithUnaccent = true;
 
                 options.Projections.Add<DocumentProjection>(ProjectionLifecycle.Inline);
+                options.Projections.Add<ImportHistoryProjection>(ProjectionLifecycle.Inline);
             });
 
             services.AddScoped<IDocumentSession>(sp => sp.GetRequiredService<IDocumentStore>().LightweightSession());

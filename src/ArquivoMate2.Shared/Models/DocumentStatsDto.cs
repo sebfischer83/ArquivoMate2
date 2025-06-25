@@ -11,6 +11,6 @@ namespace ArquivoMate2.Shared.Models
         public int Characters { get; set; }
         public int NotAccepted { get; set; }
         public int Documents { get; set; }
-        public Dictionary<string, int> Facets { get; set; }
+        public required Dictionary<string, int> Facets { get; set; }
     }
 }

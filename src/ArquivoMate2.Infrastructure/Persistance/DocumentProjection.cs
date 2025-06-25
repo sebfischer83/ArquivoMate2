@@ -1,4 +1,5 @@
 ﻿using ArquivoMate2.Domain.Document;
+using ArquivoMate2.Domain.Import;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Schema;
@@ -10,31 +11,15 @@ namespace ArquivoMate2.Infrastructure.Persistance
     {
         public void Apply(DocumentUploaded e, DocumentView view)
         {
-            view.Status = Shared.Models.ProcessingStatus.Pending;
             view.Id = e.AggregateId;
-            view.UploadedAt = e.OccurredOn;
             view.UserId = e.UserId;
-            view.OccurredOn = e.OccurredOn;
-        }
-
-        public void Apply(DocumentProcessed e, DocumentView view)
-        {
-            view.Status = Shared.Models.ProcessingStatus.Completed;
-            view.ProcessedAt = e.OccurredOn;
             view.OccurredOn = e.OccurredOn;
         }
 
         public void Apply(DocumentContentExtracted e, DocumentView view)
         {
             view.Content = e.Content;
-            //view.Content = "gdsgfdfa";
             view.ContentLength = e.Content?.Length ?? 0;
-            view.OccurredOn = e.OccurredOn;
-        }
-
-        public void Apply(DocumentStartProcessing e, DocumentView view)
-        {
-            view.Status = Shared.Models.ProcessingStatus.InProgress;
             view.OccurredOn = e.OccurredOn;
         }
 
@@ -66,6 +51,12 @@ namespace ArquivoMate2.Infrastructure.Persistance
                     }
                 }
             }
+        }
+
+        public void Apply(DocumentProcessed e, DocumentView view)
+        {
+            view.Processed = true;
+            view.OccurredOn = e.OccurredOn;
         }
 
         public void Apply(DocumentChatBotDataReceived e, DocumentView view)

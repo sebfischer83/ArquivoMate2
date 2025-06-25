@@ -2,11 +2,11 @@
 using ArquivoMate2.Application.Configuration;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Document;
+using ArquivoMate2.Domain.Import;
 using ArquivoMate2.Domain.ValueObjects;
 using JasperFx.CodeGeneration.Frames;
 using Marten;
 using MediatR;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,24 +15,6 @@ using System.Threading.Tasks;
 
 namespace ArquivoMate2.Application.Handlers
 {
-    public class UpdateIndexHandler : IRequestHandler<UpdateIndexCommand, bool>
-    {
-        private readonly ISearchClient _searchClient;
-        private readonly ILogger<UpdateIndexHandler> _logger;
-
-        public UpdateIndexHandler(ISearchClient searchClient, ILogger<UpdateIndexHandler> logger)
-        {
-            _searchClient = searchClient;
-            _logger = logger;
-        }
-
-        public async Task<bool> Handle(UpdateIndexCommand request, CancellationToken cancellationToken)
-        {
-            await _searchClient.UpdateDocument(request.Document);   
-
-            return true;
-        }
-    }
 
     public class UploadDocumentHandler : IRequestHandler<UploadDocumentCommand, Guid>
     {
@@ -64,7 +46,17 @@ namespace ArquivoMate2.Application.Handlers
             await using var fs = new FileStream(filePath, FileMode.Create);
             await request.request.File.CopyToAsync(fs, cancellationToken);
 
-            var @event = new DocumentUploaded(fileId, _currentUserService.UserId, DateTime.UtcNow);
+            // Berechnung des Hashes der Datei
+            string fileHash;
+            using (var hashAlgorithm = System.Security.Cryptography.SHA256.Create())
+            {
+                fs.Position = 0; // Zurücksetzen des Streams
+                var hashBytes = hashAlgorithm.ComputeHash(fs);
+                fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+            }
+
+            var @event = new DocumentUploaded(fileId, _currentUserService.UserId, fileHash, DateTime.UtcNow);
+  
             _session.Events.StartStream<Document>(@event.AggregateId, @event);
             await _session.SaveChangesAsync(cancellationToken);
 
@@ -80,7 +72,8 @@ namespace ArquivoMate2.Application.Handlers
                 ext,
                 request.request.File.Length,
                 DateTime.UtcNow,
-                languages
+                languages,
+                fileHash
             );
             await _fileMetadataService.WriteMetadataAsync(metadata, cancellationToken);
 

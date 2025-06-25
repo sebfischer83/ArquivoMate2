@@ -2,6 +2,7 @@
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Models;
 using ArquivoMate2.Domain.Document;
+using ArquivoMate2.Domain.Import;
 using ArquivoMate2.Domain.ValueObjects;
 using ArquivoMate2.Shared.Models;
 using Marten;
@@ -37,6 +38,9 @@ namespace ArquivoMate2.Application.Handlers
             var sw = Stopwatch.StartNew();
             try
             {
+                _session.Events.Append(request.ImportProcessId, new StartDocumentImport(request.ImportProcessId, DateTime.Now));
+                await _session.SaveChangesAsync(cancellationToken);
+
                 var doc = await _session.Events.AggregateStreamAsync<Document>(request.DocumentId, token: cancellationToken);
                 if (doc is null)
                 {
@@ -44,9 +48,6 @@ namespace ArquivoMate2.Application.Handlers
                     throw new KeyNotFoundException($"Document {request.DocumentId} not found");
                 }
 
-                //await _documentProcessingNotifier.NotifyStatusChangedAsync(doc.UserId, DocumentProcessingNotification.InProgress(doc.Id.ToString(), _localizer.GetString("ReadFile")));
-
-                // read the file
                 var metadata = await fileMetadataService.ReadMetadataAsync(request.DocumentId, request.UserId);
 
                 if (metadata is null)
@@ -55,14 +56,11 @@ namespace ArquivoMate2.Application.Handlers
                     throw new KeyNotFoundException($"Metadata for document {request.DocumentId} not found");
                 }
 
-                _session.Events.Append(request.DocumentId, new DocumentStartProcessing(request.DocumentId, DateTime.UtcNow));
-
                 var path = pathService.GetDocumentUploadPath(request.UserId);
                 path = Path.Combine(path, $"{request.DocumentId}{metadata.Extension}");
 
                 using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan);
 
-                // get the content
                 var content = await ExtractTextAsync(stream, metadata, cancellationToken);
 
                 _session.Events.Append(request.DocumentId, new DocumentContentExtracted(request.DocumentId, content, DateTime.UtcNow));
@@ -70,7 +68,6 @@ namespace ArquivoMate2.Application.Handlers
                 var filePath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.GetFileName(path), File.ReadAllBytes(path));
                 var metaPath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.ChangeExtension(Path.GetFileName(path), "metadata"), JsonSerializer.SerializeToUtf8Bytes(metadata));
 
-                // thumbnail
                 var thumbnail = _thumbnailService.GenerateThumbnail(stream);
 
                 string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
@@ -78,7 +75,6 @@ namespace ArquivoMate2.Application.Handlers
 
                 var thumbPath = await _storage.SaveFile(request.UserId, request.DocumentId, thumbnailFileName, thumbnail);
 
-                // preview Pdf
                 var previewPdf = await _documentTextExtractor.GeneratePreviewPdf(stream, metadata, cancellationToken);
 
                 string previewPdfFileName = $"{fileNameWithoutExtension}-preview.pdf";
@@ -86,18 +82,15 @@ namespace ArquivoMate2.Application.Handlers
 
                 _session.Events.Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, DateTime.UtcNow));
 
-
-                // chatbot
                 var chatbotResult = await _chatBot.AnalyzeDocumentContent(content, cancellationToken);
 
                 await ProcessChatbotResultAsync(request.DocumentId, chatbotResult);
 
-                _session.Events.Append(request.DocumentId, new DocumentProcessed(request.DocumentId, DateTime.UtcNow));
+                _session.Events.Append(request.ImportProcessId, new MarkSuccededDocumentImport(request.ImportProcessId, request.DocumentId, DateTime.Now));
+                _session.Events.Append(request.DocumentId, new DocumentProcessed(request.DocumentId, DateTime.Now));
+
                 await _session.SaveChangesAsync(cancellationToken);
 
-                sw.Stop();
-
-                _logger.LogInformation("Processed document {DocumentId} in {ElapsedMs}ms", request.DocumentId, sw.ElapsedMilliseconds);
 
                 doc = await _session.Events.AggregateStreamAsync<Document>(request.DocumentId, token: cancellationToken);
 
@@ -106,6 +99,18 @@ namespace ArquivoMate2.Application.Handlers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing document {DocumentId}", request.DocumentId);
+
+                _session.Events.Append(request.ImportProcessId, new MarkFailedDocumentImport(request.ImportProcessId, ex.Message, DateTime.Now));
+
+                // Lösche den Event-Stream durch das Löschen des Aggregats
+                _session.Delete(request.DocumentId);
+                await _session.SaveChangesAsync(cancellationToken);
+            }
+            finally
+            {
+                sw.Stop();
+
+                _logger.LogInformation("Processed document {DocumentId} in {ElapsedMs}ms", request.DocumentId, sw.ElapsedMilliseconds);
             }
 
             return (null, null);

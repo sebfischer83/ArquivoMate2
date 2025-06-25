@@ -13,11 +13,12 @@ namespace ArquivoMate2.Infrastructure.Persistance
         public string PreviewPath { get; set; } = string.Empty;
 
         public string UserId { get; set; } = string.Empty;
-        public ProcessingStatus Status { get; set; }
-        public DateTime UploadedAt { get; set; }
-        public DateTime? ProcessedAt { get; set; }
 
         public DateTime? OccurredOn { get; set; } = null;
+
+        public bool Processed { get; set; }
+
+        public bool Deleted { get; set; }
 
         public string Content { get; set; } = string.Empty;
 

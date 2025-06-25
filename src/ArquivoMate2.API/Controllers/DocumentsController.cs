@@ -4,6 +4,7 @@ using ArquivoMate2.Application.Configuration;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Services;
 using ArquivoMate2.Domain.Document;
+using ArquivoMate2.Domain.Import;
 using ArquivoMate2.Infrastructure.Persistance;
 using ArquivoMate2.Shared.Models;
 using AutoMapper;
@@ -46,36 +47,22 @@ namespace ArquivoMate2.API.Controllers
             _localizer = localizer;
         }
 
-        [HttpGet("pending")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<DocumentStatusDto>))]
-        public async Task<IActionResult> GetPendingDocuments(CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
-        {
-            var userId = _currentUserService.UserId;
-
-            var pendingDocuments = await querySession.Query<Infrastructure.Persistance.DocumentView>()
-                .Where(doc => (doc.Status != ProcessingStatus.Completed && doc.Status != ProcessingStatus.Failed) && doc.UserId == userId)
-                .ToListAsync(cancellationToken);
-
-            var result = pendingDocuments.Select(doc => new DocumentStatusDto
-            {
-                DocumentId = doc.Id,
-                Status = doc.Status,
-                UploadedAt = doc.UploadedAt
-            }).ToList();
-
-            return Ok(result);
-        }
-
+      
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
-        public async Task<IActionResult> Upload([FromForm] UploadDocumentRequest request, CancellationToken cancellationToken, [FromServices] OcrSettings ocrSettings)
+        public async Task<IActionResult> Upload([FromForm] UploadDocumentRequest request, CancellationToken cancellationToken, [FromServices] OcrSettings ocrSettings, [FromServices] IDocumentSession querySession)
         {
             if (request.File is null || request.File.Length == 0)
                 return BadRequest();
 
+            var historyEvent = new InitDocumentImport(Guid.NewGuid(), _currentUserService.UserId, request.File.FileName, DateTime.UtcNow);
+
+            querySession.Events.StartStream<ImportProcess>(historyEvent.AggregateId, historyEvent);
+            await querySession.SaveChangesAsync();
+
             var id = await _mediator.Send(new UploadDocumentCommand(request), cancellationToken);
 
-            BackgroundJob.Enqueue<DocumentProcessingService>("documents", svc => svc.ProcessAsync(id, _currentUserService.UserId));
+            BackgroundJob.Enqueue<DocumentProcessingService>("documents", svc => svc.ProcessAsync(id, historyEvent.AggregateId, _currentUserService.UserId));
 
             return CreatedAtAction(nameof(Upload), new { id }, id);
         }
@@ -133,7 +120,7 @@ namespace ArquivoMate2.API.Controllers
             CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
         {
             var userId = _currentUserService.UserId;
-            var view = await querySession.Query<Infrastructure.Persistance.DocumentView>().Where(d => d.UserId == userId).
+            var view = await querySession.Query<Infrastructure.Persistance.DocumentView>().Where(d => d.UserId == userId && d.Processed == true).
                 ToPagedListAsync(requestDto.Page, requestDto.PageSize);
             if (view is null)
                 return NotFound();

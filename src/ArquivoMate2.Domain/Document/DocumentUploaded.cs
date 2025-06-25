@@ -1,5 +1,5 @@
 ﻿namespace ArquivoMate2.Domain.Document
 {
-    public record DocumentUploaded(Guid AggregateId, string UserId, DateTime OccurredOn) : IDomainEvent;
+    public record DocumentUploaded(Guid AggregateId, string UserId, string Hash, DateTime OccurredOn) : IDomainEvent;
 
 }

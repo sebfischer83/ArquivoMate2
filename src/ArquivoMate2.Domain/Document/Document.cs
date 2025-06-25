@@ -1,4 +1,5 @@
-﻿using ArquivoMate2.Shared.Models;
+﻿using ArquivoMate2.Domain.Import;
+using ArquivoMate2.Shared.Models;
 
 namespace ArquivoMate2.Domain.Document
 {
@@ -15,13 +16,16 @@ namespace ArquivoMate2.Domain.Document
         public string PreviewPath { get; private set; } = string.Empty;
 
         public string UserId { get; private set; } = string.Empty;
-        public DateTime UploadedAt { get; private set; }
         public bool Accepted { get; private set; }
 
-        public ProcessingStatus Status { get; private set; } = ProcessingStatus.Pending;
+        public bool Processed { get; private set; }
+
+        public bool Deleted { get; private set; }
 
         // content
         public string Content { get; private set; } = string.Empty;
+
+        public string Hash { get; private set; } = string.Empty;
 
         public DateTime? Date { get; private set; } = null;
 
@@ -46,10 +50,9 @@ namespace ArquivoMate2.Domain.Document
         public void Apply(DocumentUploaded e)
         {
             Id = e.AggregateId;
-            UploadedAt = e.OccurredOn;
             UserId = e.UserId;
-            Status = ProcessingStatus.Pending;
             OccurredOn = e.OccurredOn;
+            Hash = e.Hash;
         }
 
         public void Apply(DocumentContentExtracted documentContentExtracted)
@@ -68,16 +71,9 @@ namespace ArquivoMate2.Domain.Document
             OccurredOn = e.OccurredOn;
         }
 
-        public void Apply(DocumentStartProcessing e)
-        {
-            Status = ProcessingStatus.InProgress;
-            OccurredOn = e.OccurredOn;
-        }
-
         public void Apply(DocumentProcessed e)
         {
-            if (Status == ProcessingStatus.Completed) throw new InvalidOperationException("Document is already processed.");
-            Status = ProcessingStatus.Completed;
+            Processed = true;
             OccurredOn = e.OccurredOn;
         }
 

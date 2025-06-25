@@ -19,10 +19,10 @@ namespace ArquivoMate2.Application.Services
             _searchClient = searchClient;
         }
 
-        public async Task ProcessAsync(Guid documentId, string userId)
+        public async Task ProcessAsync(Guid documentId, Guid importProcessId, string userId)
         {
             _logger.LogInformation("Starting document processing for Document ID: {DocumentId}, User ID: {UserId}", documentId, userId);
-            var doc = await _mediator.Send(new ProcessDocumentCommand(documentId, userId));
+            var doc = await _mediator.Send(new ProcessDocumentCommand(documentId, importProcessId, userId));
 
             if (doc.Document == null)
             {

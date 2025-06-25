@@ -8,6 +8,7 @@ namespace ArquivoMate2.Shared.Models
 {
     public enum DocumentProcessingStatus
     {
+        Pending,
         InProgress,
         Completed,
         Failed

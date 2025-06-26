@@ -123,5 +123,11 @@ namespace ArquivoMate2.Domain.Document
             }
             OccurredOn = e.OccurredOn;
         }
+
+        public void Apply(DocumentDeleted e)
+        {
+            Deleted = true;
+            OccurredOn = e.OccurredOn;
+        }
     }
 }

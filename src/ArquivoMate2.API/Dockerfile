@@ -12,6 +12,27 @@ RUN apt-get -y install tesseract-ocr-deu
 RUN apt-get -y install tesseract-ocr-all
 RUN apt-get -y install fontconfig
 RUN fc-cache -f -v
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  build-essential autoconf automake libtool \
+  libleptonica-dev \
+  zlib1g-dev \
+  libffi-dev \
+  ca-certificates \
+  curl \
+  git \
+  libcairo2-dev \
+  pkg-config
+RUN \
+  mkdir jbig2 \
+  && curl -L https://github.com/agl/jbig2enc/archive/c0141bf.tar.gz | \
+  tar xz -C jbig2 --strip-components=1 \
+  && cd jbig2 \
+  && ./autogen.sh && ./configure && make && make install \
+  && cd .. \
+  && rm -rf jbig2
+
+
+
 RUN mkdir -p /var/arquivomate2
 RUN chown $APP_UID /var/arquivomate2
 USER $APP_UID

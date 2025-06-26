@@ -44,7 +44,7 @@ namespace ArquivoMate2.Infrastructure.Services.Search
                 return keywordsFacet.ToDictionary(f => f.Key, f => f.Value);
             }
 
-            throw new InvalidOperationException("No facets found for the specified user.");
+            return result;
         }
 
         public async Task<bool> UpdateDocument(Document document)

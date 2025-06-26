@@ -83,7 +83,7 @@ namespace ArquivoMate2.Infrastructure.Services
                 img.Write(tmpImage);
 
                 _logger.LogInformation("Extracting text from image with Tesseract OCR: {ImagePath}", tmpImage);
-                // Call Tesseract CLI: Output to STDOUT
+
                 var psi = new ProcessStartInfo(_tesseractPath,
                     $"-l {languages} {tmpImage} stdout")
                 {
@@ -121,17 +121,12 @@ namespace ArquivoMate2.Infrastructure.Services
                     await documentStream.CopyToAsync(fs, 81920, cancellationToken).ConfigureAwait(false);
                 }
 
-                // pdftocairo-Argumente zusammenstellen
-                // Beispiel: 72 dpi, JPEG-Qualität 50
-                int dpi = 72;
-                int quality = 50;
-
-                var args = $"-sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dQUIET -dBATCH -sOutputFile=\"{tempOutput}\" \"{tempInput}\" ";
+                var args = $"--output-type pdfa --optimize 3 \"{tempInput}\" \"{tempOutput}\" ";
 
                 // Process starten
                 var psi = new ProcessStartInfo
                 {
-                    FileName = "gs",
+                    FileName = "ocrmypdf",
                     Arguments = args,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -150,10 +145,31 @@ namespace ArquivoMate2.Infrastructure.Services
                     {
                         await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
                     }
+                }
 
-                    if (proc.ExitCode != 0)
+                if (!File.Exists(tempOutput))
+                {
+                    args = $"--output-type pdfa --skip-text --optimize 3 \"{tempInput}\" \"{tempOutput}\" ";
+                    psi = new ProcessStartInfo
                     {
-                        throw new InvalidOperationException($"pdftocairo failed (Exit {proc.ExitCode}): {stdErr}");
+                        FileName = "ocrmypdf",
+                        Arguments = args,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    using (var proc = new Process { StartInfo = psi })
+                    {
+                        proc.Start();
+
+                        string stdOut = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
+                        string stdErr = await proc.StandardError.ReadToEndAsync().ConfigureAwait(false);
+
+                        using (cancellationToken.Register(() => proc.Kill()))
+                        {
+                            await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+                        }
                     }
                 }
 

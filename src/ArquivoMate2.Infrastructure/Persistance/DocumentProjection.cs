@@ -1,7 +1,10 @@
 ﻿using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.Import;
+using Marten;
+using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
+using Marten.Linq.SoftDeletes;
 using Marten.Schema;
 
 namespace ArquivoMate2.Infrastructure.Persistance
@@ -51,6 +54,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
                     }
                 }
             }
+            view.OccurredOn = e.OccurredOn;
         }
 
         public void Apply(DocumentProcessed e, DocumentView view)
@@ -77,6 +81,12 @@ namespace ArquivoMate2.Infrastructure.Persistance
             view.MetadataPath = e.MetadataPath;
             view.ThumbnailPath = e.ThumbnailPath;
             view.PreviewPath = e.PreviewPath;
+            view.OccurredOn = e.OccurredOn;
+        }
+
+        public void Apply(DocumentDeleted e, DocumentView view)
+        {
+            view.Deleted = true;
             view.OccurredOn = e.OccurredOn;
         }
     }

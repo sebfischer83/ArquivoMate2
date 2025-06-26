@@ -59,6 +59,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 options.Events.AddEventTypes(new[]
                 {
                     typeof(DocumentUploaded),
+                    typeof(DocumentDeleted),
                     typeof(DocumentContentExtracted),
                     typeof(DocumentFilesPrepared),
                     typeof(DocumentChatBotDataReceived),

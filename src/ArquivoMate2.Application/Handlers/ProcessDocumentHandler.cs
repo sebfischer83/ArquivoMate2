@@ -36,11 +36,12 @@ namespace ArquivoMate2.Application.Handlers
         public async Task<(Document? Document, string? TempFilePath)> Handle(ProcessDocumentCommand request, CancellationToken cancellationToken)
         {
             var sw = Stopwatch.StartNew();
+
+            _session.Events.Append(request.ImportProcessId, new StartDocumentImport(request.ImportProcessId, DateTime.Now));
+            await _session.SaveChangesAsync(cancellationToken);
+
             try
             {
-                _session.Events.Append(request.ImportProcessId, new StartDocumentImport(request.ImportProcessId, DateTime.Now));
-                await _session.SaveChangesAsync(cancellationToken);
-
                 var doc = await _session.Events.AggregateStreamAsync<Document>(request.DocumentId, token: cancellationToken);
                 if (doc is null)
                 {
@@ -58,39 +59,14 @@ namespace ArquivoMate2.Application.Handlers
 
                 var path = pathService.GetDocumentUploadPath(request.UserId);
                 path = Path.Combine(path, $"{request.DocumentId}{metadata.Extension}");
-
-                using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan);
-
-                var content = await ExtractTextAsync(stream, metadata, cancellationToken);
-
-                _session.Events.Append(request.DocumentId, new DocumentContentExtracted(request.DocumentId, content, DateTime.UtcNow));
-
-                var filePath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.GetFileName(path), File.ReadAllBytes(path));
-                var metaPath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.ChangeExtension(Path.GetFileName(path), "metadata"), JsonSerializer.SerializeToUtf8Bytes(metadata));
-
-                var thumbnail = _thumbnailService.GenerateThumbnail(stream);
-
-                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
-                string thumbnailFileName = $"{fileNameWithoutExtension}-thumb.webp";
-
-                var thumbPath = await _storage.SaveFile(request.UserId, request.DocumentId, thumbnailFileName, thumbnail);
-
-                var previewPdf = await _documentTextExtractor.GeneratePreviewPdf(stream, metadata, cancellationToken);
-
-                string previewPdfFileName = $"{fileNameWithoutExtension}-preview.pdf";
-                var previewPath = await _storage.SaveFile(request.UserId, request.DocumentId, previewPdfFileName, previewPdf);
-
-                _session.Events.Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, DateTime.UtcNow));
-
-                var chatbotResult = await _chatBot.AnalyzeDocumentContent(content, cancellationToken);
-
-                await ProcessChatbotResultAsync(request.DocumentId, chatbotResult);
+                throw new Exception("Simulated error for testing purposes");
+                // Process the document based on file type
+                await ProcessPdfFiles(request, metadata, path, cancellationToken);
 
                 _session.Events.Append(request.ImportProcessId, new MarkSuccededDocumentImport(request.ImportProcessId, request.DocumentId, DateTime.Now));
                 _session.Events.Append(request.DocumentId, new DocumentProcessed(request.DocumentId, DateTime.Now));
 
                 await _session.SaveChangesAsync(cancellationToken);
-
 
                 doc = await _session.Events.AggregateStreamAsync<Document>(request.DocumentId, token: cancellationToken);
 
@@ -101,9 +77,7 @@ namespace ArquivoMate2.Application.Handlers
                 _logger.LogError(ex, "Error processing document {DocumentId}", request.DocumentId);
 
                 _session.Events.Append(request.ImportProcessId, new MarkFailedDocumentImport(request.ImportProcessId, ex.Message, DateTime.Now));
-
-                // Lösche den Event-Stream durch das Löschen des Aggregats
-                _session.Delete(request.DocumentId);
+                _session.Events.Append(request.DocumentId, new DocumentDeleted(request.DocumentId, DateTime.UtcNow));
                 await _session.SaveChangesAsync(cancellationToken);
             }
             finally
@@ -114,6 +88,36 @@ namespace ArquivoMate2.Application.Handlers
             }
 
             return (null, null);
+        }
+
+        private async Task ProcessPdfFiles(ProcessDocumentCommand request, DocumentMetadata metadata, string path, CancellationToken cancellationToken)
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan);
+
+            var content = await ExtractTextAsync(stream, metadata, cancellationToken);
+
+            _session.Events.Append(request.DocumentId, new DocumentContentExtracted(request.DocumentId, content, DateTime.UtcNow));
+
+            var filePath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.GetFileName(path), File.ReadAllBytes(path));
+            var metaPath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.ChangeExtension(Path.GetFileName(path), "metadata"), JsonSerializer.SerializeToUtf8Bytes(metadata));
+
+            var thumbnail = _thumbnailService.GenerateThumbnail(stream);
+
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
+            string thumbnailFileName = $"{fileNameWithoutExtension}-thumb.webp";
+
+            var thumbPath = await _storage.SaveFile(request.UserId, request.DocumentId, thumbnailFileName, thumbnail);
+
+            var previewPdf = await _documentTextExtractor.GeneratePreviewPdf(stream, metadata, cancellationToken);
+
+            string previewPdfFileName = $"{fileNameWithoutExtension}-preview.pdf";
+            var previewPath = await _storage.SaveFile(request.UserId, request.DocumentId, previewPdfFileName, previewPdf);
+
+            _session.Events.Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, DateTime.UtcNow));
+
+            var chatbotResult = await _chatBot.AnalyzeDocumentContent(content, cancellationToken);
+
+            await ProcessChatbotResultAsync(request.DocumentId, chatbotResult);
         }
 
         private async Task ProcessChatbotResultAsync(Guid documentId, DocumentAnalysisResult chatbotResult)

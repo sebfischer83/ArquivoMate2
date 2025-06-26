@@ -74,14 +74,14 @@ namespace ArquivoMate2.API.Controllers
             if (dto == null || !dto.Fields.Any())
                 return BadRequest(_localizer.GetString("No fields provided.").Value);
 
-            // Prüfen, ob das Dokument existiert
+            // Prüfen, ob das Dokument existiert und nicht gelöscht ist
             var userId = _currentUserService.UserId;
-            var document = await querySession.LoadAsync<Infrastructure.Persistance.DocumentView>(id, cancellationToken);
+            var document = await querySession.Query<Infrastructure.Persistance.DocumentView>()
+                .Where(d => d.Id == id && d.UserId == userId && !d.Deleted)
+                .FirstOrDefaultAsync(cancellationToken);
+            
             if (document == null)
                 return NotFound(_localizer.GetString("Document with ID {0} was not found.", id).Value);
-
-            if (document.UserId != userId)
-                return Forbid();
 
             try
             {
@@ -94,7 +94,9 @@ namespace ArquivoMate2.API.Controllers
                         // update index
                         await _mediator.Send(new UpdateIndexCommand(id, rawDoc!), cancellationToken);
 
-                        document = await querySession.LoadAsync<Infrastructure.Persistance.DocumentView>(id, cancellationToken);
+                        document = await querySession.Query<Infrastructure.Persistance.DocumentView>()
+                            .Where(d => d.Id == id && d.UserId == userId && !d.Deleted)
+                            .FirstOrDefaultAsync(cancellationToken);
                         return Ok(_mapper.Map<DocumentDto>(document));
                     case PatchResult.Forbidden:
                         return Forbid(_localizer.GetString("Some fields are not allowed to update.").Value);
@@ -120,8 +122,9 @@ namespace ArquivoMate2.API.Controllers
             CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
         {
             var userId = _currentUserService.UserId;
-            var view = await querySession.Query<Infrastructure.Persistance.DocumentView>().Where(d => d.UserId == userId && d.Processed == true).
-                ToPagedListAsync(requestDto.Page, requestDto.PageSize);
+            var view = await querySession.Query<Infrastructure.Persistance.DocumentView>()
+                .Where(d => d.UserId == userId && d.Processed == true && !d.Deleted)
+                .ToPagedListAsync(requestDto.Page, requestDto.PageSize);
             if (view is null)
                 return NotFound();
             if (view.Count == 0)
@@ -151,9 +154,9 @@ namespace ArquivoMate2.API.Controllers
         {
             var userId = _currentUserService.UserId;
 
-            var count = await querySession.Query<DocumentView>().Where(d => d.UserId == userId).CountAsync(cancellationToken);
-            var notAccepted = await querySession.Query<DocumentView>().Where(d => d.UserId == userId && !d.Accepted ).CountAsync(cancellationToken);
-            var characters = await querySession.Query<DocumentView>().Where(d => d.UserId == userId).SumAsync(d => d.ContentLength, cancellationToken);
+            var count = await querySession.Query<DocumentView>().Where(d => d.UserId == userId && !d.Deleted).CountAsync(cancellationToken);
+            var notAccepted = await querySession.Query<DocumentView>().Where(d => d.UserId == userId && !d.Accepted && !d.Deleted).CountAsync(cancellationToken);
+            var characters = await querySession.Query<DocumentView>().Where(d => d.UserId == userId && !d.Deleted).SumAsync(d => d.ContentLength, cancellationToken);
 
             var facets = await searchClient.GetFacetsAsync(userId, cancellationToken);
 
@@ -178,12 +181,12 @@ namespace ArquivoMate2.API.Controllers
         public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
         {
             var userId = _currentUserService.UserId;
-            var view = await querySession.LoadAsync<Infrastructure.Persistance.DocumentView>(id, cancellationToken);
+            var view = await querySession.Query<Infrastructure.Persistance.DocumentView>()
+                .Where(d => d.Id == id && d.UserId == userId && !d.Deleted)
+                .FirstOrDefaultAsync(cancellationToken);
+            
             if (view is null)
                 return NotFound();
-
-            if (view.UserId != userId)
-                return Forbid();
 
             var events = await querySession.Events.FetchStreamAsync(id, token: cancellationToken);
             var documentDto = _mapper.Map<DocumentDto>(view);

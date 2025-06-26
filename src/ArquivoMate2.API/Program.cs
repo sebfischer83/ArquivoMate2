@@ -56,7 +56,6 @@ namespace ArquivoMate2.API
                   tracing.AddSource(typeof(Program).Assembly.GetName().Name);
                   tracing.AddAspNetCoreInstrumentation();
                   tracing.AddHttpClientInstrumentation();
-                  tracing.AddConsoleExporter(); 
                   tracing.AddSource("Marten");
 
                   if (!string.IsNullOrWhiteSpace(seqUrl))

@@ -79,7 +79,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 options.Schema.For<Document>()
                     .Index(d => d.UserId).Index(d => d.Hash);
 
-                options.Schema.For<ImportProcess>().Index(d => d.UserId);   
+                options.Schema.For<ImportProcess>().Index(d => d.UserId).Index(x => x.IsHidden).Index(x => x.DocumentId!);   
                 //options.Advanced.UseNGramSearchWithUnaccent = true;
 
                 options.Projections.Add<DocumentProjection>(ProjectionLifecycle.Inline);

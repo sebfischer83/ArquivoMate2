@@ -8,11 +8,10 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { IFormFile } from '../../models/i-form-file';
 
 export interface ApiDocumentsPost$Params {
       body: {
-'File'?: IFormFile;
+'File'?: Blob;
 'Language'?: Array<string>;
 }
 }

@@ -27,7 +27,7 @@ let authCodeFlowConfig: AuthConfig = { ...defaultAuthConfig };
 
 const intializeAppFn = () => {
   const apiConfig = inject(ApiConfiguration);
-  apiConfig.rootUrl = 'https://localhost:5000'; 
+  apiConfig.rootUrl = 'http://localhost:5000'; 
 
   const http = inject(HttpClient);
   return firstValueFrom(http.get<Partial<AuthConfig>>('auth-config.json'))

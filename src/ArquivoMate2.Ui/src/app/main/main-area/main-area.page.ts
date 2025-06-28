@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { DocumentsService } from '../../client/services/documents.service';
-import { KeyValuePipe, NgForOf, NgIf } from '@angular/common';
+import { KeyValuePipe, NgForOf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { tuiAsPortal, TuiPortals, TuiThemeColorService } from '@taiga-ui/cdk';
 import {
@@ -18,7 +18,7 @@ import {
 } from '@taiga-ui/core';
 import {
   TuiAvatar,
-  TuiBadge,
+  TuiBadgedContent,
   TuiBadgeNotification,
   TuiBreadcrumbs,
   TuiChevron,
@@ -49,10 +49,10 @@ const ICON =
     RouterLink,
     RouterLinkActive,
     TuiAppearance,
-    TuiBadge,
     TuiBadgeNotification,
     TuiButton,
     TuiChevron,
+    TuiBadgedContent,
     TuiDataList,
     TuiDataListDropdownManager,
     TuiDropdown,
@@ -72,7 +72,7 @@ export class MainAreaComponent implements OnInit, OnDestroy {
   private readonly storage = inject(WA_LOCAL_STORAGE);  private readonly media = inject(WA_WINDOW).matchMedia('(prefers-color-scheme: dark)');
   private documentsService = inject(DocumentsService);
   private signalRService = inject(SignalrService);
-  private stateService = inject(StateService);
+  protected stateService = inject(StateService);
   private auth = inject(OAuthService);
   protected readonly darkMode = inject(TUI_DARK_MODE);
   private readonly themeService = inject(TuiThemeColorService);

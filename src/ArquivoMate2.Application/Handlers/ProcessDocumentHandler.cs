@@ -42,6 +42,8 @@ namespace ArquivoMate2.Application.Handlers
 
             try
             {
+                await _documentProcessingNotifier.NotifyStatusChangedAsync(request.UserId, 
+                    new DocumentProcessingNotification(request.DocumentId.ToString(), DocumentProcessingStatus.InProgress, "Document processing started"));
                 var doc = await _session.Events.AggregateStreamAsync<Document>(request.DocumentId, token: cancellationToken);
                 if (doc is null)
                 {
@@ -59,8 +61,6 @@ namespace ArquivoMate2.Application.Handlers
 
                 var path = pathService.GetDocumentUploadPath(request.UserId);
                 path = Path.Combine(path, $"{request.DocumentId}{metadata.Extension}");
-                throw new Exception("Simulated error for testing purposes");
-                // Process the document based on file type
                 await ProcessPdfFiles(request, metadata, path, cancellationToken);
 
                 _session.Events.Append(request.ImportProcessId, new MarkSuccededDocumentImport(request.ImportProcessId, request.DocumentId, DateTime.Now));

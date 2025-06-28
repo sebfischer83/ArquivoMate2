@@ -228,16 +228,26 @@
         >
             Add
         </button>
+     
         <footer>
-                        <button
-                iconStart="@tui.clock"
-                tuiAsideItem
-                routerLink="/app/import-history"
-                type="button"
-            >
-                Import History
-            </button>
-              <button
+               <button
+            iconStart="@tui.clock"
+            tuiAsideItem
+            routerLink="/app/import-history"
+            type="button"
+            class="import-history-item"
+        >
+            Import History
+            @if (stateService.documentsInProgressCound() > 0) {
+                <tui-badge-notification
+                    size="s"
+                    class="import-history-badge"
+                >
+                    {{ stateService.documentsInProgressCound() }}
+                </tui-badge-notification>
+            }
+        </button>
+            <button
                 tuiAsideItem
                 type="button"
                 [iconStart]="expanded() ? '@tui.chevron-left' : '@tui.chevron-right'"

@@ -11,28 +11,38 @@ import { BaseService } from '../base-service';
 import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
-import { apiHistoryCompletedCountGet } from '../fn/import-history/api-history-completed-count-get';
-import { ApiHistoryCompletedCountGet$Params } from '../fn/import-history/api-history-completed-count-get';
+import { apiHistoryCompletedCountGet$Json } from '../fn/import-history/api-history-completed-count-get-json';
+import { ApiHistoryCompletedCountGet$Json$Params } from '../fn/import-history/api-history-completed-count-get-json';
+import { apiHistoryCompletedCountGet$Plain } from '../fn/import-history/api-history-completed-count-get-plain';
+import { ApiHistoryCompletedCountGet$Plain$Params } from '../fn/import-history/api-history-completed-count-get-plain';
 import { apiHistoryCompletedGet$Json } from '../fn/import-history/api-history-completed-get-json';
 import { ApiHistoryCompletedGet$Json$Params } from '../fn/import-history/api-history-completed-get-json';
 import { apiHistoryCompletedGet$Plain } from '../fn/import-history/api-history-completed-get-plain';
 import { ApiHistoryCompletedGet$Plain$Params } from '../fn/import-history/api-history-completed-get-plain';
-import { apiHistoryFailedCountGet } from '../fn/import-history/api-history-failed-count-get';
-import { ApiHistoryFailedCountGet$Params } from '../fn/import-history/api-history-failed-count-get';
+import { apiHistoryFailedCountGet$Json } from '../fn/import-history/api-history-failed-count-get-json';
+import { ApiHistoryFailedCountGet$Json$Params } from '../fn/import-history/api-history-failed-count-get-json';
+import { apiHistoryFailedCountGet$Plain } from '../fn/import-history/api-history-failed-count-get-plain';
+import { ApiHistoryFailedCountGet$Plain$Params } from '../fn/import-history/api-history-failed-count-get-plain';
 import { apiHistoryFailedGet$Json } from '../fn/import-history/api-history-failed-get-json';
 import { ApiHistoryFailedGet$Json$Params } from '../fn/import-history/api-history-failed-get-json';
 import { apiHistoryFailedGet$Plain } from '../fn/import-history/api-history-failed-get-plain';
 import { ApiHistoryFailedGet$Plain$Params } from '../fn/import-history/api-history-failed-get-plain';
-import { apiHistoryGet } from '../fn/import-history/api-history-get';
-import { ApiHistoryGet$Params } from '../fn/import-history/api-history-get';
-import { apiHistoryInprogressCountGet } from '../fn/import-history/api-history-inprogress-count-get';
-import { ApiHistoryInprogressCountGet$Params } from '../fn/import-history/api-history-inprogress-count-get';
+import { apiHistoryGet$Json } from '../fn/import-history/api-history-get-json';
+import { ApiHistoryGet$Json$Params } from '../fn/import-history/api-history-get-json';
+import { apiHistoryGet$Plain } from '../fn/import-history/api-history-get-plain';
+import { ApiHistoryGet$Plain$Params } from '../fn/import-history/api-history-get-plain';
+import { apiHistoryInprogressCountGet$Json } from '../fn/import-history/api-history-inprogress-count-get-json';
+import { ApiHistoryInprogressCountGet$Json$Params } from '../fn/import-history/api-history-inprogress-count-get-json';
+import { apiHistoryInprogressCountGet$Plain } from '../fn/import-history/api-history-inprogress-count-get-plain';
+import { ApiHistoryInprogressCountGet$Plain$Params } from '../fn/import-history/api-history-inprogress-count-get-plain';
 import { apiHistoryInprogressGet$Json } from '../fn/import-history/api-history-inprogress-get-json';
 import { ApiHistoryInprogressGet$Json$Params } from '../fn/import-history/api-history-inprogress-get-json';
 import { apiHistoryInprogressGet$Plain } from '../fn/import-history/api-history-inprogress-get-plain';
 import { ApiHistoryInprogressGet$Plain$Params } from '../fn/import-history/api-history-inprogress-get-plain';
-import { apiHistoryPendingCountGet } from '../fn/import-history/api-history-pending-count-get';
-import { ApiHistoryPendingCountGet$Params } from '../fn/import-history/api-history-pending-count-get';
+import { apiHistoryPendingCountGet$Json } from '../fn/import-history/api-history-pending-count-get-json';
+import { ApiHistoryPendingCountGet$Json$Params } from '../fn/import-history/api-history-pending-count-get-json';
+import { apiHistoryPendingCountGet$Plain } from '../fn/import-history/api-history-pending-count-get-plain';
+import { ApiHistoryPendingCountGet$Plain$Params } from '../fn/import-history/api-history-pending-count-get-plain';
 import { apiHistoryPendingGet$Json } from '../fn/import-history/api-history-pending-get-json';
 import { ApiHistoryPendingGet$Json$Params } from '../fn/import-history/api-history-pending-get-json';
 import { apiHistoryPendingGet$Plain } from '../fn/import-history/api-history-pending-get-plain';
@@ -50,23 +60,45 @@ export class ImportHistoryService extends BaseService {
 
   /**
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `apiHistoryGet()` instead.
+   * To access only the response body, use `apiHistoryGet$Plain()` instead.
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryGet$Response(params?: ApiHistoryGet$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-    return apiHistoryGet(this.http, this.rootUrl, params, context);
+  apiHistoryGet$Plain$Response(params?: ApiHistoryGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDto>> {
+    return apiHistoryGet$Plain(this.http, this.rootUrl, params, context);
   }
 
   /**
    * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `apiHistoryGet$Response()` instead.
+   * To access the full response (for headers, for example), `apiHistoryGet$Plain$Response()` instead.
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryGet(params?: ApiHistoryGet$Params, context?: HttpContext): Observable<void> {
-    return this.apiHistoryGet$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+  apiHistoryGet$Plain(params?: ApiHistoryGet$Plain$Params, context?: HttpContext): Observable<ImportHistoryListDto> {
+    return this.apiHistoryGet$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<ImportHistoryListDto>): ImportHistoryListDto => r.body)
+    );
+  }
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiHistoryGet$Json()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiHistoryGet$Json$Response(params?: ApiHistoryGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDto>> {
+    return apiHistoryGet$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiHistoryGet$Json$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiHistoryGet$Json(params?: ApiHistoryGet$Json$Params, context?: HttpContext): Observable<ImportHistoryListDto> {
+    return this.apiHistoryGet$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<ImportHistoryListDto>): ImportHistoryListDto => r.body)
     );
   }
 
@@ -75,23 +107,45 @@ export class ImportHistoryService extends BaseService {
 
   /**
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `apiHistoryInprogressCountGet()` instead.
+   * To access only the response body, use `apiHistoryInprogressCountGet$Plain()` instead.
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryInprogressCountGet$Response(params?: ApiHistoryInprogressCountGet$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-    return apiHistoryInprogressCountGet(this.http, this.rootUrl, params, context);
+  apiHistoryInprogressCountGet$Plain$Response(params?: ApiHistoryInprogressCountGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return apiHistoryInprogressCountGet$Plain(this.http, this.rootUrl, params, context);
   }
 
   /**
    * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `apiHistoryInprogressCountGet$Response()` instead.
+   * To access the full response (for headers, for example), `apiHistoryInprogressCountGet$Plain$Response()` instead.
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryInprogressCountGet(params?: ApiHistoryInprogressCountGet$Params, context?: HttpContext): Observable<void> {
-    return this.apiHistoryInprogressCountGet$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+  apiHistoryInprogressCountGet$Plain(params?: ApiHistoryInprogressCountGet$Plain$Params, context?: HttpContext): Observable<number> {
+    return this.apiHistoryInprogressCountGet$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
+    );
+  }
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiHistoryInprogressCountGet$Json()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiHistoryInprogressCountGet$Json$Response(params?: ApiHistoryInprogressCountGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return apiHistoryInprogressCountGet$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiHistoryInprogressCountGet$Json$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiHistoryInprogressCountGet$Json(params?: ApiHistoryInprogressCountGet$Json$Params, context?: HttpContext): Observable<number> {
+    return this.apiHistoryInprogressCountGet$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
     );
   }
 
@@ -147,23 +201,45 @@ export class ImportHistoryService extends BaseService {
 
   /**
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `apiHistoryPendingCountGet()` instead.
+   * To access only the response body, use `apiHistoryPendingCountGet$Plain()` instead.
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryPendingCountGet$Response(params?: ApiHistoryPendingCountGet$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-    return apiHistoryPendingCountGet(this.http, this.rootUrl, params, context);
+  apiHistoryPendingCountGet$Plain$Response(params?: ApiHistoryPendingCountGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return apiHistoryPendingCountGet$Plain(this.http, this.rootUrl, params, context);
   }
 
   /**
    * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `apiHistoryPendingCountGet$Response()` instead.
+   * To access the full response (for headers, for example), `apiHistoryPendingCountGet$Plain$Response()` instead.
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryPendingCountGet(params?: ApiHistoryPendingCountGet$Params, context?: HttpContext): Observable<void> {
-    return this.apiHistoryPendingCountGet$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+  apiHistoryPendingCountGet$Plain(params?: ApiHistoryPendingCountGet$Plain$Params, context?: HttpContext): Observable<number> {
+    return this.apiHistoryPendingCountGet$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
+    );
+  }
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiHistoryPendingCountGet$Json()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiHistoryPendingCountGet$Json$Response(params?: ApiHistoryPendingCountGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return apiHistoryPendingCountGet$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiHistoryPendingCountGet$Json$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiHistoryPendingCountGet$Json(params?: ApiHistoryPendingCountGet$Json$Params, context?: HttpContext): Observable<number> {
+    return this.apiHistoryPendingCountGet$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
     );
   }
 
@@ -219,23 +295,45 @@ export class ImportHistoryService extends BaseService {
 
   /**
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `apiHistoryCompletedCountGet()` instead.
+   * To access only the response body, use `apiHistoryCompletedCountGet$Plain()` instead.
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryCompletedCountGet$Response(params?: ApiHistoryCompletedCountGet$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-    return apiHistoryCompletedCountGet(this.http, this.rootUrl, params, context);
+  apiHistoryCompletedCountGet$Plain$Response(params?: ApiHistoryCompletedCountGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return apiHistoryCompletedCountGet$Plain(this.http, this.rootUrl, params, context);
   }
 
   /**
    * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `apiHistoryCompletedCountGet$Response()` instead.
+   * To access the full response (for headers, for example), `apiHistoryCompletedCountGet$Plain$Response()` instead.
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryCompletedCountGet(params?: ApiHistoryCompletedCountGet$Params, context?: HttpContext): Observable<void> {
-    return this.apiHistoryCompletedCountGet$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+  apiHistoryCompletedCountGet$Plain(params?: ApiHistoryCompletedCountGet$Plain$Params, context?: HttpContext): Observable<number> {
+    return this.apiHistoryCompletedCountGet$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
+    );
+  }
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiHistoryCompletedCountGet$Json()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiHistoryCompletedCountGet$Json$Response(params?: ApiHistoryCompletedCountGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return apiHistoryCompletedCountGet$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiHistoryCompletedCountGet$Json$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiHistoryCompletedCountGet$Json(params?: ApiHistoryCompletedCountGet$Json$Params, context?: HttpContext): Observable<number> {
+    return this.apiHistoryCompletedCountGet$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
     );
   }
 
@@ -291,23 +389,45 @@ export class ImportHistoryService extends BaseService {
 
   /**
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `apiHistoryFailedCountGet()` instead.
+   * To access only the response body, use `apiHistoryFailedCountGet$Plain()` instead.
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryFailedCountGet$Response(params?: ApiHistoryFailedCountGet$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-    return apiHistoryFailedCountGet(this.http, this.rootUrl, params, context);
+  apiHistoryFailedCountGet$Plain$Response(params?: ApiHistoryFailedCountGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return apiHistoryFailedCountGet$Plain(this.http, this.rootUrl, params, context);
   }
 
   /**
    * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `apiHistoryFailedCountGet$Response()` instead.
+   * To access the full response (for headers, for example), `apiHistoryFailedCountGet$Plain$Response()` instead.
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryFailedCountGet(params?: ApiHistoryFailedCountGet$Params, context?: HttpContext): Observable<void> {
-    return this.apiHistoryFailedCountGet$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+  apiHistoryFailedCountGet$Plain(params?: ApiHistoryFailedCountGet$Plain$Params, context?: HttpContext): Observable<number> {
+    return this.apiHistoryFailedCountGet$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
+    );
+  }
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiHistoryFailedCountGet$Json()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiHistoryFailedCountGet$Json$Response(params?: ApiHistoryFailedCountGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+    return apiHistoryFailedCountGet$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiHistoryFailedCountGet$Json$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiHistoryFailedCountGet$Json(params?: ApiHistoryFailedCountGet$Json$Params, context?: HttpContext): Observable<number> {
+    return this.apiHistoryFailedCountGet$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<number>): number => r.body)
     );
   }
 

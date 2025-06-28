@@ -1,0 +1,31 @@
+.import-history-item {
+  position: relative !important;
+  
+  .import-history-badge {
+    position: absolute !important;
+    z-index: 10 !important;
+    
+    // Ausgeklappte Sidebar - Badge rechts oben am Text
+    top: 8px !important;
+    right: 12px !important;
+  }
+}
+
+// Eingeklappte Sidebar - Badge über dem Icon
+aside:not([tuiNavigationAside="true"]) .import-history-item {
+  .import-history-badge {
+    top: 4px !important;
+    right: 4px !important;
+    transform: scale(0.8) !important; // Etwas kleiner für bessere Optik
+  }
+}
+
+// Zusätzliche Verbesserungen für bessere Sichtbarkeit
+.import-history-badge {
+  // Stärkerer Schatten für bessere Sichtbarkeit
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  
+  // Mindestbreite für einstellige Zahlen
+  min-width: 18px !important;
+  text-align: center !important;
+}

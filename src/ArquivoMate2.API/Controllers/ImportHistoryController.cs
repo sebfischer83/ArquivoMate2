@@ -24,21 +24,37 @@ namespace ArquivoMate2.API.Controllers
         }
 
         [HttpGet()]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ImportHistoryListDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Get(CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
+        public async Task<IActionResult> Get([FromQuery] ImportHistoryListRequestDto requestDto, CancellationToken cancellationToken, [FromServices] IQuerySession querySession, [FromServices] AutoMapper.IMapper mapper)
         {
-            _logger.LogInformation("ImportHistoryController.Get called by user {UserId}", _currentUserService.UserId);
             var userId = _currentUserService.UserId;
 
-            var view = querySession.Query<ImportHistoryView>().ToList();
+            var view = await querySession.Query<ImportHistoryView>()
+                .Where(x => x.UserId == userId && !x.IsHidden)
+                .ToPagedListAsync(requestDto.Page, requestDto.PageSize, cancellationToken);
+            
+            if (view is null || view.Count == 0)
+                return NotFound();
 
-            return Ok(view);
+            var items = mapper.Map<ImportHistoryListItemDto[]>(view);
+            var result = new ImportHistoryListDto
+            {
+                Items = items,
+                TotalCount = view.TotalItemCount,
+                HasNextPage = view.HasNextPage,
+                PageCount = view.PageCount,
+                HasPreviousPage = view.HasPreviousPage,
+                IsLastPage = view.IsLastPage,
+                IsFirstPage = view.IsFirstPage,
+                CurrentPage = requestDto.Page
+            };
+            return Ok(result);
         }
 
         [HttpGet("inprogress/count")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(int))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetInProgressCount(CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
         {
@@ -78,7 +94,7 @@ namespace ArquivoMate2.API.Controllers
         }
 
         [HttpGet("pending/count")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(int))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetPendingCount(CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
         {
@@ -118,7 +134,7 @@ namespace ArquivoMate2.API.Controllers
         }
 
         [HttpGet("completed/count")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(int))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetCompletedCount(CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
         {
@@ -158,7 +174,7 @@ namespace ArquivoMate2.API.Controllers
         }
 
         [HttpGet("failed/count")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(int))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetFailedCount(CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
         {

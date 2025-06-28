@@ -5,7 +5,7 @@
 export interface DocumentStatsDto {
   characters?: number;
   documents?: number;
-  facets?: {
+  facets: {
 [key: string]: number;
 };
   id?: string;

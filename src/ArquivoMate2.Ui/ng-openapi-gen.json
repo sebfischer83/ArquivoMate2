@@ -1,4 +1,4 @@
 {
-  "input": "src/api.json",
+  "input": "http://localhost:5000/openapi/v1.json",
   "output": "src/app/client"
 }

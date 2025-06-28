@@ -19,6 +19,11 @@ export const routes: Routes = [
                 path: 'dashboard',
                 loadComponent: () =>
                     import('./main/dashboard/dashboard.component').then(m => m.DashboardComponent)
+            },
+            {
+                path: 'import-history',
+                loadComponent: () =>
+                    import('./main/pages/import-history/import-history.component').then(m => m.ImportHistoryComponent)
             }
         ]
     },

@@ -18,6 +18,16 @@ namespace ArquivoMate2.Infrastructure.Persistance
         public string? ErrorMessage { get; set; } // Fehlermeldung (falls fehlgeschlagen)
         public Guid? DocumentId { get; set; } // Verknüpfte Dokument-ID (falls erfolgreich)
 
+        public bool IsCompleted => Status == DocumentProcessingStatus.Completed;
+
+        public bool IsFailed => Status == DocumentProcessingStatus.Failed;
+
+        public bool IsPending => Status == DocumentProcessingStatus.Pending;
+
+        public bool IsInProgress => Status == DocumentProcessingStatus.InProgress;
+
+        public bool IsHidden { get; set; } = false;
+
         public DateTime OccurredOn { get; set; }
     }
 }

@@ -27,6 +27,13 @@ namespace ArquivoMate2.Infrastructure.Persistance
             view.OccurredOn = e.OccurredOn;
         }
 
+        public void Apply(HideDocumentImport e, ImportHistoryView view)
+        {
+            view.Id = e.AggregateId;
+            view.OccurredOn = e.OccurredOn;
+            view.IsHidden = true;
+        }
+
         public void Apply(MarkFailedDocumentImport e, ImportHistoryView view)
         {
             view.Id = e.AggregateId;

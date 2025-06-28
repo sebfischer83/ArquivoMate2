@@ -1,0 +1,166 @@
+<div class="import-history-container">
+  <header tuiHeader>
+    <h1 tuiTitle>
+      📂 Import History
+    </h1>
+    <div class="header-actions">
+      <div class="filter-buttons">
+        <button
+          tuiButton
+          appearance="secondary"
+          size="s"
+          [class.active]="selectedFilter() === 'all'"
+          (click)="setFilter('all')"
+        >
+          All
+        </button>
+        <button
+          tuiButton
+          appearance="secondary"
+          size="s"
+          [class.active]="selectedFilter() === 'success'"
+          (click)="setFilter('success')"
+        >
+          Successful
+        </button>
+        <button
+          tuiButton
+          appearance="secondary"
+          size="s"
+          [class.active]="selectedFilter() === 'error'"
+          (click)="setFilter('error')"
+        >
+          Failed
+        </button>
+        <button
+          tuiButton
+          appearance="secondary"
+          size="s"
+          [class.active]="selectedFilter() === 'processing'"
+          (click)="setFilter('processing')"
+        >
+          In Progress
+        </button>
+        <button
+          tuiButton
+          appearance="secondary"
+          size="s"
+          [class.active]="selectedFilter() === 'queued'"
+          (click)="setFilter('queued')"
+        >
+          Queued
+        </button>
+      </div>
+      <button
+        tuiButton
+        appearance="secondary"
+        iconStart="@tui.refresh"
+        size="s"
+        (click)="refresh()"
+      >
+        @if (loading()) {
+          Loading...
+        } @else {
+          Refresh
+        }
+      </button>
+    </div>
+  </header>
+
+  <main class="import-history-content">
+    @if (loading()) {
+      <div class="loading-state">
+        <div class="loading-block">
+          <p>Loading import history...</p>
+        </div>
+      </div>
+    } @else if (filteredItems().length === 0) {
+      <div class="empty-state">
+        <div class="empty-block">
+          <h3>No imports found</h3>
+          <p>No documents have been imported yet.</p>
+        </div>
+      </div>
+    } @else {
+      <div class="history-container">
+        <div class="history-list">
+          @for (item of paginatedItems(); track item.id) {
+            <div class="history-item">
+              <div class="item-content">
+                <div class="item-main">
+                  <span class="item-title">{{ item.title }}</span>
+                  <tui-badge [appearance]="getStatusBadge(item.type)" size="s">
+                    {{ getStatusText(item.type) }}
+                  </tui-badge>
+                </div>
+                <span class="timestamp">{{ formatTimestamp(item.timestamp) }}</span>
+              </div>
+              <p class="item-description">{{ item.description }}</p>
+            </div>
+          }
+        </div>
+        
+        <!-- Pagination -->
+        <div class="pagination-container">
+          <div class="pagination-info">
+            <span>
+              Showing {{ getStartIndex() + 1 }}-{{ getEndIndex() }} of {{ filteredItems().length }} entries
+            </span>
+          </div>
+          
+          <div class="pagination-controls">
+            <button
+              tuiButton
+              appearance="secondary"
+              size="s"
+              iconStart="@tui.chevron-left"
+              [disabled]="currentPage() === 1"
+              (click)="goToPage(currentPage() - 1)"
+            >
+              Previous
+            </button>
+            
+            <div class="page-numbers">
+              @for (page of getPageNumbers(); track page) {
+                <button
+                  tuiButton
+                  [appearance]="page === currentPage() ? 'primary' : 'secondary'"
+                  size="s"
+                  (click)="goToPage(page)"
+                  [class.active]="page === currentPage()"
+                >
+                  {{ page }}
+                </button>
+              }
+            </div>
+            
+            <button
+              tuiButton
+              appearance="secondary"
+              size="s"
+              iconEnd="@tui.chevron-right"
+              [disabled]="currentPage() === totalPages()"
+              (click)="goToPage(currentPage() + 1)"
+            >
+              Next
+            </button>
+          </div>
+          
+          <div class="page-size-selector">
+            <label>Items per page:</label>
+            <select 
+              [value]="pageSize()" 
+              (change)="setPageSize(+$any($event.target).value)"
+              class="page-size-select"
+            >
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    }
+  </main>
+</div>

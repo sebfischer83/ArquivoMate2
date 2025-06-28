@@ -19,12 +19,10 @@ import { apiDocumentsIdGet$Json } from '../fn/documents/api-documents-id-get-jso
 import { ApiDocumentsIdGet$Json$Params } from '../fn/documents/api-documents-id-get-json';
 import { apiDocumentsIdGet$Plain } from '../fn/documents/api-documents-id-get-plain';
 import { ApiDocumentsIdGet$Plain$Params } from '../fn/documents/api-documents-id-get-plain';
-import { apiDocumentsIdUpdateFieldsPatch } from '../fn/documents/api-documents-id-update-fields-patch';
-import { ApiDocumentsIdUpdateFieldsPatch$Params } from '../fn/documents/api-documents-id-update-fields-patch';
-import { apiDocumentsPendingGet$Json } from '../fn/documents/api-documents-pending-get-json';
-import { ApiDocumentsPendingGet$Json$Params } from '../fn/documents/api-documents-pending-get-json';
-import { apiDocumentsPendingGet$Plain } from '../fn/documents/api-documents-pending-get-plain';
-import { ApiDocumentsPendingGet$Plain$Params } from '../fn/documents/api-documents-pending-get-plain';
+import { apiDocumentsIdUpdateFieldsPatch$Json } from '../fn/documents/api-documents-id-update-fields-patch-json';
+import { ApiDocumentsIdUpdateFieldsPatch$Json$Params } from '../fn/documents/api-documents-id-update-fields-patch-json';
+import { apiDocumentsIdUpdateFieldsPatch$Plain } from '../fn/documents/api-documents-id-update-fields-patch-plain';
+import { ApiDocumentsIdUpdateFieldsPatch$Plain$Params } from '../fn/documents/api-documents-id-update-fields-patch-plain';
 import { apiDocumentsPost } from '../fn/documents/api-documents-post';
 import { ApiDocumentsPost$Params } from '../fn/documents/api-documents-post';
 import { apiDocumentsStatsGet$Json } from '../fn/documents/api-documents-stats-get-json';
@@ -34,59 +32,11 @@ import { ApiDocumentsStatsGet$Plain$Params } from '../fn/documents/api-documents
 import { DocumentDto } from '../models/document-dto';
 import { DocumentListDto } from '../models/document-list-dto';
 import { DocumentStatsDto } from '../models/document-stats-dto';
-import { DocumentStatusDto } from '../models/document-status-dto';
 
 @Injectable({ providedIn: 'root' })
 export class DocumentsService extends BaseService {
   constructor(config: ApiConfiguration, http: HttpClient) {
     super(config, http);
-  }
-
-  /** Path part for operation `apiDocumentsPendingGet()` */
-  static readonly ApiDocumentsPendingGetPath = '/api/documents/pending';
-
-  /**
-   * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `apiDocumentsPendingGet$Plain()` instead.
-   *
-   * This method doesn't expect any request body.
-   */
-  apiDocumentsPendingGet$Plain$Response(params?: ApiDocumentsPendingGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<DocumentStatusDto>>> {
-    return apiDocumentsPendingGet$Plain(this.http, this.rootUrl, params, context);
-  }
-
-  /**
-   * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `apiDocumentsPendingGet$Plain$Response()` instead.
-   *
-   * This method doesn't expect any request body.
-   */
-  apiDocumentsPendingGet$Plain(params?: ApiDocumentsPendingGet$Plain$Params, context?: HttpContext): Observable<Array<DocumentStatusDto>> {
-    return this.apiDocumentsPendingGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<DocumentStatusDto>>): Array<DocumentStatusDto> => r.body)
-    );
-  }
-
-  /**
-   * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `apiDocumentsPendingGet$Json()` instead.
-   *
-   * This method doesn't expect any request body.
-   */
-  apiDocumentsPendingGet$Json$Response(params?: ApiDocumentsPendingGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<DocumentStatusDto>>> {
-    return apiDocumentsPendingGet$Json(this.http, this.rootUrl, params, context);
-  }
-
-  /**
-   * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `apiDocumentsPendingGet$Json$Response()` instead.
-   *
-   * This method doesn't expect any request body.
-   */
-  apiDocumentsPendingGet$Json(params?: ApiDocumentsPendingGet$Json$Params, context?: HttpContext): Observable<Array<DocumentStatusDto>> {
-    return this.apiDocumentsPendingGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<DocumentStatusDto>>): Array<DocumentStatusDto> => r.body)
-    );
   }
 
   /** Path part for operation `apiDocumentsGet()` */
@@ -166,23 +116,45 @@ export class DocumentsService extends BaseService {
 
   /**
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `apiDocumentsIdUpdateFieldsPatch()` instead.
+   * To access only the response body, use `apiDocumentsIdUpdateFieldsPatch$Plain()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsIdUpdateFieldsPatch$Response(params: ApiDocumentsIdUpdateFieldsPatch$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-    return apiDocumentsIdUpdateFieldsPatch(this.http, this.rootUrl, params, context);
+  apiDocumentsIdUpdateFieldsPatch$Plain$Response(params: ApiDocumentsIdUpdateFieldsPatch$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentDto>> {
+    return apiDocumentsIdUpdateFieldsPatch$Plain(this.http, this.rootUrl, params, context);
   }
 
   /**
    * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `apiDocumentsIdUpdateFieldsPatch$Response()` instead.
+   * To access the full response (for headers, for example), `apiDocumentsIdUpdateFieldsPatch$Plain$Response()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsIdUpdateFieldsPatch(params: ApiDocumentsIdUpdateFieldsPatch$Params, context?: HttpContext): Observable<void> {
-    return this.apiDocumentsIdUpdateFieldsPatch$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+  apiDocumentsIdUpdateFieldsPatch$Plain(params: ApiDocumentsIdUpdateFieldsPatch$Plain$Params, context?: HttpContext): Observable<DocumentDto> {
+    return this.apiDocumentsIdUpdateFieldsPatch$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<DocumentDto>): DocumentDto => r.body)
+    );
+  }
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiDocumentsIdUpdateFieldsPatch$Json()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsIdUpdateFieldsPatch$Json$Response(params: ApiDocumentsIdUpdateFieldsPatch$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentDto>> {
+    return apiDocumentsIdUpdateFieldsPatch$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiDocumentsIdUpdateFieldsPatch$Json$Response()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsIdUpdateFieldsPatch$Json(params: ApiDocumentsIdUpdateFieldsPatch$Json$Params, context?: HttpContext): Observable<DocumentDto> {
+    return this.apiDocumentsIdUpdateFieldsPatch$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<DocumentDto>): DocumentDto => r.body)
     );
   }
 

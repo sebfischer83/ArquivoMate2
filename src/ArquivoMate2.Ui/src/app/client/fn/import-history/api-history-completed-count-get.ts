@@ -8,18 +8,13 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { UpdateDocumentFieldsDto } from '../../models/update-document-fields-dto';
 
-export interface ApiDocumentsIdUpdateFieldsPatch$Params {
-  id: string;
-      body: UpdateDocumentFieldsDto
+export interface ApiHistoryCompletedCountGet$Params {
 }
 
-export function apiDocumentsIdUpdateFieldsPatch(http: HttpClient, rootUrl: string, params: ApiDocumentsIdUpdateFieldsPatch$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, apiDocumentsIdUpdateFieldsPatch.PATH, 'patch');
+export function apiHistoryCompletedCountGet(http: HttpClient, rootUrl: string, params?: ApiHistoryCompletedCountGet$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  const rb = new RequestBuilder(rootUrl, apiHistoryCompletedCountGet.PATH, 'get');
   if (params) {
-    rb.path('id', params.id, {});
-    rb.body(params.body, 'application/*+json');
   }
 
   return http.request(
@@ -32,4 +27,4 @@ export function apiDocumentsIdUpdateFieldsPatch(http: HttpClient, rootUrl: strin
   );
 }
 
-apiDocumentsIdUpdateFieldsPatch.PATH = '/api/documents/{id}/update-fields';
+apiHistoryCompletedCountGet.PATH = '/api/history/completed/count';

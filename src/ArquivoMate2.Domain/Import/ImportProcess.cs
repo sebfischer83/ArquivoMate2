@@ -19,6 +19,8 @@ namespace ArquivoMate2.Domain.Import
         public string? ErrorMessage { get; private set; } // Fehlermeldung (falls fehlgeschlagen)
         public Guid? DocumentId { get; private set; } // Verknüpfte Dokument-ID (falls erfolgreich)
 
+        public bool IsHidden { get; private set; } = false; // Gibt an, ob der Import in der UI versteckt ist
+
         public DateTime OccurredOn { get; private set; }
 
         public ImportProcess()
@@ -56,6 +58,13 @@ namespace ArquivoMate2.Domain.Import
             OccurredOn = e.OccurredOn;
             Status = DocumentProcessingStatus.Completed;
             DocumentId = e.DocumentId;
+        }
+
+        public void Apply(HideDocumentImport e)
+        {
+            Id = e.AggregateId;
+            OccurredOn = e.OccurredOn;
+            IsHidden = true;
         }
     }
 }

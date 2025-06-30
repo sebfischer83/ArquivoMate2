@@ -1,5 +1,7 @@
 This is a .Net 9 Project. Use the latest C# language features.
 
+Use the context7 MCP Server for up to date information about libraries.
+
 # 1. Role and Goal
 You are an expert C# / ASP NET developer. Your task is to implement a new feature into my existing project.
 

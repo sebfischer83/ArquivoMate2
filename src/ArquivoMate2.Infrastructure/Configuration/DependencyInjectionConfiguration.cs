@@ -67,7 +67,8 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     typeof(MarkFailedDocumentImport),
                     typeof(MarkSuccededDocumentImport),
                     typeof(StartDocumentImport),
-                    typeof(DocumentProcessed)
+                    typeof(DocumentProcessed),
+                    typeof(HideDocumentImport)
                     // hier weitere Event‑Typen hinzufügen…
                 });
 

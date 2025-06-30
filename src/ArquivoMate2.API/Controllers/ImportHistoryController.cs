@@ -1,10 +1,13 @@
-﻿using ArquivoMate2.Application.Interfaces;
+﻿using ArquivoMate2.Application.Commands;
+using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Infrastructure.Persistance;
 using ArquivoMate2.Shared.Models;
 using Marten;
 using Marten.Pagination;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace ArquivoMate2.API.Controllers
@@ -16,11 +19,31 @@ namespace ArquivoMate2.API.Controllers
     {
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger<ImportHistoryController> _logger;
+        private readonly IStringLocalizer<ImportHistoryController> _stringLocalizer;
 
-        public ImportHistoryController(ICurrentUserService currentUserService, ILogger<ImportHistoryController> logger)
+        public ImportHistoryController(ICurrentUserService currentUserService, ILogger<ImportHistoryController> logger, IStringLocalizer<ImportHistoryController> stringLocalizer)
         {
             _currentUserService = currentUserService;
             _logger = logger;
+            _stringLocalizer = stringLocalizer;
+        }
+
+        [HttpPost("hideByStatus")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> HideAllFromImportHistory(DocumentProcessingStatus documentProcessingStatus, CancellationToken cancellationToken, [FromServices] IMediator mediator)
+        {
+            var userId = _currentUserService.UserId;
+            
+            var success = await mediator.Send(new HideAllFromImportHistoryByStatusCommand(documentProcessingStatus, userId), cancellationToken);
+
+            if (!success)
+            {
+                _logger.LogError("Failed to hide import history entries with status {Status} for user {UserId}", documentProcessingStatus, userId);
+                return StatusCode(StatusCodes.Status500InternalServerError, _stringLocalizer.GetString("Failed to hide import history entries."));
+            }
+
+            return NoContent();
         }
 
         [HttpGet()]

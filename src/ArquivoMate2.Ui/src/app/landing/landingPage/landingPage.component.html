@@ -6,7 +6,9 @@
   </main>
   {{ auth.hasValidAccessToken()  }}
 
-  <footer style="text-align: center; padding: 1rem; background: #f5f5f5;">
-    <small>© 2025 Mein Unternehmen</small>
-  </footer>
+<ng-container *transloco="let t">
+  <p>{{ t('title') }}</p>
+  <p>4554</p>
+</ng-container>
+
 </tui-root>

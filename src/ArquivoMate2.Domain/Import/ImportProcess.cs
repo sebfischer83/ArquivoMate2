@@ -13,6 +13,7 @@ namespace ArquivoMate2.Domain.Import
         public Guid Id { get; private set; } // Eindeutige ID des Imports
         public string FileName { get; private set; } = string.Empty; // Name der hochgeladenen Datei
         public string UserId { get; private set; } = string.Empty; // ID des Benutzers, der den Import initiiert hat
+        public ImportSource Source { get; private set; } = ImportSource.User; // Quelle des Imports (Benutzer oder Email)
         public DateTime StartedAt { get; private set; } // Zeitpunkt des Starts des Imports
         public DateTime? CompletedAt { get; private set; } // Zeitpunkt des Abschlusses (falls erfolgreich)
         public DocumentProcessingStatus Status { get; private set; } = DocumentProcessingStatus.Pending; // Status des Imports
@@ -32,6 +33,8 @@ namespace ArquivoMate2.Domain.Import
         {
             Id = e.AggregateId;
             UserId = e.UserId;
+            FileName = e.FileName;
+            Source = e.Source;
             OccurredOn = e.OccurredOn;
             StartedAt = e.OccurredOn;
             Status = DocumentProcessingStatus.Pending;

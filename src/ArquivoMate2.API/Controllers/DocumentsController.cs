@@ -55,7 +55,13 @@ namespace ArquivoMate2.API.Controllers
             if (request.File is null || request.File.Length == 0)
                 return BadRequest();
 
-            var historyEvent = new InitDocumentImport(Guid.NewGuid(), _currentUserService.UserId, request.File.FileName, DateTime.UtcNow);
+            // Create InitDocumentImport event with explicit ImportSource.User for UI uploads
+            var historyEvent = new InitDocumentImport(
+                Guid.NewGuid(), 
+                _currentUserService.UserId, 
+                request.File.FileName, 
+                DateTime.UtcNow, 
+                ImportSource.User); // Explicitly set source as User for manual uploads
 
             querySession.Events.StartStream<ImportProcess>(historyEvent.AggregateId, historyEvent);
             await querySession.SaveChangesAsync();

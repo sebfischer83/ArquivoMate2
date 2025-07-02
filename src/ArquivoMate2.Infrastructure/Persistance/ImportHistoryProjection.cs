@@ -17,6 +17,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
             view.UserId = e.UserId;
             view.OccurredOn = e.OccurredOn;
             view.FileName = e.FileName;
+            view.Source = e.Source; // Set the import source from the event
             view.Status = Shared.Models.DocumentProcessingStatus.Pending;
         }
 

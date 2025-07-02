@@ -3,14 +3,17 @@ using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Models;
 using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.Import;
+using ArquivoMate2.Domain.Email;
 using ArquivoMate2.Domain.ValueObjects;
 using ArquivoMate2.Infrastructure.Configuration.DeliveryProvider;
 using ArquivoMate2.Infrastructure.Configuration.Llm;
 using ArquivoMate2.Infrastructure.Configuration.StorageProvider;
 using ArquivoMate2.Infrastructure.Mapping;
 using ArquivoMate2.Infrastructure.Persistance;
+using ArquivoMate2.Infrastructure.Repositories;
 using ArquivoMate2.Infrastructure.Services;
 using ArquivoMate2.Infrastructure.Services.DeliveryProvider;
+using ArquivoMate2.Infrastructure.Services.EmailProvider;
 using ArquivoMate2.Infrastructure.Services.Llm;
 using ArquivoMate2.Infrastructure.Services.Search;
 using ArquivoMate2.Infrastructure.Services.StorageProvider;
@@ -72,6 +75,9 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 });
 
                 options.Schema.For<PartyInfo>();
+                options.Schema.For<EmailSettings>()
+                    .Index(x => x.UserId)
+                    .Index(x => x.IsActive);
 
                 options.Events.StreamIdentity = StreamIdentity.AsGuid;
 
@@ -83,7 +89,14 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     .Index(d => d.UserId)
                     .Index(x => x.IsHidden)
                     .Index(x => x.DocumentId)
-                    .Index(x => x.Status);
+                    .Index(x => x.Status)
+                    .Index(x => x.Source); // Add index for ImportSource for efficient queries
+
+                options.Schema.For<ImportHistoryView>()
+                    .Index(x => x.UserId)
+                    .Index(x => x.Status)
+                    .Index(x => x.Source)  // Add index for ImportSource filtering
+                    .Index(x => x.IsHidden);
 
                 //options.Advanced.UseNGramSearchWithUnaccent = true;
 
@@ -158,6 +171,13 @@ namespace ArquivoMate2.Infrastructure.Configuration
 
             services.AddSingleton<DeliveryProviderSettingsFactory>();
             var deliverySettings = new DeliveryProviderSettingsFactory(config).GetDeliveryProviderSettings();
+
+            // Email Configuration - Only database-based, no JSON fallback
+            services.AddScoped<IEmailSettingsRepository, EmailSettingsRepository>();
+            services.AddScoped<EmailServiceFactory>();
+            
+            // Register NullEmailService as default - no functionality until user configures settings
+            services.AddScoped<IEmailService, NullEmailService>();
 
             switch (settings)
             {

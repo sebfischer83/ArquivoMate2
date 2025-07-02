@@ -1,4 +1,5 @@
-﻿using ArquivoMate2.Shared.Models;
+﻿using ArquivoMate2.Domain.Import;
+using ArquivoMate2.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
         public Guid Id { get; set; } // Eindeutige ID des Imports
         public string FileName { get; set; } = string.Empty; // Name der hochgeladenen Datei
         public string UserId { get; set; } = string.Empty; // ID des Benutzers, der den Import initiiert hat
+        public ImportSource Source { get; set; } = ImportSource.User; // Quelle des Imports (Benutzer oder Email)
         public DateTime StartedAt { get; set; } // Zeitpunkt des Starts des Imports
         public DateTime? CompletedAt { get; set; } // Zeitpunkt des Abschlusses (falls erfolgreich)
         public DocumentProcessingStatus Status { get; set; } = DocumentProcessingStatus.Pending; // Status des Imports
@@ -29,5 +31,9 @@ namespace ArquivoMate2.Infrastructure.Persistance
         public bool IsHidden { get; set; } = false;
 
         public DateTime OccurredOn { get; set; }
+
+        // Helper properties for UI display
+        public bool IsFromUser => Source == ImportSource.User;
+        public bool IsFromEmail => Source == ImportSource.Email;
     }
 }

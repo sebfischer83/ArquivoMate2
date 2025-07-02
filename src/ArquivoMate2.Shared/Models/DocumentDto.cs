@@ -12,7 +12,6 @@ namespace ArquivoMate2.Shared.Models
         public Guid Id { get; set; }
     }
 
-
     public class DocumentDto : BaseDto
     {
         public string FilePath { get; set; } = string.Empty;

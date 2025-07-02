@@ -1,5 +1,6 @@
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Email;
+using ArquivoMate2.Shared.Models;
 using System;
 using System.Threading;
 using System.Threading.Tasks;

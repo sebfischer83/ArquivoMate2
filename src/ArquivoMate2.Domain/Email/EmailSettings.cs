@@ -1,3 +1,4 @@
+using ArquivoMate2.Shared.Models;
 using System;
 
 namespace ArquivoMate2.Domain.Email
@@ -21,12 +22,5 @@ namespace ArquivoMate2.Domain.Email
         public int ConnectionTimeout { get; set; } = 30000; // 30 seconds
         public string DefaultFolder { get; set; } = "INBOX";
         public bool AutoReconnect { get; set; } = true;
-    }
-
-    public enum EmailProviderType
-    {
-        IMAP,
-        POP3,
-        Exchange
     }
 }

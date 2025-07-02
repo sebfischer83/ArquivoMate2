@@ -2,6 +2,7 @@ using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Models;
 using ArquivoMate2.Domain.Email;
 using ArquivoMate2.Infrastructure.Services.EmailProvider;
+using ArquivoMate2.Shared.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
@@ -199,32 +200,5 @@ namespace ArquivoMate2.API.Controllers
         }
     }
 
-    public class SaveEmailSettingsRequest
-    {
-        [Required]
-        public EmailProviderType ProviderType { get; set; }
-
-        [Required]
-        public string Server { get; set; } = string.Empty;
-
-        [Required]
-        [Range(1, 65535)]
-        public int Port { get; set; }
-
-        public bool UseSsl { get; set; } = true;
-
-        [Required]
-        public string Username { get; set; } = string.Empty;
-
-        [Required]
-        public string Password { get; set; } = string.Empty;
-
-        public string? DisplayName { get; set; }
-
-        public int? ConnectionTimeout { get; set; }
-
-        public string? DefaultFolder { get; set; }
-
-        public bool? AutoReconnect { get; set; }
-    }
+    
 }

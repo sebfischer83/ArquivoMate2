@@ -15,6 +15,8 @@ namespace ArquivoMate2.Application.Interfaces
         /// <returns>Email settings or null if not found</returns>
         Task<EmailSettings?> GetEmailSettingsAsync(string userId, CancellationToken cancellationToken = default);
 
+        Task<IReadOnlyList<EmailSettings>> GetEmailSettingsAsync(CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Saves or updates email settings for the specified user
         /// </summary>

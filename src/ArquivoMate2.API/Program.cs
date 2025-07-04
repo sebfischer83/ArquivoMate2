@@ -2,6 +2,7 @@ using ArquivoMate2.API.Hubs;
 using ArquivoMate2.API.Notifications;
 using ArquivoMate2.Application.Handlers;
 using ArquivoMate2.Application.Interfaces;
+using ArquivoMate2.Application.Services;
 using ArquivoMate2.Infrastructure.Configuration;
 using ArquivoMate2.Infrastructure.Configuration.Auth;
 using Hangfire;
@@ -34,6 +35,7 @@ namespace ArquivoMate2.API
             //builder.Configuration.AddUserSecrets<Program>();
             builder.Configuration.AddEnvironmentVariables("AMate__");
             string connectionString = builder.Configuration.GetConnectionString("Default");
+            string hangfireConnectionString = builder.Configuration.GetConnectionString("Hangfire");
 
             var seqUrl = builder.Configuration["Seq:ServerUrl"];
             var seqApiKey = builder.Configuration["Seq:ApiKey"];
@@ -86,7 +88,7 @@ namespace ArquivoMate2.API
             {
                 config.UseSerilogLogProvider();
                 config.UseRecommendedSerializerSettings();
-                config.UsePostgreSqlStorage(opt => opt.UseNpgsqlConnection(connectionString));
+                config.UsePostgreSqlStorage(opt => opt.UseNpgsqlConnection(hangfireConnectionString));
             });
 
             builder.Services.AddHangfireServer(options =>
@@ -106,6 +108,8 @@ namespace ArquivoMate2.API
                         .AllowCredentials();
                 });
             });
+
+            builder.Services.AddHostedService<EmailDocumentBackgroundService>();
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();

@@ -15,7 +15,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       USER_SECRETS_ID: bb5e46f1-5f35-4a18-b8ac-a5d3eef93c99
       ConnectionStrings__Default: "Host=db;Port=5432;Database=arquivomate;Username=postgres;Password=yourpassword"
-
+      ConnectionStrings__Hangfire: "Host=db;Port=5432;Database=hangfire;Username=postgres;Password=yourpassword"
   redis:
     image: redis/redis-stack:7.2.0-v8
     container_name: cache
@@ -52,6 +52,27 @@ services:
         resources:
             limits:
                 memory: 1024M
+
+  db-init:
+    image: postgres:16.1
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+        PGPASSWORD: yourpassword
+    command: |
+        bash -c "
+            echo 'Creating additional databases...'
+      
+            DB_EXISTS=\$$(psql -h db -U postgres -d postgres -tAc \"SELECT 1 FROM pg_database WHERE datname='hangfire'\")
+            if [ \"\$$DB_EXISTS\" != \"1\" ]; then
+            echo 'Creating hangfire database...'
+            psql -h db -U postgres -d postgres -c 'CREATE DATABASE hangfire;'
+            fi
+      
+            echo 'Database initialization completed'
+        "
+    restart: "no"
 
   meili:
     image: getmeili/meilisearch:v1.15.0-rc.0

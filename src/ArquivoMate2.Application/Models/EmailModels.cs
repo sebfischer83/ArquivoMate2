@@ -19,6 +19,16 @@ namespace ArquivoMate2.Application.Models
         public List<EmailAttachment> Attachments { get; set; } = new();
         public int Size { get; set; }
         public string FolderName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// IMAP UID of the email (for IMAP operations like moving, flagging)
+        /// </summary>
+        public uint Uid { get; set; }
+
+        /// <summary>
+        /// IMAP flags associated with this email (including custom flags)
+        /// </summary>
+        public List<string> Flags { get; set; } = new();
     }
 
     public class EmailAttachment
@@ -43,6 +53,16 @@ namespace ArquivoMate2.Application.Models
         public int Skip { get; set; } = 0;
         public EmailSortBy SortBy { get; set; } = EmailSortBy.Date;
         public bool SortDescending { get; set; } = true;
+
+        /// <summary>
+        /// Exclude emails that have any of these flags (e.g., "Processed", "Archived")
+        /// </summary>
+        public List<string>? ExcludeFlags { get; set; }
+
+        /// <summary>
+        /// Only include emails that have all of these flags
+        /// </summary>
+        public List<string>? IncludeFlags { get; set; }
     }
 
     public enum EmailSortBy

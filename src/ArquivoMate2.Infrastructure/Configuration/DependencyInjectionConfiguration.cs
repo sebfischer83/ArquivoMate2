@@ -80,9 +80,13 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     .Index(x => x.UserId)
                     .Index(x => x.IsActive);
 
+                options.Schema.For<ProcessedEmail>()
+                    .Index(x => x.UserId)
+                    .Index(x => x.EmailUid)
+                    .Index(x => x.Status);
+
                 options.Events.StreamIdentity = StreamIdentity.AsGuid;
 
-                //options.Schema.For<PartyInfo>().NgramIndex(x => x.SearchText);
                 options.Schema.For<Document>()
                     .Index(d => d.UserId).Index(d => d.Hash);
 
@@ -175,7 +179,8 @@ namespace ArquivoMate2.Infrastructure.Configuration
 
             // Email Configuration - Only database-based, no JSON fallback
             services.AddScoped<IEmailSettingsRepository, EmailSettingsRepository>();
-            services.AddScoped<EmailServiceFactory>();
+            services.AddScoped<IProcessedEmailRepository, ProcessedEmailRepository>();
+            services.AddScoped<IEmailServiceFactory, EmailServiceFactory>();
             
             // Register NullEmailService as default - no functionality until user configures settings
             services.AddScoped<IEmailService, NullEmailService>();

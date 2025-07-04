@@ -1,7 +1,9 @@
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Models;
 using ArquivoMate2.Domain.Email;
+using ArquivoMate2.Shared.Models;
 using MailKit.Net.Pop3;
+using Microsoft.Extensions.Logging;
 using MimeKit;
 using System;
 using System.Collections.Generic;
@@ -15,12 +17,18 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
     {
         private readonly Pop3Client _client;
         private readonly EmailSettings _settings;
+        private readonly ILogger<Pop3EmailService> _logger;
         private bool _disposed = false;
 
-        public Pop3EmailService(EmailSettings settings)
+        public EmailProviderType ProviderType => EmailProviderType.POP3;
+
+        public string UserId => _settings.UserId ?? string.Empty;
+
+        public Pop3EmailService(EmailSettings settings, ILogger<Pop3EmailService> logger)
         {
             _client = new Pop3Client();
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            _logger = logger;
         }
 
         public async Task<IEnumerable<EmailMessage>> GetEmailsAsync(EmailCriteria criteria, CancellationToken cancellationToken = default)
@@ -47,9 +55,9 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
                         messages.Add(emailMessage);
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    // Log error and continue with next message
+                    _logger.LogError(ex, "Error while retrieving message at index {Index}", i);
                     continue;
                 }
             }
@@ -70,8 +78,9 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
                 await testClient.DisconnectAsync(true, cancellationToken);
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error while testing connection");
                 return false;
             }
         }
@@ -82,6 +91,15 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
             return _client.Count;
         }
 
+        /// <summary>
+        /// POP3 does not support moving emails or setting custom flags.
+        /// This method throws NotSupportedException.
+        /// </summary>
+        public Task MoveEmailWithFlagAsync(string sourceFolderName, string destinationFolderName, uint emailUid, string customFlag, CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException("POP3 protocol does not support moving emails between folders or setting custom flags. Use IMAP instead.");
+        }
+
         private async Task EnsureConnectedAsync(CancellationToken cancellationToken)
         {
             if (_client.IsConnected && _client.IsAuthenticated)
@@ -90,8 +108,16 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
             if (_client.IsConnected)
                 await _client.DisconnectAsync(false, cancellationToken);
 
-            await _client.ConnectAsync(_settings.Server, _settings.Port, _settings.UseSsl, cancellationToken);
-            await _client.AuthenticateAsync(_settings.Username, _settings.Password, cancellationToken);
+            try
+            {
+                await _client.ConnectAsync(_settings.Server, _settings.Port, _settings.UseSsl, cancellationToken);
+                await _client.AuthenticateAsync(_settings.Username, _settings.Password, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while connecting to POP3 server");
+                throw;
+            }
         }
 
         private bool MatchesCriteria(EmailMessage message, EmailCriteria criteria)
@@ -119,6 +145,25 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
 
             if (criteria.HasAttachments.HasValue && message.HasAttachments != criteria.HasAttachments.Value)
                 return false;
+
+            // Flag-based filtering (POP3 has limited flag support)
+            if (criteria.ExcludeFlags?.Count > 0)
+            {
+                foreach (var excludeFlag in criteria.ExcludeFlags)
+                {
+                    if (message.Flags.Contains(excludeFlag))
+                        return false;
+                }
+            }
+
+            if (criteria.IncludeFlags?.Count > 0)
+            {
+                foreach (var includeFlag in criteria.IncludeFlags)
+                {
+                    if (!message.Flags.Contains(includeFlag))
+                        return false;
+                }
+            }
 
             return true;
         }
@@ -150,7 +195,8 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
                 Body = message.TextBody ?? string.Empty,
                 BodyHtml = message.HtmlBody ?? string.Empty,
                 FolderName = "INBOX", // POP3 only has one mailbox
-                Size = (int)(message.Headers.Count * 50) // Rough estimate
+                Size = (int)(message.Headers.Count * 50), // Rough estimate
+                Flags = new List<string>() // POP3 doesn't support custom flags
             };
 
             // Handle attachments

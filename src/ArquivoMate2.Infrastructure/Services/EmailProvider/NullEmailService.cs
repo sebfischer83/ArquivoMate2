@@ -1,5 +1,6 @@
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Models;
+using ArquivoMate2.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,10 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
     /// </summary>
     public class NullEmailService : IEmailService
     {
+        public EmailProviderType ProviderType =>  EmailProviderType.Null;
+
+        public string UserId => string.Empty;
+
         public Task<IEnumerable<EmailMessage>> GetEmailsAsync(EmailCriteria criteria, CancellationToken cancellationToken = default)
         {
             // Return empty list - no emails available
@@ -30,6 +35,15 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
         {
             // Always return 0 - no emails available
             return Task.FromResult(0);
+        }
+
+        /// <summary>
+        /// Null implementation does not support moving emails or setting custom flags.
+        /// This method throws NotSupportedException.
+        /// </summary>
+        public Task MoveEmailWithFlagAsync(string sourceFolderName, string destinationFolderName, uint emailUid, string customFlag, CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException("No email service configured. Configure IMAP settings to use email operations.");
         }
     }
 }

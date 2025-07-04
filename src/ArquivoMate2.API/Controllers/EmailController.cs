@@ -1,8 +1,8 @@
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Models;
 using ArquivoMate2.Domain.Email;
-using ArquivoMate2.Infrastructure.Services.EmailProvider;
 using ArquivoMate2.Shared.Models;
+using MailKit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
@@ -14,12 +14,12 @@ namespace ArquivoMate2.API.Controllers
     [Authorize]
     public class EmailController : ControllerBase
     {
-        private readonly EmailServiceFactory _emailServiceFactory;
+        private readonly IEmailServiceFactory _emailServiceFactory;
         private readonly IEmailSettingsRepository _emailSettingsRepository;
         private readonly ICurrentUserService _currentUserService;
 
         public EmailController(
-            EmailServiceFactory emailServiceFactory,
+            IEmailServiceFactory emailServiceFactory,
             IEmailSettingsRepository emailSettingsRepository,
             ICurrentUserService currentUserService)
         {
@@ -198,7 +198,102 @@ namespace ArquivoMate2.API.Controllers
                 return StatusCode(500, new { message = "Failed to delete email settings", error = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Moves an email to a different folder and sets a custom IMAP flag
+        /// </summary>
+        [HttpPost("move-with-flag")]
+        public async Task<ActionResult> MoveEmailWithFlag([FromBody] MoveEmailWithFlagRequest request, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var emailService = await _emailServiceFactory.CreateEmailServiceAsync(cancellationToken);
+                
+                await emailService.MoveEmailWithFlagAsync(
+                    request.SourceFolderName,
+                    request.DestinationFolderName,
+                    request.Uid,
+                    request.CustomFlag,
+                    cancellationToken);
+
+                return Ok(new { message = "Email moved successfully and custom flag set" });
+            }
+            catch (NotSupportedException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to move email", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Searches for emails excluding those with specific flags (e.g., already processed emails)
+        /// </summary>
+        [HttpPost("search-unprocessed")]
+        public async Task<ActionResult<IEnumerable<EmailMessage>>> SearchUnprocessedEmails([FromBody] SearchUnprocessedEmailsRequest request, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var emailService = await _emailServiceFactory.CreateEmailServiceAsync(cancellationToken);
+                
+                var criteria = new EmailCriteria
+                {
+                    FolderName = request.FolderName ?? "INBOX",
+                    MaxResults = request.MaxResults,
+                    Skip = request.Skip,
+                    SortDescending = request.SortDescending,
+                    ExcludeFlags = request.ExcludeFlags, // E.g., ["Processed", "Archived"]
+                    SubjectContains = request.SubjectContains,
+                    FromContains = request.FromContains,
+                    DateFrom = request.DateFrom,
+                    DateTo = request.DateTo
+                };
+
+                var emails = await emailService.GetEmailsAsync(criteria, cancellationToken);
+                return Ok(emails);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to retrieve unprocessed emails", error = ex.Message });
+            }
+        }
     }
 
-    
+    public class MoveEmailWithFlagRequest
+    {
+        [Required]
+        public string SourceFolderName { get; set; } = string.Empty;
+
+        [Required]
+        public string DestinationFolderName { get; set; } = string.Empty;
+
+        [Required]
+        public uint Uid { get; set; }
+
+        [Required]
+        public string CustomFlag { get; set; } = string.Empty;
+    }
+
+    public class SearchUnprocessedEmailsRequest
+    {
+        public string? FolderName { get; set; } = "INBOX";
+        public int MaxResults { get; set; } = 100;
+        public int Skip { get; set; } = 0;
+        public bool SortDescending { get; set; } = true;
+        public List<string>? ExcludeFlags { get; set; }
+        public string? SubjectContains { get; set; }
+        public string? FromContains { get; set; }
+        public DateTime? DateFrom { get; set; }
+        public DateTime? DateTo { get; set; }
+    }
 }

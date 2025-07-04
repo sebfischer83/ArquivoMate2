@@ -7,6 +7,7 @@ namespace ArquivoMate2.Shared.Models
     {
         IMAP,
         POP3,
-        Exchange
+        Exchange,
+        Null
     }
 }

@@ -16,6 +16,12 @@ namespace ArquivoMate2.Infrastructure.Repositories
             _session = session;
         }
 
+        public async Task<IReadOnlyList<EmailSettings>> GetEmailSettingsAsync(CancellationToken cancellationToken = default)
+        {
+            return await _session.Query<EmailSettings>()
+                .Where(x => x.IsActive).ToListAsync();
+        }
+
         public async Task<EmailSettings?> GetEmailSettingsAsync(string userId, CancellationToken cancellationToken = default)
         {
             return await _session.Query<EmailSettings>()

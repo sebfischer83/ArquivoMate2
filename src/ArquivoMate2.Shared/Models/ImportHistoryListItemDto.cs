@@ -12,5 +12,7 @@ namespace ArquivoMate2.Shared.Models
         public string? ErrorMessage { get; set; }
         public Guid? DocumentId { get; set; }
         public DateTime OccurredOn { get; set; }
+
+        public string Source { get; set; } = string.Empty;
     }
 }

@@ -227,6 +227,10 @@ namespace ArquivoMate2.Infrastructure.Configuration
 
             services.AddScoped<IMemberValueResolver<DocumentView, BaseDto, string, string>, PathResolver>();
 
+            // Register enum translation resolvers for AutoMapper
+            services.AddScoped<StatusTranslationResolver<ImportHistoryView, ImportHistoryListItemDto>>();
+            services.AddScoped<ImportSourceTranslationResolver<ImportHistoryView, ImportHistoryListItemDto>>();
+
             services.AddAutoMapper(typeof(Mapping.DocumentMapping).Assembly);
 
             services.AddHostedService<DatabaseMigrationService>();

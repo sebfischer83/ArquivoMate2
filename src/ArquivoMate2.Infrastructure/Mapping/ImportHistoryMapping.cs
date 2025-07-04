@@ -9,7 +9,8 @@ namespace ArquivoMate2.Infrastructure.Mapping
         public ImportHistoryMapping()
         {
             CreateMap<ImportHistoryView, ImportHistoryListItemDto>()
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+                .ForMember(dest => dest.Status, opt => opt.MapFrom<StatusTranslationResolver<ImportHistoryView, ImportHistoryListItemDto>>())
+                .ForMember(dest => dest.Source, opt => opt.MapFrom<ImportSourceTranslationResolver<ImportHistoryView, ImportHistoryListItemDto>>());
         }
     }
 }

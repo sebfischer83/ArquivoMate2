@@ -1,5 +1,4 @@
-﻿using ArquivoMate2.Domain.Import;
-using ArquivoMate2.Shared.Models;
+﻿using ArquivoMate2.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;

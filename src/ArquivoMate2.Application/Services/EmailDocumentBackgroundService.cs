@@ -2,6 +2,7 @@
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Email;
 using ArquivoMate2.Domain.Import;
+using ArquivoMate2.Shared.Models;
 using Hangfire;
 using Marten;
 using Marten.Internal.Sessions;

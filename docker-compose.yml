@@ -74,6 +74,16 @@ services:
         "
     restart: "no"
 
+  pgadmin:
+    image: 'docker.io/dpage/pgadmin4:latest'
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "test@test.de"
+      PGADMIN_DEFAULT_PASSWORD: "mypassword"
+    ports:
+      - 15080:80
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin/
+
   meili:
     image: getmeili/meilisearch:v1.15.0-rc.0
     container_name: meili
@@ -96,4 +106,6 @@ volumes:
   seq:
     driver: local
   meili_data:
+    driver: local
+  pgadmin-data:
     driver: local

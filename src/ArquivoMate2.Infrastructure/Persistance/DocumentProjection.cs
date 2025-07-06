@@ -10,7 +10,7 @@ using Marten.Schema;
 namespace ArquivoMate2.Infrastructure.Persistance
 {
 
-    public class DocumentProjection : SingleStreamProjection<DocumentView>
+    public class DocumentProjection : SingleStreamProjection<DocumentView, Guid>
     {
         public void Apply(DocumentUploaded e, DocumentView view)
         {

@@ -1,5 +1,5 @@
 using ArquivoMate2.Application.Interfaces;
-using ArquivoMate2.Application.Models;
+using ArquivoMate2.Domain.Email;
 using ArquivoMate2.Shared.Models;
 using System;
 using System.Collections.Generic;
@@ -19,7 +19,7 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
 
         public string UserId => string.Empty;
 
-        public Task<IEnumerable<EmailMessage>> GetEmailsAsync(EmailCriteria criteria, CancellationToken cancellationToken = default)
+        public Task<IEnumerable<EmailMessage>> GetEmailsAsync(ArquivoMate2.Shared.Models.EmailCriteria criteria, CancellationToken cancellationToken = default)
         {
             // Return empty list - no emails available
             return Task.FromResult(Enumerable.Empty<EmailMessage>());

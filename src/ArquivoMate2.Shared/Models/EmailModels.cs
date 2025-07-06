@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 
-namespace ArquivoMate2.Application.Models
+namespace ArquivoMate2.Shared.Models
 {
+    /// <summary>
+    /// Email message model
+    /// </summary>
     public class EmailMessage
     {
         public string MessageId { get; set; } = string.Empty;
@@ -31,6 +34,9 @@ namespace ArquivoMate2.Application.Models
         public List<string> Flags { get; set; } = new();
     }
 
+    /// <summary>
+    /// Email attachment model
+    /// </summary>
     public class EmailAttachment
     {
         public string FileName { get; set; } = string.Empty;
@@ -39,6 +45,9 @@ namespace ArquivoMate2.Application.Models
         public byte[] Content { get; set; } = Array.Empty<byte>();
     }
 
+    /// <summary>
+    /// Email search criteria model
+    /// </summary>
     public class EmailCriteria
     {
         public string? SubjectContains { get; set; }
@@ -55,6 +64,12 @@ namespace ArquivoMate2.Application.Models
         public bool SortDescending { get; set; } = true;
 
         /// <summary>
+        /// Maximum number of days to search back in time. If set, this will automatically calculate DateFrom.
+        /// Takes precedence only if DateFrom is null. Default is 30 days.
+        /// </summary>
+        public int? MaxDaysBack { get; set; } = 30;
+
+        /// <summary>
         /// Exclude emails that have any of these flags (e.g., "Processed", "Archived")
         /// </summary>
         public List<string>? ExcludeFlags { get; set; }
@@ -63,13 +78,23 @@ namespace ArquivoMate2.Application.Models
         /// Only include emails that have all of these flags
         /// </summary>
         public List<string>? IncludeFlags { get; set; }
-    }
 
-    public enum EmailSortBy
-    {
-        Date,
-        Subject,
-        From,
-        Size
+        /// <summary>
+        /// Gets the effective DateFrom value, either from the explicit DateFrom property 
+        /// or calculated from MaxDaysBack if DateFrom is null.
+        /// </summary>
+        /// <returns>The effective start date for email search, or null if neither is set</returns>
+        public DateTime? GetEffectiveDateFrom()
+        {
+            // DateFrom has priority if explicitly set
+            if (DateFrom.HasValue)
+                return DateFrom.Value;
+
+            // Fall back to MaxDaysBack calculation
+            if (MaxDaysBack.HasValue && MaxDaysBack.Value > 0)
+                return DateTime.UtcNow.AddDays(-MaxDaysBack.Value);
+
+            return null;
+        }
     }
 }

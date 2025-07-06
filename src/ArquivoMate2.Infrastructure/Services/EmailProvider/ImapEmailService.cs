@@ -1,7 +1,6 @@
 using ArquivoMate2.Application.Interfaces;
-using ArquivoMate2.Application.Models;
-using ArquivoMate2.Domain.Email;
 using ArquivoMate2.Shared.Models;
+using ArquivoMate2.Domain.Email;
 using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Search;
@@ -33,7 +32,7 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
             _logger = logger;
         }
 
-        public async Task<IEnumerable<EmailMessage>> GetEmailsAsync(EmailCriteria criteria, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<EmailMessage>> GetEmailsAsync(ArquivoMate2.Shared.Models.EmailCriteria criteria, CancellationToken cancellationToken = default)
         {
             await EnsureConnectedAsync(cancellationToken);
 
@@ -166,7 +165,7 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
             await _client.AuthenticateAsync(_settings.Username, _settings.Password, cancellationToken);
         }
 
-        private SearchQuery BuildSearchQuery(EmailCriteria criteria)
+        private SearchQuery BuildSearchQuery(ArquivoMate2.Shared.Models.EmailCriteria criteria)
         {
             var queries = new List<SearchQuery>();
 
@@ -179,8 +178,10 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
             if (!string.IsNullOrEmpty(criteria.ToContains))
                 queries.Add(SearchQuery.ToContains(criteria.ToContains));
 
-            if (criteria.DateFrom.HasValue)
-                queries.Add(SearchQuery.DeliveredAfter(criteria.DateFrom.Value));
+            // Use the effective DateFrom (either explicit DateFrom or calculated from MaxDaysBack)
+            var effectiveDateFrom = criteria.GetEffectiveDateFrom();
+            if (effectiveDateFrom.HasValue)
+                queries.Add(SearchQuery.DeliveredAfter(effectiveDateFrom.Value));
 
             if (criteria.DateTo.HasValue)
                 queries.Add(SearchQuery.DeliveredBefore(criteria.DateTo.Value));
@@ -258,7 +259,7 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
             };
         }
 
-        private IEnumerable<UniqueId> ApplySorting(IList<UniqueId> uids, EmailCriteria criteria)
+        private IEnumerable<UniqueId> ApplySorting(IList<UniqueId> uids, ArquivoMate2.Shared.Models.EmailCriteria criteria)
         {
             return criteria.SortDescending ? uids.Reverse() : uids;
         }

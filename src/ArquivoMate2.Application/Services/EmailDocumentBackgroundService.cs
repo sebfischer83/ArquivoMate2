@@ -72,6 +72,7 @@ namespace ArquivoMate2.Application.Services
             var processedEmailRepository = scope.ServiceProvider.GetRequiredService<IProcessedEmailRepository>();
             var mediatr = scope.ServiceProvider.GetRequiredService<IMediator>();
             var querySession = scope.ServiceProvider.GetRequiredService<IDocumentSession>();
+            var emailCriteriaRepository = scope.ServiceProvider.GetRequiredService<IEmailCriteriaRepository>();
 
             var services = await factory.CreateEmailServicesAsync(cancellationToken);
 
@@ -101,16 +102,21 @@ namespace ArquivoMate2.Application.Services
                 {
                     _logger.LogInformation("Starting email document processing for user {UserId}...", userId);
 
-                  
-                    // Create criteria to exclude already processed emails
-                    var criteria = new Application.Models.EmailCriteria
+                    var domainCriteria = await emailCriteriaRepository.GetEmailCriteriaAsync(userId, cancellationToken);
+                    
+                    // Convert from Domain EmailCriteria to Shared EmailCriteria for the email service
+                    ArquivoMate2.Shared.Models.EmailCriteria criteria;
+                    if (domainCriteria != null)
                     {
-                        ExcludeFlags = new List<string> { "Processed" },
-                        MaxResults = 50,
-                        SubjectContains = "Document",
-                        DateFrom = DateTime.UtcNow.AddDays(-7)
-                    };
-
+                        // Use the user's saved criteria with built-in conversion method
+                        criteria = domainCriteria.ToSharedEmailCriteria();
+                    }
+                    else
+                    {
+                        // Use default criteria for document processing
+                        criteria = ArquivoMate2.Domain.Email.EmailCriteria.CreateDefaultForDocumentProcessing();
+                    }
+                    
                     var emails = await provider.GetEmailsAsync(criteria, cancellationToken);
                     if (emails == null || !emails.Any())
                     {
@@ -140,7 +146,7 @@ namespace ArquivoMate2.Application.Services
         private async Task ProcessSingleEmailAsync(
             IMediator mediatr,
             IDocumentSession querySession,
-            Application.Models.EmailMessage email,
+            EmailMessage email,
             IEmailService provider,
             IProcessedEmailRepository processedEmailRepository,
             string userId,

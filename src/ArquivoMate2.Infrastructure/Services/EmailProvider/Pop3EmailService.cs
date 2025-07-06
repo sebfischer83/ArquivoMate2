@@ -1,7 +1,6 @@
 using ArquivoMate2.Application.Interfaces;
-using ArquivoMate2.Application.Models;
-using ArquivoMate2.Domain.Email;
 using ArquivoMate2.Shared.Models;
+using ArquivoMate2.Domain.Email;
 using MailKit.Net.Pop3;
 using Microsoft.Extensions.Logging;
 using MimeKit;
@@ -31,7 +30,7 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
             _logger = logger;
         }
 
-        public async Task<IEnumerable<EmailMessage>> GetEmailsAsync(EmailCriteria criteria, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<EmailMessage>> GetEmailsAsync(ArquivoMate2.Shared.Models.EmailCriteria criteria, CancellationToken cancellationToken = default)
         {
             await EnsureConnectedAsync(cancellationToken);
 
@@ -120,7 +119,7 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
             }
         }
 
-        private bool MatchesCriteria(EmailMessage message, EmailCriteria criteria)
+        private bool MatchesCriteria(EmailMessage message, ArquivoMate2.Shared.Models.EmailCriteria criteria)
         {
             if (!string.IsNullOrEmpty(criteria.SubjectContains) && 
                 !message.Subject.Contains(criteria.SubjectContains, StringComparison.OrdinalIgnoreCase))
@@ -134,7 +133,9 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
                 !message.To.Any(to => to.Contains(criteria.ToContains, StringComparison.OrdinalIgnoreCase)))
                 return false;
 
-            if (criteria.DateFrom.HasValue && message.Date < criteria.DateFrom.Value)
+            // Use the effective DateFrom (either explicit DateFrom or calculated from MaxDaysBack)
+            var effectiveDateFrom = criteria.GetEffectiveDateFrom();
+            if (effectiveDateFrom.HasValue && message.Date < effectiveDateFrom.Value)
                 return false;
 
             if (criteria.DateTo.HasValue && message.Date > criteria.DateTo.Value)
@@ -168,7 +169,7 @@ namespace ArquivoMate2.Infrastructure.Services.EmailProvider
             return true;
         }
 
-        private IEnumerable<EmailMessage> ApplySorting(IEnumerable<EmailMessage> messages, EmailCriteria criteria)
+        private IEnumerable<EmailMessage> ApplySorting(IEnumerable<EmailMessage> messages, ArquivoMate2.Shared.Models.EmailCriteria criteria)
         {
             var sorted = criteria.SortBy switch
             {

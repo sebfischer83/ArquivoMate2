@@ -5,6 +5,13 @@ using System;
 namespace ArquivoMate2.Infrastructure.Mapping
 {
     /// <summary>
+    /// Marker class for localization resources
+    /// </summary>
+    public class SharedResources
+    {
+    }
+
+    /// <summary>
     /// AutoMapper resolver for translating enum values using IStringLocalizer.
     /// </summary>
     /// <typeparam name="TSource">Source object type</typeparam>
@@ -13,9 +20,9 @@ namespace ArquivoMate2.Infrastructure.Mapping
     public class EnumTranslationResolver<TSource, TDestination, TEnum> : IValueResolver<TSource, TDestination, string>
         where TEnum : struct, Enum
     {
-        private readonly IStringLocalizer _localizer;
+        private readonly IStringLocalizer<SharedResources> _localizer;
 
-        public EnumTranslationResolver(IStringLocalizer localizer)
+        public EnumTranslationResolver(IStringLocalizer<SharedResources> localizer)
         {
             _localizer = localizer;
         }
@@ -69,9 +76,9 @@ namespace ArquivoMate2.Infrastructure.Mapping
     /// </summary>
     public class StatusTranslationResolver<TSource, TDestination> : IValueResolver<TSource, TDestination, string>
     {
-        private readonly IStringLocalizer _localizer;
+        private readonly IStringLocalizer<SharedResources> _localizer;
 
-        public StatusTranslationResolver(IStringLocalizer localizer)
+        public StatusTranslationResolver(IStringLocalizer<SharedResources> localizer)
         {
             _localizer = localizer;
         }
@@ -103,9 +110,9 @@ namespace ArquivoMate2.Infrastructure.Mapping
     /// </summary>
     public class ImportSourceTranslationResolver<TSource, TDestination> : IValueResolver<TSource, TDestination, string>
     {
-        private readonly IStringLocalizer _localizer;
+        private readonly IStringLocalizer<SharedResources> _localizer;
 
-        public ImportSourceTranslationResolver(IStringLocalizer localizer)
+        public ImportSourceTranslationResolver(IStringLocalizer<SharedResources> localizer)
         {
             _localizer = localizer;
         }

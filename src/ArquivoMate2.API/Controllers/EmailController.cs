@@ -1,11 +1,12 @@
 using ArquivoMate2.Application.Interfaces;
-using ArquivoMate2.Application.Models;
 using ArquivoMate2.Domain.Email;
 using ArquivoMate2.Shared.Models;
+using AutoMapper;
 using MailKit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using DomainEmailCriteria = ArquivoMate2.Domain.Email.EmailCriteria;
 
 namespace ArquivoMate2.API.Controllers
 {
@@ -16,16 +17,22 @@ namespace ArquivoMate2.API.Controllers
     {
         private readonly IEmailServiceFactory _emailServiceFactory;
         private readonly IEmailSettingsRepository _emailSettingsRepository;
+        private readonly IEmailCriteriaRepository _emailCriteriaRepository;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IMapper _mapper;
 
         public EmailController(
             IEmailServiceFactory emailServiceFactory,
             IEmailSettingsRepository emailSettingsRepository,
-            ICurrentUserService currentUserService)
+            IEmailCriteriaRepository emailCriteriaRepository,
+            ICurrentUserService currentUserService,
+            IMapper mapper)
         {
             _emailServiceFactory = emailServiceFactory;
             _emailSettingsRepository = emailSettingsRepository;
+            _emailCriteriaRepository = emailCriteriaRepository;
             _currentUserService = currentUserService;
+            _mapper = mapper;
         }
 
         /// <summary>
@@ -177,5 +184,98 @@ namespace ArquivoMate2.API.Controllers
             }
         }
 
+        #region Email Criteria Management
+
+        /// <summary>
+        /// Gets the email criteria for the current user
+        /// </summary>
+        [HttpGet("criteria")]
+        public async Task<ActionResult<EmailCriteriaDto>> GetEmailCriteria(CancellationToken cancellationToken = default)
+        {
+            var userId = _currentUserService.UserId;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                var criteria = await _emailCriteriaRepository.GetEmailCriteriaAsync(userId, cancellationToken);
+                if (criteria == null)
+                {
+                    return NotFound(new { message = "Email criteria not found" });
+                }
+
+                var criteriaDto = _mapper.Map<EmailCriteriaDto>(criteria);
+                return Ok(criteriaDto);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to retrieve email criteria", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Saves (creates or updates) email criteria for the current user
+        /// </summary>
+        [HttpPost("criteria")]
+        public async Task<ActionResult<EmailCriteriaDto>> SaveEmailCriteria([FromBody] SaveEmailCriteriaRequest request, CancellationToken cancellationToken = default)
+        {
+            var userId = _currentUserService.UserId;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                return BadRequest(new { message = "Name is required" });
+            }
+
+            try
+            {
+                var criteria = _mapper.Map<DomainEmailCriteria>(request);
+                criteria.UserId = userId;
+
+                var savedCriteria = await _emailCriteriaRepository.SaveEmailCriteriaAsync(criteria, cancellationToken);
+                var criteriaDto = _mapper.Map<EmailCriteriaDto>(savedCriteria);
+
+                return Ok(criteriaDto);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to save email criteria", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Deletes email criteria for the current user
+        /// </summary>
+        [HttpDelete("criteria")]
+        public async Task<ActionResult> DeleteEmailCriteria(CancellationToken cancellationToken = default)
+        {
+            var userId = _currentUserService.UserId;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                var deleted = await _emailCriteriaRepository.DeleteEmailCriteriaAsync(userId, cancellationToken);
+                if (!deleted)
+                {
+                    return NotFound(new { message = "Email criteria not found" });
+                }
+
+                return Ok(new { message = "Email criteria deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to delete email criteria", error = ex.Message });
+            }
+        }
+
+        #endregion
     }
 }

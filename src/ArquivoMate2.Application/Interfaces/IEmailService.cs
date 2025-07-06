@@ -1,4 +1,4 @@
-using ArquivoMate2.Application.Models;
+using ArquivoMate2.Domain.Email;
 using ArquivoMate2.Shared.Models;
 using System;
 using System.Collections.Generic;
@@ -19,7 +19,7 @@ namespace ArquivoMate2.Application.Interfaces
         /// <param name="criteria">Filtering criteria for emails</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>List of emails matching the criteria</returns>
-        Task<IEnumerable<EmailMessage>> GetEmailsAsync(EmailCriteria criteria, CancellationToken cancellationToken = default);
+        Task<IEnumerable<EmailMessage>> GetEmailsAsync(ArquivoMate2.Shared.Models.EmailCriteria criteria, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Tests the email connection with current settings

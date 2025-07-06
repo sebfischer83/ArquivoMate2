@@ -33,7 +33,7 @@ services:
                 memory: 128M
 
   db:
-    image: postgres:16.1
+    image: postgres:18beta1
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: yourpassword
@@ -54,7 +54,7 @@ services:
                 memory: 1024M
 
   db-init:
-    image: postgres:16.1
+    image: postgres:18beta1
     depends_on:
       db:
         condition: service_healthy

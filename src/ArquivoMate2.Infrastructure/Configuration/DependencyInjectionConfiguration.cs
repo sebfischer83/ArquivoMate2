@@ -45,6 +45,8 @@ using System.Threading.Tasks;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql.Tables;
+using EmailCriteria = ArquivoMate2.Domain.Email.EmailCriteria;
+using JasperFx.Events.Projections;
 
 namespace ArquivoMate2.Infrastructure.Configuration
 {
@@ -56,7 +58,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
             {
                 // Verbindungszeichenfolge aus appsettings.json
                 options.Connection(config.GetConnectionString("Default")!);
-                options.AutoCreateSchemaObjects = AutoCreate.All;
+                options.AutoCreateSchemaObjects = JasperFx.AutoCreate.All;
 
                 // Domain‑Events registrieren
                 options.Events.AddEventTypes(new[]
@@ -80,12 +82,15 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     .Index(x => x.UserId)
                     .Index(x => x.IsActive);
 
+                options.Schema.For<EmailCriteria>()
+                    .Index(x => x.UserId);
+
                 options.Schema.For<ProcessedEmail>()
                     .Index(x => x.UserId)
                     .Index(x => x.EmailUid)
                     .Index(x => x.Status);
 
-                options.Events.StreamIdentity = StreamIdentity.AsGuid;
+                options.Events.StreamIdentity = JasperFx.Events.StreamIdentity.AsGuid;
 
                 options.Schema.For<Document>()
                     .Index(d => d.UserId).Index(d => d.Hash);
@@ -180,6 +185,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
             // Email Configuration - Only database-based, no JSON fallback
             services.AddScoped<IEmailSettingsRepository, EmailSettingsRepository>();
             services.AddScoped<IProcessedEmailRepository, ProcessedEmailRepository>();
+            services.AddScoped<IEmailCriteriaRepository, EmailCriteriaRepository>();
             services.AddScoped<IEmailServiceFactory, EmailServiceFactory>();
             
             // Register NullEmailService as default - no functionality until user configures settings

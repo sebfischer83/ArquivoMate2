@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace ArquivoMate2.Infrastructure.Persistance
 {
-    public class ImportHistoryProjection : SingleStreamProjection<ImportHistoryView>
+    public class ImportHistoryProjection : SingleStreamProjection<ImportHistoryView, Guid>
     {
         public void Apply(InitDocumentImport e, ImportHistoryView view)
         {

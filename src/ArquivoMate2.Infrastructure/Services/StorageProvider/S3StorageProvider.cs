@@ -42,8 +42,8 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
         {
             var mimeType = MimeTypeMap.GetMimeType(filename);
             using var stream = new MemoryStream(file);
-
-            string fullPath = string.Join('/', _pathService.GetStoragePath(userId, documentId, filename));
+            
+            string fullPath = "arquivomate/" + string.Join('/', (_pathService.GetStoragePath(userId, documentId, filename)));
             var putObjectArgs = new PutObjectArgs()
                     .WithBucket(_settings.BucketName)
                     .WithObject(fullPath)

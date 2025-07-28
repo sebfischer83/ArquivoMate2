@@ -31,10 +31,19 @@ namespace ArquivoMate2.Infrastructure.Configuration.DeliveryProvider
 
     public class BunnyDeliveryProviderSettings : DeliveryProviderSettings
     {
-        public string ApiKey { get; set; } = string.Empty;
-        public string StorageZoneName { get; set; } = string.Empty;
-        public string Region { get; set; } = string.Empty;
-        public string PullZone { get; set; } = string.Empty;
+        public string TokenAuthenticationKey { get; set; } = string.Empty;
+        public string Host { get; set; } = string.Empty;
+
+        public bool UseTokenAuthentication { get; set; } = false;
+
+        public bool UseTokenIpValidation { get; set; } = false;
+
+        public bool UseTokenPath { get; set; } = false;
+
+        public string TokenCountries { get; set; } = string.Empty;
+
+        public string TokenCountriesBlocked { get; set; } = string.Empty;
+
     }
 
     public class DeliveryProviderSettingsFactory

@@ -223,8 +223,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 case BunnyDeliveryProviderSettings bunny:
                     services.Configure<BunnyDeliveryProviderSettings>(
                         config.GetSection("DeliveryProvider").GetSection("Args"));
-                    //services.AddScoped<IDeliveryProvider, BunnyDeliveryProvider>();
-                    // Hier ggf. BunnyNet-Client registrieren
+                    services.AddScoped<IDeliveryProvider, BunnyCdnDeliveryProvider>();
                     break;
 
                 default:

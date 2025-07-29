@@ -46,6 +46,22 @@ namespace ArquivoMate2.Infrastructure.Services
             return strings;
         }
 
+        public string GetUserPartFromPath(string fullPath)
+        {
+            if (string.IsNullOrEmpty(fullPath))
+                return string.Empty;
+
+            // Pfad in Segmente aufteilen
+            string[] segments = fullPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+            // Mindestens 2 Segmente benötigt
+            if (segments.Length < 2)
+                return string.Empty;
+
+            // Erste beiden Segmente zurückgeben
+            return $"{segments[0]}/{segments[1]}";
+        }
+
         private byte[] GetHash(string userId, string documentId)
         {
             var input = userId.ToString() + documentId.ToString();

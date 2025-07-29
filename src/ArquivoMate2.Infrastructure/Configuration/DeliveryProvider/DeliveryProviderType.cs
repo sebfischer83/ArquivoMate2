@@ -44,6 +44,11 @@ namespace ArquivoMate2.Infrastructure.Configuration.DeliveryProvider
 
         public string TokenCountriesBlocked { get; set; } = string.Empty;
 
+
+        public override string ToString()
+        {
+            return $"{Host}{UseTokenAuthentication}{UseTokenIpValidation}";
+        }
     }
 
     public class DeliveryProviderSettingsFactory

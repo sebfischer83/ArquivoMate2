@@ -41,7 +41,7 @@ namespace ArquivoMate2.Infrastructure.Services.DeliveryProvider
                 return $"{_settings.Host.TrimEnd('/')}/{fullPath}";
             }
 
-            var cacheKey = $"bunnyDelivery:{fullPath}";
+            var cacheKey = $"bunnyDelivery:{fullPath}-{_settings.ToString()}";
             var cachedUrl = await _cache.GetAsync<string>(cacheKey);
 
             if (cachedUrl.HasValue)

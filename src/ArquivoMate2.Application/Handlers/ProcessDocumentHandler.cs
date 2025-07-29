@@ -29,6 +29,9 @@ namespace ArquivoMate2.Application.Handlers
         private readonly IChatBot _chatBot;
         private readonly IDocumentProcessingNotifier _documentProcessingNotifier;
 
+        // PDF Magic Number (first 4 bytes)
+        private static readonly byte[] PdfMagicNumber = [0x25, 0x50, 0x44, 0x46]; // %PDF
+
         public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger, IDocumentProcessor documentTextExtractor, IFileMetadataService fileMetadataService, IPathService pathService,
             IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot, IDocumentProcessingNotifier documentProcessingNotifier, ICurrentUserService currentUserService)
             => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService, _chatBot, _documentProcessingNotifier) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService, chatBot, documentProcessingNotifier);
@@ -61,7 +64,22 @@ namespace ArquivoMate2.Application.Handlers
 
                 var path = pathService.GetDocumentUploadPath(request.UserId);
                 path = Path.Combine(path, $"{request.DocumentId}{metadata.Extension}");
-                await ProcessPdfFiles(request, metadata, path, cancellationToken);
+
+                if (await IsPdfFileAsync(path, metadata))
+                {
+                    await ProcessPdfFiles(request, metadata, path, cancellationToken);
+                }
+                else
+                {
+                    _logger.LogWarning("Document {DocumentId} is not a supported PDF file. Extension: {Extension}, MimeType: {MimeType}", 
+                        request.DocumentId, metadata.Extension, metadata.MimeType);
+                    
+                    await _documentProcessingNotifier.NotifyStatusChangedAsync(request.UserId,
+                        new DocumentProcessingNotification(request.DocumentId.ToString(), DocumentProcessingStatus.Failed, 
+                            $"Unsupported file type: {metadata.Extension}"));
+                    
+                    throw new NotSupportedException($"File type {metadata.Extension} is not supported for processing");
+                }
 
                 _session.Events.Append(request.ImportProcessId, new MarkSuccededDocumentImport(request.ImportProcessId, request.DocumentId, DateTime.Now));
                 _session.Events.Append(request.DocumentId, new DocumentProcessed(request.DocumentId, DateTime.Now));
@@ -88,6 +106,73 @@ namespace ArquivoMate2.Application.Handlers
             }
 
             return (null, null);
+        }
+
+        /// <summary>
+        /// Comprehensive PDF file validation using multiple methods
+        /// </summary>
+        /// <param name="filePath">Path to the file to validate</param>
+        /// <param name="metadata">File metadata containing extension and MIME type</param>
+        /// <returns>True if the file is a valid PDF, false otherwise</returns>
+        private async Task<bool> IsPdfFileAsync(string filePath, DocumentMetadata metadata)
+        {
+            try
+            {
+                // 1. Check file extension (basic check)
+                var hasValidExtension = string.Equals(metadata.Extension, ".pdf", StringComparison.OrdinalIgnoreCase);
+                
+                // 2. Check MIME type if available
+                var hasValidMimeType = metadata.MimeType != null && 
+                    (string.Equals(metadata.MimeType, "application/pdf", StringComparison.OrdinalIgnoreCase) ||
+                     string.Equals(metadata.MimeType, "application/x-pdf", StringComparison.OrdinalIgnoreCase));
+
+                // 3. Check magic number (file signature) - most reliable method
+                var hasValidMagicNumber = await HasPdfMagicNumberAsync(filePath);
+
+                // Log validation results for debugging
+                _logger.LogDebug("PDF validation for {FilePath}: Extension={Extension} ({ValidExtension}), " +
+                    "MimeType={MimeType} ({ValidMimeType}), MagicNumber={ValidMagicNumber}",
+                    filePath, metadata.Extension, hasValidExtension, 
+                    metadata.MimeType, hasValidMimeType, hasValidMagicNumber);
+
+                // File is considered PDF if:
+                // - Magic number matches (most important) AND
+                // - At least one of: valid extension OR valid MIME type
+                return hasValidMagicNumber && (hasValidExtension || hasValidMimeType);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating PDF file {FilePath}", filePath);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Checks if file starts with PDF magic number (%PDF)
+        /// </summary>
+        /// <param name="filePath">Path to the file to check</param>
+        /// <returns>True if file has PDF magic number, false otherwise</returns>
+        private async Task<bool> HasPdfMagicNumberAsync(string filePath)
+        {
+            try
+            {
+                if (!File.Exists(filePath))
+                    return false;
+
+                using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                var buffer = new byte[PdfMagicNumber.Length];
+                var bytesRead = await fileStream.ReadAsync(buffer, 0, buffer.Length);
+
+                if (bytesRead < PdfMagicNumber.Length)
+                    return false;
+
+                return buffer.SequenceEqual(PdfMagicNumber);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reading magic number from file {FilePath}", filePath);
+                return false;
+            }
         }
 
         private async Task ProcessPdfFiles(ProcessDocumentCommand request, DocumentMetadata metadata, string path, CancellationToken cancellationToken)

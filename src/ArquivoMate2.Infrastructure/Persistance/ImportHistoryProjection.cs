@@ -25,6 +25,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
         {
             view.Id = e.AggregateId;
             view.Status = Shared.Models.DocumentProcessingStatus.InProgress;
+            view.StartedAt = e.OccurredOn;
             view.OccurredOn = e.OccurredOn;
         }
 
@@ -54,6 +55,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
             view.DocumentId = e.DocumentId;
             view.Status = Shared.Models.DocumentProcessingStatus.Completed;
             view.OccurredOn = e.OccurredOn;
+            view.CompletedAt = e.OccurredOn;
         }
     }
 }

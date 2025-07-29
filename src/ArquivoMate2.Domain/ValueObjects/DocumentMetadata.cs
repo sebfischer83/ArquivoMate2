@@ -10,7 +10,7 @@ namespace ArquivoMate2.Domain.ValueObjects
         Guid DocumentId,
         string UserId,
         string OriginalFileName,
-        string ContentType,
+        string MimeType,
         string Extension,
         long Size,
         DateTime UploadedAt,

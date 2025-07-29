@@ -4,6 +4,7 @@ using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.Import;
 using ArquivoMate2.Domain.ValueObjects;
+using HeyRed.Mime;
 using JasperFx.CodeGeneration.Frames;
 using Marten;
 using MediatR;

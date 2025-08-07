@@ -9,6 +9,7 @@ export interface ImportHistoryListItemDto {
   fileName?: string;
   id?: string;
   occurredOn?: string;
+  source?: string;
   startedAt?: string;
   status?: string;
 }

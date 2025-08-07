@@ -7,6 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { ApiConfiguration, ApiConfigurationParams } from './api-configuration';
 
 import { DocumentsService } from './services/documents.service';
+import { EmailService } from './services/email.service';
 import { ImportHistoryService } from './services/import-history.service';
 
 /**
@@ -18,6 +19,7 @@ import { ImportHistoryService } from './services/import-history.service';
   declarations: [],
   providers: [
     DocumentsService,
+    EmailService,
     ImportHistoryService,
     ApiConfiguration
   ],

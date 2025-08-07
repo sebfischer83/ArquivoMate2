@@ -27,8 +27,12 @@
               },
               {
                 "glob": "**/*",
+                "input": "src/assets"
+              },
+              {
+                "glob": "**/*",
                 "input": "node_modules/@taiga-ui/icons/src",
-                "output": "assets/taiga-ui/icons"
+                "output": "assets/taiga-ui/icons/"
               }
             ],
             "styles": [
@@ -36,6 +40,9 @@
               "node_modules/@taiga-ui/core/styles/taiga-ui-fonts.less",
               "src/styles.scss",
               "node_modules/filepond/dist/filepond.min.css"
+            ],
+            "polyfills": [
+              "@angular/localize/init"
             ]
           },
           "configurations": {
@@ -95,6 +102,9 @@
             ],
             "styles": [
               "src/styles.scss"
+            ],
+            "polyfills": [
+              "@angular/localize/init"
             ]
           }
         }

@@ -1,82 +1,93 @@
-# Use this for the Project ArquivoMate2.Ui
+# ArquivoMate2.Ui — AI Coding Agent Guide
 
-# 1. Role and Goal
-You are an expert Angular developer. Your task is to implement a new feature into my existing project.
+## Architecture Overview
 
-# 2. Instructions & Rules
-- Adhere to the existing coding style and conventions found in the provided files.
-- Write clean, modular, and well-commented code.
-- Ensure the new feature is robust and handles potential errors gracefully.
-- Do NOT include any placeholder logic. All code should be fully implemented.
-- If you need more information or the request is ambiguous, ask me clarifying questions before writing code. 
+- **Framework:** Angular 20+ with Taiga UI for all UI components.
+- **Structure:**  
+  - Main app logic in `src/app/`
+  - Feature modules under `src/app/main/pages/`
+  - Shared services in `src/app/services/`
+  - API client code in `src/app/client/` (OpenAPI-generated)
+  - Models in `src/app/models/`
+  - Utilities in `src/app/utils/`
+- **Routing:**  
+  - Centralized in `src/app/app.routes.ts`
+  - Feature pages registered as lazy modules under `/main/pages/`
+- **Styling:**  
+  - Global styles in `src/styles.scss`
+  - Component styles in `.scss` files next to each component
 
-# 3. Implementation Plan (Your Thinking Process)
-Before writing any code, provide a detailed, step-by-step implementation plan. This plan should outline:
-1.  **High-Level Approach:** Your overall strategy for implementing the feature.
-2.  **File Modifications:** A list of which existing files you will modify and a summary of the changes for each.
-3.  **New Files:** A list of any new files you will create and their purpose.
-4.  **Key Logic/Components:** A description of any new functions, classes, or components you will add.
+## Developer Workflows
 
-# Angular
+- **Start Dev Server:**  
+  - `ng serve` (or VS Code task: npm start)
+- **Run Unit Tests:**  
+  - `ng test` (or VS Code task: npm test)
+- **Build for Production:**  
+  - `ng build`
+- **Generate Components/Services:**  
+  - `ng generate component <name>`
+  - `ng generate service <name>`
+- **API Client Regeneration:**  
+  - OpenAPI generator config in `ng-openapi-gen.json`
+  - Regenerate with `npx ng-openapi-gen` (check for custom scripts in `package.json`)
 
-Angular — Deliver web apps with confidence 🚀
+## Project-Specific Patterns
 
-## Table of Contents
+- **Taiga UI:**  
+  - Use Taiga UI components for all forms, tables, dialogs, and navigation.
+  - Prefer `tui-table`, `tui-input`, `tui-dialog` for new UI features.
+- **Service Layer:**  
+  - All HTTP/API logic goes in Angular services under `src/app/services/`.
+  - Use Angular's `HttpClient` and interceptors (`src/app/interceptors/`) for authentication and error handling.
+- **State Management:**  
+  - Use Angular signals or RxJS for local state; avoid global state libraries.
+- **API Models:**  
+  - Always import DTOs from `src/app/client/models/` for API types.
+- **Error Handling:**  
+  - Use centralized error handling in services and interceptors.
+  - Display errors using Taiga UI `tui-alert` or `tui-error` components.
 
-- [What is Angular](https://angular.dev/overview)
-- [Installation guide](https://angular.dev/installation)
-- [Style Guide](https://next.angular.dev/style-guide)
+## Integration Points
 
-## Components
+- **Authentication:**  
+  - Auth logic in `src/app/guards/auth.guard.ts` and `src/app/interceptors/auth.interceptor.ts`
+- **SignalR:**  
+  - Real-time updates via `src/app/services/signalr.service.ts`
+- **OpenAPI:**  
+  - All backend API calls use generated client in `src/app/client/`
+- **External Config:**  
+  - Auth config in `public/auth-config.json`
+  - Proxy config for local API in `proxy.conf.json`
 
-- [What is a component](https://angular.dev/guide/components)
-- [Component selectors](https://angular.dev/guide/components/selectors)
-- [Styling components](https://angular.dev/guide/components/styling)
-- [Accepting data with input properties](https://angular.dev/guide/components/inputs)
-- [Custom events with output](https://angular.dev/guide/components/outputs)
-- [Content projection](https://angular.dev/guide/components/content-projection)
-- [Component lifecycle](https://angular.dev/guide/components/lifecycle)
+## Conventions & Patterns
 
-## Templates guides
+- **Naming:**  
+  - Components: PascalCase, e.g., `DashboardComponent`
+  - Services: camelCase, e.g., `stateService`
+  - DTOs: Suffix with `Dto`, e.g., `DocumentDto`
+- **File Placement:**  
+  - Place new features in their own folder under `src/app/main/pages/`
+  - Shared logic in `src/app/services/` or `src/app/utils/`
+- **Testing:**  
+  - Use Angular TestBed for unit tests.
+  - Place tests next to source files with `.spec.ts` suffix.
 
-- [Template Overview](https://angular.dev/guide/templates)
-- [Adding event listeners](https://angular.dev/guide/templates/event-listeners)
-- [Binding text, properties and attributes](https://angular.dev/guide/templates/binding)
-- [Control Flow](https://angular.dev/guide/templates/control-flow)
-- [Template variable declaration](https://angular.dev/guide/templates/variables)
-- [Deferred loading of components](https://angular.dev/guide/templates/defer) 
-- [Expression syntax](https://angular.dev/guide/templates/expression-syntax)
+## Example: Adding a Feature Page
 
-## Directives
+1. Generate component:  
+   `ng generate component main/pages/my-feature`
+2. Register route in `app.routes.ts`
+3. Add navigation link in sidebar (if needed)
+4. Use Taiga UI components for UI
+5. Place business logic in a service under `src/app/services/`
+6. Use DTOs from `src/app/client/models/`
 
-- [Directives overview](https://angular.dev/guide/directives)
-- [Attribute directives](https://angular.dev/guide/directives/attribute-directives)
-- [Structural directives](https://angular.dev/guide/directives/structural-directives)
-- [Directive composition](https://angular.dev/guide/directives/directive-composition-api)
-- [Optimizing images](https://angular.dev/guide/image-optimization)
+## References
 
-## Signals 
-
-- [Signals overview](https://angular.dev/guide/signals)
-- [Dependent state with linkedSignal](https://angular.dev/guide/signals/linked-signal)
-- [Async reactivity with resources](https://angular.dev/guide/signals/resource)
-
-## Dependency injection (DI)
-
-- [Dependency Injection overview](https://angular.dev/guide/di)
-- [Understanding Dependency injection](https://angular.dev/guide/di/dependency-injection)
-- [Creating an injectable service](https://angular.dev/guide/di/creating-injectable-service)
-- [Configuring dependency providers](https://angular.dev/guide/di/dependency-injection-providers)
-- [Injection context](https://angular.dev/guide/di/dependency-injection-context)
-- [Hierarchical injectors](https://angular.dev/guide/di/hierarchical-dependency-injection)
-- [Optimizing Injection tokens](https://angular.dev/guide/di/lightweight-injection-tokens)
-
-## RxJS 
-
-- [RxJS interop with Angular signals](https://angular.dev/ecosystem/rxjs-interop)
-- [Component output interop](https://angular.dev/ecosystem/rxjs-interop/output-interop)
-
-## Loading Data
+- [Angular Docs](https://angular.dev/overview)
+- [Taiga UI Docs](https://taiga-ui.dev/getting-started)
+- See `README.md` for CLI commands and setup
 
 - [HttpClient overview](https://angular.dev/guide/http)
 - [Setting up the HttpClient](https://angular.dev/guide/http/setup)

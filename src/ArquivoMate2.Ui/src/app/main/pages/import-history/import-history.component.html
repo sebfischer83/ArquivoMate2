@@ -5,59 +5,13 @@
     </h1>
     <div class="header-actions">
       <div class="filter-buttons">
-        <button
-          tuiButton
-          appearance="secondary"
-          size="s"
-          [class.active]="selectedFilter() === 'all'"
-          (click)="setFilter('all')"
-        >
-          All
-        </button>
-        <button
-          tuiButton
-          appearance="secondary"
-          size="s"
-          [class.active]="selectedFilter() === 'success'"
-          (click)="setFilter('success')"
-        >
-          Successful
-        </button>
-        <button
-          tuiButton
-          appearance="secondary"
-          size="s"
-          [class.active]="selectedFilter() === 'error'"
-          (click)="setFilter('error')"
-        >
-          Failed
-        </button>
-        <button
-          tuiButton
-          appearance="secondary"
-          size="s"
-          [class.active]="selectedFilter() === 'processing'"
-          (click)="setFilter('processing')"
-        >
-          In Progress
-        </button>
-        <button
-          tuiButton
-          appearance="secondary"
-          size="s"
-          [class.active]="selectedFilter() === 'queued'"
-          (click)="setFilter('queued')"
-        >
-          Queued
-        </button>
+        <button tuiButton appearance="secondary" size="s" [class.active]="selectedFilter() === 'all'" (click)="setFilter('all')">All</button>
+        <button tuiButton appearance="secondary" size="s" [class.active]="selectedFilter() === 'success'" (click)="setFilter('success')">Successful</button>
+        <button tuiButton appearance="secondary" size="s" [class.active]="selectedFilter() === 'error'" (click)="setFilter('error')">Failed</button>
+        <button tuiButton appearance="secondary" size="s" [class.active]="selectedFilter() === 'processing'" (click)="setFilter('processing')">In Progress</button>
+        <button tuiButton appearance="secondary" size="s" [class.active]="selectedFilter() === 'queued'" (click)="setFilter('queued')">Queued</button>
       </div>
-      <button
-        tuiButton
-        appearance="secondary"
-        iconStart="@tui.refresh"
-        size="s"
-        (click)="refresh()"
-      >
+      <button tuiButton appearance="secondary" iconStart="@tui.refresh-ccw" size="s" (click)="refresh()">
         @if (loading()) {
           Loading...
         } @else {
@@ -71,7 +25,7 @@
     @if (loading()) {
       <div class="loading-state">
         <div class="loading-block">
-          <p>Loading import history...</p>
+          <p>Loading...</p>
         </div>
       </div>
     } @else if (filteredItems().length === 0) {
@@ -84,7 +38,7 @@
     } @else {
       <div class="history-container">
         <div class="history-list">
-          @for (item of paginatedItems(); track item.id) {
+          @for (item of filteredItems(); track item.id) {
             <div class="history-item">
               <div class="item-content">
                 <div class="item-main">
@@ -104,7 +58,7 @@
         <div class="pagination-container">
           <div class="pagination-info">
             <span>
-              Showing {{ getStartIndex() + 1 }}-{{ getEndIndex() }} of {{ filteredItems().length }} entries
+              Showing {{ (currentPage() - 1) * pageSize() + 1 }} to {{ getEndIndex() }} of {{ totalCount() }} entries
             </span>
           </div>
           
@@ -139,7 +93,7 @@
               appearance="secondary"
               size="s"
               iconEnd="@tui.chevron-right"
-              [disabled]="currentPage() === totalPages()"
+              [disabled]="currentPage() === pageCount()"
               (click)="goToPage(currentPage() + 1)"
             >
               Next

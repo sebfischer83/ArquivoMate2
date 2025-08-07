@@ -7,13 +7,11 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { AuthConfig } from 'angular-oauth2-oidc';
 import { routes } from './app.routes';
 import { firstValueFrom } from 'rxjs';
-import { provideZonelessChangeDetection, isDevMode } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { AuthGuard } from "./guards/auth.guard";
 import { ApiConfiguration } from './client/api-configuration';
 import { authInterceptor } from './interceptors/auth.interceptor';
 import { HttpClient } from '@angular/common/http';
-import { TranslocoHttpLoader } from './transloco-loader';
-import { provideTransloco } from '@jsverse/transloco';
 
 const defaultAuthConfig: AuthConfig = {
   issuer: 'https://default-issuer.com',
@@ -56,14 +54,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideAppInitializer(intializeAppFn),
     provideEventPlugins(),
-    AuthGuard, provideHttpClient(), provideTransloco({
-        config: { 
-          availableLangs: ['en', 'de'],
-          defaultLang: 'en',
-          reRenderOnLangChange: true,
-          prodMode: !isDevMode(),
-        },
-        loader: TranslocoHttpLoader
-      })
+    AuthGuard,
+    provideHttpClient()
   ]
 };

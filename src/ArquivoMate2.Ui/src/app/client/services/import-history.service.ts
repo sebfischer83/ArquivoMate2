@@ -31,6 +31,8 @@ import { apiHistoryGet$Json } from '../fn/import-history/api-history-get-json';
 import { ApiHistoryGet$Json$Params } from '../fn/import-history/api-history-get-json';
 import { apiHistoryGet$Plain } from '../fn/import-history/api-history-get-plain';
 import { ApiHistoryGet$Plain$Params } from '../fn/import-history/api-history-get-plain';
+import { apiHistoryHideByStatusPost } from '../fn/import-history/api-history-hide-by-status-post';
+import { ApiHistoryHideByStatusPost$Params } from '../fn/import-history/api-history-hide-by-status-post';
 import { apiHistoryInprogressCountGet$Json } from '../fn/import-history/api-history-inprogress-count-get-json';
 import { ApiHistoryInprogressCountGet$Json$Params } from '../fn/import-history/api-history-inprogress-count-get-json';
 import { apiHistoryInprogressCountGet$Plain } from '../fn/import-history/api-history-inprogress-count-get-plain';
@@ -53,6 +55,31 @@ import { ImportHistoryListDto } from '../models/import-history-list-dto';
 export class ImportHistoryService extends BaseService {
   constructor(config: ApiConfiguration, http: HttpClient) {
     super(config, http);
+  }
+
+  /** Path part for operation `apiHistoryHideByStatusPost()` */
+  static readonly ApiHistoryHideByStatusPostPath = '/api/history/hideByStatus';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiHistoryHideByStatusPost()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiHistoryHideByStatusPost$Response(params?: ApiHistoryHideByStatusPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return apiHistoryHideByStatusPost(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiHistoryHideByStatusPost$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiHistoryHideByStatusPost(params?: ApiHistoryHideByStatusPost$Params, context?: HttpContext): Observable<void> {
+    return this.apiHistoryHideByStatusPost$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
   }
 
   /** Path part for operation `apiHistoryGet()` */

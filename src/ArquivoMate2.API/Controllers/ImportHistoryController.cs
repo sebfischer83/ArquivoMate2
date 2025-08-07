@@ -49,7 +49,6 @@ namespace ArquivoMate2.API.Controllers
         [HttpGet()]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ImportHistoryListDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Get([FromQuery] ImportHistoryListRequestDto requestDto, CancellationToken cancellationToken, [FromServices] IQuerySession querySession, [FromServices] AutoMapper.IMapper mapper)
         {
             var userId = _currentUserService.UserId;
@@ -59,7 +58,19 @@ namespace ArquivoMate2.API.Controllers
                 .ToPagedListAsync(requestDto.Page, requestDto.PageSize, cancellationToken);
             
             if (view is null || view.Count == 0)
-                return NotFound();
+            {
+                return Ok(new ImportHistoryListDto
+                {
+                    Items = Array.Empty<ImportHistoryListItemDto>(),
+                    TotalCount = 0,
+                    HasNextPage = false,
+                    PageCount = 0,
+                    HasPreviousPage = false,
+                    IsLastPage = true,
+                    IsFirstPage = true,
+                    CurrentPage = requestDto.Page
+                });
+            }
 
             var items = mapper.Map<ImportHistoryListItemDto[]>(view);
             var result = new ImportHistoryListDto
@@ -91,15 +102,27 @@ namespace ArquivoMate2.API.Controllers
         [HttpGet("inprogress")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ImportHistoryListDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetInProgress([FromQuery] ImportHistoryListRequestDto requestDto, CancellationToken cancellationToken, [FromServices] IQuerySession querySession, [FromServices] AutoMapper.IMapper mapper)
         {
             var userId = _currentUserService.UserId;
             var view = await querySession.Query<ImportHistoryView>()
                 .Where(x => x.UserId == userId && x.Status == DocumentProcessingStatus.InProgress && !x.IsHidden)
                 .ToPagedListAsync(requestDto.Page, requestDto.PageSize, cancellationToken);
+            
             if (view is null || view.Count == 0)
-                return NotFound();
+            {
+                return Ok(new ImportHistoryListDto
+                {
+                    Items = Array.Empty<ImportHistoryListItemDto>(),
+                    TotalCount = 0,
+                    HasNextPage = false,
+                    PageCount = 0,
+                    HasPreviousPage = false,
+                    IsLastPage = true,
+                    IsFirstPage = true,
+                    CurrentPage = requestDto.Page
+                });
+            }
 
             var items = mapper.Map<ImportHistoryListItemDto[]>(view);
             var result = new ImportHistoryListDto
@@ -131,15 +154,27 @@ namespace ArquivoMate2.API.Controllers
         [HttpGet("pending")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ImportHistoryListDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetPending([FromQuery] ImportHistoryListRequestDto requestDto, CancellationToken cancellationToken, [FromServices] IQuerySession querySession, [FromServices] AutoMapper.IMapper mapper)
         {
             var userId = _currentUserService.UserId;
             var view = await querySession.Query<ImportHistoryView>()
                 .Where(x => x.UserId == userId && x.Status == DocumentProcessingStatus.Pending && !x.IsHidden)
                 .ToPagedListAsync(requestDto.Page, requestDto.PageSize, cancellationToken);
+            
             if (view is null || view.Count == 0)
-                return NotFound();
+            {
+                return Ok(new ImportHistoryListDto
+                {
+                    Items = Array.Empty<ImportHistoryListItemDto>(),
+                    TotalCount = 0,
+                    HasNextPage = false,
+                    PageCount = 0,
+                    HasPreviousPage = false,
+                    IsLastPage = true,
+                    IsFirstPage = true,
+                    CurrentPage = requestDto.Page
+                });
+            }
 
             var items = mapper.Map<ImportHistoryListItemDto[]>(view);
             var result = new ImportHistoryListDto
@@ -171,15 +206,27 @@ namespace ArquivoMate2.API.Controllers
         [HttpGet("completed")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ImportHistoryListDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetCompleted([FromQuery] ImportHistoryListRequestDto requestDto, CancellationToken cancellationToken, [FromServices] IQuerySession querySession, [FromServices] AutoMapper.IMapper mapper)
         {
             var userId = _currentUserService.UserId;
             var view = await querySession.Query<ImportHistoryView>()
                 .Where(x => x.UserId == userId && x.Status == DocumentProcessingStatus.Completed && !x.IsHidden)
                 .ToPagedListAsync(requestDto.Page, requestDto.PageSize, cancellationToken);
+            
             if (view is null || view.Count == 0)
-                return NotFound();
+            {
+                return Ok(new ImportHistoryListDto
+                {
+                    Items = Array.Empty<ImportHistoryListItemDto>(),
+                    TotalCount = 0,
+                    HasNextPage = false,
+                    PageCount = 0,
+                    HasPreviousPage = false,
+                    IsLastPage = true,
+                    IsFirstPage = true,
+                    CurrentPage = requestDto.Page
+                });
+            }
 
             var items = mapper.Map<ImportHistoryListItemDto[]>(view);
             var result = new ImportHistoryListDto
@@ -211,15 +258,27 @@ namespace ArquivoMate2.API.Controllers
         [HttpGet("failed")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ImportHistoryListDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetFailed([FromQuery] ImportHistoryListRequestDto requestDto, CancellationToken cancellationToken, [FromServices] IQuerySession querySession, [FromServices] AutoMapper.IMapper mapper)
         {
             var userId = _currentUserService.UserId;
             var view = await querySession.Query<ImportHistoryView>()
                 .Where(x => x.UserId == userId && x.Status == DocumentProcessingStatus.Failed && !x.IsHidden)
                 .ToPagedListAsync(requestDto.Page, requestDto.PageSize, cancellationToken);
+            
             if (view is null || view.Count == 0)
-                return NotFound();
+            {
+                return Ok(new ImportHistoryListDto
+                {
+                    Items = Array.Empty<ImportHistoryListItemDto>(),
+                    TotalCount = 0,
+                    HasNextPage = false,
+                    PageCount = 0,
+                    HasPreviousPage = false,
+                    IsLastPage = true,
+                    IsFirstPage = true,
+                    CurrentPage = requestDto.Page
+                });
+            }
 
             var items = mapper.Map<ImportHistoryListItemDto[]>(view);
             var result = new ImportHistoryListDto

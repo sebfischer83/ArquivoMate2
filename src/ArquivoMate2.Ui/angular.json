@@ -40,9 +40,6 @@
               "node_modules/@taiga-ui/core/styles/taiga-ui-fonts.less",
               "src/styles.scss",
               "node_modules/filepond/dist/filepond.min.css"
-            ],
-            "polyfills": [
-              "@angular/localize/init"
             ]
           },
           "configurations": {
@@ -86,9 +83,6 @@
           },
           "defaultConfiguration": "development"
         },
-        "extract-i18n": {
-          "builder": "@angular/build:extract-i18n"
-        },
         "test": {
           "builder": "@angular/build:karma",
           "options": {
@@ -102,9 +96,6 @@
             ],
             "styles": [
               "src/styles.scss"
-            ],
-            "polyfills": [
-              "@angular/localize/init"
             ]
           }
         }

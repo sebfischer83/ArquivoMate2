@@ -1,0 +1,23 @@
+<button
+  tuiDropdownOpen
+  [(tuiDropdownOpen)]="open"
+  [tuiDropdown]="dropdown"
+  class="lang-trigger"
+  aria-label="Language switcher"
+>
+  <img class="flag" [src]="flagSrc(activeLang)" [alt]="activeLang" />
+</button>
+
+<ng-template #dropdown>
+  <div class="lang-menu" tuiDropdown>
+    <button
+      class="lang-item"
+      *ngFor="let l of langs"
+      (click)="select(l)"
+      [class.active]="l === activeLang"
+    >
+      <img class="flag" [src]="flagSrc(l)" [alt]="l" />
+      <span>{{ l | uppercase }}</span>
+    </button>
+  </div>
+  </ng-template>

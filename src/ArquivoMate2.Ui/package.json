@@ -9,7 +9,6 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "generate-api": "ng-openapi-gen",
-    "generate-api2": "openapi-generator-cli generate -i src/api.json -g typescript-angular -o src/app/api",
     "build:analyze": "ng build --configuration=analyze-bundle && source-map-explorer dist/**/*.js --no-border-checks"
   },
   "private": true,
@@ -21,6 +20,7 @@
     "@angular/forms": "^20.0.0",
     "@angular/platform-browser": "^20.0.0",
     "@angular/router": "^20.0.0",
+    "@jsverse/transloco": "^7.6.1",
     "@microsoft/signalr": "^8.0.7",
     "@taiga-ui/addon-charts": "^4.39.2",
     "@taiga-ui/addon-commerce": "^4.39.2",
@@ -44,7 +44,6 @@
     "@angular/build": "^20.0.1",
     "@angular/cli": "^20.0.1",
     "@angular/compiler-cli": "^20.0.0",
-    "@angular/localize": "^20.0.2",
     "@types/jasmine": "~5.1.0",
     "@types/lodash": "^4.17.19",
     "jasmine-core": "~5.7.0",

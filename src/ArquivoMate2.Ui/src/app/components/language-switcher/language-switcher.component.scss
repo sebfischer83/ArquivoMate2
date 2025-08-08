@@ -1,0 +1,30 @@
+:host { display: inline-block; }
+.lang-trigger {
+	display: inline-flex;
+	align-items: center;
+	gap: .5rem;
+	background: transparent;
+	border: 0;
+	padding: 0;
+	cursor: pointer;
+}
+.flag { width: 20px; height: 14px; object-fit: cover; }
+.lang-menu {
+	display: flex;
+	flex-direction: column;
+	min-width: 160px;
+}
+.lang-item {
+	display: flex;
+	align-items: center;
+	gap: .5rem;
+	padding: .5rem .75rem;
+	width: 100%;
+	background: transparent;
+	border: 0;
+	text-align: left;
+	cursor: pointer;
+}
+.lang-item.active { background: var(--tui-base-02, #f3f4f6); }
+label{margin-right:.5rem}
+select{min-width:8rem}

@@ -1,9 +1,32 @@
-<file-pond
-  #myPond
-  [options]="pondOptions"
-  (oninit)="pondHandleInit()"
-  (onaddfile)="pondHandleAddFile($event)"
-  (onactivatefile)="pondHandleActivateFile($event)"
-  (onprocessfile)="pondHandleProcessFile($event)"
->
-</file-pond>
+<div class="upload-area">
+  <am-upload-widget />
+</div>
+
+@if (isLoading()) {
+  <p>Lade Dokumente…</p>
+} @else {
+  <section class="documents-list">
+    <h3>Dokumente ({{ total() }})</h3>
+    @if (error()) { <div class="error">{{ error() }}</div> }
+    <div class="pagination-controls">
+      <button type="button" (click)="prevPage()" [disabled]="currentPage() <= 1 || isLoading()">«</button>
+      Seite {{ currentPage() }} / {{ totalPages() || '?' }}
+      <button type="button" (click)="nextPage()" [disabled]="(totalPages() && currentPage() >= totalPages()) || isLoading()">»</button>
+      <select [value]="pageSize()" (change)="changeSize($any($event.target).value)">
+        <option [value]="10">10</option>
+        <option [value]="20">20</option>
+        <option [value]="50">50</option>
+      </select>
+    </div>
+    @if (documents()?.documents?.length) {
+      <ul>
+        <li *ngFor="let d of documents()?.documents">
+          <strong>{{ d.title || d.id }}</strong>
+          @if (d.uploadedAt) { <span> – {{ d.uploadedAt | date:'short' }}</span> }
+        </li>
+      </ul>
+    } @else {
+      <p>Keine Dokumente vorhanden.</p>
+    }
+  </section>
+}

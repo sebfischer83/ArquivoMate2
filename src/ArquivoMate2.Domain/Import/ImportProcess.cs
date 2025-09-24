@@ -53,14 +53,16 @@ namespace ArquivoMate2.Domain.Import
             OccurredOn = e.OccurredOn;
             Status = DocumentProcessingStatus.Failed;
             ErrorMessage = e.ErrorMessage;
+            CompletedAt = e.OccurredOn;
         }
 
-        public void Apply(MarkSuccededDocumentImport e)
+        public void Apply(MarkSucceededDocumentImport e)
         {
             Id = e.AggregateId;
             OccurredOn = e.OccurredOn;
             Status = DocumentProcessingStatus.Completed;
             DocumentId = e.DocumentId;
+            CompletedAt = e.OccurredOn;
         }
 
         public void Apply(HideDocumentImport e)

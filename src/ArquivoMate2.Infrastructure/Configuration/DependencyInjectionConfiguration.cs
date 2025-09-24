@@ -58,7 +58,11 @@ namespace ArquivoMate2.Infrastructure.Configuration
             {
                 // Verbindungszeichenfolge aus appsettings.json
                 options.Connection(config.GetConnectionString("Default")!);
-                options.AutoCreateSchemaObjects = JasperFx.AutoCreate.All;
+
+                var env = config["ASPNETCORE_ENVIRONMENT"] ?? "Production";
+                options.AutoCreateSchemaObjects = env.Equals("Development", StringComparison.OrdinalIgnoreCase)
+                    ? JasperFx.AutoCreate.All
+                    : JasperFx.AutoCreate.CreateOrUpdate;
 
                 // Domain‑Events registrieren
                 options.Events.AddEventTypes(new[]
@@ -70,11 +74,10 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     typeof(DocumentChatBotDataReceived),
                     typeof(InitDocumentImport),
                     typeof(MarkFailedDocumentImport),
-                    typeof(MarkSuccededDocumentImport),
+                    typeof(MarkSucceededDocumentImport),
                     typeof(StartDocumentImport),
                     typeof(DocumentProcessed),
                     typeof(HideDocumentImport)
-                    // hier weitere Event‑Typen hinzufügen…
                 });
 
                 options.Schema.For<PartyInfo>();
@@ -100,15 +103,27 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     .Index(x => x.IsHidden)
                     .Index(x => x.DocumentId)
                     .Index(x => x.Status)
-                    .Index(x => x.Source); // Add index for ImportSource for efficient queries
+                    .Index(x => x.Source);
 
                 options.Schema.For<ImportHistoryView>()
                     .Index(x => x.UserId)
                     .Index(x => x.Status)
-                    .Index(x => x.Source)  // Add index for ImportSource filtering
+                    .Index(x => x.Source)
                     .Index(x => x.IsHidden);
 
-                //options.Advanced.UseNGramSearchWithUnaccent = true;
+                // Indizes für DocumentView (Sortierung & Filter)
+                var docView = options.Schema.For<DocumentView>();
+                docView.Index(x => x.UserId);
+                docView.Index(x => x.Date);
+                docView.Index(x => x.OccurredOn);
+                docView.Index(x => x.TotalPrice);
+                docView.Index(x => x.Type);
+                docView.Index(x => x.Accepted);
+                docView.Index(x => x.CustomerNumber);
+                docView.Index(x => x.InvoiceNumber);
+                // Composite für häufige Sortierung/Filter (user + date)
+                docView.Index(x => new { x.UserId, x.Date });
+                // Erweiterte partielle / GIN Indizes bei Bedarf per separatem SQL-Migrationsskript hinzufügen (nicht im Code, um Build zu vereinfachen)
 
                 options.Projections.Add<DocumentProjection>(ProjectionLifecycle.Inline);
                 options.Projections.Add<ImportHistoryProjection>(ProjectionLifecycle.Inline);
@@ -122,13 +137,8 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddScoped<IFileMetadataService, FileMetadataService>();
             services.AddScoped<IPathService, PathService>();
             services.AddScoped<IThumbnailService, ThumbnailService>();
-            services.AddScoped<MeilisearchClient>(sp =>
-            {
-                return new MeilisearchClient(config["Meilisearch:Url"], "supersecret");
-            });
-
+            services.AddScoped<MeilisearchClient>(sp => new MeilisearchClient(config["Meilisearch:Url"], "supersecret"));
             services.AddScoped<ISearchClient, SearchClient>();
-
             services.AddHttpClient();
 
             services.AddSingleton<ChatBotSettingsFactory>();
@@ -139,22 +149,18 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 services.AddSingleton(openAISettings);
                 if (openAISettings.UseBatch)
                 {
-                    services.AddScoped<IChatBot, OpenAIBatchChatBot>(service =>
+                    services.AddScoped<IChatBot, OpenAIBatchChatBot>(_ =>
                     {
-                        var opt = service.GetRequiredService<OpenAISettings>();
                         BatchClient client = new BatchClient(openAISettings.ApiKey);
-                        var bot = new OpenAIBatchChatBot(client);
-                        return bot;
+                        return new OpenAIBatchChatBot(client);
                     });
                 }
                 else
                 {
-                    services.AddScoped<IChatBot, OpenAIChatBot>(service =>
+                    services.AddScoped<IChatBot, OpenAIChatBot>(_ =>
                     {
-                        var opt = service.GetRequiredService<OpenAISettings>();
-                        ChatClient client = new(model: opt.Model, apiKey: opt.ApiKey);
-                        var bot = new OpenAIChatBot(client);
-                        return bot;
+                        ChatClient client = new(model: openAISettings.Model, apiKey: openAISettings.ApiKey);
+                        return new OpenAIChatBot(client);
                     });
                 }
             }
@@ -163,50 +169,35 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 throw new InvalidOperationException("Unsupported ChatBotSettings");
             }
 
-            // config
-            services.Configure<OcrSettings>(
-                config.GetSection("OcrSettings"));
+            services.Configure<OcrSettings>(config.GetSection("OcrSettings"));
+            services.AddSingleton(sp => sp.GetRequiredService<IOptions<OcrSettings>>().Value);
 
-            services.AddSingleton(sp =>
-                sp.GetRequiredService<IOptions<OcrSettings>>().Value);
-
-            services.Configure<Paths>(
-                config.GetSection("Paths"));
-
-            services.AddSingleton(sp =>
-                sp.GetRequiredService<IOptions<Paths>>().Value);
+            services.Configure<Paths>(config.GetSection("Paths"));
+            services.AddSingleton(sp => sp.GetRequiredService<IOptions<Paths>>().Value);
 
             services.AddSingleton<StorageProviderSettingsFactory>();
             var settings = new StorageProviderSettingsFactory(config).GetsStorageProviderSettings();
-
             services.AddSingleton<DeliveryProviderSettingsFactory>();
             var deliverySettings = new DeliveryProviderSettingsFactory(config).GetDeliveryProviderSettings();
 
-            // Email Configuration - Only database-based, no JSON fallback
             services.AddScoped<IEmailSettingsRepository, EmailSettingsRepository>();
             services.AddScoped<IProcessedEmailRepository, ProcessedEmailRepository>();
             services.AddScoped<IEmailCriteriaRepository, EmailCriteriaRepository>();
             services.AddScoped<IEmailServiceFactory, EmailServiceFactory>();
-            
-            // Register NullEmailService as default - no functionality until user configures settings
             services.AddScoped<IEmailService, NullEmailService>();
 
             switch (settings)
             {
                 case S3StorageProviderSettings local:
-                    services.Configure<S3StorageProviderSettings>(
-                         config.GetSection("StorageProvider").GetSection("Args"));
+                    services.Configure<S3StorageProviderSettings>(config.GetSection("StorageProvider").GetSection("Args"));
                     services.AddScoped<IStorageProvider, S3StorageProvider>();
-
                     var endpoint = local.Endpoint;
-
                     services.AddMinio(configureClient => configureClient
                         .WithEndpoint(endpoint)
-                                        .WithCredentials(local.AccessKey, local.SecretKey)
-                                        .WithSSL(true)
-                                    .Build());
+                        .WithCredentials(local.AccessKey, local.SecretKey)
+                        .WithSSL(true)
+                        .Build());
                     break;
-                // … weitere Fälle …
                 default:
                     throw new InvalidOperationException("Unsupported FileProviderSettings");
             }
@@ -214,43 +205,32 @@ namespace ArquivoMate2.Infrastructure.Configuration
             switch (deliverySettings)
             {
                 case S3DeliveryProviderSettings s3:
-                    services.Configure<S3DeliveryProviderSettings>(
-                        config.GetSection("DeliveryProvider").GetSection("Args"));
+                    services.Configure<S3DeliveryProviderSettings>(config.GetSection("DeliveryProvider").GetSection("Args"));
                     services.AddScoped<IDeliveryProvider, S3DeliveryProvider>();
-                    // currently s3 delivery must be the same settings than storage
                     break;
-
                 case BunnyDeliveryProviderSettings bunny:
-                    services.Configure<BunnyDeliveryProviderSettings>(
-                        config.GetSection("DeliveryProvider").GetSection("Args"));
+                    services.Configure<BunnyDeliveryProviderSettings>(config.GetSection("DeliveryProvider").GetSection("Args"));
                     services.AddScoped<IDeliveryProvider, BunnyCdnDeliveryProvider>();
                     break;
-
                 default:
                     throw new InvalidOperationException("Unsupported DeliveryProviderSettings");
             }
 
             services.AddScoped<IMemberValueResolver<DocumentView, BaseDto, string, string>, PathResolver>();
-
-            // Register enum translation resolvers for AutoMapper
             services.AddScoped<StatusTranslationResolver<ImportHistoryView, ImportHistoryListItemDto>>();
             services.AddScoped<ImportSourceTranslationResolver<ImportHistoryView, ImportHistoryListItemDto>>();
-
             services.AddAutoMapper(typeof(Mapping.DocumentMapping).Assembly);
-
             services.AddHostedService<DatabaseMigrationService>();
             services.AddHostedService<MeiliInitService>();
 
-            services.AddEasyCaching(x =>
-                            x.UseRedis(r =>
-                            {
-                                r.EnableLogging = false;
-                                r.DBConfig.KeyPrefix = "redis" + ":";
-                                r.SerializerName = "A";
-                                r.DBConfig.Endpoints.Add(new EasyCaching.Core.Configurations.ServerEndPoint("cache", int.Parse("6379")));
-                                r.DBConfig.AbortOnConnectFail = false;
-                            }).WithSystemTextJson("A")
-            );
+            services.AddEasyCaching(x => x.UseRedis(r =>
+            {
+                r.EnableLogging = false;
+                r.DBConfig.KeyPrefix = "redis:";
+                r.SerializerName = "A";
+                r.DBConfig.Endpoints.Add(new EasyCaching.Core.Configurations.ServerEndPoint("cache", int.Parse("6379")));
+                r.DBConfig.AbortOnConnectFail = false;
+            }).WithSystemTextJson("A"));
 
             return services;
         }

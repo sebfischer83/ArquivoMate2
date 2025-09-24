@@ -1,74 +1,34 @@
-import { ChangeDetectionStrategy, Component, inject, ViewChild } from '@angular/core';
-import { FilePondModule, registerPlugin } from "ngx-filepond";
-import { FilePondComponent } from "ngx-filepond";
-import { FilePondOptions } from "filepond";
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { OAuthService } from 'angular-oauth2-oidc';
+import { DocumentsFacadeService } from '../../../services/documents-facade.service';
+import { CommonModule, NgForOf, DatePipe } from '@angular/common';
+import { UploadWidgetComponent } from './upload-widget.component';
 
 
 @Component({
   standalone: true,
   selector: 'app-dashboard',
-  imports: [FilePondModule],
+  imports: [CommonModule, NgForOf, DatePipe, UploadWidgetComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardComponent {
-  @ViewChild("myPond") myPond!: FilePondComponent;
+  private facade = inject(DocumentsFacadeService);
+  documents = this.facade.documents;
+  total = this.facade.totalCount;
+  isLoading = this.facade.isLoading;
+  error = this.facade.error;
+  currentPage = this.facade.currentPage;
+  totalPages = this.facade.totalPages;
+  pageSize = this.facade.pageSize;
   auth = inject(OAuthService);
 
- pondOptions: FilePondOptions = {
-    allowMultiple: true,
-    labelIdle: "Drop files here...",
-    name: "file",
-    server: {
-      process: {
-        url: 'http://localhost:5000/api/documents',
-        method: 'POST',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'Authorization': `Bearer ${this.auth.getAccessToken()}`
-        },
-        withCredentials: false,
-        ondata: (formData) => {
-          console.log("Preparing data for upload", formData);
-          formData.append('Language', 'deu');
-          return formData;
-        },
+  // Upload widget always visible now; on completed uploads the widget itself should trigger facade refresh (can be wired later)
 
-        onload: (response) => {
-          console.log("File uploaded successfully", response);
-          
-          return '';
-        },
-        onerror: (response) => {
-          console.error("File upload failed", response);
-          return response;
-        }
-      }      
-    },
-  };
+  ngOnInit(): void { this.facade.load(); }
 
-   pondHandleInit() {
-    console.log("FilePond has initialised", this.myPond);
-  }
-
-  pondHandleAddFile(event: any) {
-    console.log("A file was added", event);
-  }
-
-  pondHandleActivateFile(event: any) {
-    console.log("A file was activated", event);
-  }
-
-  pondHandleProcessFile(event: any) {
-    // Entferne die Datei nach erfolgreichem Upload
-    if (event.error)
-    {
-      return;
-    }
-    if (event && event.file && this.myPond && this.myPond['pond']) {
-      this.myPond['pond'].removeFile(event.file.id);
-    }
-  }
- }
+  nextPage(): void { this.facade.setPage(this.currentPage() + 1); }
+  prevPage(): void { this.facade.setPage(this.currentPage() - 1); }
+  changeSize(val: string): void { const size = parseInt(val, 10); this.facade.setPageSize(size); }
+}

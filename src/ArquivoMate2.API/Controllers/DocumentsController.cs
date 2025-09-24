@@ -19,6 +19,7 @@ using Microsoft.Extensions.Localization;
 using Newtonsoft.Json.Linq;
 using System.Threading;
 using Weasel.Postgresql.Views;
+using ArquivoMate2.API.Querying; // neu
 
 namespace ArquivoMate2.API.Controllers
 {
@@ -55,13 +56,12 @@ namespace ArquivoMate2.API.Controllers
             if (request.File is null || request.File.Length == 0)
                 return BadRequest();
 
-            // Create InitDocumentImport event with explicit ImportSource.User for UI uploads
             var historyEvent = new InitDocumentImport(
                 Guid.NewGuid(), 
                 _currentUserService.UserId, 
                 request.File.FileName, 
                 DateTime.UtcNow, 
-                ImportSource.User); // Explicitly set source as User for manual uploads
+                ImportSource.User);
 
             querySession.Events.StartStream<ImportProcess>(historyEvent.AggregateId, historyEvent);
             await querySession.SaveChangesAsync();
@@ -123,34 +123,91 @@ namespace ArquivoMate2.API.Controllers
         [HttpGet()]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentListDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Get([FromQuery] DocumentListRequestDto requestDto,
-            CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
+            CancellationToken cancellationToken, [FromServices] IQuerySession querySession, [FromServices] ISearchClient searchClient)
         {
             var userId = _currentUserService.UserId;
-            var view = await querySession.Query<Infrastructure.Persistance.DocumentView>()
-                .Where(d => d.UserId == userId && d.Processed == true && !d.Deleted)
-                .ToPagedListAsync(requestDto.Page, requestDto.PageSize);
-            if (view is null)
-                return NotFound();
-            if (view.Count == 0)
-                return NotFound();
+            requestDto.NormalizePaging();
 
+            IReadOnlyList<Guid>? searchIds = null;
+            long? searchTotal = null;
 
-            DocumentListDto documentListDto = new();
-            var documents = _mapper.Map<DocumentListItemDto[]>(view);
-            documentListDto.Documents = documents;
+            // Wenn Volltext vorhanden: zuerst Meili
+            if (!string.IsNullOrWhiteSpace(requestDto.Search))
+            {
+                var (ids, total) = await searchClient.SearchDocumentIdsAsync(userId, requestDto.Search, requestDto.Page, requestDto.PageSize, cancellationToken);
+                searchIds = ids;
+                searchTotal = total;
 
-            documentListDto.TotalCount = view.TotalItemCount;
-            documentListDto.HasNextPage = view.HasNextPage;
-            documentListDto.PageCount = view.PageCount;
-            documentListDto.HasPreviousPage = view.HasPreviousPage;
-            documentListDto.IsLastPage = view.IsLastPage;
-            documentListDto.IsFirstPage = view.IsFirstPage;
-            documentListDto.CurrentPage = requestDto.Page;
+                if (ids.Count == 0)
+                {
+                    return Ok(new DocumentListDto
+                    {
+                        Documents = new List<DocumentListItemDto>(),
+                        TotalCount = 0,
+                        PageCount = 0,
+                        HasNextPage = false,
+                        HasPreviousPage = false,
+                        IsFirstPage = requestDto.Page == 1,
+                        IsLastPage = true,
+                        CurrentPage = requestDto.Page
+                    });
+                }
+            }
 
-            return Ok(documentListDto);
+            var baseQuery = querySession.Query<DocumentView>().ApplyDocumentFilters(requestDto, userId);
 
+            if (searchIds != null)
+            {
+                // Eingrenzen auf Treffer aus Meili
+                baseQuery = baseQuery.Where(d => searchIds.Contains(d.Id));
+            }
+
+            baseQuery = baseQuery.ApplySorting(requestDto);
+
+            // Pagination nur anwenden, wenn keine Volltextsuche (bei Volltext schon per Offset/Limit geholt) -> aber wir müssen Reihenfolge erhalten
+            // Falls Volltext: wir haben schon exact die Seite Ids -> also kein ToPagedListAsync nötig, sondern manuelle Projektion
+            if (searchIds != null)
+            {
+                // Reihenfolge der Meili-Suche beibehalten
+                var dict = searchIds.Select((id, idx) => new { id, idx }).ToDictionary(x => x.id, x => x.idx);
+                var docs = await baseQuery.Where(d => searchIds.Contains(d.Id)).ToListAsync(cancellationToken);
+                var ordered = docs.OrderBy(d => dict[d.Id]).ToList();
+
+                var mapped = _mapper.Map<IList<DocumentListItemDto>>(ordered);
+                var total = searchTotal ?? mapped.Count;
+                var pageCount = (int)Math.Ceiling(total / (double)requestDto.PageSize);
+
+                return Ok(new DocumentListDto
+                {
+                    Documents = mapped,
+                    TotalCount = total,
+                    PageCount = pageCount,
+                    HasNextPage = requestDto.Page < pageCount,
+                    HasPreviousPage = requestDto.Page > 1,
+                    IsFirstPage = requestDto.Page == 1,
+                    IsLastPage = requestDto.Page >= pageCount,
+                    CurrentPage = requestDto.Page
+                });
+            }
+            else
+            {
+                var paged = await baseQuery.ToPagedListAsync(requestDto.Page, requestDto.PageSize, cancellationToken);
+
+                var dto = new DocumentListDto
+                {
+                    Documents = paged.Count == 0 ? new List<DocumentListItemDto>() : _mapper.Map<IList<DocumentListItemDto>>(paged),
+                    TotalCount = paged.TotalItemCount,
+                    HasNextPage = paged.HasNextPage,
+                    HasPreviousPage = paged.HasPreviousPage,
+                    PageCount = paged.PageCount,
+                    IsFirstPage = paged.IsFirstPage,
+                    IsLastPage = paged.IsLastPage,
+                    CurrentPage = requestDto.Page
+                };
+
+                return Ok(dto);
+            }
         }
 
         [HttpGet("stats")]

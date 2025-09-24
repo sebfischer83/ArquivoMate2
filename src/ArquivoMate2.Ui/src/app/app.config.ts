@@ -6,11 +6,13 @@ import { provideOAuthClient } from 'angular-oauth2-oidc';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { AuthConfig } from 'angular-oauth2-oidc';
 import { routes } from './app.routes';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, of, forkJoin } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { provideZonelessChangeDetection, isDevMode } from '@angular/core';
 import { AuthGuard } from "./guards/auth.guard";
 import { ApiConfiguration } from './client/api-configuration';
 import { authInterceptor } from './interceptors/auth.interceptor';
+import { errorInterceptor } from './interceptors/error.interceptor';
 import { HttpClient } from '@angular/common/http';
 import { TranslocoHttpLoader } from './transloco-loader';
 import { provideTransloco } from '@jsverse/transloco';
@@ -28,18 +30,32 @@ const defaultAuthConfig: AuthConfig = {
 
 let authCodeFlowConfig: AuthConfig = { ...defaultAuthConfig };
 
+interface RuntimeConfigFile {
+  apiBaseUrl?: string;
+  auth?: Partial<AuthConfig>;
+}
+
 const intializeAppFn = () => {
   const apiConfig = inject(ApiConfiguration);
-  apiConfig.rootUrl = 'http://localhost:5000'; 
-
   const http = inject(HttpClient);
-  return firstValueFrom(http.get<Partial<AuthConfig>>('auth-config.json'))
-    .then(config => {
-      if (config) {
-        authCodeFlowConfig = { ...defaultAuthConfig, ...config };
-      } else {
-        authCodeFlowConfig = { ...defaultAuthConfig };
-      }
+
+  // Parallel laden: auth + runtime config
+  const authCfg$ = http.get<Partial<AuthConfig>>('auth-config.json').pipe(catchError(() => of({}))); 
+  const runtimeCfg$ = http.get<RuntimeConfigFile>('runtime-config.json').pipe(catchError(() => of({} as RuntimeConfigFile)));
+
+  return firstValueFrom(forkJoin([authCfg$, runtimeCfg$]))
+    .then(([authFile, runtimeFile]) => {
+      // API Base URL Priorität: runtime-config.json > auth-config.json(apiBaseUrl?) > default
+      const apiBase = runtimeFile.apiBaseUrl || (authFile as any).apiBaseUrl || 'http://localhost:5000';
+      apiConfig.rootUrl = apiBase;
+
+      // Merge Auth config
+      const authPart = runtimeFile.auth || authFile || {};
+      authCodeFlowConfig = { ...defaultAuthConfig, ...authPart, redirectUri: window.location.origin + '/app' };
+    })
+    .catch(() => {
+      apiConfig.rootUrl = 'http://localhost:5000';
+      authCodeFlowConfig = { ...defaultAuthConfig };
     });
 };
 
@@ -52,13 +68,13 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideAnimations(),
     provideZonelessChangeDetection(),
-    provideHttpClient(withInterceptors([authInterceptor])),
+  provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
     provideOAuthClient(),
     provideRouter(routes),
     provideAppInitializer(intializeAppFn),
     provideEventPlugins(),
     AuthGuard,
-  provideHttpClient(), provideTransloco({
+    provideTransloco({
         config: { 
       availableLangs: [...AVAILABLE_LANGS],
           defaultLang: 'ru',

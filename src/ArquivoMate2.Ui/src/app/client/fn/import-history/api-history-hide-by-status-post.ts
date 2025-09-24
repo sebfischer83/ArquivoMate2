@@ -8,9 +8,10 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { DocumentProcessingStatus } from '../../models/document-processing-status';
 
 export interface ApiHistoryHideByStatusPost$Params {
-  documentProcessingStatus?: number;
+  documentProcessingStatus?: DocumentProcessingStatus;
 }
 
 export function apiHistoryHideByStatusPost(http: HttpClient, rootUrl: string, params?: ApiHistoryHideByStatusPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {

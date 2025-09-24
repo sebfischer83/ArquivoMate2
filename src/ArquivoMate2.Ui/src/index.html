@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="en">
-<head>
+  <head>
+    <!-- CSP Report-Only: initial non-blocking policy, extend gradually -->
+    <meta http-equiv="Content-Security-Policy-Report-Only" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http://localhost:5000 https://default-issuer.com; font-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; report-uri /csp-report"> 
   <meta charset="utf-8">
   <title>ArquivoMate2Ui</title>
   <base href="/">

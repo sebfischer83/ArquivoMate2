@@ -16,6 +16,9 @@ namespace ArquivoMate2.Infrastructure.Persistance
 
         public DateTime? OccurredOn { get; set; } = null;
 
+        /// <summary>
+        /// The document processing is finished
+        /// </summary>
         public bool Processed { get; set; }
 
         public bool Deleted { get; set; }

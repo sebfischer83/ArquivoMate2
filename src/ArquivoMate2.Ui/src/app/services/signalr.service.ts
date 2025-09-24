@@ -9,7 +9,8 @@ export class SignalrService {
   private hubConnection!: HubConnection;
   private auth = inject(OAuthService);
   private onReconnected?: () => void;
-  private pendingHandlers: Array<{ event: string, callback: (data: any) => void }> = [];
+  // Use a Map to prevent duplicate registrations of the same event/callback
+  private pendingHandlers: Map<string, Array<(data: any) => void>> = new Map();
 
   constructor() { }
   startConnection(hubUrl: string): Promise<void> {
@@ -35,7 +36,7 @@ export class SignalrService {
       .configureLogging(LogLevel.Warning) 
       .withAutomaticReconnect([0, 2000, 10000, 30000])
       .build();   
-    this.hubConnection.onclose((error) => {
+  this.hubConnection.onclose((error: any) => {
       console.error('SignalR connection closed:', error);
       if (error) {
         console.error('Close error details:', {
@@ -46,7 +47,7 @@ export class SignalrService {
       }
     });
 
-    this.hubConnection.onreconnecting((error) => {
+  this.hubConnection.onreconnecting((error: any) => {
       console.warn('SignalR reconnecting:', error);
       if (error) {
         console.warn('Reconnecting error details:', {
@@ -56,7 +57,7 @@ export class SignalrService {
       }
     });
 
-    this.hubConnection.onreconnected((connectionId) => {
+  this.hubConnection.onreconnected((connectionId: string | undefined) => {
       console.log('SignalR reconnected with ID:', connectionId);
       // Registriere Handler nach Reconnect erneut
       this.registerPendingHandlers();
@@ -69,7 +70,7 @@ export class SignalrService {
         // Registriere zwischengespeicherte Handler
         this.registerPendingHandlers();
       })
-      .catch(err => {
+  .catch((err: any) => {
         console.error('❌ SignalR Connection Error: ', err);
         console.error('🔍 Error details:', {
           message: err.message,
@@ -97,8 +98,12 @@ export class SignalrService {
     this.onReconnected = callback;
   }
   on<T>(event: string, callback: (data: T) => void): void {
-    // Handler zwischenspeichern
-    this.pendingHandlers.push({ event, callback });
+    // Prevent duplicated same reference handlers
+    const list = this.pendingHandlers.get(event) ?? [];
+    if (!list.includes(callback as any)) {
+      list.push(callback as any);
+      this.pendingHandlers.set(event, list);
+    }
 
     if (this.hubConnection && this.hubConnection.state === HubConnectionState.Connected) {
       console.log(`🔗 Registering SignalR handler for event: ${event}`);
@@ -110,12 +115,14 @@ export class SignalrService {
 
   private registerPendingHandlers(): void {
     if (this.hubConnection && this.hubConnection.state === HubConnectionState.Connected) {
-      console.log(`🔗 Registering ${this.pendingHandlers.length} pending SignalR handlers`);
-      
-      for (const handler of this.pendingHandlers) {
-        console.log(`   - Registering: ${handler.event}`);
-        this.hubConnection.on(handler.event, handler.callback);
+      console.log(`🔗 Registering pending SignalR handlers: ${this.pendingHandlers.size} events`);
+      for (const [event, callbacks] of this.pendingHandlers.entries()) {
+        for (const cb of callbacks) {
+          this.hubConnection.on(event, cb);
+        }
       }
+      // After successful registration we clear, future additions will re-populate
+      this.pendingHandlers.clear();
     }
   }
 

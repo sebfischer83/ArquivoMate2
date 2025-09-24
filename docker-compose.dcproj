@@ -17,6 +17,13 @@
     </None>
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
+    <None Include="docs\ProjectOverview.md" />
+    <None Include="tests\ArquivoMate2.Application.Tests\ArquivoMate2.Application.Tests.csproj" />
+    <None Include="tests\ArquivoMate2.Application.Tests\SampleApplicationTests.cs" />
+    <None Include="tests\ArquivoMate2.Domain.Tests\ArquivoMate2.Domain.Tests.csproj" />
+    <None Include="tests\ArquivoMate2.Domain.Tests\ImportProcessTests.cs" />
+    <None Include="tests\ArquivoMate2.Infrastructure.Tests\ArquivoMate2.Infrastructure.Tests.csproj" />
+    <None Include="tests\ArquivoMate2.Infrastructure.Tests\PathServiceTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="src\ArquivoMate2.Shared\Models\" />

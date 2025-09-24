@@ -1,0 +1,40 @@
+tasks:
+  - id: task-001
+    description: Prevent duplicate SignalR handler registrations
+    status: done
+    validation_criteria:
+      - Review code ensures Map + clear after register
+  - id: task-002
+    description: Add central HTTP error interceptor (logging only phase)
+    status: done
+    validation_criteria:
+      - Interceptor present in providers
+      - Console classification for 0/400/401/403/404/5xx
+  - id: task-003
+    description: Integrate toast notification service for errors (Taiga UI)
+    status: done
+    depends_on: [task-002]
+  - id: task-004
+    description: Introduce runtime configuration for API base URL
+    status: done
+  - id: task-005
+    description: Add CSP (Report-Only) meta tag injection
+    status: done
+  - id: task-006
+    description: Add facade layer over OpenAPI for UI friendly models (first sample)
+    status: done
+  - id: task-007
+    description: Expand facade invalidation logic & integrate components
+    status: done
+  - id: task-009
+    description: Add loading/error/pagination to documents facade and UI
+    status: done
+    validation_criteria:
+      - Loading state visible
+      - Error state displayed on failure
+      - Pagination controls change page & size
+  - id: task-008
+    description: Remove unused Taiga imports (TasksComponent) to clear build warnings
+    status: done
+    validation_criteria:
+      - Build has no unused import warnings for TasksComponent

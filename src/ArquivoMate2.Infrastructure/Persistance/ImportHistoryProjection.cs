@@ -44,7 +44,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
             view.ErrorMessage = e.ErrorMessage;
         }
 
-        public void Apply(MarkSuccededDocumentImport e, ImportHistoryView view)
+        public void Apply(MarkSucceededDocumentImport e, ImportHistoryView view)
         {
             if (view.Id == view.DocumentId)
             {

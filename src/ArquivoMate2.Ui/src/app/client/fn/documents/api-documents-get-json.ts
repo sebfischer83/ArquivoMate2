@@ -13,6 +13,19 @@ import { DocumentListDto } from '../../models/document-list-dto';
 export interface ApiDocumentsGet$Json$Params {
   Page?: number;
   PageSize?: number;
+  Type?: string;
+  Accepted?: boolean;
+  FromDate?: string;
+  ToDate?: string;
+  MinTotalPrice?: number;
+  MaxTotalPrice?: number;
+  CustomerNumber?: string;
+  InvoiceNumber?: string;
+  Keywords?: Array<string>;
+  KeywordMatchAll?: boolean;
+  Search?: string;
+  SortBy?: string;
+  SortDirection?: string;
 }
 
 export function apiDocumentsGet$Json(http: HttpClient, rootUrl: string, params?: ApiDocumentsGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentListDto>> {
@@ -20,6 +33,19 @@ export function apiDocumentsGet$Json(http: HttpClient, rootUrl: string, params?:
   if (params) {
     rb.query('Page', params.Page, {});
     rb.query('PageSize', params.PageSize, {});
+    rb.query('Type', params.Type, {});
+    rb.query('Accepted', params.Accepted, {});
+    rb.query('FromDate', params.FromDate, {});
+    rb.query('ToDate', params.ToDate, {});
+    rb.query('MinTotalPrice', params.MinTotalPrice, {});
+    rb.query('MaxTotalPrice', params.MaxTotalPrice, {});
+    rb.query('CustomerNumber', params.CustomerNumber, {});
+    rb.query('InvoiceNumber', params.InvoiceNumber, {});
+    rb.query('Keywords', params.Keywords, {});
+    rb.query('KeywordMatchAll', params.KeywordMatchAll, {});
+    rb.query('Search', params.Search, {});
+    rb.query('SortBy', params.SortBy, {});
+    rb.query('SortDirection', params.SortDirection, {});
   }
 
   return http.request(

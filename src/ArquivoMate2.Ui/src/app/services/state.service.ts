@@ -4,7 +4,6 @@ import { DocumentProcessingNotification } from '../models/document-processing-no
 import { ImportHistoryService } from '../client/services';
 import { DocumentProcessingStatus } from '../models/document-processing-status';
 import { DevConsole } from '../utils/console';
-import * as lodash from 'lodash';
 
 @Injectable({
   providedIn: 'root'
@@ -30,8 +29,8 @@ export class StateService {
       this.signalRService.on('documentprocessingnotification', (notification: DocumentProcessingNotification) => {
         DevConsole.log('Received documentprocessingnotification:', notification);
         
-        // Check if notification with same documentId already exists using lodash
-        const existingNotification = lodash.find(this.documentNotification(), { documentId: notification.documentId });
+  // Check if notification with same documentId already exists (native find)
+  const existingNotification = this.documentNotification().find(n => n.documentId === notification.documentId);
         
         if (!existingNotification) {
           // Add new notification if not already present
@@ -44,9 +43,7 @@ export class StateService {
           // Remove existing notification and add the new one
           DevConsole.log('Notification with documentId already exists, replacing:', notification.documentId);
           this.documentNotification.update((prev) => {
-            // Remove existing notification with same documentId
-            const filtered = lodash.filter(prev, (n) => n.documentId !== notification.documentId);
-            // Add the new notification
+            const filtered = prev.filter(n => n.documentId !== notification.documentId);
             return [...filtered, notification];
           });
           

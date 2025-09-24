@@ -40,7 +40,7 @@ namespace ArquivoMate2.Application.Handlers
         {
             var sw = Stopwatch.StartNew();
 
-            _session.Events.Append(request.ImportProcessId, new StartDocumentImport(request.ImportProcessId, DateTime.Now));
+            _session.Events.Append(request.ImportProcessId, new StartDocumentImport(request.ImportProcessId, DateTime.UtcNow));
             await _session.SaveChangesAsync(cancellationToken);
 
             try
@@ -81,8 +81,8 @@ namespace ArquivoMate2.Application.Handlers
                     throw new NotSupportedException($"File type {metadata.Extension} is not supported for processing");
                 }
 
-                _session.Events.Append(request.ImportProcessId, new MarkSuccededDocumentImport(request.ImportProcessId, request.DocumentId, DateTime.Now));
-                _session.Events.Append(request.DocumentId, new DocumentProcessed(request.DocumentId, DateTime.Now));
+                _session.Events.Append(request.ImportProcessId, new MarkSucceededDocumentImport(request.ImportProcessId, request.DocumentId, DateTime.UtcNow));
+                _session.Events.Append(request.DocumentId, new DocumentProcessed(request.DocumentId, DateTime.UtcNow));
 
                 await _session.SaveChangesAsync(cancellationToken);
 
@@ -94,7 +94,7 @@ namespace ArquivoMate2.Application.Handlers
             {
                 _logger.LogError(ex, "Error processing document {DocumentId}", request.DocumentId);
 
-                _session.Events.Append(request.ImportProcessId, new MarkFailedDocumentImport(request.ImportProcessId, ex.Message, DateTime.Now));
+                _session.Events.Append(request.ImportProcessId, new MarkFailedDocumentImport(request.ImportProcessId, ex.Message, DateTime.UtcNow));
                 _session.Events.Append(request.DocumentId, new DocumentDeleted(request.DocumentId, DateTime.UtcNow));
                 await _session.SaveChangesAsync(cancellationToken);
             }
@@ -108,36 +108,17 @@ namespace ArquivoMate2.Application.Handlers
             return (null, null);
         }
 
-        /// <summary>
-        /// Comprehensive PDF file validation using multiple methods
-        /// </summary>
-        /// <param name="filePath">Path to the file to validate</param>
-        /// <param name="metadata">File metadata containing extension and MIME type</param>
-        /// <returns>True if the file is a valid PDF, false otherwise</returns>
         private async Task<bool> IsPdfFileAsync(string filePath, DocumentMetadata metadata)
         {
             try
             {
-                // 1. Check file extension (basic check)
                 var hasValidExtension = string.Equals(metadata.Extension, ".pdf", StringComparison.OrdinalIgnoreCase);
-                
-                // 2. Check MIME type if available
                 var hasValidMimeType = metadata.MimeType != null && 
                     (string.Equals(metadata.MimeType, "application/pdf", StringComparison.OrdinalIgnoreCase) ||
                      string.Equals(metadata.MimeType, "application/x-pdf", StringComparison.OrdinalIgnoreCase));
-
-                // 3. Check magic number (file signature) - most reliable method
                 var hasValidMagicNumber = await HasPdfMagicNumberAsync(filePath);
-
-                // Log validation results for debugging
-                _logger.LogDebug("PDF validation for {FilePath}: Extension={Extension} ({ValidExtension}), " +
-                    "MimeType={MimeType} ({ValidMimeType}), MagicNumber={ValidMagicNumber}",
-                    filePath, metadata.Extension, hasValidExtension, 
-                    metadata.MimeType, hasValidMimeType, hasValidMagicNumber);
-
-                // File is considered PDF if:
-                // - Magic number matches (most important) AND
-                // - At least one of: valid extension OR valid MIME type
+                _logger.LogDebug("PDF validation for {FilePath}: Extension={Extension} ({ValidExtension}), MimeType={MimeType} ({ValidMimeType}), MagicNumber={ValidMagicNumber}",
+                    filePath, metadata.Extension, hasValidExtension, metadata.MimeType, hasValidMimeType, hasValidMagicNumber);
                 return hasValidMagicNumber && (hasValidExtension || hasValidMimeType);
             }
             catch (Exception ex)
@@ -147,11 +128,6 @@ namespace ArquivoMate2.Application.Handlers
             }
         }
 
-        /// <summary>
-        /// Checks if file starts with PDF magic number (%PDF)
-        /// </summary>
-        /// <param name="filePath">Path to the file to check</param>
-        /// <returns>True if file has PDF magic number, false otherwise</returns>
         private async Task<bool> HasPdfMagicNumberAsync(string filePath)
         {
             try
@@ -200,9 +176,15 @@ namespace ArquivoMate2.Application.Handlers
 
             _session.Events.Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, DateTime.UtcNow));
 
-            var chatbotResult = await _chatBot.AnalyzeDocumentContent(content, cancellationToken);
-
-            await ProcessChatbotResultAsync(request.DocumentId, chatbotResult);
+            try
+            {
+                var chatbotResult = await _chatBot.AnalyzeDocumentContent(content, cancellationToken);
+                await ProcessChatbotResultAsync(request.DocumentId, chatbotResult);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Chatbot analysis failed for {DocumentId}. Continuing without chatbot data.", request.DocumentId);
+            }
         }
 
         private async Task ProcessChatbotResultAsync(Guid documentId, DocumentAnalysisResult chatbotResult)
@@ -280,24 +262,21 @@ namespace ArquivoMate2.Application.Handlers
                         PostalCode = recipient.PostalCode,
                         Street = recipient.Street,
                     };
-                    _session.Store(newRecipient);
-                    recipientId = newRecipient.Id;
                     newSession.Store(newRecipient);
+                    recipientId = newRecipient.Id;
                     await newSession.SaveChangesAsync();
                 }
             }
             
-            _session.Events.Append(documentId, new DocumentChatBotDataReceived(documentId, senderId, recipientId, null, DateTime.Now,
+            _session.Events.Append(documentId, new DocumentChatBotDataReceived(documentId, senderId, recipientId, null, DateTime.UtcNow,
                 chatbotResult.DocumentType, chatbotResult.CustomerNumber, chatbotResult.InvoiceNumber, chatbotResult.TotalPrice, chatbotResult.Keywords, chatbotResult.Summary));
         }
 
         private async Task<string> ExtractTextAsync(FileStream stream, DocumentMetadata metadata, CancellationToken cancellationToken)
         {
-            // prüfen nach Dateiendung
             switch (metadata.Extension.ToLowerInvariant())
             {
                 case ".pdf":
-                    // PDF Text extrahieren
                     return await _documentTextExtractor.ExtractPdfTextAsync(stream, metadata, false, cancellationToken);
                 default:
                     _logger.LogError("Unsupported file type: {Extension}", metadata.Extension);

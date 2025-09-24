@@ -1,0 +1,59 @@
+specifications:
+  functional_requirements:
+    - id: req-001
+      description: As a user the app shall show document processing status updates in near real-time.
+      status: existing
+    - id: req-002
+      description: As a user I want consistent error handling (toast) for API errors.
+      status: planned
+    - id: req-003
+      description: As a developer I want duplicate SignalR handler registrations to be prevented.
+      status: implemented
+    - id: req-004
+      description: As a developer I want API base URL configurable per installation.
+      status: implemented
+  edge_cases:
+    - id: edge-001
+      description: SignalR reconnect fires multiple times causing duplicate events.
+      likelihood: 3
+      impact: 4
+      risk_score: 12
+      mitigation: Use map + clear after registration (implemented)
+    - id: edge-002
+      description: Network outage leads to ambiguous generic errors.
+      likelihood: 2
+      impact: 3
+      risk_score: 6
+      mitigation: Central error interceptor classification
+  system_architecture:
+    tech_stack:
+      languages: [TypeScript]
+      frameworks: [Angular20, TaigaUI, Transloco]
+      realtime: SignalR
+      auth: OAuth2 OIDC Code Flow
+    component_architecture:
+      presentation: Standalone components lazy-loaded via router
+      state: Angular signals in StateService
+      api: OpenAPI generated services (ng-openapi-gen)
+      cross_cutting: AuthGuard, auth+error interceptors, logging utility
+  feature_specifications:
+    - feature_id: feat-err-hdl
+      related_requirements: [req-002]
+      user_story: As a user I want meaningful feedback when API calls fail.
+      implementation_steps:
+        - Add error interceptor (done)
+        - Integrate toast/notification adapter (pending)
+        - Map common status codes to user friendly messages (pending)
+      validation_criteria: Simulated 400/401/500 produce classified log entries (later: toasts)
+    - feature_id: feat-signalr-dedupe
+      related_requirements: [req-003]
+      user_story: As a developer I need each SignalR event handler invoked exactly once per event.
+      implementation_steps:
+        - Replace array with Map and clear after registration (done)
+      validation_criteria: Manual test reconnect -> no duplicate callbacks
+  security_compliance:
+    csp: report-only planned
+    token_storage: default angular-oauth2-oidc (to be reviewed)
+  assumptions:
+    - App hosted by private users (no multi-tenant complexity now)
+    - Only document status realtime events for now

@@ -19,20 +19,20 @@
     <PackageReference Include="EasyCaching.Redis" Version="1.9.2" />
     <PackageReference Include="EasyCaching.Serialization.SystemTextJson" Version="1.9.2" />
     <PackageReference Include="FluentStorage.AWS" Version="5.5.0" />
-    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.20" />
-    <PackageReference Include="Hangfire.NetCore" Version="1.8.20" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.21" />
+    <PackageReference Include="Hangfire.NetCore" Version="1.8.21" />
     <PackageReference Include="Hangfire.PostgreSql" Version="1.20.12" />
     <PackageReference Include="MailKit" Version="4.13.0" />
-    <PackageReference Include="Marten" Version="8.3.1" />
-    <PackageReference Include="Marten.AspNetCore" Version="8.3.1" />
-    <PackageReference Include="MeiliSearch" Version="0.16.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.6" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.6" />
+    <PackageReference Include="Marten" Version="8.11.0" />
+    <PackageReference Include="Marten.AspNetCore" Version="8.11.0" />
+    <PackageReference Include="MeiliSearch" Version="0.17.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
     <PackageReference Include="MimeTypeMapOfficial" Version="1.0.17" />
     <PackageReference Include="Minio" Version="6.0.5" />
-    <PackageReference Include="OpenAI" Version="2.2.0" />
-    <PackageReference Include="PdfPig" Version="0.1.10" />
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.6.0" />
+    <PackageReference Include="OpenAI" Version="2.5.0" />
+    <PackageReference Include="PdfPig" Version="0.1.11" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.8.2" />
   </ItemGroup>
 
   <ItemGroup>

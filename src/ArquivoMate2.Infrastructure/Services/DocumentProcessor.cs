@@ -106,6 +106,45 @@ namespace ArquivoMate2.Infrastructure.Services
             return result.ToString();
         }
 
+        // Single image OCR (jpg/png/tif/webp/bmp)
+        public async Task<string> ExtractImageTextAsync(Stream documentStream, DocumentMetadata documentMetadata, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                documentStream.Position = 0;
+                var tmpImage = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.img");
+                await using (var fs = new FileStream(tmpImage, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    await documentStream.CopyToAsync(fs, cancellationToken);
+                }
+
+                var languages = documentMetadata.Languages.Join("+");
+                var psi = new ProcessStartInfo(_tesseractPath, $"-l {languages} {tmpImage} stdout")
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using var proc = Process.Start(psi)!;
+                string ocrText = await proc.StandardOutput.ReadToEndAsync(cancellationToken);
+                string err = await proc.StandardError.ReadToEndAsync(cancellationToken);
+                proc.WaitForExit();
+                if (proc.ExitCode != 0)
+                {
+                    _logger.LogError("Tesseract failed for image: {Error}", err);
+                    throw new Exception($"Tesseract failed: {err}");
+                }
+                return ocrText;
+            }
+            finally
+            {
+                // attempt to cleanup leftover temporary files
+                // tesseract may write temp files automatically; best-effort cleanup only
+            }
+        }
+
         public async Task<byte[]> GeneratePreviewPdf(Stream documentStream, DocumentMetadata documentMetadata, CancellationToken cancellationToken = default)
         {
             var tempInput = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".pdf");

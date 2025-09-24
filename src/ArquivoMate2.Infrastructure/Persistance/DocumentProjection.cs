@@ -17,6 +17,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
             view.Id = e.AggregateId;
             view.UserId = e.UserId;
             view.OccurredOn = e.OccurredOn;
+            view.UploadedAt = e.OccurredOn; // neu
         }
 
         public void Apply(DocumentContentExtracted e, DocumentView view)
@@ -61,6 +62,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
         {
             view.Processed = true;
             view.OccurredOn = e.OccurredOn;
+            view.ProcessedAt = e.OccurredOn; // neu
         }
 
         public void Apply(DocumentChatBotDataReceived e, DocumentView view)

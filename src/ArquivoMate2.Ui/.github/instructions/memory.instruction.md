@@ -1,0 +1,1 @@
+- Pattern 001: Avoid using *ngIf in new components; prefer Angular @if/@else control flow blocks. Added after user preference on 2025-09-24.

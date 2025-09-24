@@ -31,6 +31,7 @@ namespace ArquivoMate2.Application.Handlers
 
         // PDF Magic Number (first 4 bytes)
         private static readonly byte[] PdfMagicNumber = [0x25, 0x50, 0x44, 0x46]; // %PDF
+        private static readonly HashSet<string> SupportedImageExtensions = new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp" };
 
         public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger, IDocumentProcessor documentTextExtractor, IFileMetadataService fileMetadataService, IPathService pathService,
             IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot, IDocumentProcessingNotifier documentProcessingNotifier, ICurrentUserService currentUserService)
@@ -69,9 +70,13 @@ namespace ArquivoMate2.Application.Handlers
                 {
                     await ProcessPdfFiles(request, metadata, path, cancellationToken);
                 }
+                else if (IsSingleImage(metadata))
+                {
+                    await ProcessImageFiles(request, metadata, path, cancellationToken);
+                }
                 else
                 {
-                    _logger.LogWarning("Document {DocumentId} is not a supported PDF file. Extension: {Extension}, MimeType: {MimeType}", 
+                    _logger.LogWarning("Document {DocumentId} is not a supported file. Extension: {Extension}, MimeType: {MimeType}", 
                         request.DocumentId, metadata.Extension, metadata.MimeType);
                     
                     await _documentProcessingNotifier.NotifyStatusChangedAsync(request.UserId,
@@ -106,6 +111,11 @@ namespace ArquivoMate2.Application.Handlers
             }
 
             return (null, null);
+        }
+
+        private bool IsSingleImage(DocumentMetadata metadata)
+        {
+            return SupportedImageExtensions.Contains(metadata.Extension);
         }
 
         private async Task<bool> IsPdfFileAsync(string filePath, DocumentMetadata metadata)
@@ -162,6 +172,7 @@ namespace ArquivoMate2.Application.Handlers
             var filePath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.GetFileName(path), File.ReadAllBytes(path));
             var metaPath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.ChangeExtension(Path.GetFileName(path), "metadata"), JsonSerializer.SerializeToUtf8Bytes(metadata));
 
+            stream.Position = 0;
             var thumbnail = _thumbnailService.GenerateThumbnail(stream);
 
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
@@ -169,10 +180,44 @@ namespace ArquivoMate2.Application.Handlers
 
             var thumbPath = await _storage.SaveFile(request.UserId, request.DocumentId, thumbnailFileName, thumbnail);
 
+            stream.Position = 0;
             var previewPdf = await _documentTextExtractor.GeneratePreviewPdf(stream, metadata, cancellationToken);
 
             string previewPdfFileName = $"{fileNameWithoutExtension}-preview.pdf";
             var previewPath = await _storage.SaveFile(request.UserId, request.DocumentId, previewPdfFileName, previewPdf);
+
+            _session.Events.Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, DateTime.UtcNow));
+
+            try
+            {
+                var chatbotResult = await _chatBot.AnalyzeDocumentContent(content, cancellationToken);
+                await ProcessChatbotResultAsync(request.DocumentId, chatbotResult);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Chatbot analysis failed for {DocumentId}. Continuing without chatbot data.", request.DocumentId);
+            }
+        }
+
+        private async Task ProcessImageFiles(ProcessDocumentCommand request, DocumentMetadata metadata, string path, CancellationToken cancellationToken)
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan);
+
+            var content = await _documentTextExtractor.ExtractImageTextAsync(stream, metadata, cancellationToken);
+            _session.Events.Append(request.DocumentId, new DocumentContentExtracted(request.DocumentId, content, DateTime.UtcNow));
+
+            var filePath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.GetFileName(path), File.ReadAllBytes(path));
+            var metaPath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.ChangeExtension(Path.GetFileName(path), "metadata"), JsonSerializer.SerializeToUtf8Bytes(metadata));
+
+            stream.Position = 0;
+            var thumbnail = _thumbnailService.GenerateThumbnail(stream);
+            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
+            var thumbPath = await _storage.SaveFile(request.UserId, request.DocumentId, $"{fileNameWithoutExtension}-thumb.webp", thumbnail);
+
+            // For image we still produce a PDF preview (single page) for consistency
+            stream.Position = 0;
+            var previewPdf = await _documentTextExtractor.GeneratePreviewPdf(stream, metadata, cancellationToken);
+            var previewPath = await _storage.SaveFile(request.UserId, request.DocumentId, $"{fileNameWithoutExtension}-preview.pdf", previewPdf);
 
             _session.Events.Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, DateTime.UtcNow));
 
@@ -278,6 +323,14 @@ namespace ArquivoMate2.Application.Handlers
             {
                 case ".pdf":
                     return await _documentTextExtractor.ExtractPdfTextAsync(stream, metadata, false, cancellationToken);
+                case ".jpg":
+                case ".jpeg":
+                case ".png":
+                case ".tif":
+                case ".tiff":
+                case ".bmp":
+                case ".webp":
+                    return await _documentTextExtractor.ExtractImageTextAsync(stream, metadata, cancellationToken);
                 default:
                     _logger.LogError("Unsupported file type: {Extension}", metadata.Extension);
                     return string.Empty;

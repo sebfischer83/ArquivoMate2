@@ -25,6 +25,15 @@ export const routes: Routes = [
                 loadComponent: () =>
                     import('./main/pages/import-history/import-history.component').then(m => m.ImportHistoryComponent)
             }
+            ,
+            {
+                path: 'document/:id',
+                loadComponent: () =>
+                    import('./main/pages/document/document.component').then(m => m.DocumentComponent),
+                resolve: {
+                    document: () => import('./main/pages/document/document.resolver').then(m => m.documentResolver)
+                }
+            }
         ]
     },
 ];

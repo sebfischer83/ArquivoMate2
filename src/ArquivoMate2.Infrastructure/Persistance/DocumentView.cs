@@ -27,7 +27,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
 
         public bool Accepted { get; set; }
 
-        public DateTime AcceptedAt { get; set; } = DateTime.UtcNow;
+        public DateTime AcceptedAt { get; set; }
 
         public string Type { get; set; } = string.Empty;
 
@@ -40,5 +40,8 @@ namespace ArquivoMate2.Infrastructure.Persistance
 
         public string Title { get; set; } = string.Empty;
         public int ContentLength { get; set; }
+
+        public DateTime UploadedAt { get; set; }
+        public DateTime? ProcessedAt { get; set; }
     }
 }

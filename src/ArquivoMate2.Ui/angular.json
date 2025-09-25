@@ -40,6 +40,9 @@
               "node_modules/@taiga-ui/core/styles/taiga-ui-fonts.less",
               "src/styles.scss",
               "node_modules/filepond/dist/filepond.min.css"
+            ],
+            "allowedCommonJsDependencies": [
+              "filepond"
             ]
           },
           "configurations": {

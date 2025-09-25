@@ -5,6 +5,7 @@ using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.Import;
 using ArquivoMate2.Domain.ValueObjects;
 using ArquivoMate2.Shared.Models;
+using JasperFx.Core;
 using Marten;
 using MediatR;
 using Microsoft.Extensions.FileProviders;
@@ -315,6 +316,10 @@ namespace ArquivoMate2.Application.Handlers
             
             _session.Events.Append(documentId, new DocumentChatBotDataReceived(documentId, senderId, recipientId, null, DateTime.UtcNow,
                 chatbotResult.DocumentType, chatbotResult.CustomerNumber, chatbotResult.InvoiceNumber, chatbotResult.TotalPrice, chatbotResult.Keywords, chatbotResult.Summary));
+            if (chatbotResult.Title.IsNotEmpty())
+            {
+                _session.Events.Append(documentId, new DocumentTitleSuggested(documentId, chatbotResult.Title, DateTime.UtcNow));
+            }
         }
 
         private async Task<string> ExtractTextAsync(FileStream stream, DocumentMetadata metadata, CancellationToken cancellationToken)

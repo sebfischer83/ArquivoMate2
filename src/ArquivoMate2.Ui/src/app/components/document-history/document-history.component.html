@@ -1,0 +1,29 @@
+<div class="history-panel">
+	<div class="history-list" tuiScrollbar>
+		<div
+			class="history-item"
+			*ngFor="let ev of sortedEvents(); trackBy: trackByTime"
+			(click)="selectEvent(ev)"
+			[class.active]="ev === selectedEvent()"
+		>
+			<div class="row-top">
+				<span class="time">{{ ev.occurredOn | date : 'yyyy-MM-dd HH:mm:ss' }}</span>
+				<span class="type">{{ ev.eventType }}</span>
+			</div>
+			<div class="user" [class.hidden]="!ev.userId">User: {{ ev.userId || '' }}</div>
+		</div>
+	</div>
+
+	<div class="history-details" [class.empty]="!selectedEvent()">
+		<div class="details-header">
+			<strong>Detail</strong>
+			<span class="meta">
+				{{ selectedEvent()?.occurredOn | date : 'yyyy-MM-dd HH:mm:ss' }} • {{ selectedEvent()?.eventType || '—' }}
+				<span class="user-inline" [class.hidden]="!selectedEvent()?.userId"> • {{ selectedEvent()?.userId }}</span>
+			</span>
+		</div>
+		<div class="json-wrapper">
+			<pre class="json" [class.placeholder]="!hasJson" [innerHTML]="highlightedJson || 'Keine Detaildaten'"></pre>
+		</div>
+	</div>
+</div>

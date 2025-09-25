@@ -1,1 +1,2 @@
 - Pattern 001: Avoid using *ngIf in new components; prefer Angular @if/@else control flow blocks. Added after user preference on 2025-09-24.
+- Pattern 002: Place reusable (nicht-Seiten) Components unter src/app/components/. Gilt seit Verschiebung DocumentHistoryComponent am 2025-09-25.

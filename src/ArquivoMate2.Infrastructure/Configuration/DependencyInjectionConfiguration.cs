@@ -77,7 +77,9 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     typeof(MarkSucceededDocumentImport),
                     typeof(StartDocumentImport),
                     typeof(DocumentProcessed),
-                    typeof(HideDocumentImport)
+                    typeof(HideDocumentImport),
+                    typeof(DocumentTitleInitialized),
+                    typeof(DocumentTitleSuggested)
                 });
 
                 options.Schema.For<PartyInfo>();

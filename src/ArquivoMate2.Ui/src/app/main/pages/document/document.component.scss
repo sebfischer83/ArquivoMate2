@@ -1,9 +1,44 @@
+ .document-layout {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  min-height: 0;
+ }
+
+ .main-area {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0;
+  display: flex;
+ }
+
+ .history-wrapper {
+  /* Minimal fixed width sidebar (simplified) */
+  --history-panel-width: 400px;
+  flex: 0 0 var(--history-panel-width);
+  width: var(--history-panel-width);
+  height: 100%;
+  display: flex;
+  box-sizing: border-box;
+ }
+
+   /* .history-wrapper.debug-width { outline: 1px solid magenta; } */
+
+ /* Removed previous 1100px breakpoint to stop potential toggle when near boundary causing perceived width changes */
+
+ @media (max-width: 900px) {
+  /* Stack vertically on very narrow screens */
+  .document-layout { flex-direction: column; }
+  .history-wrapper { width: 100%; max-width: 100%; min-width: 0; flex: 0 0 auto; order: 2; }
+ }
+
  .document-detail {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   padding: 1.25rem;
   border-radius: 0.75rem;
+  width: 100%;
  }
 
  .header {
@@ -12,29 +47,7 @@
   gap: 1rem;
  }
 
- .loader-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.95rem;
-  color: var(--tui-text-02);
- }
-
- .error {
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
- }
-
- .content dl {
-  margin: 0;
-  display: grid;
-  grid-template-columns: 160px 1fr;
-  row-gap: 0.5rem;
-  column-gap: 1rem;
- }
+ .loader-wrapper { display: flex; align-items: center; gap: 0.75rem; font-size: 0.95rem; color: var(--tui-text-02); }
 
  .content dt {
   font-weight: 600;

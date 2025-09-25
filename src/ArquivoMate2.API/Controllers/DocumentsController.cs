@@ -165,8 +165,6 @@ namespace ArquivoMate2.API.Controllers
 
             baseQuery = baseQuery.ApplySorting(requestDto);
 
-            // Pagination nur anwenden, wenn keine Volltextsuche (bei Volltext schon per Offset/Limit geholt) -> aber wir müssen Reihenfolge erhalten
-            // Falls Volltext: wir haben schon exact die Seite Ids -> also kein ToPagedListAsync nötig, sondern manuelle Projektion
             if (searchIds != null)
             {
                 // Reihenfolge der Meili-Suche beibehalten

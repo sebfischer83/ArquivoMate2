@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { documentResolver } from './main/pages/document/document.resolver';
 import { LandingPageComponent } from './landing/landingPage/landingPage.component';
 import { AuthGuard } from './guards/auth.guard';
 
@@ -30,9 +31,7 @@ export const routes: Routes = [
                 path: 'document/:id',
                 loadComponent: () =>
                     import('./main/pages/document/document.component').then(m => m.DocumentComponent),
-                resolve: {
-                    document: () => import('./main/pages/document/document.resolver').then(m => m.documentResolver)
-                }
+                resolve: { document: documentResolver }
             }
         ]
     },

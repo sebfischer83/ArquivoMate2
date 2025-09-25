@@ -31,7 +31,6 @@ namespace ArquivoMate2.Application.Handlers
 
         public async Task<Guid> Handle(UploadDocumentByMailCommand request, CancellationToken cancellationToken)
         {
-
             var userFolder = _pathService.GetDocumentUploadPath(request.UserId);
             Directory.CreateDirectory(userFolder);
 
@@ -52,9 +51,12 @@ namespace ArquivoMate2.Application.Handlers
                 fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
             }
 
-            var @event = new DocumentUploaded(fileId, request.UserId, fileHash, DateTime.UtcNow);
+            var uploaded = new DocumentUploaded(fileId, request.UserId, fileHash, DateTime.UtcNow);
+            _session.Events.StartStream<Document>(uploaded.AggregateId, uploaded);
 
-            _session.Events.StartStream<Document>(@event.AggregateId, @event);
+            var defaultTitle = TitleNormalizer.FromFileName(request.EmailDocument.FileName);
+            _session.Events.Append(fileId, new DocumentTitleInitialized(fileId, defaultTitle, DateTime.UtcNow));
+
             await _session.SaveChangesAsync(cancellationToken);
 
             var languages = _ocrSettings.DefaultLanguages;
@@ -75,7 +77,7 @@ namespace ArquivoMate2.Application.Handlers
 
             await _fileMetadataService.WriteMetadataAsync(metadata, cancellationToken);
 
-            return @event.AggregateId;
+            return uploaded.AggregateId;
         }
     }
 }

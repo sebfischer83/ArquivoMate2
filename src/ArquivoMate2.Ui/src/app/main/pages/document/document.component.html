@@ -1,33 +1,40 @@
-<div class="document-detail" tuiSurface appearance="floating">
-	<div class="header">
-		<button tuiButton size="s" appearance="secondary" iconStart="@tui.arrow-left" type="button" (click)="back()">Zurück</button>
-		<h2 tuiTitle="m">Dokument Detail</h2>
-	</div>
+<div class="document-layout">
+	<div class="main-area" tuiSurface appearance="floating">
+		<div class="document-detail">
+			<div class="header">
+				<button tuiButton size="s" appearance="secondary" iconStart="@tui.arrow-left" type="button" (click)="back()">Zurück</button>
+				<h2 tuiTitle="m">Dokument Detail</h2>
+			</div>
 
-	@if (loading()) {
-		<section class="skeleton" aria-label="Lade Dokument">
-			<div class="sk-line w-30"></div>
-			<div class="sk-line w-55"></div>
-			<div class="sk-line w-40"></div>
-			<div class="sk-line w-65"></div>
-			<div class="sk-line w-25"></div>
-		</section>
-	}
-	@if (error()) {
-		<div class="error" tuiSurface appearance="negative">
-			<p>{{ error() }}</p>
-			<button tuiButton appearance="primary" size="s" iconStart="@tui.refresh-ccw" type="button" (click)="retry()">Erneut versuchen</button>
+			@if (loading()) {
+				<section class="skeleton" aria-label="Lade Dokument">
+					<div class="sk-line w-30"></div>
+					<div class="sk-line w-55"></div>
+					<div class="sk-line w-40"></div>
+					<div class="sk-line w-65"></div>
+					<div class="sk-line w-25"></div>
+				</section>
+			}
+			@if (error()) {
+				<div class="error" tuiSurface appearance="negative">
+					<p>{{ error() }}</p>
+					<button tuiButton appearance="primary" size="s" iconStart="@tui.refresh-ccw" type="button" (click)="retry()">Erneut versuchen</button>
+				</div>
+			}
+			@if (hasData() && document(); as doc) {
+				<section class="content">
+					<dl>
+						<div class="row"><dt>ID</dt><dd>{{ doc.id }}</dd></div>
+						<div class="row"><dt>Titel</dt><dd>{{ doc.title || '-' }}</dd></div>
+						<div class="row"><dt>Typ</dt><dd>{{ doc.type || '-' }}</dd></div>
+						<div class="row"><dt>Akzeptiert</dt><dd>{{ doc.accepted ? 'Ja' : 'Nein' }}</dd></div>
+						<div class="row"><dt>Hochgeladen</dt><dd>{{ doc.uploadedAt || '-' }}</dd></div>
+					</dl>
+				</section>
+			}
 		</div>
-	}
-	@if (hasData() && document(); as doc) {
-		<section class="content">
-			<dl>
-				<div class="row"><dt>ID</dt><dd>{{ doc.id }}</dd></div>
-				<div class="row"><dt>Titel</dt><dd>{{ doc.title || '-' }}</dd></div>
-				<div class="row"><dt>Typ</dt><dd>{{ doc.type || '-' }}</dd></div>
-				<div class="row"><dt>Akzeptiert</dt><dd>{{ doc.accepted ? 'Ja' : 'Nein' }}</dd></div>
-				<div class="row"><dt>Hochgeladen</dt><dd>{{ doc.uploadedAt || '-' }}</dd></div>
-			</dl>
-		</section>
-	}
+	</div>
+	<div class="history-wrapper">
+		<app-document-history style="width: 100%;" [events]="history()"></app-document-history>
+	</div>
 </div>

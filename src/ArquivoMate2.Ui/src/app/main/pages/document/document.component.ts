@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TuiButton, TuiLoader, TuiSurface, TuiTitle } from '@taiga-ui/core';
+import { TuiButton, TuiSurface, TuiTitle } from '@taiga-ui/core';
+import { DocumentHistoryComponent } from '../../../components/document-history/document-history.component';
+import { DocumentEventDto } from '../../../client/models/document-event-dto';
 import { ActivatedRoute } from '@angular/router';
 import { DocumentsService } from '../../../client/services/documents.service';
 import { DocumentDto } from '../../../client/models/document-dto';
@@ -9,7 +11,7 @@ import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-document',
-  imports: [CommonModule, TuiButton, TuiLoader, TuiSurface, TuiTitle],
+  imports: [CommonModule, TuiButton, TuiSurface, TuiTitle, DocumentHistoryComponent],
   templateUrl: './document.component.html',
   styleUrl: './document.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,6 +22,7 @@ export class DocumentComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly document = signal<DocumentDto | null>(null);
   readonly hasData = computed(() => !!this.document());
+  readonly history = signal<DocumentEventDto[]>([]);
 
   constructor(
     private route: ActivatedRoute,
@@ -38,7 +41,9 @@ export class DocumentComponent implements OnInit {
     // Resolver supplies data under 'document'
     const resolved: DocumentDto | null | undefined = this.route.snapshot.data['document'];
     if (resolved) {
+      console.log(resolved);
       this.document.set(resolved);
+      this.history.set(resolved.history ?? []);
     } else {
       const id = this.documentId();
       if (!id) {
@@ -55,6 +60,7 @@ export class DocumentComponent implements OnInit {
     this.api.apiDocumentsIdGet$Json({ id }).subscribe({
       next: dto => {
         this.document.set(dto);
+        this.history.set(dto.history ?? []);
         this.loading.set(false);
       },
       error: () => {

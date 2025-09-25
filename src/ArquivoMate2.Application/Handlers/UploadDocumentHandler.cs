@@ -5,18 +5,11 @@ using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.Import;
 using ArquivoMate2.Domain.ValueObjects;
 using HeyRed.Mime;
-using JasperFx.CodeGeneration.Frames;
 using Marten;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ArquivoMate2.Application.Handlers
 {
-
     public class UploadDocumentHandler : IRequestHandler<UploadDocumentCommand, Guid>
     {
         private readonly IDocumentSession _session;
@@ -56,9 +49,13 @@ namespace ArquivoMate2.Application.Handlers
                 fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
             }
 
-            var @event = new DocumentUploaded(fileId, _currentUserService.UserId, fileHash, DateTime.UtcNow);
-  
-            _session.Events.StartStream<Document>(@event.AggregateId, @event);
+            var uploaded = new DocumentUploaded(fileId, _currentUserService.UserId, fileHash, DateTime.UtcNow);
+            _session.Events.StartStream<Document>(uploaded.AggregateId, uploaded);
+
+            // Default Titel
+            var defaultTitle = TitleNormalizer.FromFileName(request.request.File.FileName);
+            _session.Events.Append(fileId, new DocumentTitleInitialized(fileId, defaultTitle, DateTime.UtcNow));
+
             await _session.SaveChangesAsync(cancellationToken);
 
             var languages = (request.request.Language == null || request.request.Language.Length == 0)
@@ -78,7 +75,7 @@ namespace ArquivoMate2.Application.Handlers
             );
             await _fileMetadataService.WriteMetadataAsync(metadata, cancellationToken);
 
-            return @event.AggregateId;
+            return uploaded.AggregateId;
         }
     }
 }

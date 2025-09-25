@@ -1,0 +1,147 @@
+:host { display: block; height: 100%; }
+
+// Use CSS vars from Taiga where possible; add dark-mode adjustments.
+// Prevent jumping by fixing border and not changing padding between states.
+
+.history-panel {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100%;
+	flex: 1 1 auto;
+	min-height: 100%;
+	/* Border kommt bereits ggf. vom äußeren Wrapper / wir verzichten hier um keinen optischen Einzug zu erzeugen */
+	background: var(--tui-background-base, var(--tui-background-base-alt, #fff));
+	font-size: 0.75rem;
+	color: var(--tui-text-primary, inherit);
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+.history-list {
+	flex: 1 1 auto;
+	overflow: auto;
+	padding: 0.5rem 0.5rem 0.35rem 0.5rem; /* leicht weniger unten, damit Details-Sektion bündig wirkt */
+	gap: 0.25rem;
+	display: flex;
+	flex-direction: column;
+	scrollbar-width: thin;
+}
+
+.history-item {
+	padding: 0.45rem 0.55rem; // consistent size
+	border-radius: 4px;
+	cursor: pointer;
+	background: var(--tui-background-base-alt, #f6f6f6);
+	transition: background 120ms, box-shadow 120ms, color 120ms;
+	display: flex;
+	flex-direction: column;
+	position: relative;
+	border: 1px solid transparent;
+}
+.history-item .row-top { display: flex; justify-content: space-between; gap: 0.5rem; align-items: baseline; }
+.history-item .time { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; opacity: 0.85; }
+.history-item .type { font-weight: 600; }
+.history-item .user { margin-top: 0.15rem; opacity: 0.7; font-size: 0.66rem; word-break: break-all; }
+.history-item .user.hidden { display:none; }
+.history-item:hover { background: var(--tui-base-03, #e9e9e9); }
+.history-item.active {
+	background: var(--tui-primary-bg, var(--tui-primary-hover, #d0e6ff));
+	box-shadow: inset 0 0 0 1px var(--tui-primary, #007aff);
+	border-color: var(--tui-primary, #007aff);
+	color: var(--tui-text-on-accent, inherit);
+}
+
+.history-details {
+	flex: 0 0 40%;
+	border-top: 1px solid var(--tui-border-normal, var(--tui-background-base-alt, #dcdcdc));
+	padding: 0.6rem 0.65rem 0.8rem 0.65rem;
+	background: var(--tui-background-elevated, var(--tui-background-base-alt, #fff));
+	max-height: 45%;
+	display: flex;
+	flex-direction: column;
+	gap: 0.55rem;
+	overflow: hidden; /* inner area scrolls */
+	position: relative;
+	box-sizing: border-box;
+}
+.history-details.empty { opacity: .65; }
+.history-details .details-header { display: flex; flex-direction: column; gap: 0.15rem; }
+.history-details .meta { font-size: 0.65rem; opacity: 0.7; }
+.json-wrapper { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-gutter: stable both-edges; }
+.history-details .json {
+	margin: 0;
+	font-size: 0.65rem;
+	line-height: 1.25;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	// wrap long values while preserving indentation
+	white-space: pre-wrap; // keeps existing line breaks + allows wrapping
+	overflow-wrap: anywhere; // allow very long tokens (hashes/uuids) to break
+	word-break: break-word; // fallback for older browsers
+	background: var(--tui-background-base-alt, #f1f1f1);
+	padding: 0.55rem 0.6rem;
+	border-radius: 4px;
+	overflow: auto;
+	border: 1px solid var(--tui-border-normal, var(--tui-base-03, #dcdcdc));
+	max-width: 100%;
+}
+.history-details .json.placeholder { color: var(--tui-text-secondary, #666); font-style: italic; }
+
+/* JSON syntax highlighting tokens */
+.json-token-key { color: #0550ae; font-weight: 500; }
+.json-token-string { color: #0a7c3a; }
+.json-token-number { color: #b55900; }
+.json-token-boolean { color: #aa0d91; font-weight: 500; }
+.json-token-null { color: #6f42c1; font-style: italic; }
+
+:host-context(.tui-theme_dark) {
+	.json-token-key { color: #6cb6ff; }
+	.json-token-string { color: #8ddb8c; }
+	.json-token-number { color: #ffa657; }
+	.json-token-boolean { color: #f69dff; }
+	.json-token-null { color: #d2a8ff; }
+}
+
+// Layout stability: reserve scrollbar space to avoid horizontal/width jumps.
+.history-list,
+.history-details { scrollbar-gutter: stable both-edges; }
+
+// Improve vertical distribution: details take 40% when visible.
+.history-list { flex: 1 1 60%; min-height: 0; }
+.history-details { min-height: 0; }
+
+// Support Taiga's dark theme host class
+// Rely primarily on Taiga theme tokens; only minimal tweak for dark to increase contrast if needed.
+:host-context(.tui-theme_dark) {
+	/* Dark mode refinements for better contrast & visual hierarchy */
+	.history-panel { background: var(--tui-background-base-alt, #141518); }
+	.history-item {
+		background: var(--tui-base-02, #1e1f23);
+		color: var(--tui-text-primary, #e3e6ea);
+		border-color: rgba(255,255,255,0.04);
+	}
+	.history-item:hover { background: var(--tui-base-03, #272a2f); }
+	.history-item.active {
+		/* Use a translucent accent mix instead of full solid block */
+		background:
+			linear-gradient(
+				0deg,
+				color-mix(in srgb, var(--tui-primary) 22%, transparent) 0%,
+				color-mix(in srgb, var(--tui-primary) 12%, transparent) 100%
+			);
+		color: var(--tui-text-primary, #fff);
+		border-color: var(--tui-primary);
+		box-shadow: inset 0 0 0 1px var(--tui-primary);
+	}
+	.history-details { background: var(--tui-background-base-alt, #1a1c20); }
+	.history-details.empty { opacity: .55; }
+	.history-details .json {
+		background: var(--tui-base-02, #1e1f23);
+		border-color: var(--tui-base-03, #2a2d33);
+		color: var(--tui-text-secondary, #c5c8ce);
+	}
+	.history-details .json.placeholder { color: var(--tui-text-secondary, #7a8088); }
+}
+
+// Reduce layout shift when selecting the first vs second item: no margin collapse.
+.history-item + .history-item { margin-top: 0; }

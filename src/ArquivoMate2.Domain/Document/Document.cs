@@ -45,6 +45,8 @@ namespace ArquivoMate2.Domain.Document
 
         public DateTime? OccurredOn { get; private set; }
 
+        private string? _initialTitle;
+
         public Document() { }
 
         public void Apply(DocumentUploaded e)
@@ -55,11 +57,30 @@ namespace ArquivoMate2.Domain.Document
             Hash = e.Hash;
         }
 
-        public void Apply(DocumentContentExtracted documentContentExtracted)
+        public void Apply(DocumentTitleInitialized e)
         {
-            Content = documentContentExtracted.Content;
+            if (string.IsNullOrWhiteSpace(Title))
+            {
+                Title = e.Title;
+                _initialTitle = e.Title;
+            }
+            OccurredOn = e.OccurredOn;
+        }
 
-            OccurredOn = documentContentExtracted.OccurredOn;
+        public void Apply(DocumentTitleSuggested e)
+        {
+            if (string.IsNullOrWhiteSpace(Title) || (!string.IsNullOrWhiteSpace(_initialTitle) && Title == _initialTitle))
+            {
+                Title = e.Title;
+            }
+            OccurredOn = e.OccurredOn;
+        }
+
+        public void Apply(DocumentContentExtracted e)
+        {
+            Content = e.Content;
+
+            OccurredOn = e.OccurredOn;
         }
 
         public void Apply(DocumentFilesPrepared e)
@@ -121,6 +142,8 @@ namespace ArquivoMate2.Domain.Document
                     }
                 }
             }
+            if (!string.IsNullOrWhiteSpace(Title) && Title != _initialTitle)
+                _initialTitle = null;
             OccurredOn = e.OccurredOn;
         }
 

@@ -424,3 +424,5 @@
 - [Utils / Miscellaneous](https://taiga-ui.dev/utils/miscellaneous)
 - [Utils / Pure](https://taiga-ui.dev/utils/pure)
 - [Utils / Tokens](https://taiga-ui.dev/utils/tokens)
+
+Beachte immer die memory.instrunction.md Datei.

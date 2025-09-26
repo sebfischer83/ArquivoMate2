@@ -23,6 +23,8 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             _client = client;
         }
 
+        public string ModelName => _client.Model;
+
         public async Task<DocumentAnalysisResult> AnalyzeDocumentContent(string content, CancellationToken cancellationToken)
         {   
             var messages = new List<ChatMessage>

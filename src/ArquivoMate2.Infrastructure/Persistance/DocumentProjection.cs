@@ -71,6 +71,8 @@ namespace ArquivoMate2.Infrastructure.Persistance
             view.TotalPrice = e.TotalPrice;
             view.Type = e.Type;
             view.Date = e.Date;
+            view.ChatBotModel = e.ModelName; // NEW
+            view.ChatBotClass = e.ChatBotClass; // NEW
             view.OccurredOn = e.OccurredOn;
         }
 

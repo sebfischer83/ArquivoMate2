@@ -11,6 +11,8 @@
             string InvoiceNumber,
             decimal? TotalPrice,
             List<string> Keywords,
-            string Summary) : IDomainEvent;
+            string Summary,
+            string ModelName,
+            string ChatBotClass) : IDomainEvent;
 
 }

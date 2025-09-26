@@ -6,12 +6,14 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
 {
     public class OpenAIBatchChatBot : IChatBot
     {
-        private BatchClient _client;
+        private readonly BatchClient _client;
 
         public OpenAIBatchChatBot(BatchClient client)
         {
             _client = client;
         }
+
+        public string ModelName => "";
 
         public Task<DocumentAnalysisResult> AnalyzeDocumentContent(string content, CancellationToken cancellationToken)
         {

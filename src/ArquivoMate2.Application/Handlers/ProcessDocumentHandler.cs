@@ -315,7 +315,7 @@ namespace ArquivoMate2.Application.Handlers
             }
             
             _session.Events.Append(documentId, new DocumentChatBotDataReceived(documentId, senderId, recipientId, null, DateTime.UtcNow,
-                chatbotResult.DocumentType, chatbotResult.CustomerNumber, chatbotResult.InvoiceNumber, chatbotResult.TotalPrice, chatbotResult.Keywords, chatbotResult.Summary));
+                chatbotResult.DocumentType, chatbotResult.CustomerNumber, chatbotResult.InvoiceNumber, chatbotResult.TotalPrice, chatbotResult.Keywords, chatbotResult.Summary, _chatBot.ModelName, _chatBot.GetType().Name));
             if (chatbotResult.Title.IsNotEmpty())
             {
                 _session.Events.Append(documentId, new DocumentTitleSuggested(documentId, chatbotResult.Title, DateTime.UtcNow));

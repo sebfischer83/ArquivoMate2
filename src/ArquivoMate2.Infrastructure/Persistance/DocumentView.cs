@@ -41,6 +41,9 @@ namespace ArquivoMate2.Infrastructure.Persistance
         public string Title { get; set; } = string.Empty;
         public int ContentLength { get; set; }
 
+        public string ChatBotModel { get; set; } = string.Empty; // NEW
+        public string ChatBotClass { get; set; } = string.Empty; // NEW
+
         public DateTime UploadedAt { get; set; }
         public DateTime? ProcessedAt { get; set; }
     }

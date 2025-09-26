@@ -43,6 +43,9 @@ namespace ArquivoMate2.Domain.Document
 
         public string Title { get; private set; } = string.Empty;
 
+        public string ChatBotModel { get; private set; } = string.Empty; // NEW
+        public string ChatBotClass { get; private set; } = string.Empty; // NEW
+
         public DateTime? OccurredOn { get; private set; }
 
         private string? _initialTitle;
@@ -109,6 +112,8 @@ namespace ArquivoMate2.Domain.Document
             TotalPrice = e.TotalPrice;
             Keywords = e.Keywords;
             Summary = e.Summary;
+            ChatBotModel = e.ModelName; // NEW
+            ChatBotClass = e.ChatBotClass; // NEW
             OccurredOn = e.OccurredOn;
         }
 

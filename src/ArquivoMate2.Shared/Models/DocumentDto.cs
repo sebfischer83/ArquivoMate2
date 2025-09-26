@@ -46,6 +46,9 @@ namespace ArquivoMate2.Shared.Models
 
         public string Title { get; set; } = string.Empty;
 
+        public string ChatBotModel { get; set; } = string.Empty; // NOVO
+        public string ChatBotClass { get; set; } = string.Empty; // NOVO
+
         public List<DocumentEventDto> History { get; set; } = new List<DocumentEventDto>();
     }
 }

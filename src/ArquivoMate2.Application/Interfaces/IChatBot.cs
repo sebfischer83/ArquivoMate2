@@ -9,6 +9,8 @@ namespace ArquivoMate2.Application.Interfaces
 {
     public interface IChatBot
     {
+        string ModelName { get; }
+
         public Task<DocumentAnalysisResult> AnalyzeDocumentContent(string content, CancellationToken cancellationToken);
     }
 }

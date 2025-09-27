@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, OnInit, signal, computed, inject } 
 import { CommonModule } from '@angular/common';
 import { TuiButton, TuiSurface, TuiTitle } from '@taiga-ui/core';
 import { TuiTabs } from '@taiga-ui/kit';
+import { DocumentTabsComponent } from './components/document-tabs/document-tabs.component';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PdfJsViewerComponent } from '../../../components/pdfjs-viewer/pdfjs-viewer.component';
 import { DocumentHistoryComponent } from '../../../components/document-history/document-history.component';
@@ -16,7 +17,7 @@ import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-document',
-  imports: [CommonModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, DocumentHistoryComponent, PdfJsViewerComponent],
+  imports: [CommonModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, DocumentHistoryComponent, PdfJsViewerComponent, DocumentTabsComponent],
   templateUrl: './document.component.html',
   styleUrls: ['./document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

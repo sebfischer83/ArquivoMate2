@@ -27,14 +27,11 @@
 					<button tuiButton appearance="primary" size="s" iconStart="@tui.refresh-ccw" type="button" (click)="retry()">Erneut versuchen</button>
 				</div>
 			}
-            @if (hasData() && document(); as doc) {
-						<div class="doc-split">
-							<div class="detail-pane left-col">
-					<tui-tabs [(activeItemIndex)]="activeItemIndex">
-						<button type="button" tuiTab iconStart="@tui.file-text">Details</button>
-						<button type="button" tuiTab iconStart="@tui.align-left">Inhalt</button>
-						<button type="button" tuiTab iconStart="@tui.history">Historie</button>
-					</tui-tabs>
+			@if (hasData() && document(); as doc) {
+				<app-document-tabs [(activeIndex)]="activeItemIndex" [sticky]="true"></app-document-tabs>
+				<div class="doc-split"> 
+					<div class="detail-pane left-col">
+            <div class="left-scroll">
 					<div class="tab-content">
 						<section class="tab-pane properties" [class.active]="activeItemIndex === 0">
 							<div *ngIf="doc.summary" class="summary-box details-summary">
@@ -55,14 +52,11 @@
 						</section>
 						<section class="tab-pane content-view" [class.active]="activeItemIndex === 1">
 							<div class="content-toolbar">
-								<div class="left">
-									<h3 tuiTitle="s">Inhalt</h3>
-								</div>
 								<div class="right">
 									<button tuiButton size="xs" appearance="flat" type="button" (click)="toggleWrap()" [iconStart]="wrapContent() ? '@tui.text' : '@tui.expand'">{{ wrapContent() ? 'Wrap aus' : 'Wrap an' }}</button>
 									<button tuiButton size="xs" appearance="flat" type="button" (click)="copyContent()" [iconStart]="copiedContent() ? '@tui.check' : '@tui.copy'">{{ copiedContent() ? 'Kopiert' : 'Copy' }}</button>
 								</div>
-							</div>
+							</div> <!-- /.content-toolbar -->
 							<div class="content-box" [class.nowrap]="!wrapContent()" tuiScrollbar>
 								<pre class="doc-content" [class.nowrap]="!wrapContent()">{{ doc.content }}</pre>
 							</div>
@@ -70,21 +64,22 @@
 						<section class="tab-pane history-view" [class.active]="activeItemIndex === 2">
 							<app-document-history style="width: 100%;" [events]="history()"></app-document-history>
 						</section>
- 					</div>
-							</div>
+						</div><!-- /.tab-content -->
+						</div><!-- /.left-scroll -->
+					</div><!-- /.detail-pane -->
 											<div class="preview-pane right-col">
 															<div class="preview-header">
 																<h3 tuiTitle="s">Vorschau</h3>
 															</div>
 															@if (previewPath) {
 																<div class="preview-frame">
-																	<app-pdfjs-viewer [src]="previewPath"></app-pdfjs-viewer>
+																	<!-- <app-pdfjs-viewer [src]="previewPath"></app-pdfjs-viewer> -->
 																</div>
 															} @else {
 																<div class="no-preview" tuiSurface appearance="floating">Keine Vorschau verfügbar</div>
 															}
 											</div>
-            </div>
+            </div><!-- /.doc-split -->
 			}
 		</div>
 	</div>

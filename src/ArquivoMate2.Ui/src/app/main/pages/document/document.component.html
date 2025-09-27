@@ -72,8 +72,11 @@
 																<h3 tuiTitle="s">Vorschau</h3>
 															</div>
 															@if (previewPath) {
+																<div class="preview-toolbar-wrapper">
+																	<app-pdfjs-viewer-toolbar [viewer]="pdfViewer" class="pdf-toolbar-sticky"></app-pdfjs-viewer-toolbar>
+																</div>
 																<div class="preview-frame">
-																	<!-- <app-pdfjs-viewer [src]="previewPath"></app-pdfjs-viewer> -->
+																	<app-pdfjs-viewer #pdfViewer [initialFitMode]="'width'" [src]="previewPath"></app-pdfjs-viewer>
 																</div>
 															} @else {
 																<div class="no-preview" tuiSurface appearance="floating">Keine Vorschau verfügbar</div>

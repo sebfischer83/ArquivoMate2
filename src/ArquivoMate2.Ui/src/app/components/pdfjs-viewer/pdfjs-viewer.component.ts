@@ -1,6 +1,6 @@
-import { Component, ChangeDetectionStrategy, Input, signal, inject, OnDestroy, ElementRef, ViewChild } from '@angular/core';
+import { Component, ChangeDetectionStrategy, Input, signal, inject, OnDestroy, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TuiButton, TuiLoader, TuiSurface } from '@taiga-ui/core';
+import { TuiLoader, TuiSurface } from '@taiga-ui/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Subject } from 'rxjs';
 
@@ -17,24 +17,10 @@ declare const window: any;
 @Component({
   selector: 'app-pdfjs-viewer',
   standalone: true,
-  imports: [CommonModule, TuiButton, TuiLoader, TuiSurface],
+  imports: [CommonModule, TuiLoader, TuiSurface],
   template: `
   <div class="pdfjs-container" [class.loading]="loading()">
-    <div class="toolbar" tuiSurface appearance="floating">
-      <div class="left">
-        <button tuiButton size="xs" appearance="flat" iconStart="@tui.arrow-left" (click)="prevPage()" [disabled]="pageIndex() <= 1">Seite -</button>
-  <span class="page-indicator">{{ pageIndex() }} / {{ totalPages() || '?' }}</span>
-        <button tuiButton size="xs" appearance="flat" iconStart="@tui.arrow-right" (click)="nextPage()" [disabled]="pageIndex() >= totalPages()">Seite +</button>
-      </div>
-      <div class="mid">
-        <button tuiButton size="xs" appearance="flat" iconStart="@tui.zoom-in" (click)="zoomIn()" [disabled]="zoom() >= 3 || fitPage()">Zoom +</button>
-        <button tuiButton size="xs" appearance="flat" iconStart="@tui.zoom-out" (click)="zoomOut()" [disabled]="zoom() <= 0.5 || fitPage()">Zoom -</button>
-        <button tuiButton size="xs" appearance="flat" iconStart="@tui.refresh-ccw" (click)="resetZoom()" [disabled]="(zoom() === 1 && !fitPage())">Reset</button>
-      </div>
-      <div class="right"></div>
-    </div>
-
-  <div class="viewer-wrapper" #wrapper>
+    <div class="viewer-wrapper" #wrapper>
       <canvas #canvasEl class="pdf-canvas"></canvas>
       <div class="loading-overlay" *ngIf="loading()">
         <tui-loader size="l"></tui-loader>
@@ -46,7 +32,7 @@ declare const window: any;
   styleUrls: ['./pdfjs-viewer.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PdfJsViewerComponent implements OnDestroy {
+export class PdfJsViewerComponent implements OnDestroy, AfterViewInit {
   private destroy$ = new Subject<void>();
 
   private sanitizer = inject(DomSanitizer);
@@ -68,7 +54,32 @@ export class PdfJsViewerComponent implements OnDestroy {
   pageIndex = signal(1);
   totalPages = signal(0);
   zoom = signal(1);
-  fitPage = signal(false);
+  /** Effective last render scale (after fit/zoom computation). */
+  lastScale = signal(1);
+  /** Fit modes: page -> contain (whole page visible), width -> fill available width, custom -> manual zoom (100% baseline). */
+  fitMode = signal<'page' | 'width' | 'custom'>('page');
+  /** User rotation offset (multiples of 90). Currently not exposed via UI after toolbar simplification. */
+  rotation = signal(0);
+  /** If true (default) a pure 180° intrinsic page rotation is normalized to 0 (some PDFs embed upside-down pages). */
+  @Input() normalizeUpsideDown = true;
+  /** Allow initial override of fit mode from parent */
+  @Input() set initialFitMode(m: 'page'|'width'|'custom') {
+    const changed = this.fitMode() !== m;
+    this.fitMode.set(m);
+    if (changed && this.pdfDoc) {
+      // re-render immediately if document already loaded
+      this.renderPage();
+    }
+  }
+  /** Optional initial custom zoom in percent (e.g. 100, 125). Only applied if initialFitMode='custom'. */
+  @Input() set initialZoomPercent(p: number | null) {
+    if (p && p > 0) {
+      this.zoom.set(p / 100);
+      if (this.fitMode() === 'custom' && this.pdfDoc) {
+        this.renderPage();
+      }
+    }
+  }
 
   private pdfDoc: PDFDocumentProxy | null = null;
   private currentPage: PDFPageProxy | null = null;
@@ -77,8 +88,24 @@ export class PdfJsViewerComponent implements OnDestroy {
   private rendering = false;
   private pendingPage: number | null = null;
   srcSafe: SafeResourceUrl | null = null;
+  private resizeObserver?: ResizeObserver;
+
+  ngAfterViewInit(): void {
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => {
+        if (this.pdfDoc) {
+          this.renderPage();
+        }
+      });
+      const el = this.wrapperRef?.nativeElement;
+      if (el) this.resizeObserver.observe(el);
+    }
+  }
 
   ngOnDestroy(): void {
+    if (this.resizeObserver) {
+      try { this.resizeObserver.disconnect(); } catch {}
+    }
     this.destroy$.next();
     this.destroy$.complete();
     this.clearDoc();
@@ -124,14 +151,23 @@ export class PdfJsViewerComponent implements OnDestroy {
     this.rendering = true;
     this.pdfDoc.getPage(pageNum).then(page => {
       this.currentPage = page;
+      // Combine intrinsic page rotation with user rotation (if any)
+      let effectiveRotation = (page.rotate + this.rotation()) % 360;
+      if (this.normalizeUpsideDown && effectiveRotation === 180) {
+        effectiveRotation = 0;
+      }
       const wrapperEl = this.wrapperRef?.nativeElement;
-      const baseViewport = page.getViewport({ scale: 1 });
-      let scale = this.computeScale(baseViewport.width, baseViewport.height, wrapperEl);
-      const viewport = page.getViewport({ scale });
+      const baseViewport = page.getViewport({ scale: 1, rotation: effectiveRotation });
+      const scale = this.computeScale(baseViewport.width, baseViewport.height, wrapperEl);
+  const viewport = page.getViewport({ scale, rotation: effectiveRotation });
+  this.lastScale.set(scale);
       const canvas = this.canvasRef!.nativeElement;
       const ctx = canvas.getContext('2d');
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  canvas.width = viewport.width;
+  // Also set CSS size so that intrinsic pixel size maps 1:1 unless browser scales
+  canvas.style.width = `${viewport.width}px`;
+  canvas.style.height = `${viewport.height}px`;
       if (!ctx) {
         this.rendering = false;
         return;
@@ -153,39 +189,25 @@ export class PdfJsViewerComponent implements OnDestroy {
    * 3. Clamps so the resulting canvas does not exceed wrapper width/height (prevents layout overflow)
    */
   private computeScale(pdfWidth: number, pdfHeight: number, wrapperEl?: HTMLElement): number {
-    let scale = this.zoom();
-    if (!wrapperEl) return scale;
-    const paddingComp = 16; // wrapper horizontal padding total approximation
+    if (!wrapperEl) return 1;
+    const paddingComp = 16;
     const availW = Math.max(0, wrapperEl.clientWidth - paddingComp);
     const availH = Math.max(0, wrapperEl.clientHeight - paddingComp);
-
-    // Base contain scaling (never let initial render overflow vertically or horizontally)
-    const containScale = Math.min(
-      availW > 0 ? availW / pdfWidth : scale,
-      availH > 0 ? availH / pdfHeight : scale,
-      scale
+    const contain = Math.min(
+      availW > 0 ? availW / pdfWidth : 1,
+      availH > 0 ? availH / pdfHeight : 1
     );
-
-    // If fitPage explicitly on, override with pure contain irrespective of user zoom
-    if (this.fitPage()) {
-      scale = containScale;
-    } else {
-      // Otherwise ensure we don't exceed container at base zoom (scale<=1) but allow user zoom to enlarge
-      if (this.zoom() === 1) {
-        scale = containScale;
-      } else {
-        // User has zoomed; cap so we never overflow height (horizontal overflow allowed? No -> also clamp)
-        const maxScaleW = availW > 0 ? availW / pdfWidth : scale;
-        const maxScaleH = availH > 0 ? availH / pdfHeight : scale;
-        const hardMax = Math.min(maxScaleW, maxScaleH);
-        if (scale > hardMax) scale = hardMax;
-      }
+    switch (this.fitMode()) {
+      case 'page':
+        return clamp(contain, 0.1, 5);
+      case 'width':
+        if (availW <= 0) return 1;
+        return clamp(availW / pdfWidth, 0.1, 5);
+      case 'custom':
+      default:
+        // custom uses manual zoom relative to natural 100% size (scale=1) but still avoid huge overflow > 5
+        return clamp(this.zoom(), 0.1, 5);
     }
-
-    // Guard rails
-    if (scale < 0.25) scale = 0.25;
-    if (scale > 5) scale = 5;
-    return scale;
   }
 
   nextPage() {
@@ -200,16 +222,21 @@ export class PdfJsViewerComponent implements OnDestroy {
     this.queueRender(target);
   }
 
-  zoomIn() { this.zoom.update(z => Math.min(3, +(z + 0.25).toFixed(2))); this.renderPage(); }
-  zoomOut() { this.zoom.update(z => Math.max(0.5, +(z - 0.25).toFixed(2))); this.renderPage(); }
-  resetZoom() { this.zoom.set(1); this.renderPage(); }
-  toggleFit() {
-    this.fitPage.update(v => !v);
-    if (!this.fitPage()) {
-      this.zoom.set(1); // reset when leaving fit mode
+  setFitMode(mode: 'page'|'width'|'custom') {
+    this.fitMode.set(mode);
+    if (mode === 'custom') {
+      if (this.zoom() === 1) {
+        // keep 100% baseline
+      }
+    } else {
+      // reset zoom to baseline when leaving custom
+      this.zoom.set(1);
     }
     this.renderPage();
   }
+  zoomIn() { if (this.fitMode() !== 'custom') this.fitMode.set('custom'); this.zoom.update(z => +(z + 0.25).toFixed(2)); this.renderPage(); }
+  zoomOut() { if (this.fitMode() !== 'custom') this.fitMode.set('custom'); this.zoom.update(z => Math.max(0.1, +(z - 0.25).toFixed(2))); this.renderPage(); }
+  resetZoom() { this.zoom.set(1); if (this.fitMode() !== 'custom') this.fitMode.set('custom'); this.renderPage(); }
 
   private queueRender(page: number) {
     if (this.rendering) { this.pendingPage = page; return; }
@@ -217,5 +244,9 @@ export class PdfJsViewerComponent implements OnDestroy {
     this.renderPage();
   }
 
+  // Exposed for external toolbar template consumption
+  // (signals are already public; methods above are the API)
   // Overlay functionality removed
 }
+
+function clamp(v: number, min: number, max: number) { return v < min ? min : v > max ? max : v; }

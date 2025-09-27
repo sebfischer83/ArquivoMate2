@@ -6,6 +6,7 @@ import { TuiTabs } from '@taiga-ui/kit';
 import { DocumentTabsComponent } from './components/document-tabs/document-tabs.component';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PdfJsViewerComponent } from '../../../components/pdfjs-viewer/pdfjs-viewer.component';
+import { PdfJsViewerToolbarComponent } from '../../../components/pdfjs-viewer/pdfjs-viewer-toolbar.component';
 import { DocumentHistoryComponent } from '../../../components/document-history/document-history.component';
 import { DocumentEventDto } from '../../../client/models/document-event-dto';
 import { ActivatedRoute } from '@angular/router';
@@ -17,7 +18,7 @@ import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-document',
-  imports: [CommonModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, DocumentHistoryComponent, PdfJsViewerComponent, DocumentTabsComponent],
+  imports: [CommonModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, DocumentHistoryComponent, PdfJsViewerComponent, DocumentTabsComponent, PdfJsViewerToolbarComponent],
   templateUrl: './document.component.html',
   styleUrls: ['./document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

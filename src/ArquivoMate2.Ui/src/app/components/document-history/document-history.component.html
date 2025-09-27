@@ -1,4 +1,5 @@
 <div class="history-panel">
+	<h3 tuiTitle="s" class="history-heading">Dokumenten Historie</h3>
 	<div class="history-list" tuiScrollbar>
 		<div
 			class="history-item"
@@ -21,9 +22,45 @@
 				{{ selectedEvent()?.occurredOn | date : 'yyyy-MM-dd HH:mm:ss' }} • {{ selectedEvent()?.eventType || '—' }}
 				<span class="user-inline" [class.hidden]="!selectedEvent()?.userId"> • {{ selectedEvent()?.userId }}</span>
 			</span>
+			<div class="toolbar" *ngIf="hasJson">
+				<button tuiButton size="xs" appearance="secondary" type="button" (click)="copyJson()" [iconStart]="copied() ? '@tui.check' : '@tui.copy'" [attr.aria-label]="copied() ? 'Copied' : 'Copy JSON'">
+					<span>{{ copied() ? 'Copied' : 'Copy' }}</span>
+				</button>
+				<button tuiButton size="xs" appearance="secondary" type="button" iconStart="@tui.chevrons-down" (click)="expandAll()" aria-label="Expand all">Expand</button>
+				<button tuiButton size="xs" appearance="secondary" type="button" iconStart="@tui.chevrons-up" (click)="collapseAll()" aria-label="Collapse all">Collapse</button>
+			</div>
 		</div>
 		<div class="json-wrapper">
-			<pre class="json" [class.placeholder]="!hasJson" [innerHTML]="highlightedJson || 'Keine Detaildaten'"></pre>
+			<ng-container *ngIf="treeRoot() as root; else staticJson">
+				<div class="json-tree">
+					<!-- force change detection on treeVersion updates -->
+					<span style="display:none">{{ treeVersionValue }}</span>
+					<ng-container [ngTemplateOutlet]="jsonNode" [ngTemplateOutletContext]="{ $implicit: root, last: true, isRoot: true }"></ng-container>
+				</div>
+			</ng-container>
+			<ng-template #staticJson>
+				<pre class="json" [class.placeholder]="!hasJson" [innerHTML]="hasJson ? formattedJson : 'Keine Detaildaten'"></pre>
+			</ng-template>
+
+			<ng-template #jsonNode let-node let-last="last" let-isRoot="isRoot">
+				<div class="jt-line" [style.margin-left.px]="isRoot ? 0 : (node.path.split('.').length - 2) * 14">
+					<button tuiButton size="xs" appearance="flat" type="button" class="jt-toggle" *ngIf="node.type !== 'value'" (click)="toggle(node)" [attr.aria-label]="node.collapsed ? 'expand' : 'collapse'" [iconStart]="node.collapsed ? '@tui.chevron-right' : '@tui.chevron-down'"></button>
+					<span class="jt-key" *ngIf="!isRoot && node.key">"{{ node.key }}"<span class="jt-colon">: </span></span>
+					<ng-container [ngSwitch]="node.type">
+						<span *ngSwitchCase="'value'" [ngClass]="valueClass(node.value)">{{ formatValue(node.value) }}</span>
+						<span *ngSwitchCase="'object'" class="jt-brace">{{ '{' }}</span>
+						<span *ngSwitchCase="'array'" class="jt-brace">{{ '[' }}</span>
+					</ng-container>
+				</div>
+				<div class="jt-children" *ngIf="node.type !== 'value' && !node.collapsed">
+					<ng-container *ngFor="let c of node.children; let li = last">
+						<ng-container [ngTemplateOutlet]="jsonNode" [ngTemplateOutletContext]="{ $implicit: c, last: li, isRoot: false }"></ng-container>
+					</ng-container>
+					<div class="jt-line end" [style.margin-left.px]="(node.path.split('.').length - 2) * 14">
+						<span class="jt-brace" *ngIf="node.type === 'object'">{{ '}' }}</span><span class="jt-brace" *ngIf="node.type === 'array'">{{ ']' }}</span><span class="jt-comma" *ngIf="!last">,</span>
+					</div>
+				</div>
+			</ng-template>
 		</div>
 	</div>
 </div>

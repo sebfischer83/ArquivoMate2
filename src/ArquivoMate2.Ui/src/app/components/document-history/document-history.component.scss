@@ -21,18 +21,20 @@
 .history-list {
 	flex: 1 1 auto;
 	overflow: auto;
+	background: var(--tui-background-elevated, var(--tui-background-base-alt, #fff));
 	padding: 0.5rem 0.5rem 0.35rem 0.5rem; /* leicht weniger unten, damit Details-Sektion bündig wirkt */
 	gap: 0.25rem;
 	display: flex;
 	flex-direction: column;
 	scrollbar-width: thin;
+	border: 1px solid var(--tui-border-normal, var(--tui-background-base-alt, #dcdcdc));
 }
 
 .history-item {
 	padding: 0.45rem 0.55rem; // consistent size
 	border-radius: 4px;
 	cursor: pointer;
-	background: var(--tui-background-base-alt, #f6f6f6);
+	background: var(--tui-background-elevation-1, #f6f6f6);
 	transition: background 120ms, box-shadow 120ms, color 120ms;
 	display: flex;
 	flex-direction: column;
@@ -54,7 +56,7 @@
 
 .history-details {
 	flex: 0 0 40%;
-	border-top: 1px solid var(--tui-border-normal, var(--tui-background-base-alt, #dcdcdc));
+	border: 1px solid var(--tui-border-normal, var(--tui-background-base-alt, #dcdcdc));
 	padding: 0.6rem 0.65rem 0.8rem 0.65rem;
 	background: var(--tui-background-elevated, var(--tui-background-base-alt, #fff));
 	max-height: 45%;
@@ -87,6 +89,55 @@
 }
 .history-details .json.placeholder { color: var(--tui-text-secondary, #666); font-style: italic; }
 
+/* Toolbar */
+.details-header { position: relative; }
+.details-header .toolbar { display: flex; gap: .35rem; margin-top: .25rem; flex-wrap: wrap; }
+.details-header .toolbar button { font-size: 0.55rem; }
+
+/* Interactive JSON tree */
+.json-tree { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.65rem; line-height: 1.25; }
+.json-tree .jt-line { white-space: nowrap; display: flex; align-items: flex-start; gap: .25rem; }
+.json-tree .jt-line.root { font-weight: 600; }
+.json-tree .jt-children { display: block; }
+.json-tree .jt-toggle { width: 1.1rem; min-width: 1.1rem; padding: 0; text-align: center; line-height: 1; }
+.json-tree .jt-toggle span { display: inline-block; transform: translateY(-1px); }
+.json-tree .jt-key { color: #0550ae; }
+.json-tree .jt-colon { color: var(--tui-text-secondary, #666); }
+.json-tree .jt-brace { color: var(--tui-text-secondary, #888); }
+.json-tree .jt-comma { color: var(--tui-text-secondary, #888); }
+.json-tree .jt-string { color: #0a7c3a; }
+.json-tree .jt-number { color: #b55900; }
+.json-tree .jt-boolean { color: #aa0d91; }
+.json-tree .jt-null { color: #6f42c1; font-style: italic; }
+.json-tree .jt-line:hover { background: rgba(0,0,0,0.04); border-radius: 3px; }
+
+:host-context(.tui-theme_dark) .json-tree {
+	.jt-key { color: #6cb6ff; }
+	.jt-brace, .jt-comma, .jt-colon { color: #8b949e; }
+	.jt-string { color: #8ddb8c; }
+	.jt-number { color: #ffa657; }
+	.jt-boolean { color: #f69dff; }
+	.jt-null { color: #d2a8ff; }
+	.jt-line:hover { background: rgba(255,255,255,0.06); }
+}
+
+/* pretty-print-json library classes */
+.json .ppj-line { display: block; }
+.json .ppj-key { color: #0550ae; font-weight: 500; }
+.json .ppj-value-string { color: #0a7c3a; }
+.json .ppj-value-number { color: #b55900; }
+.json .ppj-value-boolean { color: #aa0d91; font-weight: 500; }
+.json .ppj-value-null { color: #6f42c1; font-style: italic; }
+.json .ppj-raw { white-space: pre-wrap; word-break: break-word; }
+
+:host-context(.tui-theme_dark) .json {
+	.ppj-key { color: #6cb6ff; }
+	.ppj-value-string { color: #8ddb8c; }
+	.ppj-value-number { color: #ffa657; }
+	.ppj-value-boolean { color: #f69dff; }
+	.ppj-value-null { color: #d2a8ff; }
+}
+
 /* JSON syntax highlighting tokens */
 .json-token-key { color: #0550ae; font-weight: 500; }
 .json-token-string { color: #0a7c3a; }
@@ -116,7 +167,7 @@
 	/* Dark mode refinements for better contrast & visual hierarchy */
 	.history-panel { background: var(--tui-background-base-alt, #141518); }
 	.history-item {
-		background: var(--tui-base-02, #1e1f23);
+		background: var(--tui-background-elevation-1, #1e1f23);
 		color: var(--tui-text-primary, #e3e6ea);
 		border-color: rgba(255,255,255,0.04);
 	}

@@ -16,7 +16,8 @@
       
     </footer>
 </tui-drawer>
-<header tuiNavigationHeader>
+<div class="main-area-shell app-shell">
+<header tuiNavigationHeader class="app-header">
     <span tuiNavigationSegments>
         <button
             appearance="secondary-grayscale"
@@ -100,12 +101,9 @@
     (click)="openDrawer.set(!openDrawer())"
     >Toggle
 </button>
-</header>
-<div [style.display]="'flex'">
-    <aside
-        style="height: calc(100vh - 48px);"
-        [tuiNavigationAside]="expanded()"
-    >
+ </header>
+<div class="app-body-layout app-content">
+    <aside [tuiNavigationAside]="expanded()" class="app-aside">
         <header>
             <button
                 iconStart="@tui.home"
@@ -257,7 +255,8 @@
             </button>
         </footer>
     </aside>
-    <main tuiNavigationMain>
+    <main tuiNavigationMain class="app-main">
         <router-outlet />
     </main>
+ </div>
 </div>

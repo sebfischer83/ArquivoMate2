@@ -1,3 +1,80 @@
+:root {
+  /* default header height fallback */
+  --app-header-height: 56px;
+}
+
+app-main-area, app-main-area > * {
+  box-sizing: border-box;
+}
+
+/* Shell layout: header + content column */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+.app-shell > header { flex: 0 0 auto; }
+.app-shell > .app-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Utility class pages can use if needed */
+.fill-viewport-minus-header {
+  height: calc(100dvh - var(--app-header-height));
+  max-height: calc(100dvh - var(--app-header-height));
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* New structured layout classes */
+.main-area-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.main-area-shell > .app-body-layout {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.app-aside {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden; /* aside itself scroll not required; its inner can */
+}
+
+.app-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* descendant pages decide scroll */
+}
+
+.app-main > router-outlet + * {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .import-history-item {
   position: relative !important;
   

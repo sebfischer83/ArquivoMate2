@@ -1,9 +1,15 @@
-<div class="document-layout">
+<div class="document-layout page-flex-root">
 	<div class="main-area" tuiSurface appearance="floating">
 		<div class="document-detail">
-			<div class="header">
-				<button tuiButton size="s" appearance="secondary" iconStart="@tui.arrow-left" type="button" (click)="back()">Zurück</button>
-				<h2 tuiTitle="m">Dokument Detail</h2>
+			<div class="toolbar">
+				<div class="left">
+					<button tuiButton size="s" appearance="secondary" iconStart="@tui.arrow-left" type="button" (click)="back()">Zurück</button>
+					<h2 tuiTitle="m" class="doc-title">{{ originalFileName() || 'Dokument' }}</h2>
+				</div>
+				<div class="actions" *ngIf="hasData()">
+					<button tuiButton size="s" appearance="flat" iconStart="@tui.download" type="button" (click)="downloadOriginal()" [disabled]="!filePath || downloadLoading()">{{ downloadLoading() ? 'Lädt…' : 'Download' }}</button>
+					<button tuiButton size="s" appearance="flat" iconStart="@tui.external-link" type="button" (click)="openInNewTab()" [disabled]="!filePath">Öffnen</button>
+				</div>
 			</div>
 
 			@if (loading()) {
@@ -21,20 +27,65 @@
 					<button tuiButton appearance="primary" size="s" iconStart="@tui.refresh-ccw" type="button" (click)="retry()">Erneut versuchen</button>
 				</div>
 			}
-			@if (hasData() && document(); as doc) {
-				<section class="content">
-					<dl>
-						<div class="row"><dt>ID</dt><dd>{{ doc.id }}</dd></div>
-						<div class="row"><dt>Titel</dt><dd>{{ doc.title || '-' }}</dd></div>
-						<div class="row"><dt>Typ</dt><dd>{{ doc.type || '-' }}</dd></div>
-						<div class="row"><dt>Akzeptiert</dt><dd>{{ doc.accepted ? 'Ja' : 'Nein' }}</dd></div>
-						<div class="row"><dt>Hochgeladen</dt><dd>{{ doc.uploadedAt || '-' }}</dd></div>
-					</dl>
-				</section>
+            @if (hasData() && document(); as doc) {
+						<div class="doc-split">
+							<div class="detail-pane left-col">
+					<tui-tabs [(activeItemIndex)]="activeItemIndex">
+						<button type="button" tuiTab iconStart="@tui.file-text">Details</button>
+						<button type="button" tuiTab iconStart="@tui.align-left">Inhalt</button>
+						<button type="button" tuiTab iconStart="@tui.history">Historie</button>
+					</tui-tabs>
+					<div class="tab-content">
+						<section class="tab-pane properties" [class.active]="activeItemIndex === 0">
+							<div *ngIf="doc.summary" class="summary-box details-summary">
+								<h3 tuiTitle="s">Zusammenfassung</h3>
+								<div>{{ doc.summary }}</div>
+							</div>
+							<div class="prop-grid">
+								<div class="prop"><span class="label">Dateiname</span><span class="value mono">{{ originalFileName() || '-' }}</span></div>
+								<div class="prop"><span class="label">ID</span><span class="value mono">{{ doc.id }}</span></div>
+								<div class="prop" *ngIf="doc.title"><span class="label">Titel</span><span class="value">{{ doc.title }}</span></div>
+								<div class="prop"><span class="label">Typ</span><span class="value">{{ doc.type || '-' }}</span></div>
+								<div class="prop"><span class="label">Akzeptiert</span><span class="value">{{ doc.accepted ? 'Ja' : 'Nein' }}</span></div>
+								<div class="prop"><span class="label">Hochgeladen</span><span class="value">{{ doc.uploadedAt || '-' }}</span></div>
+								<div class="prop" *ngIf="doc.contentLength"><span class="label">Länge</span><span class="value mono">{{ doc.contentLength }}</span></div>
+								<div class="prop" *ngIf="doc.invoiceNumber"><span class="label">Rechnungsnr.</span><span class="value mono">{{ doc.invoiceNumber }}</span></div>
+								<div class="prop" *ngIf="doc.customerNumber"><span class="label">Kundennr.</span><span class="value mono">{{ doc.customerNumber }}</span></div>
+							</div>
+						</section>
+						<section class="tab-pane content-view" [class.active]="activeItemIndex === 1">
+							<div class="content-toolbar">
+								<div class="left">
+									<h3 tuiTitle="s">Inhalt</h3>
+								</div>
+								<div class="right">
+									<button tuiButton size="xs" appearance="flat" type="button" (click)="toggleWrap()" [iconStart]="wrapContent() ? '@tui.text' : '@tui.expand'">{{ wrapContent() ? 'Wrap aus' : 'Wrap an' }}</button>
+									<button tuiButton size="xs" appearance="flat" type="button" (click)="copyContent()" [iconStart]="copiedContent() ? '@tui.check' : '@tui.copy'">{{ copiedContent() ? 'Kopiert' : 'Copy' }}</button>
+								</div>
+							</div>
+							<div class="content-box" [class.nowrap]="!wrapContent()" tuiScrollbar>
+								<pre class="doc-content" [class.nowrap]="!wrapContent()">{{ doc.content }}</pre>
+							</div>
+						</section>
+						<section class="tab-pane history-view" [class.active]="activeItemIndex === 2">
+							<app-document-history style="width: 100%;" [events]="history()"></app-document-history>
+						</section>
+ 					</div>
+							</div>
+											<div class="preview-pane right-col">
+															<div class="preview-header">
+																<h3 tuiTitle="s">Vorschau</h3>
+															</div>
+															@if (previewPath) {
+																<div class="preview-frame">
+																	<app-pdfjs-viewer [src]="previewPath"></app-pdfjs-viewer>
+																</div>
+															} @else {
+																<div class="no-preview" tuiSurface appearance="floating">Keine Vorschau verfügbar</div>
+															}
+											</div>
+            </div>
 			}
 		</div>
-	</div>
-	<div class="history-wrapper">
-		<app-document-history style="width: 100%;" [events]="history()"></app-document-history>
 	</div>
 </div>

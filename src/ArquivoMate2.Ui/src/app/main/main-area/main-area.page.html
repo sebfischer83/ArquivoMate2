@@ -16,7 +16,6 @@
       
     </footer>
 </tui-drawer>
-<div class="main-area-shell app-shell">
 <header tuiNavigationHeader class="app-header">
     <span tuiNavigationSegments>
         <button
@@ -103,7 +102,11 @@
 </button>
  </header>
 <div class="app-body-layout app-content">
-    <aside [tuiNavigationAside]="expanded()" class="app-aside">
+<div [style.display]="'flex'">
+    <aside
+        style="height: calc(100vh - 48px);"
+        [tuiNavigationAside]="expanded()"
+    >
         <header>
             <button
                 iconStart="@tui.home"
@@ -255,8 +258,7 @@
             </button>
         </footer>
     </aside>
-    <main tuiNavigationMain class="app-main">
+    <main tuiNavigationMain>
         <router-outlet />
     </main>
  </div>
-</div>

@@ -54,12 +54,16 @@
 				<app-document-tabs [(activeIndex)]="activeItemIndex" [sticky]="true"></app-document-tabs>
 				<div class="doc-split"> 
 					<div class="detail-pane left-col">
+						<!-- Content toolbar moved outside of scroll container so it does not scroll away -->
+						@if (activeItemIndex === 1) {
+							<app-content-toolbar class="outside-content-toolbar" [wrap]="wrapContent" [copied]="copiedContent" (toggleWrap)="toggleWrap()" (copy)="copyContent()" />
+						}
             <div class="left-scroll">
 					<div class="tab-content">
 						<section class="tab-pane properties" [class.active]="activeItemIndex === 0">
 							<div *ngIf="doc.summary" class="summary-box details-summary">
-								<h3 tuiTitle="s">Zusammenfassung</h3>
-								<div>{{ doc.summary }}</div>
+								<div class="summary-label">ZUSAMMENFASSUNG</div>
+								<div class="summary-text">{{ doc.summary }}</div>
 							</div>
 							<div class="prop-grid">
 								<div class="prop"><span class="label">Dateiname</span><span class="value mono">{{ originalFileName() || '-' }}</span></div>
@@ -74,12 +78,6 @@
 							</div>
 						</section>
 						<section class="tab-pane content-view" [class.active]="activeItemIndex === 1">
-							<div class="content-toolbar">
-								<div class="right">
-									<button tuiButton size="xs" appearance="flat" type="button" (click)="toggleWrap()" [iconStart]="wrapContent() ? '@tui.text' : '@tui.expand'">{{ wrapContent() ? 'Wrap aus' : 'Wrap an' }}</button>
-									<button tuiButton size="xs" appearance="flat" type="button" (click)="copyContent()" [iconStart]="copiedContent() ? '@tui.check' : '@tui.copy'">{{ copiedContent() ? 'Kopiert' : 'Copy' }}</button>
-								</div>
-							</div> <!-- /.content-toolbar -->
 							<div class="content-box" [class.nowrap]="!wrapContent()" tuiScrollbar>
 								<pre class="doc-content" [class.nowrap]="!wrapContent()">{{ doc.content }}</pre>
 							</div>

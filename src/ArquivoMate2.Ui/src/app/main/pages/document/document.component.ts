@@ -7,6 +7,7 @@ import { DocumentTabsComponent } from './components/document-tabs/document-tabs.
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PdfJsViewerComponent } from '../../../components/pdfjs-viewer/pdfjs-viewer.component';
 import { PdfJsViewerToolbarComponent } from '../../../components/pdfjs-viewer/pdfjs-viewer-toolbar.component';
+import { ContentToolbarComponent } from './components/content-toolbar/content-toolbar.component';
 import { DocumentHistoryComponent } from '../../../components/document-history/document-history.component';
 import { DocumentEventDto } from '../../../client/models/document-event-dto';
 import { ActivatedRoute } from '@angular/router';
@@ -18,7 +19,7 @@ import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-document',
-  imports: [CommonModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, TuiDropdown, TuiDropdownOpen, DocumentHistoryComponent, PdfJsViewerComponent, DocumentTabsComponent, PdfJsViewerToolbarComponent],
+  imports: [CommonModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, TuiDropdown, TuiDropdownOpen, DocumentHistoryComponent, PdfJsViewerComponent, DocumentTabsComponent, PdfJsViewerToolbarComponent, ContentToolbarComponent],
   templateUrl: './document.component.html',
   styleUrls: ['./document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

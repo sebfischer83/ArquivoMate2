@@ -79,9 +79,14 @@
  .prop .value { font-size: 0.85rem; line-height: 1.2; word-break: break-word; }
  .prop .value.mono { font-family: var(--tui-font-mono); font-size: 0.75rem; }
 
- .content-view { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
- .content-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
- .content-toolbar .right { display: flex; gap: 0.4rem; }
+/* Summary box aligns with property label styling */
+.summary-box { background: var(--tui-base-02); padding: 0.65rem 0.75rem 0.75rem; border-radius: 0.5rem; margin-bottom: 0.75rem; }
+.summary-box .summary-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--tui-text-03); font-weight: 600; margin-bottom: 0.35rem; }
+.summary-box .summary-text { font-size: 0.8rem; line-height: 1.25; white-space: pre-wrap; word-break: break-word; }
+
+/* content tab no longer needs extra top margin because toolbar sits above scroll container */
+.content-view { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
+/* content toolbar extracted to standalone component */
 .content-box { position: relative; border: 1px solid var(--tui-base-04); border-radius: 0.5rem; background: var(--tui-base-01); padding: 0.75rem; overflow: auto; }
  .doc-content { margin: 0; font-family: var(--tui-font-mono); font-size: 0.72rem; line-height: 1.2; white-space: pre-wrap; }
  .doc-content.nowrap { white-space: pre; }
@@ -114,6 +119,7 @@ app-document-history * { word-break:break-word; }
 .detail-pane { flex: 1 1 0; display: flex; flex-direction: column; min-height:0; overflow:hidden; }
 .left-scroll { flex:1 1 auto; min-height:0; overflow:auto; display:flex; flex-direction:column; }
 .detail-pane .tab-content { flex: 1 1 auto; overflow: visible; min-height:0; }
+.outside-content-toolbar { position: sticky; top:0; z-index:5; margin-top:0.5rem; }
 .tabs-sticky { display:none; }
 
 /* Header Tabs (aus ausgelagerter Komponente) nimmt eigene Border, daher Abstand oben minimieren */

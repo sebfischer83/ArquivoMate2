@@ -1,8 +1,15 @@
-.pdfjs-container { position: relative; display: flex; flex-direction: column; gap: 0.5rem; height: 100%; min-height: 0; }
+/* Host should just fill its parent without adding extra stacked height */
+:host { display:block; width:100%; height:100%; min-height:0; overflow:hidden; }
+
+/* Container takes full height; internal flex children distribute space */
+.pdfjs-container { position: relative; display: flex; flex-direction: column; gap: 0.5rem; height:100%; min-height: 0; }
 .toolbar { display:flex; justify-content:space-between; align-items:center; gap:0.5rem; flex-wrap:wrap; padding:0.25rem 0.5rem; border-radius:0.5rem; }
 .toolbar .left, .toolbar .mid, .toolbar .right { display:flex; align-items:center; gap:0.35rem; }
 .page-indicator { font-size:0.7rem; font-family:var(--tui-font-mono); opacity:0.8; }
-.viewer-wrapper { position:relative; flex:1 1 auto; min-height:0; overflow:auto; display:flex; justify-content:center; align-items:flex-start; background:var(--tui-base-01); border:1px solid var(--tui-base-04); border-radius:0.5rem; padding:0.5rem; }
-.pdf-canvas { display:block; max-width:100%; height:auto; box-shadow:0 0 0 1px var(--tui-base-04); background:#fff; }
+.viewer-wrapper { position:relative; flex:1 1 auto; min-height:0; /* no explicit height to avoid stacking with toolbar */ overflow:auto; display:flex; justify-content:center; align-items:flex-start; background:var(--tui-base-01); border:1px solid var(--tui-base-04); border-radius:0.5rem; padding:0.5rem; }
+.pdf-canvas { display:block; max-width:100%; height:auto; max-height:100%; object-fit:contain; box-shadow:0 0 0 1px var(--tui-base-04); background:#fff; }
+
+/* Safety: prevent accidental intrinsic size expansion if pdf.js sets larger size first */
+.viewer-wrapper > .pdf-canvas { width:auto !important; }
 .loading-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.6); backdrop-filter:blur(2px); border-radius:0.5rem; }
 .error-box { position:absolute; top:0.5rem; left:0.5rem; padding:0.5rem 0.75rem; font-size:0.75rem; }

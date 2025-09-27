@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, Input, signal, inject, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, Input, signal, inject, OnDestroy, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TuiButton, TuiLoader, TuiSurface } from '@taiga-ui/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -30,12 +30,11 @@ declare const window: any;
         <button tuiButton size="xs" appearance="flat" iconStart="@tui.zoom-in" (click)="zoomIn()" [disabled]="zoom() >= 3 || fitPage()">Zoom +</button>
         <button tuiButton size="xs" appearance="flat" iconStart="@tui.zoom-out" (click)="zoomOut()" [disabled]="zoom() <= 0.5 || fitPage()">Zoom -</button>
         <button tuiButton size="xs" appearance="flat" iconStart="@tui.refresh-ccw" (click)="resetZoom()" [disabled]="(zoom() === 1 && !fitPage())">Reset</button>
-        <button tuiButton size="xs" appearance="flat" iconStart="@tui.maximize" (click)="toggleFit()" [appearance]="fitPage() ? 'primary' : 'flat'">Fit Höhe</button>
       </div>
       <div class="right"></div>
     </div>
 
-  <div class="viewer-wrapper">
+  <div class="viewer-wrapper" #wrapper>
       <canvas #canvasEl class="pdf-canvas"></canvas>
       <div class="loading-overlay" *ngIf="loading()">
         <tui-loader size="l"></tui-loader>
@@ -73,7 +72,8 @@ export class PdfJsViewerComponent implements OnDestroy {
 
   private pdfDoc: PDFDocumentProxy | null = null;
   private currentPage: PDFPageProxy | null = null;
-  private canvas?: HTMLCanvasElement;
+  @ViewChild('canvasEl', { static: true }) private canvasRef?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('wrapper', { static: true }) private wrapperRef?: ElementRef<HTMLElement>;
   private rendering = false;
   private pendingPage: number | null = null;
   srcSafe: SafeResourceUrl | null = null;
@@ -87,9 +87,10 @@ export class PdfJsViewerComponent implements OnDestroy {
   private clearDoc() {
     this.pdfDoc = null;
     this.currentPage = null;
-    if (this.canvas) {
-      const ctx = this.canvas.getContext('2d');
-      ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    const c = this.canvasRef?.nativeElement;
+    if (c) {
+      const ctx = c.getContext('2d');
+      if (ctx) ctx.clearRect(0, 0, c.width, c.height);
     }
   }
 
@@ -123,22 +124,11 @@ export class PdfJsViewerComponent implements OnDestroy {
     this.rendering = true;
     this.pdfDoc.getPage(pageNum).then(page => {
       this.currentPage = page;
-      // Determine scale: either explicit zoom or fit-to-height
-      let scale = this.zoom();
-      if (this.fitPage()) {
-        const wrapper = document.querySelector('.viewer-wrapper') as HTMLElement | null;
-        const baseViewport = page.getViewport({ scale: 1 });
-        if (wrapper && baseViewport.height) {
-          const available = wrapper.clientHeight - 16; // subtract padding
-          scale = available / baseViewport.height;
-          if (scale <= 0) scale = this.zoom();
-        }
-      }
+      const wrapperEl = this.wrapperRef?.nativeElement;
+      const baseViewport = page.getViewport({ scale: 1 });
+      let scale = this.computeScale(baseViewport.width, baseViewport.height, wrapperEl);
       const viewport = page.getViewport({ scale });
-      if (!this.canvas) {
-        this.canvas = document.querySelector('canvas.pdf-canvas') as HTMLCanvasElement;
-      }
-      const canvas = this.canvas!;
+      const canvas = this.canvasRef!.nativeElement;
       const ctx = canvas.getContext('2d');
       canvas.height = viewport.height;
       canvas.width = viewport.width;
@@ -154,6 +144,48 @@ export class PdfJsViewerComponent implements OnDestroy {
         }
       });
     });
+  }
+
+  /**
+   * Compute an effective scale that
+   * 1. Respects explicit zoom()
+   * 2. Optionally fits page height if fitPage() active
+   * 3. Clamps so the resulting canvas does not exceed wrapper width/height (prevents layout overflow)
+   */
+  private computeScale(pdfWidth: number, pdfHeight: number, wrapperEl?: HTMLElement): number {
+    let scale = this.zoom();
+    if (!wrapperEl) return scale;
+    const paddingComp = 16; // wrapper horizontal padding total approximation
+    const availW = Math.max(0, wrapperEl.clientWidth - paddingComp);
+    const availH = Math.max(0, wrapperEl.clientHeight - paddingComp);
+
+    // Base contain scaling (never let initial render overflow vertically or horizontally)
+    const containScale = Math.min(
+      availW > 0 ? availW / pdfWidth : scale,
+      availH > 0 ? availH / pdfHeight : scale,
+      scale
+    );
+
+    // If fitPage explicitly on, override with pure contain irrespective of user zoom
+    if (this.fitPage()) {
+      scale = containScale;
+    } else {
+      // Otherwise ensure we don't exceed container at base zoom (scale<=1) but allow user zoom to enlarge
+      if (this.zoom() === 1) {
+        scale = containScale;
+      } else {
+        // User has zoomed; cap so we never overflow height (horizontal overflow allowed? No -> also clamp)
+        const maxScaleW = availW > 0 ? availW / pdfWidth : scale;
+        const maxScaleH = availH > 0 ? availH / pdfHeight : scale;
+        const hardMax = Math.min(maxScaleW, maxScaleH);
+        if (scale > hardMax) scale = hardMax;
+      }
+    }
+
+    // Guard rails
+    if (scale < 0.25) scale = 0.25;
+    if (scale > 5) scale = 5;
+    return scale;
   }
 
   nextPage() {

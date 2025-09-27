@@ -1,3 +1,8 @@
 {
-  "LandingPage": {"Welcome": "Willkommen"}
+  "LandingPage": {"Welcome": "Willkommen"},
+  "Document": {
+    "Download": "Download",
+    "DownloadOriginal": "Original",
+    "DownloadArchive": "Archiv"
+  }
 }

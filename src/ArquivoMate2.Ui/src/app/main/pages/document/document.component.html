@@ -7,7 +7,30 @@
 					<h2 tuiTitle="m" class="doc-title">{{ originalFileName() || 'Dokument' }}</h2>
 				</div>
 				<div class="actions" *ngIf="hasData()">
-					<button tuiButton size="s" appearance="flat" iconStart="@tui.download" type="button" (click)="downloadOriginal()" [disabled]="!filePath || downloadLoading()">{{ downloadLoading() ? 'Lädt…' : 'Download' }}</button>
+					<!-- If archivePath exists show dropdown menu, else show direct download button -->
+					@if (document()?.archivePath) {
+						<button
+								size="s"
+								appearance="flat"
+								tuiButton
+								iconStart="@tui.download"
+								type="button"
+								[tuiDropdownOpen]="downloadMenuOpen()"
+								(tuiDropdownOpenChange)="onDownloadMenu($event)"
+								[tuiDropdown]="downloadMenu"
+								[disabled]="!filePath || downloadLoading()"
+						>
+							{{ downloadLoading() ? 'Lädt…' : 'Download' }}
+						</button>
+						<ng-template #downloadMenu>
+							<div class="download-menu" tuiDropdown tuiSurface appearance="floating">
+								<button type="button" tuiButton size="s" appearance="flat" class="menu-item" (click)="downloadOriginal(); closeDownloadMenu()" [disabled]="downloadLoading()">Original</button>
+								<button type="button" tuiButton size="s" appearance="flat" class="menu-item" (click)="downloadArchive(); closeDownloadMenu()" [disabled]="downloadLoading()">Archiv</button>
+							</div>
+						</ng-template>
+					} @else {
+						<button tuiButton size="s" appearance="flat" iconStart="@tui.download" type="button" (click)="downloadOriginal()" [disabled]="!filePath || downloadLoading()">{{ downloadLoading() ? 'Lädt…' : 'Download' }}</button>
+					}
 					<button tuiButton size="s" appearance="flat" iconStart="@tui.external-link" type="button" (click)="openInNewTab()" [disabled]="!filePath">Öffnen</button>
 				</div>
 			</div>

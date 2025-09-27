@@ -5,7 +5,10 @@ import { catchError, throwError } from 'rxjs';
 import { ToastService } from '../services/toast.service';
 
 // Central HTTP error interceptor.
-// Responsibility: Normalize error logging and provide a single extension point for future UI toast integration.
+// Responsibility: Normalize error logging and surface a user-friendly toast ONCE per actual error condition.
+// Toast deduplication is implemented inside ToastService (time–window suppression) so rapid retries or
+// simultaneous failing requests do not spam the user. Interceptor therefore emits unconditionally and
+// relies on service-level suppression.
 export const errorInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
   const toast = inject<ToastService>(ToastService);
   return next(req).pipe(

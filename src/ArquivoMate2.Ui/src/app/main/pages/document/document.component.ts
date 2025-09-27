@@ -1,7 +1,7 @@
 // ...existing code...
 import { ChangeDetectionStrategy, Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TuiButton, TuiSurface, TuiTitle } from '@taiga-ui/core';
+import { TuiButton, TuiSurface, TuiTitle, TuiDropdown, TuiDropdownOpen } from '@taiga-ui/core';
 import { TuiTabs } from '@taiga-ui/kit';
 import { DocumentTabsComponent } from './components/document-tabs/document-tabs.component';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -18,7 +18,7 @@ import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-document',
-  imports: [CommonModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, DocumentHistoryComponent, PdfJsViewerComponent, DocumentTabsComponent, PdfJsViewerToolbarComponent],
+  imports: [CommonModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, TuiDropdown, TuiDropdownOpen, DocumentHistoryComponent, PdfJsViewerComponent, DocumentTabsComponent, PdfJsViewerToolbarComponent],
   templateUrl: './document.component.html',
   styleUrls: ['./document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -34,6 +34,7 @@ export class DocumentComponent implements OnInit {
   readonly copiedContent = signal(false);
   readonly wrapContent = signal(true);
   readonly downloadLoading = signal(false);
+  readonly downloadMenuOpen = signal(false);
   /**
    * Pure original filename (never ID). Derived from potential backend fields.
    * Priority: explicit originalFileName field -> filePath basename -> empty string
@@ -134,6 +135,22 @@ export class DocumentComponent implements OnInit {
 
   downloadOriginal(): void {
     const path = this.filePath;
+    if (!path) return;
+    const filename = this.originalFileName() || 'document';
+    this.performDownload(path, filename);
+  }
+
+  /** Download archived file if available */
+  downloadArchive(): void {
+    const path = this.document()?.archivePath as string | undefined;
+    if (!path) return;
+    const base = this.originalFileName() || 'document';
+    const filename = base.replace(/(\.[^.]+)?$/, '_archive$1');
+    this.performDownload(path, filename);
+  }
+
+  /** Shared download implementation to avoid duplication */
+  private performDownload(path: string, filename: string): void {
     if (!path || this.downloadLoading()) return;
     this.downloadLoading.set(true);
     this.downloadSrv.download(path).subscribe({
@@ -143,7 +160,7 @@ export class DocumentComponent implements OnInit {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = this.originalFileName() || 'document';
+          a.download = filename;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
@@ -158,6 +175,12 @@ export class DocumentComponent implements OnInit {
       }
     });
   }
+
+  onDownloadMenu(open: boolean) {
+    this.downloadMenuOpen.set(open);
+  }
+
+  closeDownloadMenu() { this.downloadMenuOpen.set(false); }
 
   openInNewTab(): void {
     const path = this.filePath;

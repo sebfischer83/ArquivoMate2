@@ -1,3 +1,6 @@
 {
-  "LandingPage.Welcome": "Добро пожаловать"
+  "LandingPage.Welcome": "Добро пожаловать",
+  "Document.Download": "Загрузка",
+  "Document.DownloadOriginal": "Оригинал",
+  "Document.DownloadArchive": "Архив"
 }

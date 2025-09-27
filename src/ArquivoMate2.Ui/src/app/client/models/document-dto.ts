@@ -6,6 +6,7 @@ import { DocumentEventDto } from '../models/document-event-dto';
 export interface DocumentDto {
   accepted?: boolean;
   acceptedAt?: string;
+  archivePath?: string;
   chatBotClass?: string;
   chatBotModel?: string;
   content?: string;
@@ -17,7 +18,6 @@ export interface DocumentDto {
   invoiceNumber?: string;
   keywords?: Array<string>;
   metadataPath?: string;
-  originalFileName?: string;
   previewPath?: string;
   processedAt?: string | null;
   summary?: string;

@@ -1,3 +1,6 @@
 {
-  "LandingPage.Welcome": "Willkommen"
+  "LandingPage.Welcome": "Willkommen",
+  "Document.Download": "Download",
+  "Document.DownloadOriginal": "Original",
+  "Document.DownloadArchive": "Archiv"
 }

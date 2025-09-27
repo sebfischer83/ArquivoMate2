@@ -10,7 +10,7 @@ import { TuiIcon, TuiTitle } from '@taiga-ui/core';
 @Component({
   selector: 'app-document-tabs',
   standalone: true,
-  imports: [CommonModule, TuiTabs, TuiIcon, TuiTitle],
+  imports: [CommonModule, TuiTabs],
   template: `
     <div class="doc-tabs" [class.sticky]="sticky">
       <tui-tabs [(activeItemIndex)]="_active" (activeItemIndexChange)="onIndexChange($event)" size="m">

@@ -13,9 +13,8 @@
     "Cancel": "Cancel",
     "LoadingNotes": "Loading notes…",
     "Retry": "Retry",
-    "NoNotes": "No notes yet",
-    "NoteSaved": "Note saved",
-    "NotesLoadError": "Could not load notes",
+  "NoNotes": "No notes yet",
+  "NoteSaved": "Note saved",
     "Back": "Back",
     "DocumentTitleFallback": "Document",
     "LoadingEllipsis": "Loading…",
@@ -37,6 +36,13 @@
     "InvoiceNumber": "Invoice no.",
     "CustomerNumber": "Customer no.",
     "Preview": "Preview",
-    "NoPreview": "No preview available"
+    "NoPreview": "No preview available",
+    "DocumentsLoadError": "Documents could not be loaded",
+    "DocumentLoadError": "Document could not be loaded",
+    "DownloadStartError": "Download could not be started",
+  "NoteSaveError": "Note could not be saved",
+  "NotesLoadError": "Could not load notes",
+    "PdfLoadError": "PDF could not be loaded"
+    ,"KeywordTooLong": "Keyword too long (max 30)"
   }
 }

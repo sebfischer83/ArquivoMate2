@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, Input, signal, inject, OnDestroy, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { TranslocoService } from '@jsverse/transloco';
 import { CommonModule } from '@angular/common';
 import { TuiLoader, TuiSurface } from '@taiga-ui/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -35,6 +36,7 @@ export class PdfJsViewerComponent implements OnDestroy, AfterViewInit {
   private destroy$ = new Subject<void>();
 
   private sanitizer = inject(DomSanitizer);
+  private transloco = inject(TranslocoService);
 
   @Input() set src(url: string | null) {
     if (!url) {
@@ -140,7 +142,7 @@ export class PdfJsViewerComponent implements OnDestroy, AfterViewInit {
       this.loading.set(false);
     }).catch(err => {
       console.error(err);
-      this.error.set('PDF konnte nicht geladen werden');
+  this.error.set(this.transloco.translate('Document.PdfLoadError'));
       this.loading.set(false);
     });
   }

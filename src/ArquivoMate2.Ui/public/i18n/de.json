@@ -35,6 +35,12 @@
     "InvoiceNumber": "Rechnungsnr.",
     "CustomerNumber": "Kundennr.",
     "Preview": "Vorschau",
-    "NoPreview": "Keine Vorschau verfügbar"
+    "NoPreview": "Keine Vorschau verfügbar",
+    "DocumentsLoadError": "Dokumente konnten nicht geladen werden",
+    "DocumentLoadError": "Dokument konnte nicht geladen werden",
+    "DownloadStartError": "Download konnte nicht gestartet werden",
+    "NoteSaveError": "Notiz konnte nicht gespeichert werden",
+    "PdfLoadError": "PDF konnte nicht geladen werden"
+    ,"KeywordTooLong": "Keyword zu lang (max 30)"
   }
 }

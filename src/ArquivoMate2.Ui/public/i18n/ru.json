@@ -35,6 +35,12 @@
     "InvoiceNumber": "№ счета",
     "CustomerNumber": "№ клиента",
     "Preview": "Просмотр",
-    "NoPreview": "Предпросмотр недоступен"
+    "NoPreview": "Предпросмотр недоступен",
+    "DocumentsLoadError": "Не удалось загрузить документы",
+    "DocumentLoadError": "Документ не удалось загрузить",
+    "DownloadStartError": "Не удалось начать загрузку",
+    "NoteSaveError": "Не удалось сохранить заметку",
+    "PdfLoadError": "PDF не удалось загрузить"
+    ,"KeywordTooLong": "Ключевое слово слишком длинное (макс. 30)"
   }
 }

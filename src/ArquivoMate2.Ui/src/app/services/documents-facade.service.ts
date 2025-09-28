@@ -1,5 +1,6 @@
 import { inject, Injectable, signal, computed } from '@angular/core';
 import { DocumentsService } from '../client/services/documents.service';
+import { TranslocoService } from '@jsverse/transloco';
 import { DocumentListDto } from '../client/models/document-list-dto';
 import { ToastService } from './toast.service';
 import { ApiDocumentsGet$Json$Params } from '../client/fn/documents/api-documents-get-json';
@@ -9,6 +10,7 @@ import { ApiDocumentsGet$Json$Params } from '../client/fn/documents/api-document
 export class DocumentsFacadeService {
   private api = inject(DocumentsService);
   private toast = inject(ToastService);
+  private transloco = inject(TranslocoService);
 
   private readonly documentsSignal = signal<DocumentListDto | null>(null);
   private readonly loadingSignal = signal<boolean>(false);
@@ -42,8 +44,10 @@ export class DocumentsFacadeService {
       },
       error: () => {
         this.loadingSignal.set(false);
-        this.errorSignal.set('Dokumente konnten nicht geladen werden.');
-        this.toast.error('Dokumente konnten nicht geladen werden.');
+        const key = 'Document.DocumentsLoadError';
+        const msg = this.transloco.translate(key);
+        this.errorSignal.set(msg);
+        this.toast.error(msg);
       }
     });
   }

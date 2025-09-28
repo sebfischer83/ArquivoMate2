@@ -19,7 +19,7 @@ import { Location } from '@angular/common';
 import { DocumentNotesService } from '../../../client/services/document-notes.service';
 import { DocumentNoteDto } from '../../../client/models/document-note-dto';
 import { NotesListComponent } from './components/notes-list/notes-list.component';
-import { TranslocoModule } from '@jsverse/transloco';
+import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-document',
@@ -80,6 +80,7 @@ export class DocumentComponent implements OnInit {
     private toast: ToastService,
     private location: Location,
     private sanitizer: DomSanitizer,
+    private transloco: TranslocoService,
   ) {
     this.documentId.set(this.route.snapshot.paramMap.get('id'));
   }
@@ -121,9 +122,10 @@ export class DocumentComponent implements OnInit {
       },
       error: () => {
         this.loading.set(false);
-        const msg = 'Dokument konnte nicht geladen werden';
-        this.error.set(msg);
-        this.toast.error(msg);
+  const key = 'Document.DocumentLoadError';
+  const msg = this.transloco.translate(key);
+  this.error.set(msg);
+  this.toast.error(msg);
       }
     });
   }
@@ -187,12 +189,12 @@ export class DocumentComponent implements OnInit {
           document.body.removeChild(a);
           setTimeout(() => URL.revokeObjectURL(url), 4000);
         } catch {
-          this.toast.error('Download konnte nicht gestartet werden');
+  this.toast.error(this.transloco.translate('Document.DownloadStartError'));
         }
       },
       error: () => {
         this.downloadLoading.set(false);
-        this.toast.error('Download fehlgeschlagen');
+  this.toast.error(this.transloco.translate('Document.DownloadStartError'));
       }
     });
   }
@@ -232,7 +234,7 @@ export class DocumentComponent implements OnInit {
     const raw = (this.newKeyword() || '').trim();
     if (!raw) return;
     if (raw.length > 30) {
-      this.toast.error('Keyword zu lang (max 30)');
+      this.toast.error(this.transloco.translate('Document.KeywordTooLong'));
       return;
     }
     const current = this.keywords();
@@ -280,7 +282,7 @@ export class DocumentComponent implements OnInit {
     this.notesError.set(null);
     this.notesApi.apiDocumentsDocumentIdNotesGet$Json({ documentId: id }).subscribe({
       next: list => { this.notes.set(list); this.notesLoading.set(false); this.notesLoadedOnce = true; },
-      error: () => { this.notesLoading.set(false); this.notesError.set('Notizen konnten nicht geladen werden'); }
+  error: () => { this.notesLoading.set(false); this.notesError.set(this.transloco.translate('Document.NotesLoadError')); }
     });
   }
 
@@ -303,13 +305,13 @@ export class DocumentComponent implements OnInit {
         const list = this.notes() || [];
         this.notes.set(list.map(n => n.id === draft.id ? saved : n));
         this.addingNote.set(false);
-        this.toast.success('Notiz gespeichert');
+  this.toast.success(this.transloco.translate('Document.NoteSaved'));
       },
       error: () => {
         const list = this.notes() || [];
         this.notes.set(list.filter(n => n.id !== draft.id));
         if (doc) { (doc as any).notesCount = Math.max(((doc as any).notesCount || 1) - 1, 0); this.document.set({ ...doc }); }
-        this.toast.error('Notiz konnte nicht gespeichert werden');
+  this.toast.error(this.transloco.translate('Document.NoteSaveError'));
         this.addingNote.set(false);
       }
     });

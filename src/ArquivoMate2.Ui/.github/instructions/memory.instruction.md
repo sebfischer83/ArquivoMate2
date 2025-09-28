@@ -1,3 +1,4 @@
 - Pattern 001: Avoid using *ngIf in new components; prefer Angular @if/@else control flow blocks. Added after user preference on 2025-09-24.
 - Pattern 002: Place reusable (nicht-Seiten) Components unter src/app/components/. Gilt seit Verschiebung DocumentHistoryComponent am 2025-09-25.
 - Pattern 003: Keine Transloco prefix/prefix: Syntax mehr nutzen; stattdessen Keys immer voll qualifizieren (z.B. t('Document.Download')). Eingeführt nach VS Code Plugin Limitation am 2025-09-28.
+- Pattern 004: In TypeScript keine Keys roh an Toast/Error weiterreichen; immer vorher via TranslocoService.translate('Namespace.Key') auflösen. Eingeführt nach i18n API Entscheidung am 2025-09-28.

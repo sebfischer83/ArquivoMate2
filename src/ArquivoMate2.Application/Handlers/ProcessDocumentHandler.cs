@@ -8,18 +8,24 @@ using ArquivoMate2.Shared.Models;
 using JasperFx.Core;
 using Marten;
 using MediatR;
-using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
-using System.IO;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace ArquivoMate2.Application.Handlers
 {
     public class ProcessDocumentHandler : IRequestHandler<ProcessDocumentCommand, (Document? Document, string? TempFilePath)>
     {
+        private record LoadedContext(Document Document, DocumentMetadata Metadata, string PhysicalPath);
+        private record ExtractionArtifacts(
+            string Content,
+            string OriginalFilePath,
+            string MetadataFilePath,
+            string ThumbnailPath,
+            string PreviewPdfPath,
+            string ArchivePdfPath,
+            DocumentMetadata EffectiveMetadata);
+
         private readonly IDocumentSession _session;
         private readonly ILogger<ProcessDocumentHandler> _logger;
         private readonly IDocumentProcessor _documentTextExtractor;
@@ -29,9 +35,8 @@ namespace ArquivoMate2.Application.Handlers
         private readonly IThumbnailService _thumbnailService;
         private readonly IChatBot _chatBot;
         private readonly IDocumentProcessingNotifier _documentProcessingNotifier;
-        private readonly ILanguageDetectionService _languageDetection; // NEW
+        private readonly ILanguageDetectionService _languageDetection;
 
-        // PDF Magic Number (first 4 bytes)
         private static readonly byte[] PdfMagicNumber = [0x25, 0x50, 0x44, 0x46]; // %PDF
         private static readonly HashSet<string> SupportedImageExtensions = new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp" };
 
@@ -42,145 +47,226 @@ namespace ArquivoMate2.Application.Handlers
         public async Task<(Document? Document, string? TempFilePath)> Handle(ProcessDocumentCommand request, CancellationToken cancellationToken)
         {
             var sw = Stopwatch.StartNew();
-
-            _session.Events.Append(request.ImportProcessId, new StartDocumentImport(request.ImportProcessId, DateTime.UtcNow));
+            Append(request.ImportProcessId, new StartDocumentImport(request.ImportProcessId, DateTime.UtcNow));
             await _session.SaveChangesAsync(cancellationToken);
 
             try
             {
-                await _documentProcessingNotifier.NotifyStatusChangedAsync(request.UserId, 
+                await _documentProcessingNotifier.NotifyStatusChangedAsync(request.UserId,
                     new DocumentProcessingNotification(request.DocumentId.ToString(), DocumentProcessingStatus.InProgress, "Document processing started"));
-                var doc = await _session.Events.AggregateStreamAsync<Document>(request.DocumentId, token: cancellationToken);
-                if (doc is null)
-                {
-                    _logger.LogWarning("Document {DocumentId} not found", request.DocumentId);
-                    throw new KeyNotFoundException($"Document {request.DocumentId} not found");
-                }
 
-                var metadata = await fileMetadataService.ReadMetadataAsync(request.DocumentId, request.UserId);
+                var loaded = await LoadAsync(request, cancellationToken);
+                var metaAfterLang = await DetectAndMaybeUpdateLanguageAsync(loaded, cancellationToken);
+                loaded = loaded with { Metadata = metaAfterLang };
 
-                if (metadata is null)
-                {
-                    _logger.LogWarning("Metadata for document {DocumentId} not found", request.DocumentId);
-                    throw new KeyNotFoundException($"Metadata for document {request.DocumentId} not found");
-                }
+                var artifacts = await ExtractAndGenerateAsync(request, loaded, cancellationToken);
+                await RunChatBotAsync(request.DocumentId, artifacts.Content, cancellationToken);
 
-                var path = pathService.GetDocumentUploadPath(request.UserId);
-                path = Path.Combine(path, $"{request.DocumentId}{metadata.Extension}");
-
-                // Language detection (only if not already determined / narrowed)
-                var effectiveMetadata = metadata;
-                try
-                {
-                    bool needDetection = string.IsNullOrWhiteSpace(doc.Language) || metadata.Languages == null || metadata.Languages.Length != 1;
-                    if (needDetection && File.Exists(path))
-                    {
-                        bool isPdfFile = await IsPdfFileAsync(path, metadata);
-                        (string? iso, string? tess) result = (null, null);
-                        using (var detectStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
-                        {
-                            if (isPdfFile)
-                            {
-                                result = await _languageDetection.DetectFromPdfAsync(detectStream, cancellationToken);
-                                if (result.iso == null || result.tess == null)
-                                {
-                                    detectStream.Position = 0;
-                                    result = await _languageDetection.DetectFromImageOrPdfAsync(detectStream, metadata.Languages, cancellationToken);
-                                }
-                            }
-                            else if (IsSingleImage(metadata))
-                            {
-                                result = await _languageDetection.DetectFromImageOrPdfAsync(detectStream, metadata.Languages, cancellationToken);
-                            }
-                        }
-                        if (result.iso != null && result.tess != null)
-                        {
-                            if (!string.Equals(doc.Language, result.iso, StringComparison.OrdinalIgnoreCase))
-                            {
-                                _session.Events.Append(request.DocumentId, new DocumentLanguageDetected(request.DocumentId, result.iso, DateTime.UtcNow));
-                            }
-                            if (metadata.Languages.Length != 1 || !string.Equals(metadata.Languages[0], result.tess, StringComparison.OrdinalIgnoreCase))
-                            {
-                                effectiveMetadata = metadata with { Languages = new[] { result.tess } };
-                                await fileMetadataService.WriteMetadataAsync(effectiveMetadata, cancellationToken);
-                                _logger.LogInformation("Language detected for Document {DocumentId}: ISO={Iso} Tess={Tess}", request.DocumentId, result.iso, result.tess);
-                            }
-                        }
-                        else
-                        {
-                            _logger.LogInformation("Language detection skipped or failed for Document {DocumentId}", request.DocumentId);
-                        }
-                    }
-                }
-                catch (Exception lex)
-                {
-                    _logger.LogWarning(lex, "Language detection error for Document {DocumentId} - continuing with existing metadata", request.DocumentId);
-                }
-
-                // Evaluate type again (PDF/Image) possibly using original metadata (extension unaffected)
-                if (await IsPdfFileAsync(path, metadata))
-                {
-                    await ProcessPdfFiles(request, effectiveMetadata, path, cancellationToken);
-                }
-                else if (IsSingleImage(metadata))
-                {
-                    await ProcessImageFiles(request, effectiveMetadata, path, cancellationToken);
-                }
-                else
-                {
-                    _logger.LogWarning("Document {DocumentId} is not a supported file. Extension: {Extension}, MimeType: {MimeType}", 
-                        request.DocumentId, metadata.Extension, metadata.MimeType);
-                    
-                    await _documentProcessingNotifier.NotifyStatusChangedAsync(request.UserId,
-                        new DocumentProcessingNotification(request.DocumentId.ToString(), DocumentProcessingStatus.Failed, 
-                            $"Unsupported file type: {metadata.Extension}"));
-                    
-                    throw new NotSupportedException($"File type {metadata.Extension} is not supported for processing");
-                }
-
-                _session.Events.Append(request.ImportProcessId, new MarkSucceededDocumentImport(request.ImportProcessId, request.DocumentId, DateTime.UtcNow));
-                _session.Events.Append(request.DocumentId, new DocumentProcessed(request.DocumentId, DateTime.UtcNow));
-
+                Append(request.ImportProcessId, new MarkSucceededDocumentImport(request.ImportProcessId, request.DocumentId, DateTime.UtcNow));
+                Append(request.DocumentId, new DocumentProcessed(request.DocumentId, DateTime.UtcNow));
                 await _session.SaveChangesAsync(cancellationToken);
 
-                doc = await _session.Events.AggregateStreamAsync<Document>(request.DocumentId, token: cancellationToken);
-
-                return (doc, path);
+                var finalDoc = await _session.Events.AggregateStreamAsync<Document>(request.DocumentId, token: cancellationToken);
+                sw.Stop();
+                _logger.LogInformation("Processed document {DocumentId} in {ElapsedMs}ms", request.DocumentId, sw.ElapsedMilliseconds);
+                return (finalDoc, loaded.PhysicalPath);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing document {DocumentId}", request.DocumentId);
-
-                _session.Events.Append(request.ImportProcessId, new MarkFailedDocumentImport(request.ImportProcessId, ex.Message, DateTime.UtcNow));
-                _session.Events.Append(request.DocumentId, new DocumentDeleted(request.DocumentId, DateTime.UtcNow));
+                Append(request.ImportProcessId, new MarkFailedDocumentImport(request.ImportProcessId, ex.Message, DateTime.UtcNow));
+                Append(request.DocumentId, new DocumentDeleted(request.DocumentId, DateTime.UtcNow));
                 await _session.SaveChangesAsync(cancellationToken);
+                return (null, null);
             }
-            finally
-            {
-                sw.Stop();
-
-                _logger.LogInformation("Processed document {DocumentId} in {ElapsedMs}ms", request.DocumentId, sw.ElapsedMilliseconds);
-            }
-
-            return (null, null);
         }
 
-        private bool IsSingleImage(DocumentMetadata metadata)
+        #region Load & Validation
+        private async Task<LoadedContext> LoadAsync(ProcessDocumentCommand request, CancellationToken ct)
         {
-            return SupportedImageExtensions.Contains(metadata.Extension);
+            var doc = await _session.Events.AggregateStreamAsync<Document>(request.DocumentId, token: ct);
+            if (doc is null)
+            {
+                _logger.LogWarning("Document {DocumentId} not found", request.DocumentId);
+                throw new KeyNotFoundException($"Document {request.DocumentId} not found");
+            }
+
+            var metadata = await fileMetadataService.ReadMetadataAsync(request.DocumentId, request.UserId, ct);
+            if (metadata is null)
+            {
+                _logger.LogWarning("Metadata for document {DocumentId} not found", request.DocumentId);
+                throw new KeyNotFoundException($"Metadata for document {request.DocumentId} not found");
+            }
+
+            var path = Path.Combine(pathService.GetDocumentUploadPath(request.UserId), $"{request.DocumentId}{metadata.Extension}");
+            return new LoadedContext(doc, metadata, path);
         }
+        #endregion
+
+        #region Language Detection
+        private async Task<DocumentMetadata> DetectAndMaybeUpdateLanguageAsync(LoadedContext ctx, CancellationToken ct)
+        {
+            var metadata = ctx.Metadata;
+            var doc = ctx.Document;
+            var effective = metadata;
+
+            try
+            {
+                bool needDetection = string.IsNullOrWhiteSpace(doc.Language) || metadata.Languages == null || metadata.Languages.Length != 1;
+                if (!needDetection || !File.Exists(ctx.PhysicalPath)) return effective;
+
+                bool isPdf = await IsPdfFileAsync(ctx.PhysicalPath, metadata);
+                (string? iso, string? tess) result = (null, null);
+                using var detectStream = new FileStream(ctx.PhysicalPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                if (isPdf)
+                {
+                    result = await _languageDetection.DetectFromPdfAsync(detectStream, ct);
+                    if (result.iso == null || result.tess == null)
+                    {
+                        detectStream.Position = 0;
+                        result = await _languageDetection.DetectFromImageOrPdfAsync(detectStream, metadata.Languages, ct);
+                    }
+                }
+                else if (IsSingleImage(metadata))
+                {
+                    result = await _languageDetection.DetectFromImageOrPdfAsync(detectStream, metadata.Languages, ct);
+                }
+
+                if (result.iso != null && result.tess != null)
+                {
+                    if (!string.Equals(doc.Language, result.iso, StringComparison.OrdinalIgnoreCase))
+                        Append(ctx.Document.Id, new DocumentLanguageDetected(ctx.Document.Id, result.iso, DateTime.UtcNow));
+
+                    if (metadata.Languages.Length != 1 || !string.Equals(metadata.Languages[0], result.tess, StringComparison.OrdinalIgnoreCase))
+                    {
+                        effective = metadata with { Languages = new[] { result.tess } };
+                        await fileMetadataService.WriteMetadataAsync(effective, ct);
+                        _logger.LogInformation("Language detected for Document {DocumentId}: ISO={Iso} Tess={Tess}", ctx.Document.Id, result.iso, result.tess);
+                    }
+                }
+                else
+                {
+                    _logger.LogInformation("Language detection skipped or failed for Document {DocumentId}", ctx.Document.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Language detection error for Document {DocumentId} - continuing", ctx.Document.Id);
+            }
+
+            return effective;
+        }
+        #endregion
+
+        #region Extraction & Derivatives
+        private async Task<ExtractionArtifacts> ExtractAndGenerateAsync(ProcessDocumentCommand request, LoadedContext ctx, CancellationToken ct)
+        {
+            bool isPdf = await IsPdfFileAsync(ctx.PhysicalPath, ctx.Metadata);
+            if (isPdf) return await ProcessPdfAsync(request, ctx, ct);
+            if (IsSingleImage(ctx.Metadata)) return await ProcessImageAsync(request, ctx, ct);
+
+            _logger.LogWarning("Document {DocumentId} unsupported file type {Extension}", request.DocumentId, ctx.Metadata.Extension);
+            await _documentProcessingNotifier.NotifyStatusChangedAsync(request.UserId, new DocumentProcessingNotification(request.DocumentId.ToString(), DocumentProcessingStatus.Failed, $"Unsupported file type: {ctx.Metadata.Extension}"));
+            throw new NotSupportedException($"File type {ctx.Metadata.Extension} is not supported");
+        }
+
+        private async Task<ExtractionArtifacts> ProcessPdfAsync(ProcessDocumentCommand request, LoadedContext ctx, CancellationToken ct)
+        {
+            using var stream = OpenForSequentialRead(ctx.PhysicalPath);
+            var content = await _documentTextExtractor.ExtractPdfTextAsync(stream, ctx.Metadata, false, ct);
+            Append(request.DocumentId, new DocumentContentExtracted(request.DocumentId, content, DateTime.UtcNow));
+            var artifacts = await PersistAndGenerateDerivativesAsync(request, ctx, stream, ct);
+            return artifacts with { Content = content };
+        }
+
+        private async Task<ExtractionArtifacts> ProcessImageAsync(ProcessDocumentCommand request, LoadedContext ctx, CancellationToken ct)
+        {
+            using var stream = OpenForSequentialRead(ctx.PhysicalPath);
+            var content = await _documentTextExtractor.ExtractImageTextAsync(stream, ctx.Metadata, ct);
+            Append(request.DocumentId, new DocumentContentExtracted(request.DocumentId, content, DateTime.UtcNow));
+            var artifacts = await PersistAndGenerateDerivativesAsync(request, ctx, stream, ct);
+            return artifacts with { Content = content };
+        }
+
+        private async Task<ExtractionArtifacts> PersistAndGenerateDerivativesAsync(ProcessDocumentCommand request, LoadedContext ctx, FileStream openStream, CancellationToken ct)
+        {
+            var originalBytes = File.ReadAllBytes(ctx.PhysicalPath);
+            var filePath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.GetFileName(ctx.PhysicalPath), originalBytes);
+            var metaPath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.ChangeExtension(Path.GetFileName(ctx.PhysicalPath), "metadata"), JsonSerializer.SerializeToUtf8Bytes(ctx.Metadata));
+
+            openStream.Position = 0;
+            var thumbBytes = _thumbnailService.GenerateThumbnail(openStream);
+            string baseName = Path.GetFileNameWithoutExtension(ctx.PhysicalPath);
+            var thumbPath = await _storage.SaveFile(request.UserId, request.DocumentId, $"{baseName}-thumb.webp", thumbBytes);
+
+            openStream.Position = 0;
+            var previewPdf = await _documentTextExtractor.GeneratePreviewPdf(openStream, ctx.Metadata, ct);
+            var previewPath = await _storage.SaveFile(request.UserId, request.DocumentId, $"{baseName}-preview.pdf", previewPdf);
+
+            openStream.Position = 0;
+            var archivePdf = await _documentTextExtractor.GenerateArchivePdf(openStream, ctx.Metadata, ct);
+            var archivePath = await _storage.SaveFile(request.UserId, request.DocumentId, $"{baseName}-archive.pdf", archivePdf);
+
+            Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, archivePath, DateTime.UtcNow));
+
+            return new ExtractionArtifacts(string.Empty, filePath, metaPath, thumbPath, previewPath, archivePath, ctx.Metadata);
+        }
+        #endregion
+
+        #region ChatBot
+        private async Task RunChatBotAsync(Guid documentId, string content, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(content)) return;
+            try
+            {
+                var result = await _chatBot.AnalyzeDocumentContent(content, ct);
+                await ProcessChatbotResultAsync(documentId, result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Chatbot analysis failed for {DocumentId}. Continuing without chatbot data.", documentId);
+            }
+        }
+
+        private async Task ProcessChatbotResultAsync(Guid documentId, DocumentAnalysisResult chatbotResult)
+        {
+            if (chatbotResult == null) return;
+            Guid senderId = await ResolveOrCreatePartyAsync(chatbotResult.Sender);
+            Guid recipientId = await ResolveOrCreatePartyAsync(chatbotResult.Recipient);
+
+            Append(documentId, new DocumentChatBotDataReceived(documentId, senderId, recipientId, null, DateTime.UtcNow,
+                chatbotResult.DocumentType, chatbotResult.CustomerNumber, chatbotResult.InvoiceNumber, chatbotResult.TotalPrice, chatbotResult.Keywords, chatbotResult.Summary, _chatBot.ModelName, _chatBot.GetType().Name));
+            if (chatbotResult.Title.IsNotEmpty())
+                Append(documentId, new DocumentTitleSuggested(documentId, chatbotResult.Title, DateTime.UtcNow));
+        }
+
+        private async Task<Guid> ResolveOrCreatePartyAsync(PartyInfo? party)
+        {
+            if (party == null) return Guid.Empty;
+            var search = party.CompanyName + " " + party.FirstName + " " + party.LastName;
+            var matches = await _session.Query<PartyInfo>().Where(x => x.SearchText.NgramSearch(search)).ToListAsync();
+            if (matches.Count > 0) return matches.First().Id;
+
+            using var newSession = _session.DocumentStore.LightweightSession();
+            party.Id = Guid.NewGuid();
+            newSession.Store(party);
+            await newSession.SaveChangesAsync();
+            return party.Id;
+        }
+        #endregion
+
+        #region Helpers
+        private void Append(Guid streamId, object @event) => _session.Events.Append(streamId, @event);
+        private bool IsSingleImage(DocumentMetadata metadata) => SupportedImageExtensions.Contains(metadata.Extension);
 
         private async Task<bool> IsPdfFileAsync(string filePath, DocumentMetadata metadata)
         {
             try
             {
                 var hasValidExtension = string.Equals(metadata.Extension, ".pdf", StringComparison.OrdinalIgnoreCase);
-                var hasValidMimeType = metadata.MimeType != null && 
-                    (string.Equals(metadata.MimeType, "application/pdf", StringComparison.OrdinalIgnoreCase) ||
-                     string.Equals(metadata.MimeType, "application/x-pdf", StringComparison.OrdinalIgnoreCase));
+                var hasValidMimeType = metadata.MimeType != null && (string.Equals(metadata.MimeType, "application/pdf", StringComparison.OrdinalIgnoreCase) || string.Equals(metadata.MimeType, "application/x-pdf", StringComparison.OrdinalIgnoreCase));
                 var hasValidMagicNumber = await HasPdfMagicNumberAsync(filePath);
-                _logger.LogDebug("PDF validation for {FilePath}: Extension={Extension} ({ValidExtension}), MimeType={MimeType} ({ValidMimeType}), MagicNumber={ValidMagicNumber}",
-                    filePath, metadata.Extension, hasValidExtension, metadata.MimeType, hasValidMimeType, hasValidMagicNumber);
+                _logger.LogDebug("PDF validation for {FilePath}: ext={Ext} okExt={OkExt}, mime={Mime} okMime={OkMime}, magic={Magic}", filePath, metadata.Extension, hasValidExtension, metadata.MimeType, hasValidMimeType, hasValidMagicNumber);
                 return hasValidMagicNumber && (hasValidExtension || hasValidMimeType);
             }
             catch (Exception ex)
@@ -194,16 +280,11 @@ namespace ArquivoMate2.Application.Handlers
         {
             try
             {
-                if (!File.Exists(filePath))
-                    return false;
-
+                if (!File.Exists(filePath)) return false;
                 using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 var buffer = new byte[PdfMagicNumber.Length];
                 var bytesRead = await fileStream.ReadAsync(buffer, 0, buffer.Length);
-
-                if (bytesRead < PdfMagicNumber.Length)
-                    return false;
-
+                if (bytesRead < PdfMagicNumber.Length) return false;
                 return buffer.SequenceEqual(PdfMagicNumber);
             }
             catch (Exception ex)
@@ -213,173 +294,7 @@ namespace ArquivoMate2.Application.Handlers
             }
         }
 
-        private async Task ProcessPdfFiles(ProcessDocumentCommand request, DocumentMetadata metadata, string path, CancellationToken cancellationToken)
-        {
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan);
-
-            var content = await ExtractTextAsync(stream, metadata, cancellationToken);
-
-            _session.Events.Append(request.DocumentId, new DocumentContentExtracted(request.DocumentId, content, DateTime.UtcNow));
-
-            var filePath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.GetFileName(path), File.ReadAllBytes(path));
-            var metaPath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.ChangeExtension(Path.GetFileName(path), "metadata"), JsonSerializer.SerializeToUtf8Bytes(metadata));
-
-            stream.Position = 0;
-            var thumbnail = _thumbnailService.GenerateThumbnail(stream);
-
-            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
-            string thumbnailFileName = $"{fileNameWithoutExtension}-thumb.webp";
-
-            var thumbPath = await _storage.SaveFile(request.UserId, request.DocumentId, thumbnailFileName, thumbnail);
-
-            stream.Position = 0;
-            var previewPdf = await _documentTextExtractor.GeneratePreviewPdf(stream, metadata, cancellationToken);
-            string previewPdfFileName = $"{fileNameWithoutExtension}-preview.pdf";
-            var previewPath = await _storage.SaveFile(request.UserId, request.DocumentId, previewPdfFileName, previewPdf);
-
-            stream.Position = 0;
-            var archivePdf = await _documentTextExtractor.GenerateArchivePdf(stream, metadata, cancellationToken);
-            string archivePdfFileName = $"{fileNameWithoutExtension}-archive.pdf";
-            var archivePath = await _storage.SaveFile(request.UserId, request.DocumentId, archivePdfFileName, archivePdf);
-
-            _session.Events.Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, archivePath, DateTime.UtcNow));
-
-            try
-            {
-                var chatbotResult = await _chatBot.AnalyzeDocumentContent(content, cancellationToken);
-                await ProcessChatbotResultAsync(request.DocumentId, chatbotResult);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Chatbot analysis failed for {DocumentId}. Continuing without chatbot data.", request.DocumentId);
-            }
-        }
-
-        private async Task ProcessImageFiles(ProcessDocumentCommand request, DocumentMetadata metadata, string path, CancellationToken cancellationToken)
-        {
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan);
-
-            var content = await _documentTextExtractor.ExtractImageTextAsync(stream, metadata, cancellationToken);
-            _session.Events.Append(request.DocumentId, new DocumentContentExtracted(request.DocumentId, content, DateTime.UtcNow));
-
-            var filePath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.GetFileName(path), File.ReadAllBytes(path));
-            var metaPath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.ChangeExtension(Path.GetFileName(path), "metadata"), JsonSerializer.SerializeToUtf8Bytes(metadata));
-
-            stream.Position = 0;
-            var thumbnail = _thumbnailService.GenerateThumbnail(stream);
-            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
-            var thumbPath = await _storage.SaveFile(request.UserId, request.DocumentId, $"{fileNameWithoutExtension}-thumb.webp", thumbnail);
-
-            // For image we still produce a PDF preview (single page) for consistency
-            stream.Position = 0;
-            var previewPdf = await _documentTextExtractor.GeneratePreviewPdf(stream, metadata, cancellationToken);
-            var previewPath = await _storage.SaveFile(request.UserId, request.DocumentId, $"{fileNameWithoutExtension}-preview.pdf", previewPdf);
-
-            stream.Position = 0;
-            var archivePdf = await _documentTextExtractor.GenerateArchivePdf(stream, metadata, cancellationToken);
-            var archivePath = await _storage.SaveFile(request.UserId, request.DocumentId, $"{fileNameWithoutExtension}-archive.pdf", archivePdf);
-
-            _session.Events.Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, archivePath, DateTime.UtcNow));
-
-            try
-            {
-                var chatbotResult = await _chatBot.AnalyzeDocumentContent(content, cancellationToken);
-                await ProcessChatbotResultAsync(request.DocumentId, chatbotResult);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Chatbot analysis failed for {DocumentId}. Continuing without chatbot data.", request.DocumentId);
-            }
-        }
-
-        private async Task ProcessChatbotResultAsync(Guid documentId, DocumentAnalysisResult chatbotResult)
-        {
-            if (chatbotResult == null)
-                return;
-
-            var all = _session.Query<PartyInfo>().ToList();
-
-            var sender = chatbotResult.Sender;
-            Guid senderId = Guid.Empty;
-
-            if (sender != null)
-            {
-                var matches = await _session.Query<PartyInfo>()
-                .Where(x => x.SearchText.NgramSearch(sender.CompanyName + " " + sender.FirstName + " " + sender.LastName))
-                .ToListAsync();
-
-                if (matches != null && matches.Count > 0)
-                {
-                    var bestMatch = matches.FirstOrDefault();
-                    if (bestMatch != null)
-                    {
-                        senderId = bestMatch.Id;
-                    }
-                }
-                else
-                {
-                    using var newSession = _session.DocumentStore.LightweightSession();
-                    PartyInfo newSender = new PartyInfo()
-                    {
-                        Id = Guid.NewGuid(),
-                        City = sender.City,
-                        CompanyName = sender.CompanyName,
-                        FirstName = sender.FirstName,
-                        HouseNumber = sender.HouseNumber,
-                        LastName = sender.LastName,
-                        PostalCode = sender.PostalCode,
-                        Street = sender.Street,
-                    };
-                    newSession.Store(newSender);
-                    senderId = newSender.Id;
-                    await newSession.SaveChangesAsync();
-                }
-            }
-
-            var recipient = chatbotResult.Recipient;
-            Guid recipientId = Guid.Empty;
-
-            if (recipient != null)
-            {
-                var matches = await _session.Query<PartyInfo>()
-                .Where(x => x.SearchText.NgramSearch(recipient.CompanyName + " " + recipient.FirstName + " " + recipient.LastName))
-                .ToListAsync();
-
-                if (matches != null && matches.Count > 0)
-                {
-                    var bestMatch = matches.FirstOrDefault();
-                    if (bestMatch != null)
-                    {
-                        recipientId = bestMatch.Id;
-                    }
-                }
-                else
-                {
-                    using var newSession = _session.DocumentStore.LightweightSession();
-                    PartyInfo newRecipient = new PartyInfo()
-                    {
-                        Id = Guid.NewGuid(),
-                        City = recipient.City,
-                        CompanyName = recipient.CompanyName,
-                        FirstName = recipient.FirstName,
-                        HouseNumber = recipient.HouseNumber,
-                        LastName = recipient.LastName,
-                        PostalCode = recipient.PostalCode,
-                        Street = recipient.Street,
-                    };
-                    newSession.Store(newRecipient);
-                    recipientId = newRecipient.Id;
-                    await newSession.SaveChangesAsync();
-                }
-            }
-            
-            _session.Events.Append(documentId, new DocumentChatBotDataReceived(documentId, senderId, recipientId, null, DateTime.UtcNow,
-                chatbotResult.DocumentType, chatbotResult.CustomerNumber, chatbotResult.InvoiceNumber, chatbotResult.TotalPrice, chatbotResult.Keywords, chatbotResult.Summary, _chatBot.ModelName, _chatBot.GetType().Name));
-            if (chatbotResult.Title.IsNotEmpty())
-            {
-                _session.Events.Append(documentId, new DocumentTitleSuggested(documentId, chatbotResult.Title, DateTime.UtcNow));
-            }
-        }
+        private FileStream OpenForSequentialRead(string path) => new(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan);
 
         private async Task<string> ExtractTextAsync(FileStream stream, DocumentMetadata metadata, CancellationToken cancellationToken)
         {
@@ -398,8 +313,8 @@ namespace ArquivoMate2.Application.Handlers
                 default:
                     _logger.LogError("Unsupported file type: {Extension}", metadata.Extension);
                     return string.Empty;
-
             }
         }
+        #endregion
     }
 }

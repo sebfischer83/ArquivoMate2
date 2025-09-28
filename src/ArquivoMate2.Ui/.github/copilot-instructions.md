@@ -1,5 +1,7 @@
 # ArquivoMate2.Ui — AI Coding Agent Guide
 
+NUTZE IMMER DIE AKTUELLE memory.instruction.md DATEI ALS REFERENZ.
+
 ## Architecture Overview
 
 - **Framework:** Angular 20+ with Taiga UI for all UI components.

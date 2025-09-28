@@ -2,7 +2,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TuiButton, TuiSurface, TuiTitle, TuiDropdown, TuiDropdownOpen } from '@taiga-ui/core';
-import { TuiTabs } from '@taiga-ui/kit';
+import { TuiTabs, TuiChip } from '@taiga-ui/kit';
 import { DocumentTabsComponent } from './components/document-tabs/document-tabs.component';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PdfJsViewerComponent } from '../../../components/pdfjs-viewer/pdfjs-viewer.component';
@@ -16,10 +16,14 @@ import { DocumentDownloadService } from '../../../services/document-download.ser
 import { DocumentDto } from '../../../client/models/document-dto';
 import { ToastService } from '../../../services/toast.service';
 import { Location } from '@angular/common';
+import { DocumentNotesService } from '../../../client/services/document-notes.service';
+import { DocumentNoteDto } from '../../../client/models/document-note-dto';
+import { NotesListComponent } from './components/notes-list/notes-list.component';
+import { TranslocoModule } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-document',
-  imports: [CommonModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, TuiDropdown, TuiDropdownOpen, DocumentHistoryComponent, PdfJsViewerComponent, DocumentTabsComponent, PdfJsViewerToolbarComponent, ContentToolbarComponent],
+  imports: [CommonModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, TuiDropdown, TuiDropdownOpen, TuiChip, DocumentHistoryComponent, PdfJsViewerComponent, DocumentTabsComponent, PdfJsViewerToolbarComponent, ContentToolbarComponent, NotesListComponent, TranslocoModule],
   templateUrl: './document.component.html',
   styleUrls: ['./document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,6 +40,18 @@ export class DocumentComponent implements OnInit {
   readonly wrapContent = signal(true);
   readonly downloadLoading = signal(false);
   readonly downloadMenuOpen = signal(false);
+  // Local mutable keywords (UI only, no server persistence yet)
+  readonly keywords = signal<string[]>([]);
+  readonly newKeyword = signal<string>('');
+  // Animation state
+  readonly lastAddedKeyword = signal<string | null>(null);
+  readonly removalSet = signal<Set<string>>(new Set());
+  // Notes state/signals
+  readonly notes = signal<DocumentNoteDto[] | null>(null);
+  readonly notesLoading = signal(false);
+  readonly notesError = signal<string | null>(null);
+  readonly addingNote = signal(false);
+  private notesLoadedOnce = false;
   /**
    * Pure original filename (never ID). Derived from potential backend fields.
    * Priority: explicit originalFileName field -> filePath basename -> empty string
@@ -59,6 +75,7 @@ export class DocumentComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private api: DocumentsService,
+    private notesApi: DocumentNotesService,
     private downloadSrv: DocumentDownloadService,
     private toast: ToastService,
     private location: Location,
@@ -79,6 +96,8 @@ export class DocumentComponent implements OnInit {
   this.document.set(resolved);
   this.updateSafePreview();
       this.history.set(resolved.history ?? []);
+      // initialize local keywords copy
+      this.keywords.set([...(resolved.keywords ?? [])]);
     } else {
       const id = this.documentId();
       if (!id) {
@@ -97,6 +116,7 @@ export class DocumentComponent implements OnInit {
   this.document.set(dto);
   this.updateSafePreview();
         this.history.set(dto.history ?? []);
+        this.keywords.set([...(dto.keywords ?? [])]);
         this.loading.set(false);
       },
       error: () => {
@@ -207,9 +227,93 @@ export class DocumentComponent implements OnInit {
 
   toggleWrap(): void { this.wrapContent.update(v => !v); }
 
+  // --- Keyword UI actions (no server interaction) ---
+  addKeyword(): void {
+    const raw = (this.newKeyword() || '').trim();
+    if (!raw) return;
+    if (raw.length > 30) {
+      this.toast.error('Keyword zu lang (max 30)');
+      return;
+    }
+    const current = this.keywords();
+    if (current.some(k => k.toLowerCase() === raw.toLowerCase())) {
+      this.newKeyword.set('');
+      return; // ignore duplicates
+    }
+    this.keywords.set([...current, raw]);
+    this.newKeyword.set('');
+    this.lastAddedKeyword.set(raw);
+    // clear highlight after animation
+    setTimeout(() => {
+      if (this.lastAddedKeyword() === raw) this.lastAddedKeyword.set(null);
+    }, 400);
+  }
+
+  removeKeyword(k: string): void {
+    // stage removal to allow CSS animation
+    if (this.removalSet().has(k)) return;
+    this.removalSet.update(set => new Set([...Array.from(set), k]));
+    setTimeout(() => {
+      this.keywords.set(this.keywords().filter(x => x !== k));
+      this.removalSet.update(set => { set.delete(k); return new Set(set); });
+      if (this.lastAddedKeyword() === k) this.lastAddedKeyword.set(null);
+    }, 180); // matches CSS transition duration
+  }
+
+  onKeywordInput(value: string): void { this.newKeyword.set(value); }
+  onKeywordKey(event: KeyboardEvent): void {
+    if (event.key === 'Enter') { event.preventDefault(); this.addKeyword(); }
+  }
+
   // Adapter for Taiga UI two-way binding syntax if needed
   get activeItemIndex(): number { return this.tabIndex(); }
-  set activeItemIndex(i: number) { this.tabIndex.set(i); }
+  set activeItemIndex(i: number) {
+    this.tabIndex.set(i);
+    if (i === 3 && !this.notesLoadedOnce) this.loadNotes();
+  }
+
+  // --- Notes ---
+  private loadNotes(): void {
+    const id = this.documentId();
+    if (!id || this.notesLoading()) return;
+    this.notesLoading.set(true);
+    this.notesError.set(null);
+    this.notesApi.apiDocumentsDocumentIdNotesGet$Json({ documentId: id }).subscribe({
+      next: list => { this.notes.set(list); this.notesLoading.set(false); this.notesLoadedOnce = true; },
+      error: () => { this.notesLoading.set(false); this.notesError.set('Notizen konnten nicht geladen werden'); }
+    });
+  }
+
+  retryNotes(): void { this.notesLoadedOnce = false; this.loadNotes(); }
+
+  addNote(text: string): void {
+    const id = this.documentId();
+    if (!id || !text.trim()) return;
+    if (this.addingNote()) return;
+    // optimistic add
+    const draft: DocumentNoteDto = { id: 'tmp-' + Date.now(), text: text.trim(), createdAt: new Date().toISOString(), documentId: id };
+    const current = this.notes() || [];
+    this.notes.set([draft, ...current]);
+    // increment notesCount on document signal
+    const doc = this.document();
+    if (doc) { (doc as any).notesCount = (doc as any).notesCount ? (doc as any).notesCount + 1 : 1; this.document.set({ ...doc }); }
+    this.addingNote.set(true);
+    this.notesApi.apiDocumentsDocumentIdNotesPost$Json({ documentId: id, body: { text: text.trim() } as any }).subscribe({
+      next: saved => {
+        const list = this.notes() || [];
+        this.notes.set(list.map(n => n.id === draft.id ? saved : n));
+        this.addingNote.set(false);
+        this.toast.success('Notiz gespeichert');
+      },
+      error: () => {
+        const list = this.notes() || [];
+        this.notes.set(list.filter(n => n.id !== draft.id));
+        if (doc) { (doc as any).notesCount = Math.max(((doc as any).notesCount || 1) - 1, 0); this.document.set({ ...doc }); }
+        this.toast.error('Notiz konnte nicht gespeichert werden');
+        this.addingNote.set(false);
+      }
+    });
+  }
 
   private fallbackCopy(text: string) {
     try {

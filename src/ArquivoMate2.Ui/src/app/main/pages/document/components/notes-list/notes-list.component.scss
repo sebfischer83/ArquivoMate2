@@ -1,0 +1,31 @@
+// Wrapper
+.notes-wrapper { display:flex; flex-direction:column; gap:.9rem; padding:1rem; border-radius:.75rem; }
+.notes-header { display:flex; justify-content:space-between; align-items:center; gap:1rem;
+  h4 { margin:0; font-size:.95rem; font-weight:600; }
+}
+
+// Composer
+.note-composer { display:flex; flex-direction:column; gap:.6rem; padding:.75rem .85rem .85rem; border:1px solid var(--tui-base-04); border-radius:.75rem; background:var(--tui-base-02); animation:composerIn .18s ease; }
+.note-textarea { resize:vertical; min-height:3.5rem; max-height:14rem; width:100%; padding:.55rem .65rem; font:inherit; line-height:1.25; border:1px solid var(--tui-base-04); border-radius:.55rem; background:var(--tui-base-01); color:var(--tui-text-01); transition:border-color .15s, background .15s; }
+.note-textarea:focus { outline:2px solid var(--tui-primary); outline-offset:2px; }
+.composer-footer { display:flex; align-items:center; flex-wrap:wrap; gap:.6rem; }
+.composer-footer .counter { font-size:.6rem; opacity:.6; letter-spacing:.05em; text-transform:uppercase; }
+.composer-footer .spacer { flex:1; }
+.saving { display:inline-flex; align-items:center; }
+
+// States
+.notes-loading, .notes-error, .notes-empty { font-size:.8rem; opacity:.85; display:flex; align-items:center; gap:.4rem; }
+.notes-error { color:var(--tui-negative); }
+
+// List
+.notes-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.55rem; }
+.note-item { padding:.55rem .65rem .65rem; border:1px solid var(--tui-base-04); border-radius:.65rem; background:var(--tui-base-02); display:flex; flex-direction:column; gap:.35rem; position:relative; animation:itemIn .2s ease; }
+.note-item.optimistic { animation:optimisticPulse 1.2s ease; }
+.note-head { display:flex; justify-content:space-between; align-items:center; gap:.5rem; }
+.note-date { font-size:.65rem; text-transform:uppercase; letter-spacing:.05em; opacity:.65; }
+.note-body { white-space:pre-wrap; line-height:1.25; font-size:.8rem; }
+
+// Animations
+@keyframes composerIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+@keyframes itemIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+@keyframes optimisticPulse { 0% { box-shadow:0 0 0 0 rgba(var(--tui-primary-rgb), .35); background:rgba(var(--tui-primary-rgb), .15);} 60% { box-shadow:0 0 0 6px rgba(var(--tui-primary-rgb), 0); } 100% { box-shadow:none; background:var(--tui-base-02);} }

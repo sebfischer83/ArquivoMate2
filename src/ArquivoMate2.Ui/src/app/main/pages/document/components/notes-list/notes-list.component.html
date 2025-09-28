@@ -1,0 +1,50 @@
+<ng-container *transloco="let t">
+  <div class="notes-wrapper" tuiSurface appearance="floating">
+    <div class="notes-header">
+  <h4>{{ t('Document.Notes') }}</h4>
+      <div class="composer-trigger" *ngIf="!composerOpen">
+  <button tuiButton size="xs" appearance="flat" iconStart="@tui.plus" type="button" (click)="openComposer()">{{ t('Document.AddNote') }}</button>
+      </div>
+    </div>
+
+    <tui-expand [expanded]="composerOpen">
+      <form class="note-composer" (submit)="onSubmit($event)">
+        <textarea
+          class="note-textarea"
+          [(ngModel)]="draft"
+          name="draft"
+          [placeholder]="t('Document.NewNotePlaceholder')"
+          (keydown)="onComposerKey($event)"
+          [disabled]="adding"
+          rows="3"
+        ></textarea>
+        <div class="composer-footer">
+          <span class="counter">{{ draft.length }}/1000</span>
+          <span class="spacer"></span>
+          <button tuiButton size="xs" appearance="secondary" type="button" (click)="cancelComposer()" [disabled]="adding">{{ t('Document.Cancel') }}</button>
+          <button tuiButton size="xs" appearance="primary" type="submit" [disabled]="adding || !draft.trim()">
+            <ng-container *ngIf="!adding; else savingTpl">{{ t('Document.Save') }}</ng-container>
+          </button>
+          <ng-template #savingTpl><span class="saving"><tui-loader size="xs"></tui-loader>&nbsp;{{ t('Document.Save') }}…</span></ng-template>
+        </div>
+      </form>
+    </tui-expand>
+
+    <div *ngIf="loading" class="notes-loading">
+  <tui-loader size="s"></tui-loader>&nbsp;{{ t('Document.LoadingNotes') }}
+    </div>
+    <div *ngIf="error && !loading" class="notes-error">
+      <span>{{ error }}</span>
+  <button tuiButton size="xs" appearance="flat" type="button" (click)="retry.emit()">{{ t('Document.Retry') }}</button>
+    </div>
+  <div *ngIf="!loading && !error && empty" class="notes-empty">{{ t('Document.NoNotes') }}</div>
+    <ul *ngIf="!loading && !error && !empty" class="notes-list">
+      <li class="note-item" *ngFor="let n of notes; trackBy: trackId" [class.optimistic]="isTemp(n)">
+        <div class="note-head">
+          <span class="note-date">{{ n.createdAt | noteDate }}</span>
+        </div>
+        <div class="note-body">{{ n.text }}</div>
+      </li>
+    </ul>
+  </div>
+</ng-container>

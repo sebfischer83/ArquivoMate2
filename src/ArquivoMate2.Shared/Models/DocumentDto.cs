@@ -21,6 +21,7 @@ namespace ArquivoMate2.Shared.Models
         public string MetadataPath { get; set; } = string.Empty;
 
         public string PreviewPath { get; set; } = string.Empty;
+        public string ArchivePath { get; set; } = string.Empty; // NEW
 
         public string UserId { get; set; } = string.Empty;
 
@@ -48,6 +49,10 @@ namespace ArquivoMate2.Shared.Models
 
         public string ChatBotModel { get; set; } = string.Empty; // NOVO
         public string ChatBotClass { get; set; } = string.Empty; // NOVO
+
+        public int NotesCount { get; set; } // NEW
+
+        public string Language { get; set; } = string.Empty; // NEW
 
         public List<DocumentEventDto> History { get; set; } = new List<DocumentEventDto>();
     }

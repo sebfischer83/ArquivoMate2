@@ -14,6 +14,7 @@ namespace ArquivoMate2.Domain.Document
         public string MetadataPath { get; private set; } = string.Empty;
 
         public string PreviewPath { get; private set; } = string.Empty;
+        public string ArchivePath { get; private set; } = string.Empty; // NEW
 
         public string UserId { get; private set; } = string.Empty;
         public bool Accepted { get; private set; }
@@ -45,6 +46,10 @@ namespace ArquivoMate2.Domain.Document
 
         public string ChatBotModel { get; private set; } = string.Empty; // NEW
         public string ChatBotClass { get; private set; } = string.Empty; // NEW
+
+        public int NotesCount { get; private set; } = 0; // NEW
+
+        public string Language { get; private set; } = string.Empty; // NEW
 
         public DateTime? OccurredOn { get; private set; }
 
@@ -92,6 +97,7 @@ namespace ArquivoMate2.Domain.Document
             MetadataPath = e.MetadataPath;
             ThumbnailPath = e.ThumbnailPath;
             PreviewPath = e.PreviewPath;
+            ArchivePath = e.ArchivePath; // NEW
             OccurredOn = e.OccurredOn;
         }
 
@@ -155,6 +161,24 @@ namespace ArquivoMate2.Domain.Document
         public void Apply(DocumentDeleted e)
         {
             Deleted = true;
+            OccurredOn = e.OccurredOn;
+        }
+
+        public void Apply(DocumentNoteAdded e)
+        {
+            NotesCount++;
+            OccurredOn = e.OccurredOn;
+        }
+
+        public void Apply(DocumentNoteDeleted e)
+        {
+            if (NotesCount > 0) NotesCount--;
+            OccurredOn = e.OccurredOn;
+        }
+
+        public void Apply(DocumentLanguageDetected e)
+        {
+            Language = e.IsoCode;
             OccurredOn = e.OccurredOn;
         }
     }

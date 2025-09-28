@@ -29,14 +29,15 @@ namespace ArquivoMate2.Application.Handlers
         private readonly IThumbnailService _thumbnailService;
         private readonly IChatBot _chatBot;
         private readonly IDocumentProcessingNotifier _documentProcessingNotifier;
+        private readonly ILanguageDetectionService _languageDetection; // NEW
 
         // PDF Magic Number (first 4 bytes)
         private static readonly byte[] PdfMagicNumber = [0x25, 0x50, 0x44, 0x46]; // %PDF
         private static readonly HashSet<string> SupportedImageExtensions = new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp" };
 
         public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger, IDocumentProcessor documentTextExtractor, IFileMetadataService fileMetadataService, IPathService pathService,
-            IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot, IDocumentProcessingNotifier documentProcessingNotifier, ICurrentUserService currentUserService)
-            => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService, _chatBot, _documentProcessingNotifier) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService, chatBot, documentProcessingNotifier);
+            IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot, IDocumentProcessingNotifier documentProcessingNotifier, ICurrentUserService currentUserService, ILanguageDetectionService languageDetection)
+            => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService, _chatBot, _documentProcessingNotifier, _languageDetection) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService, chatBot, documentProcessingNotifier, languageDetection);
 
         public async Task<(Document? Document, string? TempFilePath)> Handle(ProcessDocumentCommand request, CancellationToken cancellationToken)
         {
@@ -67,13 +68,63 @@ namespace ArquivoMate2.Application.Handlers
                 var path = pathService.GetDocumentUploadPath(request.UserId);
                 path = Path.Combine(path, $"{request.DocumentId}{metadata.Extension}");
 
+                // Language detection (only if not already determined / narrowed)
+                var effectiveMetadata = metadata;
+                try
+                {
+                    bool needDetection = string.IsNullOrWhiteSpace(doc.Language) || metadata.Languages == null || metadata.Languages.Length != 1;
+                    if (needDetection && File.Exists(path))
+                    {
+                        bool isPdfFile = await IsPdfFileAsync(path, metadata);
+                        (string? iso, string? tess) result = (null, null);
+                        using (var detectStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                        {
+                            if (isPdfFile)
+                            {
+                                result = await _languageDetection.DetectFromPdfAsync(detectStream, cancellationToken);
+                                if (result.iso == null || result.tess == null)
+                                {
+                                    detectStream.Position = 0;
+                                    result = await _languageDetection.DetectFromImageOrPdfAsync(detectStream, metadata.Languages, cancellationToken);
+                                }
+                            }
+                            else if (IsSingleImage(metadata))
+                            {
+                                result = await _languageDetection.DetectFromImageOrPdfAsync(detectStream, metadata.Languages, cancellationToken);
+                            }
+                        }
+                        if (result.iso != null && result.tess != null)
+                        {
+                            if (!string.Equals(doc.Language, result.iso, StringComparison.OrdinalIgnoreCase))
+                            {
+                                _session.Events.Append(request.DocumentId, new DocumentLanguageDetected(request.DocumentId, result.iso, DateTime.UtcNow));
+                            }
+                            if (metadata.Languages.Length != 1 || !string.Equals(metadata.Languages[0], result.tess, StringComparison.OrdinalIgnoreCase))
+                            {
+                                effectiveMetadata = metadata with { Languages = new[] { result.tess } };
+                                await fileMetadataService.WriteMetadataAsync(effectiveMetadata, cancellationToken);
+                                _logger.LogInformation("Language detected for Document {DocumentId}: ISO={Iso} Tess={Tess}", request.DocumentId, result.iso, result.tess);
+                            }
+                        }
+                        else
+                        {
+                            _logger.LogInformation("Language detection skipped or failed for Document {DocumentId}", request.DocumentId);
+                        }
+                    }
+                }
+                catch (Exception lex)
+                {
+                    _logger.LogWarning(lex, "Language detection error for Document {DocumentId} - continuing with existing metadata", request.DocumentId);
+                }
+
+                // Evaluate type again (PDF/Image) possibly using original metadata (extension unaffected)
                 if (await IsPdfFileAsync(path, metadata))
                 {
-                    await ProcessPdfFiles(request, metadata, path, cancellationToken);
+                    await ProcessPdfFiles(request, effectiveMetadata, path, cancellationToken);
                 }
                 else if (IsSingleImage(metadata))
                 {
-                    await ProcessImageFiles(request, metadata, path, cancellationToken);
+                    await ProcessImageFiles(request, effectiveMetadata, path, cancellationToken);
                 }
                 else
                 {
@@ -183,11 +234,15 @@ namespace ArquivoMate2.Application.Handlers
 
             stream.Position = 0;
             var previewPdf = await _documentTextExtractor.GeneratePreviewPdf(stream, metadata, cancellationToken);
-
             string previewPdfFileName = $"{fileNameWithoutExtension}-preview.pdf";
             var previewPath = await _storage.SaveFile(request.UserId, request.DocumentId, previewPdfFileName, previewPdf);
 
-            _session.Events.Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, DateTime.UtcNow));
+            stream.Position = 0;
+            var archivePdf = await _documentTextExtractor.GenerateArchivePdf(stream, metadata, cancellationToken);
+            string archivePdfFileName = $"{fileNameWithoutExtension}-archive.pdf";
+            var archivePath = await _storage.SaveFile(request.UserId, request.DocumentId, archivePdfFileName, archivePdf);
+
+            _session.Events.Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, archivePath, DateTime.UtcNow));
 
             try
             {
@@ -220,7 +275,11 @@ namespace ArquivoMate2.Application.Handlers
             var previewPdf = await _documentTextExtractor.GeneratePreviewPdf(stream, metadata, cancellationToken);
             var previewPath = await _storage.SaveFile(request.UserId, request.DocumentId, $"{fileNameWithoutExtension}-preview.pdf", previewPdf);
 
-            _session.Events.Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, DateTime.UtcNow));
+            stream.Position = 0;
+            var archivePdf = await _documentTextExtractor.GenerateArchivePdf(stream, metadata, cancellationToken);
+            var archivePath = await _storage.SaveFile(request.UserId, request.DocumentId, $"{fileNameWithoutExtension}-archive.pdf", archivePdf);
+
+            _session.Events.Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, archivePath, DateTime.UtcNow));
 
             try
             {

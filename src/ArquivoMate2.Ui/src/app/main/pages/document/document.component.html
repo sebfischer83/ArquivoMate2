@@ -1,10 +1,11 @@
+<ng-container *transloco="let t">
 <div class="document-layout page-flex-root">
 	<div class="main-area" tuiSurface appearance="floating">
 		<div class="document-detail">
 			<div class="toolbar">
 				<div class="left">
-					<button tuiButton size="s" appearance="secondary" iconStart="@tui.arrow-left" type="button" (click)="back()">Zurück</button>
-					<h2 tuiTitle="m" class="doc-title">{{ originalFileName() || 'Dokument' }}</h2>
+					<button tuiButton size="s" appearance="secondary" iconStart="@tui.arrow-left" type="button" (click)="back()">{{ t('Document.Back') || '←' }}</button>
+					<h2 tuiTitle="m" class="doc-title">{{ originalFileName() || t('Document.DocumentTitleFallback') }}</h2>
 				</div>
 				<div class="actions" *ngIf="hasData()">
 					<!-- If archivePath exists show dropdown menu, else show direct download button -->
@@ -20,23 +21,23 @@
 								[tuiDropdown]="downloadMenu"
 								[disabled]="!filePath || downloadLoading()"
 						>
-							{{ downloadLoading() ? 'Lädt…' : 'Download' }}
+							{{ downloadLoading() ? t('Document.LoadingEllipsis') : t('Document.Download') }}
 						</button>
 						<ng-template #downloadMenu>
 							<div class="download-menu" tuiDropdown tuiSurface appearance="floating">
-								<button type="button" tuiButton size="s" appearance="flat" class="menu-item" (click)="downloadOriginal(); closeDownloadMenu()" [disabled]="downloadLoading()">Original</button>
-								<button type="button" tuiButton size="s" appearance="flat" class="menu-item" (click)="downloadArchive(); closeDownloadMenu()" [disabled]="downloadLoading()">Archiv</button>
+								<button type="button" tuiButton size="s" appearance="flat" class="menu-item" (click)="downloadOriginal(); closeDownloadMenu()" [disabled]="downloadLoading()">{{ t('Document.DownloadOriginal') }}</button>
+								<button type="button" tuiButton size="s" appearance="flat" class="menu-item" (click)="downloadArchive(); closeDownloadMenu()" [disabled]="downloadLoading()">{{ t('Document.DownloadArchive') }}</button>
 							</div>
 						</ng-template>
 					} @else {
-						<button tuiButton size="s" appearance="flat" iconStart="@tui.download" type="button" (click)="downloadOriginal()" [disabled]="!filePath || downloadLoading()">{{ downloadLoading() ? 'Lädt…' : 'Download' }}</button>
+						<button tuiButton size="s" appearance="flat" iconStart="@tui.download" type="button" (click)="downloadOriginal()" [disabled]="!filePath || downloadLoading()">{{ downloadLoading() ? t('Document.LoadingEllipsis') : t('Document.Download') }}</button>
 					}
-					<button tuiButton size="s" appearance="flat" iconStart="@tui.external-link" type="button" (click)="openInNewTab()" [disabled]="!filePath">Öffnen</button>
+						<button tuiButton size="s" appearance="flat" iconStart="@tui.external-link" type="button" (click)="openInNewTab()" [disabled]="!filePath">{{ t('Document.Open') }}</button>
 				</div>
 			</div>
 
 			@if (loading()) {
-				<section class="skeleton" aria-label="Lade Dokument">
+				<section class="skeleton" [attr.aria-label]="t('Document.LoadingDocument')">
 					<div class="sk-line w-30"></div>
 					<div class="sk-line w-55"></div>
 					<div class="sk-line w-40"></div>
@@ -47,11 +48,11 @@
 			@if (error()) {
 				<div class="error" tuiSurface appearance="negative">
 					<p>{{ error() }}</p>
-					<button tuiButton appearance="primary" size="s" iconStart="@tui.refresh-ccw" type="button" (click)="retry()">Erneut versuchen</button>
+					<button tuiButton appearance="primary" size="s" iconStart="@tui.refresh-ccw" type="button" (click)="retry()">{{ t('Document.Retry') }}</button>
 				</div>
 			}
 			@if (hasData() && document(); as doc) {
-				<app-document-tabs [(activeIndex)]="activeItemIndex" [sticky]="true"></app-document-tabs>
+				<app-document-tabs [(activeIndex)]="activeItemIndex" [sticky]="true" [notesCount]="document()?.notesCount || 0"></app-document-tabs>
 				<div class="doc-split"> 
 					<div class="detail-pane left-col">
 						<!-- Content toolbar moved outside of scroll container so it does not scroll away -->
@@ -62,19 +63,38 @@
 					<div class="tab-content">
 						<section class="tab-pane properties" [class.active]="activeItemIndex === 0">
 							<div *ngIf="doc.summary" class="summary-box details-summary">
-								<div class="summary-label">ZUSAMMENFASSUNG</div>
+								<div class="summary-label">{{ t('Document.Summary') }}</div>
 								<div class="summary-text">{{ doc.summary }}</div>
 							</div>
+							<div class="keywords-box">
+								<div class="keywords-header">
+									<span class="keywords-label">{{ t('Document.Keywords') }}</span>
+								</div>
+								<div class="keywords-chips">
+									@for (k of keywords(); track k) {
+										<span tuiChip size="s" appearance="primary" class="keyword-chip" [class.added]="lastAddedKeyword() === k" [class.removing]="removalSet().has(k)" title="Keyword">{{ k }}
+											<button type="button" class="chip-remove" aria-label="Keyword entfernen" (click)="$event.stopPropagation(); removeKeyword(k)">&times;</button>
+										</span>
+									}
+									@if (!keywords().length) {
+											<span class="keywords-empty">{{ t('Document.NoKeywords') }}</span>
+									}
+								</div>
+								<div class="keywords-add-row">
+									<input type="text" class="keyword-input" [value]="newKeyword()" (input)="onKeywordInput($any($event.target).value)" (keydown)="onKeywordKey($event)" [placeholder]="t('Document.NewKeyword')" />
+									<button tuiButton size="xs" appearance="flat" type="button" (click)="addKeyword()" [disabled]="!newKeyword().trim()">{{ t('Document.Add') }}</button>
+								</div>
+							</div>
 							<div class="prop-grid">
-								<div class="prop"><span class="label">Dateiname</span><span class="value mono">{{ originalFileName() || '-' }}</span></div>
+								<div class="prop"><span class="label">{{ t('Document.FileName') }}</span><span class="value mono">{{ originalFileName() || '-' }}</span></div>
 								<div class="prop"><span class="label">ID</span><span class="value mono">{{ doc.id }}</span></div>
-								<div class="prop" *ngIf="doc.title"><span class="label">Titel</span><span class="value">{{ doc.title }}</span></div>
-								<div class="prop"><span class="label">Typ</span><span class="value">{{ doc.type || '-' }}</span></div>
-								<div class="prop"><span class="label">Akzeptiert</span><span class="value">{{ doc.accepted ? 'Ja' : 'Nein' }}</span></div>
-								<div class="prop"><span class="label">Hochgeladen</span><span class="value">{{ doc.uploadedAt || '-' }}</span></div>
-								<div class="prop" *ngIf="doc.contentLength"><span class="label">Länge</span><span class="value mono">{{ doc.contentLength }}</span></div>
-								<div class="prop" *ngIf="doc.invoiceNumber"><span class="label">Rechnungsnr.</span><span class="value mono">{{ doc.invoiceNumber }}</span></div>
-								<div class="prop" *ngIf="doc.customerNumber"><span class="label">Kundennr.</span><span class="value mono">{{ doc.customerNumber }}</span></div>
+								<div class="prop" *ngIf="doc.title"><span class="label">{{ t('Document.Title') }}</span><span class="value">{{ doc.title }}</span></div>
+								<div class="prop"><span class="label">{{ t('Document.Type') }}</span><span class="value">{{ doc.type || '-' }}</span></div>
+								<div class="prop"><span class="label">{{ t('Document.Accepted') }}</span><span class="value">{{ doc.accepted ? t('Document.Yes') : t('Document.No') }}</span></div>
+								<div class="prop"><span class="label">{{ t('Document.UploadedAt') }}</span><span class="value">{{ doc.uploadedAt || '-' }}</span></div>
+								<div class="prop" *ngIf="doc.contentLength"><span class="label">{{ t('Document.ContentLength') }}</span><span class="value mono">{{ doc.contentLength }}</span></div>
+								<div class="prop" *ngIf="doc.invoiceNumber"><span class="label">{{ t('Document.InvoiceNumber') }}</span><span class="value mono">{{ doc.invoiceNumber }}</span></div>
+								<div class="prop" *ngIf="doc.customerNumber"><span class="label">{{ t('Document.CustomerNumber') }}</span><span class="value mono">{{ doc.customerNumber }}</span></div>
 							</div>
 						</section>
 						<section class="tab-pane content-view" [class.active]="activeItemIndex === 1">
@@ -85,12 +105,22 @@
 						<section class="tab-pane history-view" [class.active]="activeItemIndex === 2">
 							<app-document-history style="width: 100%;" [events]="history()"></app-document-history>
 						</section>
+						<section class="tab-pane notes-view" [class.active]="activeItemIndex === 3">
+							<app-notes-list
+								[notes]="notes()"
+								[loading]="notesLoading()"
+								[error]="notesError()"
+								[adding]="addingNote()"
+								(retry)="retryNotes()"
+								(add)="addNote($event)"
+							></app-notes-list>
+						</section>
 						</div><!-- /.tab-content -->
 						</div><!-- /.left-scroll -->
 					</div><!-- /.detail-pane -->
 											<div class="preview-pane right-col">
 															<div class="preview-header">
-																<h3 tuiTitle="s">Vorschau</h3>
+																<h3 tuiTitle="s">{{ t('Document.Preview') }}</h3>
 															</div>
 															@if (previewPath) {
 																<div class="preview-toolbar-wrapper">
@@ -100,7 +130,7 @@
 																	<app-pdfjs-viewer #pdfViewer [initialFitMode]="'width'" [src]="previewPath"></app-pdfjs-viewer>
 																</div>
 															} @else {
-																<div class="no-preview" tuiSurface appearance="floating">Keine Vorschau verfügbar</div>
+																<div class="no-preview" tuiSurface appearance="floating">{{ t('Document.NoPreview') }}</div>
 															}
 											</div>
             </div><!-- /.doc-split -->
@@ -108,3 +138,4 @@
 		</div>
 	</div>
 </div>
+</ng-container>

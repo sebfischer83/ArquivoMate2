@@ -59,8 +59,6 @@ namespace ArquivoMate2.Application.Handlers
 
             await _session.SaveChangesAsync(cancellationToken);
 
-            var languages = _ocrSettings.DefaultLanguages;
-
             var mime = MimeTypesMap.GetMimeType(request.EmailDocument.FileName);
 
             var metadata = new DocumentMetadata(
@@ -71,7 +69,7 @@ namespace ArquivoMate2.Application.Handlers
                 ext,
                 request.EmailDocument.File.Length,
                 DateTime.UtcNow,
-                languages,
+                _ocrSettings.DefaultLanguages,
                 fileHash
             );
 

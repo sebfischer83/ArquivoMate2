@@ -14,6 +14,7 @@
     <PackageReference Include="MediatR" Version="12.5.0" />
     <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="9.0.9" />
     <PackageReference Include="MimeTypesMap" Version="1.0.9" />
+    <PackageReference Include="AutoMapper" Version="13.0.1" />
   </ItemGroup>
 
   <ItemGroup>

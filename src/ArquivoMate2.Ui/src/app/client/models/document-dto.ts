@@ -18,6 +18,7 @@ export interface DocumentDto {
   invoiceNumber?: string;
   keywords?: Array<string>;
   metadataPath?: string;
+  notesCount?: number;
   previewPath?: string;
   processedAt?: string | null;
   summary?: string;

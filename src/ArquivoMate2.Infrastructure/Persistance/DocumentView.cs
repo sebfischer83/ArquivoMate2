@@ -11,6 +11,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
 
         public string MetadataPath { get; set; } = string.Empty;
         public string PreviewPath { get; set; } = string.Empty;
+        public string ArchivePath { get; set; } = string.Empty; // NEW
 
         public string UserId { get; set; } = string.Empty;
 
@@ -43,6 +44,10 @@ namespace ArquivoMate2.Infrastructure.Persistance
 
         public string ChatBotModel { get; set; } = string.Empty; // NEW
         public string ChatBotClass { get; set; } = string.Empty; // NEW
+
+        public int NotesCount { get; set; } // NEW
+
+        public string Language { get; set; } = string.Empty; // NEW
 
         public DateTime UploadedAt { get; set; }
         public DateTime? ProcessedAt { get; set; }

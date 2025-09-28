@@ -79,7 +79,10 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     typeof(DocumentProcessed),
                     typeof(HideDocumentImport),
                     typeof(DocumentTitleInitialized),
-                    typeof(DocumentTitleSuggested)
+                    typeof(DocumentTitleSuggested),
+                    typeof(DocumentNoteAdded), // NEW
+                    typeof(DocumentNoteDeleted), // NEW
+                    typeof(DocumentLanguageDetected) // NEW
                 });
 
                 options.Schema.For<PartyInfo>();
@@ -129,6 +132,11 @@ namespace ArquivoMate2.Infrastructure.Configuration
 
                 options.Projections.Add<DocumentProjection>(ProjectionLifecycle.Inline);
                 options.Projections.Add<ImportHistoryProjection>(ProjectionLifecycle.Inline);
+
+                // Notes document schema
+                options.Schema.For<ArquivoMate2.Domain.Notes.DocumentNote>()
+                    .Index(x => x.DocumentId)
+                    .Index(x => x.UserId);
             });
 
             services.AddScoped<IDocumentSession>(sp => sp.GetRequiredService<IDocumentStore>().LightweightSession());
@@ -142,6 +150,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddScoped<MeilisearchClient>(sp => new MeilisearchClient(config["Meilisearch:Url"], "supersecret"));
             services.AddScoped<ISearchClient, SearchClient>();
             services.AddHttpClient();
+            services.AddScoped<ILanguageDetectionService, LanguageDetectionService>(); // NEW
 
             services.AddSingleton<ChatBotSettingsFactory>();
             var chatbotSettings = new ChatBotSettingsFactory(config).GetChatBotSettings();

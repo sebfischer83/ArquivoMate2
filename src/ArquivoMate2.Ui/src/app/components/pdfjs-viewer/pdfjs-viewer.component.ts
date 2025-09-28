@@ -6,11 +6,10 @@ import { Subject } from 'rxjs';
 
 // pdf.js imports
 import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy, type PDFPageProxy } from 'pdfjs-dist';
-// Import worker asset URL (bundler should copy it); adjust path if necessary
-// @ts-ignore
-import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-// Worker asset path note: If needed you can copy from node_modules/pdfjs-dist/build/pdf.worker.min.js
-// For now we set workerSrc dynamically when first used (vite/angular builder will serve it from node_modules).
+// NOTE: pdfjs-dist v5 ESM build no longer provides a default export when using ?url in Angular CLI.
+// We compute the worker script URL via import.meta.url so the bundler rewrites it correctly.
+// This avoids relying on a synthetic default export that does not exist.
+const pdfWorkerUrl: string = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
 
 declare const window: any;
 
@@ -123,7 +122,8 @@ export class PdfJsViewerComponent implements OnDestroy, AfterViewInit {
 
   private ensureWorker() {
     if (!GlobalWorkerOptions.workerSrc) {
-      GlobalWorkerOptions.workerSrc = workerSrc;
+      // Assign resolved URL only once. (Type expects string)
+      GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
     }
   }
 

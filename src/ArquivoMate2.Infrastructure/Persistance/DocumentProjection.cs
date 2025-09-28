@@ -82,6 +82,25 @@ namespace ArquivoMate2.Infrastructure.Persistance
             view.MetadataPath = e.MetadataPath;
             view.ThumbnailPath = e.ThumbnailPath;
             view.PreviewPath = e.PreviewPath;
+            view.ArchivePath = e.ArchivePath; // NEW
+            view.OccurredOn = e.OccurredOn;
+        }
+
+        public void Apply(DocumentNoteAdded e, DocumentView view)
+        {
+            view.NotesCount++;
+            view.OccurredOn = e.OccurredOn;
+        }
+
+        public void Apply(DocumentNoteDeleted e, DocumentView view)
+        {
+            if (view.NotesCount > 0) view.NotesCount--;
+            view.OccurredOn = e.OccurredOn;
+        }
+
+        public void Apply(DocumentLanguageDetected e, DocumentView view)
+        {
+            view.Language = e.IsoCode;
             view.OccurredOn = e.OccurredOn;
         }
 

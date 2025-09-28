@@ -13,5 +13,7 @@ namespace ArquivoMate2.Application.Interfaces
         Task<string> ExtractImageTextAsync(Stream documentStream, Domain.ValueObjects.DocumentMetadata documentMetadata, CancellationToken cancellationToken = default);
         
         Task<byte[]> GeneratePreviewPdf(Stream documentStream, Domain.ValueObjects.DocumentMetadata documentMetadata, CancellationToken cancellationToken = default);
+
+        Task<byte[]> GenerateArchivePdf(Stream documentStream, Domain.ValueObjects.DocumentMetadata documentMetadata, CancellationToken cancellationToken = default);
     }
 }

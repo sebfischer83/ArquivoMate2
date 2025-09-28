@@ -141,7 +141,6 @@ namespace ArquivoMate2.Infrastructure.Services
             finally
             {
                 // attempt to cleanup leftover temporary files
-                // tesseract may write temp files automatically; best-effort cleanup only
             }
         }
 
@@ -153,7 +152,6 @@ namespace ArquivoMate2.Infrastructure.Services
 
             try
             {
-                // Input-Stream in Datei schreiben
                 documentStream.Position = 0;
                 using (var fs = new FileStream(tempInput, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
@@ -162,7 +160,6 @@ namespace ArquivoMate2.Infrastructure.Services
 
                 var args = $"--output-type pdfa --optimize 3 \"{tempInput}\" \"{tempOutput}\" ";
 
-                // Process starten
                 var psi = new ProcessStartInfo
                 {
                     FileName = "ocrmypdf",
@@ -176,10 +173,8 @@ namespace ArquivoMate2.Infrastructure.Services
                 using (var proc = new Process { StartInfo = psi })
                 {
                     proc.Start();
-
                     string stdOut = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
                     string stdErr = await proc.StandardError.ReadToEndAsync().ConfigureAwait(false);
-
                     using (cancellationToken.Register(() => proc.Kill()))
                     {
                         await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
@@ -201,10 +196,8 @@ namespace ArquivoMate2.Infrastructure.Services
                     using (var proc = new Process { StartInfo = psi })
                     {
                         proc.Start();
-
                         string stdOut = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
                         string stdErr = await proc.StandardError.ReadToEndAsync().ConfigureAwait(false);
-
                         using (cancellationToken.Register(() => proc.Kill()))
                         {
                             await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
@@ -212,20 +205,85 @@ namespace ArquivoMate2.Infrastructure.Services
                     }
                 }
 
-                // Ausgabe lesen
                 byte[] result = await File.ReadAllBytesAsync(tempOutput, cancellationToken).ConfigureAwait(false);
                 return result;
             }
             finally
             {
-                // Aufräumen
                 TryDelete(tempInput);
                 TryDelete(tempOutput);
             }
         }
+
+        public async Task<byte[]> GenerateArchivePdf(Stream documentStream, DocumentMetadata documentMetadata, CancellationToken cancellationToken = default)
+        {
+            var tempInput = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".pdf");
+            var tempOutputBase = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            var tempOutput = tempOutputBase + ".pdf";
+            try
+            {
+                documentStream.Position = 0;
+                using (var fs = new FileStream(tempInput, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    await documentStream.CopyToAsync(fs, 81920, cancellationToken).ConfigureAwait(false);
+                }
+                // For archive: keep original quality -> optimization level 0 (no aggressive recompression)
+                var args = $"--output-type pdfa --optimize 0 \"{tempInput}\" \"{tempOutput}\" ";
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "ocrmypdf",
+                    Arguments = args,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using (var proc = new Process { StartInfo = psi })
+                {
+                    proc.Start();
+                    string stdOut = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
+                    string stdErr = await proc.StandardError.ReadToEndAsync().ConfigureAwait(false);
+                    using (cancellationToken.Register(() => proc.Kill()))
+                    {
+                        await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+                    }
+                }
+                if (!File.Exists(tempOutput))
+                {
+                    // fallback with --skip-text in case of issues
+                    args = $"--output-type pdfa --skip-text --optimize 0 \"{tempInput}\" \"{tempOutput}\" ";
+                    psi = new ProcessStartInfo
+                    {
+                        FileName = "ocrmypdf",
+                        Arguments = args,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    using (var proc = new Process { StartInfo = psi })
+                    {
+                        proc.Start();
+                        string stdOut = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
+                        string stdErr = await proc.StandardError.ReadToEndAsync().ConfigureAwait(false);
+                        using (cancellationToken.Register(() => proc.Kill()))
+                        {
+                            await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+                        }
+                    }
+                }
+                return await File.ReadAllBytesAsync(tempOutput, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                TryDelete(tempInput);
+                TryDelete(tempOutput);
+            }
+        }
+
         private void TryDelete(string path)
         {
-            try { if (File.Exists(path)) File.Delete(path); } catch { /* Ignorieren */ }
+            try { if (File.Exists(path)) File.Delete(path); } catch { }
         }
     }
 }

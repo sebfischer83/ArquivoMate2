@@ -58,10 +58,6 @@ namespace ArquivoMate2.Application.Handlers
 
             await _session.SaveChangesAsync(cancellationToken);
 
-            var languages = (request.request.Language == null || request.request.Language.Length == 0)
-                ? _ocrSettings.DefaultLanguages
-                : request.request.Language;
-
             var metadata = new DocumentMetadata(
                 fileId,
                 _currentUserService.UserId,
@@ -70,7 +66,7 @@ namespace ArquivoMate2.Application.Handlers
                 ext,
                 request.request.File.Length,
                 DateTime.UtcNow,
-                languages,
+                _ocrSettings.DefaultLanguages, // always default, detection later
                 fileHash
             );
             await _fileMetadataService.WriteMetadataAsync(metadata, cancellationToken);

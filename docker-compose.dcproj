@@ -18,6 +18,7 @@
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
     <None Include="docs\ProjectOverview.md" />
+    <None Include="README.md" />
     <None Include="tests\ArquivoMate2.Application.Tests\ArquivoMate2.Application.Tests.csproj" />
     <None Include="tests\ArquivoMate2.Application.Tests\SampleApplicationTests.cs" />
     <None Include="tests\ArquivoMate2.Domain.Tests\ArquivoMate2.Domain.Tests.csproj" />

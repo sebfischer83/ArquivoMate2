@@ -30,10 +30,13 @@ namespace ArquivoMate2.Infrastructure.Mapping
                     .ForMember(dest => dest.ThumbnailPath, opt => opt.MapFrom<PathResolver, string>(src => src.ThumbnailPath))
                     .ForMember(dest => dest.MetadataPath, opt => opt.MapFrom<PathResolver, string>(src => src.MetadataPath))
                     .ForMember(dest => dest.PreviewPath, opt => opt.MapFrom<PathResolver, string>(src => src.PreviewPath))
+                    .ForMember(dest => dest.ArchivePath, opt => opt.MapFrom<PathResolver, string>(src => src.ArchivePath)) // NEW
                     .ForMember(dest => dest.UploadedAt, opt => opt.MapFrom(src => src.UploadedAt))
                     .ForMember(dest => dest.ProcessedAt, opt => opt.MapFrom(src => src.ProcessedAt))
                     .ForMember(dest => dest.ChatBotModel, opt => opt.MapFrom(src => src.ChatBotModel))
-                    .ForMember(dest => dest.ChatBotClass, opt => opt.MapFrom(src => src.ChatBotClass));
+                    .ForMember(dest => dest.ChatBotClass, opt => opt.MapFrom(src => src.ChatBotClass))
+                    .ForMember(dest => dest.NotesCount, opt => opt.MapFrom(src => src.NotesCount)) // NEW
+                    .ForMember(dest => dest.Language, opt => opt.MapFrom(src => src.Language)); // NEW
         }
 
     }

@@ -1,8 +1,42 @@
 {
-  "LandingPage": {"Welcome": "Welcome"},
+  "LandingPage": {
+    "Welcome": "Welcome"
+  },
   "Document": {
     "Download": "Download",
     "DownloadOriginal": "Original",
-    "DownloadArchive": "Archive"
+    "DownloadArchive": "Archive",
+    "Notes": "Notes",
+    "AddNote": "Add note",
+    "NewNotePlaceholder": "Enter note… Enter = save, Shift+Enter = newline",
+    "Save": "Save",
+    "Cancel": "Cancel",
+    "LoadingNotes": "Loading notes…",
+    "Retry": "Retry",
+    "NoNotes": "No notes yet",
+    "NoteSaved": "Note saved",
+    "NotesLoadError": "Could not load notes",
+    "Back": "Back",
+    "DocumentTitleFallback": "Document",
+    "LoadingEllipsis": "Loading…",
+    "Open": "Open",
+    "LoadingDocument": "Loading document",
+    "Summary": "Summary",
+    "Keywords": "Keywords",
+    "NoKeywords": "No keywords",
+    "NewKeyword": "New keyword",
+    "Add": "Add",
+    "FileName": "File name",
+    "Title": "Title",
+    "Type": "Type",
+    "Accepted": "Accepted",
+    "Yes": "Yes",
+    "No": "No",
+    "UploadedAt": "Uploaded",
+    "ContentLength": "Length",
+    "InvoiceNumber": "Invoice no.",
+    "CustomerNumber": "Customer no.",
+    "Preview": "Preview",
+    "NoPreview": "No preview available"
   }
 }

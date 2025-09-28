@@ -16,7 +16,8 @@ import { errorInterceptor } from './interceptors/error.interceptor';
 import { HttpClient } from '@angular/common/http';
 import { TranslocoHttpLoader } from './transloco-loader';
 import { provideTransloco } from '@jsverse/transloco';
-import { AVAILABLE_LANGS } from './config/i18n.config';
+import { AVAILABLE_LANGS, readPersistedLanguage } from './config/i18n.config';
+import { TranslocoService } from '@jsverse/transloco';
 
 const defaultAuthConfig: AuthConfig = {
   issuer: 'https://default-issuer.com',
@@ -38,10 +39,17 @@ interface RuntimeConfigFile {
 const intializeAppFn = () => {
   const apiConfig = inject(ApiConfiguration);
   const http = inject(HttpClient);
+  const transloco = inject(TranslocoService);
 
   // Parallel laden: auth + runtime config
   const authCfg$ = http.get<Partial<AuthConfig>>('auth-config.json').pipe(catchError(() => of({}))); 
   const runtimeCfg$ = http.get<RuntimeConfigFile>('runtime-config.json').pipe(catchError(() => of({} as RuntimeConfigFile)));
+
+  // Attempt to activate previously stored language early
+  const persistedLang = readPersistedLanguage();
+  if (persistedLang) {
+    transloco.setActiveLang(persistedLang);
+  }
 
   return firstValueFrom(forkJoin([authCfg$, runtimeCfg$]))
     .then(([authFile, runtimeFile]) => {

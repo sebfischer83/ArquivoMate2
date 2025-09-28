@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { TranslocoService } from '@jsverse/transloco';
 import { Subscription } from 'rxjs';
 import { TuiDropdown, TuiDropdownOpen } from '@taiga-ui/core';
-import { AVAILABLE_LANGS, flagFor } from '../../config/i18n.config';
+import { AVAILABLE_LANGS, flagFor, persistLanguage } from '../../config/i18n.config';
 
 @Component({
   selector: 'app-language-switcher',
@@ -47,6 +47,8 @@ export class LanguageSwitcherComponent implements OnInit, OnDestroy {
   console.log('[LanguageSwitcher] change ->', lang);
       this.transloco.setActiveLang(lang);
       this.activeLang = lang;
+      // persist selection for next session
+      persistLanguage(lang);
       this.open = false;
       this.cdr.markForCheck();
     }

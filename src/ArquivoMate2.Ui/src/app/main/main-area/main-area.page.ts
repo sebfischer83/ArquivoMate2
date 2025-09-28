@@ -35,6 +35,7 @@ import { SignalrService } from '../../services/signalr.service';
 import { StateService } from '../../services/state.service';
 import { OAuthService } from 'angular-oauth2-oidc';
 import { TasksComponent } from "../sidebar/tasks/tasks.component";
+import { LanguageSwitcherComponent } from '../../components/language-switcher/language-switcher.component';
 
 
 const ICON =
@@ -62,7 +63,7 @@ const ICON =
     TuiTabs,
     TuiTextfield,
     TuiDrawer,
-    TuiPopup, TasksComponent],
+  TuiPopup, TasksComponent, LanguageSwitcherComponent],
   templateUrl: './main-area.page.html',
   styleUrl: './main-area.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

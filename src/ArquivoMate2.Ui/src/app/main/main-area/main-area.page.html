@@ -86,14 +86,16 @@
         Notifications
         <tui-badge-notification />
     </button>
-    <button
-        iconStart="@tui.sun"
-        tuiIconButton
-        type="button"
-        (click)="toggleDarkmode()"
-    >
-        
-    </button>
+    <div class="header-actions-cluster">
+      <button
+          iconStart="@tui.sun"
+          tuiIconButton
+          type="button"
+          (click)="toggleDarkmode()"
+          aria-label="Toggle dark mode"
+      ></button>
+      <app-language-switcher class="lang-switch-inline"></app-language-switcher>
+    </div>
     <button
     tuiButton
     type="button"

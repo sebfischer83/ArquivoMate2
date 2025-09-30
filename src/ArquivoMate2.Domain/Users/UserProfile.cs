@@ -1,0 +1,30 @@
+namespace ArquivoMate2.Domain.Users;
+
+/// <summary>
+///     Represents a user profile that stores application specific data such as the
+///     friendly name and timestamps about the last login of a user.
+/// </summary>
+public class UserProfile
+{
+    /// <summary>
+    ///     Gets or sets the unique identifier of the user. This corresponds to the
+    ///     hashed identifier that is used throughout the application to reference
+    ///     a user and therefore acts as the primary key in the document store.
+    /// </summary>
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    ///     Gets or sets the display name of the user as provided by the identity provider.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    ///     Gets or sets the timestamp at which the user profile was initially created.
+    /// </summary>
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    ///     Gets or sets the timestamp of the most recent login activity.
+    /// </summary>
+    public DateTime LastLoginAt { get; set; } = DateTime.UtcNow;
+}

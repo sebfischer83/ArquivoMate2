@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using ArquivoMate2.Infrastructure.Persistance;
 using ArquivoMate2.Shared.Models;
@@ -7,9 +8,11 @@ namespace ArquivoMate2.API.Querying
 {
     public static class DocumentQueryExtensions
     {
-        public static IQueryable<DocumentView> ApplyDocumentFilters(this IQueryable<DocumentView> query, DocumentListRequestDto dto, string userId)
+        public static IQueryable<DocumentView> ApplyDocumentFilters(this IQueryable<DocumentView> query, DocumentListRequestDto dto, string userId, IReadOnlyCollection<Guid> sharedDocumentIds)
         {
-            query = query.Where(d => d.UserId == userId && d.Processed && !d.Deleted);
+            var sharedIds = sharedDocumentIds?.ToList() ?? new List<Guid>();
+
+            query = query.Where(d => d.Processed && !d.Deleted && (d.UserId == userId || sharedIds.Contains(d.Id)));
 
             if (!string.IsNullOrWhiteSpace(dto.Type))
                 query = query.Where(d => d.Type == dto.Type);

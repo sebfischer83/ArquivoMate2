@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Newtonsoft.Json.Linq;
+using System.Linq;
 using System.Threading;
 using Weasel.Postgresql.Views;
 using ArquivoMate2.API.Querying; // neu
@@ -33,19 +34,22 @@ namespace ArquivoMate2.API.Controllers
         private readonly ICurrentUserService _currentUserService;
         private readonly IMapper _mapper;
         private readonly IStringLocalizer<DocumentsController> _localizer;
+        private readonly IDocumentAccessService _documentAccessService;
 
         public DocumentsController(
-            IMediator mediator, 
-            IWebHostEnvironment env, 
-            ICurrentUserService currentUserService, 
+            IMediator mediator,
+            IWebHostEnvironment env,
+            ICurrentUserService currentUserService,
             IMapper mapper,
-            IStringLocalizer<DocumentsController> localizer)
+            IStringLocalizer<DocumentsController> localizer,
+            IDocumentAccessService documentAccessService)
         {
             _mediator = mediator;
             _env = env;
             _currentUserService = currentUserService;
             _mapper = mapper;
             _localizer = localizer;
+            _documentAccessService = documentAccessService;
         }
 
       
@@ -155,7 +159,9 @@ namespace ArquivoMate2.API.Controllers
                 }
             }
 
-            var baseQuery = querySession.Query<DocumentView>().ApplyDocumentFilters(requestDto, userId);
+            var sharedDocumentIds = await _documentAccessService.GetSharedDocumentIdsAsync(userId, cancellationToken);
+
+            var baseQuery = querySession.Query<DocumentView>().ApplyDocumentFilters(requestDto, userId, sharedDocumentIds);
 
             if (searchIds != null)
             {
@@ -215,9 +221,15 @@ namespace ArquivoMate2.API.Controllers
         {
             var userId = _currentUserService.UserId;
 
-            var count = await querySession.Query<DocumentView>().Where(d => d.UserId == userId && !d.Deleted).CountAsync(cancellationToken);
-            var notAccepted = await querySession.Query<DocumentView>().Where(d => d.UserId == userId && !d.Accepted && !d.Deleted).CountAsync(cancellationToken);
-            var characters = await querySession.Query<DocumentView>().Where(d => d.UserId == userId && !d.Deleted).SumAsync(d => d.ContentLength, cancellationToken);
+            var sharedDocumentIds = await _documentAccessService.GetSharedDocumentIdsAsync(userId, cancellationToken);
+            var sharedList = sharedDocumentIds.ToList();
+
+            var accessibleQuery = querySession.Query<DocumentView>()
+                .Where(d => !d.Deleted && (d.UserId == userId || sharedList.Contains(d.Id)));
+
+            var count = await accessibleQuery.CountAsync(cancellationToken);
+            var notAccepted = await accessibleQuery.Where(d => !d.Accepted).CountAsync(cancellationToken);
+            var characters = await accessibleQuery.SumAsync(d => d.ContentLength, cancellationToken);
 
             var facets = await searchClient.GetFacetsAsync(userId, cancellationToken);
 
@@ -242,10 +254,17 @@ namespace ArquivoMate2.API.Controllers
         public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
         {
             var userId = _currentUserService.UserId;
+
+            var hasAccess = await _documentAccessService.HasAccessToDocumentAsync(id, userId, cancellationToken);
+            if (!hasAccess)
+            {
+                return NotFound();
+            }
+
             var view = await querySession.Query<Infrastructure.Persistance.DocumentView>()
-                .Where(d => d.Id == id && d.UserId == userId && !d.Deleted)
+                .Where(d => d.Id == id && !d.Deleted)
                 .FirstOrDefaultAsync(cancellationToken);
-            
+
             if (view is null)
                 return NotFound();
 

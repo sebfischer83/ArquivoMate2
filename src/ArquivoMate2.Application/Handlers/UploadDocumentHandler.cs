@@ -17,14 +17,16 @@ namespace ArquivoMate2.Application.Handlers
         private readonly ICurrentUserService _currentUserService;
         private readonly IPathService _pathService;
         private readonly OcrSettings _ocrSettings;
+        private readonly IAutoShareService _autoShareService;
 
-        public UploadDocumentHandler(IDocumentSession session, IFileMetadataService fileMetadataService, ICurrentUserService currentUserService, IPathService pathService, OcrSettings ocrSettings)
+        public UploadDocumentHandler(IDocumentSession session, IFileMetadataService fileMetadataService, ICurrentUserService currentUserService, IPathService pathService, OcrSettings ocrSettings, IAutoShareService autoShareService)
         {
             _session = session;
             _fileMetadataService = fileMetadataService;
             _currentUserService = currentUserService;
             _pathService = pathService;
             _ocrSettings = ocrSettings;
+            _autoShareService = autoShareService;
         }
 
         public async Task<Guid> Handle(UploadDocumentCommand request, CancellationToken cancellationToken)
@@ -57,6 +59,8 @@ namespace ArquivoMate2.Application.Handlers
             _session.Events.Append(fileId, new DocumentTitleInitialized(fileId, defaultTitle, DateTime.UtcNow));
 
             await _session.SaveChangesAsync(cancellationToken);
+
+            await _autoShareService.ApplyRulesAsync(fileId, _currentUserService.UserId, cancellationToken);
 
             var metadata = new DocumentMetadata(
                 fileId,

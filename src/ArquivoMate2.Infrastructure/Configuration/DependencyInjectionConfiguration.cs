@@ -5,6 +5,8 @@ using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.Import;
 using ArquivoMate2.Domain.Email;
 using ArquivoMate2.Domain.ValueObjects;
+using ArquivoMate2.Domain.Users;
+using ArquivoMate2.Domain.Sharing;
 using ArquivoMate2.Infrastructure.Configuration.DeliveryProvider;
 using ArquivoMate2.Infrastructure.Configuration.Llm;
 using ArquivoMate2.Infrastructure.Configuration.StorageProvider;
@@ -16,6 +18,7 @@ using ArquivoMate2.Infrastructure.Services.DeliveryProvider;
 using ArquivoMate2.Infrastructure.Services.EmailProvider;
 using ArquivoMate2.Infrastructure.Services.Llm;
 using ArquivoMate2.Infrastructure.Services.Search;
+using ArquivoMate2.Infrastructure.Services.Sharing;
 using ArquivoMate2.Infrastructure.Services.StorageProvider;
 using ArquivoMate2.Shared.Models;
 using AutoMapper;
@@ -103,6 +106,20 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 options.Schema.For<Document>()
                     .Index(d => d.UserId).Index(d => d.Hash);
 
+                options.Schema.For<UserProfile>();
+
+                options.Schema.For<DocumentShare>()
+                    .Index(x => x.DocumentId)
+                    .Index(x => x.OwnerUserId)
+                    .Index(x => x.Target.Identifier);
+
+                options.Schema.For<ShareGroup>()
+                    .Index(x => x.OwnerUserId);
+
+                options.Schema.For<ShareAutomationRule>()
+                    .Index(x => x.OwnerUserId)
+                    .Index(x => x.Target.Identifier);
+
                 options.Schema.For<ImportProcess>()
                     .Index(d => d.UserId)
                     .Index(x => x.IsHidden)
@@ -149,6 +166,8 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddScoped<IThumbnailService, ThumbnailService>();
             services.AddScoped<MeilisearchClient>(sp => new MeilisearchClient(config["Meilisearch:Url"], "supersecret"));
             services.AddScoped<ISearchClient, SearchClient>();
+            services.AddScoped<IDocumentAccessService, DocumentAccessService>();
+            services.AddScoped<IAutoShareService, AutoShareService>();
             services.AddHttpClient();
             services.AddScoped<ILanguageDetectionService, LanguageDetectionService>(); // NEW
 

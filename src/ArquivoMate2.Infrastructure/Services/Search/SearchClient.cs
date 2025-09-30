@@ -1,38 +1,52 @@
 ﻿using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Document;
+using ArquivoMate2.Infrastructure.Persistance;
 using Meilisearch;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten;
 
 namespace ArquivoMate2.Infrastructure.Services.Search
 {
     public class SearchClient : ISearchClient
     {
         private readonly MeilisearchClient _meilisearchClient;
+        private readonly IQuerySession _querySession;
 
-        public SearchClient(MeilisearchClient meilisearchClient)
+        public SearchClient(MeilisearchClient meilisearchClient, IQuerySession querySession)
         {
             _meilisearchClient = meilisearchClient;
+            _querySession = querySession;
+        }
+
+        private async Task<IReadOnlyCollection<string>> LoadAllowedUserIdsAsync(Guid documentId, string ownerUserId, CancellationToken ct)
+        {
+            var access = await _querySession.LoadAsync<DocumentAccessView>(documentId, ct);
+            if (access == null) return Array.Empty<string>();
+            if (access.EffectiveUserIds.Count == 0) return Array.Empty<string>();
+            var allowed = access.EffectiveUserIds.Where(u => !string.Equals(u, ownerUserId, StringComparison.Ordinal)).Distinct().ToArray();
+            return allowed;
         }
 
         public async Task<bool> AddDocument(Document document)
         {
             var index = _meilisearchClient.Index("documents");
-            var task = await index.AddDocumentsAsync([SearchDocument.FromDocument(document)], "id");
+            var allowed = await LoadAllowedUserIdsAsync(document.Id, document.UserId, CancellationToken.None);
+            var task = await index.AddDocumentsAsync(new[] { SearchDocument.FromDocument(document, allowed) }, "id");
             var res = await _meilisearchClient.WaitForTaskAsync(task.TaskUid);
-
             return res.Status == TaskInfoStatus.Succeeded;
         }
 
         public async Task<Dictionary<string, int>> GetFacetsAsync(string userId, CancellationToken cancellationToken)
         {
             var index = _meilisearchClient.Index("documents");
-            var searchResult = await index.SearchAsync<SearchDocument>("", new SearchQuery
+            var filter = $"(userId = \"{userId}\" OR allowedUserIds = \"{userId}\")";
+            var searchResult = await index.SearchAsync<SearchDocument>(string.Empty, new SearchQuery
             {
-                Filter = $"userId = \"{userId}\"",
+                Filter = filter,
                 Facets = new List<string> { "keywords" },
                 Limit = 0
             }, cancellationToken);
@@ -47,9 +61,9 @@ namespace ArquivoMate2.Infrastructure.Services.Search
         public async Task<bool> UpdateDocument(Document document)
         {
             var index = _meilisearchClient.Index("documents");
-            var task = await index.UpdateDocumentsAsync([SearchDocument.FromDocument(document)], "id");
+            var allowed = await LoadAllowedUserIdsAsync(document.Id, document.UserId, CancellationToken.None);
+            var task = await index.UpdateDocumentsAsync(new[] { SearchDocument.FromDocument(document, allowed) }, "id");
             var res = await _meilisearchClient.WaitForTaskAsync(task.TaskUid);
-
             return res.Status == TaskInfoStatus.Succeeded;
         }
 
@@ -63,10 +77,11 @@ namespace ArquivoMate2.Infrastructure.Services.Search
             var index = _meilisearchClient.Index("documents");
             var from = (page - 1) * pageSize;
             if (from < 0) from = 0;
+            var filter = $"(userId = \"{userId}\" OR allowedUserIds = \"{userId}\")";
 
             var result = await index.SearchAsync<SearchDocument>(search, new SearchQuery
             {
-                Filter = $"userId = \"{userId}\"",
+                Filter = filter,
                 Limit = pageSize,
                 Offset = from
             }, cancellationToken);
@@ -74,13 +89,20 @@ namespace ArquivoMate2.Infrastructure.Services.Search
             var ids = result.Hits?.Select(h => h.Id).ToList() ?? new List<Guid>();
 
             long total = ids.Count;
-            // Reflection fallback auf EstimatedTotalHits falls vorhanden
             var estimatedProp = result.GetType().GetProperty("EstimatedTotalHits");
             var value = estimatedProp?.GetValue(result);
             if (value is int i) total = i;
             else if (value is long l) total = l;
 
             return (ids, total);
+        }
+
+        public async Task UpdateDocumentAccessAsync(Guid documentId, IReadOnlyCollection<string> allowedUserIds, CancellationToken cancellationToken)
+        {
+            var index = _meilisearchClient.Index("documents");
+            var payload = new[] { new { id = documentId, allowedUserIds = allowedUserIds } };
+            var task = await index.UpdateDocumentsAsync(payload, "id");
+            await _meilisearchClient.WaitForTaskAsync(task.TaskUid);
         }
     }
 }

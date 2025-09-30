@@ -4,10 +4,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using ArquivoMate2.Application.Commands.Sharing;
 using ArquivoMate2.Domain.Sharing;
-using ArquivoMate2.Infrastructure.Persistance;
-using ArquivoMate2.Shared.Models.Sharing;
+using ArquivoMate2.Shared.Models.Sharing; // ShareTargetType
 using Marten;
 using MediatR;
+using ArquivoMate2.Application.Interfaces.Sharing; // abstraction ports
 
 namespace ArquivoMate2.Application.Handlers.Sharing;
 
@@ -15,11 +15,15 @@ public class CreateDocumentShareHandler : IRequestHandler<CreateDocumentShareCom
 {
     private readonly IDocumentSession _session;
     private readonly IQuerySession _querySession;
+    private readonly IDocumentOwnershipLookup _ownershipLookup; // ownership lookup abstraction
+    private readonly IDocumentAccessUpdater _accessUpdater; // access projection updater
 
-    public CreateDocumentShareHandler(IDocumentSession session, IQuerySession querySession)
+    public CreateDocumentShareHandler(IDocumentSession session, IQuerySession querySession, IDocumentOwnershipLookup ownershipLookup, IDocumentAccessUpdater accessUpdater)
     {
         _session = session;
         _querySession = querySession;
+        _ownershipLookup = ownershipLookup;
+        _accessUpdater = accessUpdater;
     }
 
     public async Task<DocumentShareDto> Handle(CreateDocumentShareCommand request, CancellationToken cancellationToken)
@@ -29,12 +33,9 @@ public class CreateDocumentShareHandler : IRequestHandler<CreateDocumentShareCom
             throw new ArgumentException("Share target is required", nameof(request.Target));
         }
 
-        var documentInfo = await _querySession.Query<DocumentView>()
-            .Where(d => d.Id == request.DocumentId && !d.Deleted)
-            .Select(d => new { d.Id, d.UserId })
-            .FirstOrDefaultAsync(cancellationToken);
+        var documentInfo = await _ownershipLookup.GetAsync(request.DocumentId, cancellationToken);
 
-        if (documentInfo is null || !string.Equals(documentInfo.UserId, request.OwnerUserId, StringComparison.Ordinal))
+        if (documentInfo is null || documentInfo.Value.Deleted || !string.Equals(documentInfo.Value.UserId, request.OwnerUserId, StringComparison.Ordinal))
         {
             throw new InvalidOperationException("Document not found or access denied.");
         }
@@ -81,6 +82,8 @@ public class CreateDocumentShareHandler : IRequestHandler<CreateDocumentShareCom
 
         _session.Store(share);
         await _session.SaveChangesAsync(cancellationToken);
+
+        await _accessUpdater.AddShareAsync(share, cancellationToken);
 
         return new DocumentShareDto
         {

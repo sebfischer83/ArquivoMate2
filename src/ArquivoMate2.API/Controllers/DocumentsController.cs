@@ -5,7 +5,7 @@ using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Services;
 using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.Import;
-using ArquivoMate2.Infrastructure.Persistance;
+using ArquivoMate2.Infrastructure.Persistance; // ensure access to DocumentAccessView & DocumentView
 using ArquivoMate2.Shared.Models;
 using AutoMapper;
 using Hangfire;
@@ -16,10 +16,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
-using Newtonsoft.Json.Linq;
 using System.Linq;
 using System.Threading;
-using Weasel.Postgresql.Views;
 using ArquivoMate2.API.Querying; // neu
 
 namespace ArquivoMate2.API.Controllers
@@ -52,7 +50,6 @@ namespace ArquivoMate2.API.Controllers
             _documentAccessService = documentAccessService;
         }
 
-      
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         public async Task<IActionResult> Upload([FromForm] UploadDocumentRequest request, CancellationToken cancellationToken, [FromServices] OcrSettings ocrSettings, [FromServices] IDocumentSession querySession)
@@ -61,10 +58,10 @@ namespace ArquivoMate2.API.Controllers
                 return BadRequest();
 
             var historyEvent = new InitDocumentImport(
-                Guid.NewGuid(), 
-                _currentUserService.UserId, 
-                request.File.FileName, 
-                DateTime.UtcNow, 
+                Guid.NewGuid(),
+                _currentUserService.UserId,
+                request.File.FileName,
+                DateTime.UtcNow,
                 ImportSource.User);
 
             querySession.Events.StartStream<ImportProcess>(historyEvent.AggregateId, historyEvent);
@@ -86,7 +83,7 @@ namespace ArquivoMate2.API.Controllers
 
             // Prüfen, ob das Dokument existiert und nicht gelöscht ist
             var userId = _currentUserService.UserId;
-            var document = await querySession.Query<Infrastructure.Persistance.DocumentView>()
+            var document = await querySession.Query<DocumentView>()
                 .Where(d => d.Id == id && d.UserId == userId && !d.Deleted)
                 .FirstOrDefaultAsync(cancellationToken);
             
@@ -104,7 +101,7 @@ namespace ArquivoMate2.API.Controllers
                         // update index
                         await _mediator.Send(new UpdateIndexCommand(id, rawDoc!), cancellationToken);
 
-                        document = await querySession.Query<Infrastructure.Persistance.DocumentView>()
+                        document = await querySession.Query<DocumentView>()
                             .Where(d => d.Id == id && d.UserId == userId && !d.Deleted)
                             .FirstOrDefaultAsync(cancellationToken);
                         return Ok(_mapper.Map<DocumentDto>(document));
@@ -124,7 +121,7 @@ namespace ArquivoMate2.API.Controllers
             }
         }
 
-        [HttpGet()]
+        [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentListDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Get([FromQuery] DocumentListRequestDto requestDto,
@@ -159,9 +156,16 @@ namespace ArquivoMate2.API.Controllers
                 }
             }
 
-            var sharedDocumentIds = await _documentAccessService.GetSharedDocumentIdsAsync(userId, cancellationToken);
+            // Subquery for shared access (excluding own documents) - materialize to list to avoid passing IQueryable to parameter
+            var sharedAccessibleIdsList = await querySession.Query<DocumentAccessView>()
+                .Where(a => a.EffectiveUserIds.Contains(userId) && a.OwnerUserId != userId)
+                .Select(a => a.Id)
+                .ToListAsync(cancellationToken);
 
-            var baseQuery = querySession.Query<DocumentView>().ApplyDocumentFilters(requestDto, userId, sharedDocumentIds);
+            IEnumerable<Guid>? sharedAccessibleIds = sharedAccessibleIdsList.Count > 0 ? sharedAccessibleIdsList : null;
+
+            var baseQuery = querySession.Query<DocumentView>()
+                .ApplyDocumentFilters(requestDto, userId, sharedAccessibleIds);
 
             if (searchIds != null)
             {
@@ -221,11 +225,13 @@ namespace ArquivoMate2.API.Controllers
         {
             var userId = _currentUserService.UserId;
 
-            var sharedDocumentIds = await _documentAccessService.GetSharedDocumentIdsAsync(userId, cancellationToken);
-            var sharedList = sharedDocumentIds.ToList();
+            var sharedAccessibleIdsList = await querySession.Query<DocumentAccessView>()
+                .Where(a => a.EffectiveUserIds.Contains(userId) && a.OwnerUserId != userId)
+                .Select(a => a.Id)
+                .ToListAsync(cancellationToken);
 
             var accessibleQuery = querySession.Query<DocumentView>()
-                .Where(d => !d.Deleted && (d.UserId == userId || sharedList.Contains(d.Id)));
+                .Where(d => !d.Deleted && (d.UserId == userId || sharedAccessibleIdsList.Contains(d.Id)));
 
             var count = await accessibleQuery.CountAsync(cancellationToken);
             var notAccepted = await accessibleQuery.Where(d => !d.Accepted).CountAsync(cancellationToken);
@@ -245,8 +251,6 @@ namespace ArquivoMate2.API.Controllers
             return Ok(stats);
         }
 
-
-
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -261,7 +265,7 @@ namespace ArquivoMate2.API.Controllers
                 return NotFound();
             }
 
-            var view = await querySession.Query<Infrastructure.Persistance.DocumentView>()
+            var view = await querySession.Query<DocumentView>()
                 .Where(d => d.Id == id && !d.Deleted)
                 .FirstOrDefaultAsync(cancellationToken);
 

@@ -52,7 +52,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 var updateTask = await index.UpdateSettingsAsync(
                     new Meilisearch.Settings()
                     {
-                        FilterableAttributes = new List<string>() { "keywords", "userId" },
+                        FilterableAttributes = new List<string>() { "keywords", "userId", "allowedUserIds" },
                         SearchableAttributes = new List<string>() { "content", "summary", "title" },
                     });
                 await client.WaitForTaskAsync(updateTask.TaskUid);

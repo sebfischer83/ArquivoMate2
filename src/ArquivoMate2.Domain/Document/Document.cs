@@ -1,5 +1,6 @@
 ﻿using ArquivoMate2.Domain.Import;
 using ArquivoMate2.Shared.Models;
+using System.Text.Json; // NEW
 
 namespace ArquivoMate2.Domain.Document
 {
@@ -131,12 +132,14 @@ namespace ArquivoMate2.Domain.Document
                 var prop = type.GetProperty(kvp.Key);
                 if (prop != null && prop.CanWrite)
                 {
-                    // Handle List<string> conversion if needed
-                    if (prop.PropertyType == typeof(List<string>) && kvp.Value is IEnumerable<string> enumerable)
+                    // Special handling for List<string> (Keywords etc.) supporting multiple incoming representations
+                    if (prop.PropertyType == typeof(List<string>))
                     {
-                        prop.SetValue(this, enumerable.ToList());
+                        prop.SetValue(this, ToStringList(kvp.Value));
+                        continue;
                     }
-                    else if (prop.PropertyType.IsEnum && kvp.Value is string enumString)
+
+                    if (prop.PropertyType.IsEnum && kvp.Value is string enumString)
                     {
                         var enumValue = Enum.Parse(prop.PropertyType, enumString);
                         prop.SetValue(this, enumValue);
@@ -156,6 +159,71 @@ namespace ArquivoMate2.Domain.Document
             if (!string.IsNullOrWhiteSpace(Title) && Title != _initialTitle)
                 _initialTitle = null;
             OccurredOn = e.OccurredOn;
+        }
+
+        private static List<string> ToStringList(object? value)
+        {
+            if (value == null) return new List<string>();
+
+            switch (value)
+            {
+                case List<string> ls:
+                    return ls;
+                case IEnumerable<string> enumStr:
+                    return enumStr.ToList();
+                case IEnumerable<object> enumObj:
+                    return enumObj.Select(o => o?.ToString() ?? string.Empty)
+                                   .Where(s => !string.IsNullOrWhiteSpace(s))
+                                   .ToList();
+                case string s:
+                    if (string.IsNullOrWhiteSpace(s)) return new List<string>();
+                    // Try JSON array first
+                    var trimmed = s.Trim();
+                    if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
+                    {
+                        try
+                        {
+                            var arr = JsonSerializer.Deserialize<List<string>>(trimmed);
+                            if (arr != null) return arr.Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+                        }
+                        catch { /* ignore and fallback */ }
+                    }
+                    // Fallback: comma / semicolon separated
+                    return s.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                            .Where(x => !string.IsNullOrWhiteSpace(x))
+                            .ToList();
+                case JsonElement je:
+                    if (je.ValueKind == JsonValueKind.Array)
+                    {
+                        var list = new List<string>();
+                        foreach (var item in je.EnumerateArray())
+                        {
+                            if (item.ValueKind == JsonValueKind.String)
+                            {
+                                var str = item.GetString();
+                                if (!string.IsNullOrWhiteSpace(str)) list.Add(str);
+                            }
+                            else
+                            {
+                                var raw = item.ToString();
+                                if (!string.IsNullOrWhiteSpace(raw)) list.Add(raw);
+                            }
+                        }
+                        return list;
+                    }
+                    if (je.ValueKind == JsonValueKind.String)
+                    {
+                        var single = je.GetString();
+                        return string.IsNullOrWhiteSpace(single) ? new List<string>() : new List<string> { single };
+                    }
+                    break;
+            }
+            // Last resort: ToString() and split
+            var fallback = value.ToString();
+            if (string.IsNullOrWhiteSpace(fallback)) return new List<string>();
+            return fallback.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                           .Where(x => !string.IsNullOrWhiteSpace(x))
+                           .ToList();
         }
 
         public void Apply(DocumentDeleted e)

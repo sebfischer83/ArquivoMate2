@@ -50,6 +50,7 @@ using Weasel.Core.Migrations;
 using Weasel.Postgresql.Tables;
 using EmailCriteria = ArquivoMate2.Domain.Email.EmailCriteria;
 using JasperFx.Events.Projections;
+using ArquivoMate2.Application.Interfaces.Sharing;
 
 namespace ArquivoMate2.Infrastructure.Configuration
 {
@@ -120,6 +121,9 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     .Index(x => x.OwnerUserId)
                     .Index(x => x.Target.Identifier);
 
+                options.Schema.For<DocumentAccessView>() // NEW
+                    .Index(x => x.OwnerUserId); // basic index (future: custom GIN for EffectiveUserIds)
+
                 options.Schema.For<ImportProcess>()
                     .Index(d => d.UserId)
                     .Index(x => x.IsHidden)
@@ -170,6 +174,8 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddScoped<IAutoShareService, AutoShareService>();
             services.AddHttpClient();
             services.AddScoped<ILanguageDetectionService, LanguageDetectionService>(); // NEW
+            services.AddScoped<IDocumentOwnershipLookup, DocumentOwnershipLookup>(); // NEW
+            services.AddScoped<IDocumentAccessUpdater, DocumentAccessUpdater>(); // NEW
 
             services.AddSingleton<ChatBotSettingsFactory>();
             var chatbotSettings = new ChatBotSettingsFactory(config).GetChatBotSettings();

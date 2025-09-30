@@ -8,11 +8,18 @@ namespace ArquivoMate2.API.Querying
 {
     public static class DocumentQueryExtensions
     {
-        public static IQueryable<DocumentView> ApplyDocumentFilters(this IQueryable<DocumentView> query, DocumentListRequestDto dto, string userId, IReadOnlyCollection<Guid> sharedDocumentIds)
+        public static IQueryable<DocumentView> ApplyDocumentFilters(this IQueryable<DocumentView> query, DocumentListRequestDto dto, string userId, IEnumerable<Guid>? accessibleSharedDocumentIds)
         {
-            var sharedIds = sharedDocumentIds?.ToList() ?? new List<Guid>();
-
-            query = query.Where(d => d.Processed && !d.Deleted && (d.UserId == userId || sharedIds.Contains(d.Id)));
+            // Only processed & not deleted, and either owned or in accessible set
+            if (accessibleSharedDocumentIds != null)
+            {
+                var sharedIdsList = accessibleSharedDocumentIds as ICollection<Guid> ?? accessibleSharedDocumentIds.ToList();
+                query = query.Where(d => d.Processed && !d.Deleted && (d.UserId == userId || sharedIdsList.Contains(d.Id)));
+            }
+            else
+            {
+                query = query.Where(d => d.Processed && !d.Deleted && d.UserId == userId);
+            }
 
             if (!string.IsNullOrWhiteSpace(dto.Type))
                 query = query.Where(d => d.Type == dto.Type);
@@ -56,9 +63,7 @@ namespace ArquivoMate2.API.Querying
                 "type" => direction == "asc" ? query.OrderBy(d => d.Type).ThenBy(d => d.Id) : query.OrderByDescending(d => d.Type).ThenByDescending(d => d.Id),
                 "accepted" => direction == "asc" ? query.OrderBy(d => d.Accepted).ThenBy(d => d.Id) : query.OrderByDescending(d => d.Accepted).ThenByDescending(d => d.Id),
                 _ => direction == "asc"
-                    // Fallback: erst nach Date (NULLs zuerst), danach OccurredOn, dann Id
                     ? query.OrderBy(d => d.Date).ThenBy(d => d.OccurredOn).ThenBy(d => d.Id)
-                    // Desc: neueste Date zuerst, bei NULL Date nach OccurredOn
                     : query.OrderByDescending(d => d.Date).ThenByDescending(d => d.OccurredOn).ThenByDescending(d => d.Id)
             };
         }

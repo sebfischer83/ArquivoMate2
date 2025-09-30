@@ -18,7 +18,10 @@ namespace ArquivoMate2.Domain.Document
 
         public string UserId { get; set; } = string.Empty;
 
-        public static SearchDocument FromDocument(Document document)
+        // New: non-owner users with access (shares, group shares)
+        public IReadOnlyCollection<string> AllowedUserIds { get; set; } = Array.Empty<string>();
+
+        public static SearchDocument FromDocument(Document document, IReadOnlyCollection<string>? allowedUserIds = null)
         {
             return new SearchDocument
             {
@@ -27,7 +30,8 @@ namespace ArquivoMate2.Domain.Document
                 Keywords = document.Keywords,
                 Summary = document.Summary,
                 Title = document.Title,
-                UserId = document.UserId
+                UserId = document.UserId,
+                AllowedUserIds = allowedUserIds ?? Array.Empty<string>()
             };
         }
     }

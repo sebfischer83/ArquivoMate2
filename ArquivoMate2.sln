@@ -21,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Projektmappenelemente", "Pr
 	ProjectSection(SolutionItems) = preProject
 		.mcp.json = .mcp.json
 		.github\copilot-instructions.md = .github\copilot-instructions.md
+		docs\DocumentSharing.md = docs\DocumentSharing.md
+		docs\ProjectOverview.md = docs\ProjectOverview.md
 	EndProjectSection
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{81DDED9D-158B-E303-5F62-77A2896D2A5A}"

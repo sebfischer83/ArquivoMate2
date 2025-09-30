@@ -11,8 +11,9 @@ namespace ArquivoMate2.Application.Interfaces
         Task<bool> AddDocument(Document document);
         Task<bool> UpdateDocument(Document document);
         Task<Dictionary<string, int>> GetFacetsAsync(string userId, CancellationToken cancellationToken);
-
-        // Neue Volltext-Suchmethode
         Task<(IReadOnlyList<Guid> Ids, long Total)> SearchDocumentIdsAsync(string userId, string search, int page, int pageSize, CancellationToken cancellationToken);
+
+        // NEW: partial access update
+        Task UpdateDocumentAccessAsync(Guid documentId, IReadOnlyCollection<string> allowedUserIds, CancellationToken cancellationToken);
     }
 }

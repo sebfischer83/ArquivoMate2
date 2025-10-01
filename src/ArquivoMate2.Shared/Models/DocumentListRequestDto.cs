@@ -8,7 +8,7 @@ namespace ArquivoMate2.Shared.Models
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
 
-        // Filterfelder
+        // Filter fields
         public string? Type { get; set; }
         public bool? Accepted { get; set; }
         public DateTime? FromDate { get; set; }
@@ -20,10 +20,10 @@ namespace ArquivoMate2.Shared.Models
         public List<string>? Keywords { get; set; }
         public bool KeywordMatchAll { get; set; } = false;
 
-        // Volltextsuche (über Meilisearch)
+        // Full-text search (via Meilisearch)
         public string? Search { get; set; }
 
-        // Sortierung
+        // Sorting options
         public string? SortBy { get; set; }
         public string? SortDirection { get; set; }
     }

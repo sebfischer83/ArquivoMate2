@@ -1,12 +1,12 @@
 ﻿using Amazon.Runtime.Internal;
 using ArquivoMate2.Application.Commands;
 using ArquivoMate2.Application.Configuration;
-using ArquivoMate2.Application.DTOs; // ensure DTOs
+using ArquivoMate2.Application.DTOs; // Ensure DTOs are available to the controller
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Services;
 using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.Import;
-using ArquivoMate2.Infrastructure.Persistance; // ensure access to DocumentAccessView & DocumentView
+using ArquivoMate2.Infrastructure.Persistance; // Access to DocumentAccessView & DocumentView projections
 using ArquivoMate2.Shared.Models;
 using AutoMapper;
 using Hangfire;
@@ -19,10 +19,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using System.Linq;
 using System.Threading;
-using ArquivoMate2.API.Querying; // neu
+using ArquivoMate2.API.Querying; // Custom query extensions for filtering and sorting
 
 namespace ArquivoMate2.API.Controllers
 {
+    /// <summary>
+    /// Provides endpoints for managing document metadata, importing files, and retrieving document content.
+    /// </summary>
     [ApiController]
     [Authorize]
     [Route("api/documents")]
@@ -34,10 +37,22 @@ namespace ArquivoMate2.API.Controllers
         private readonly IMapper _mapper;
         private readonly IStringLocalizer<DocumentsController> _localizer;
         private readonly IDocumentAccessService _documentAccessService;
-        private readonly IFileAccessTokenService _tokenService; // NEW
-        private readonly EncryptionSettings _encryptionSettings; // NEW
-        private readonly AppSettings _appSettings; // NEW
+        private readonly IFileAccessTokenService _tokenService; // Issues signed delivery tokens
+        private readonly EncryptionSettings _encryptionSettings; // Encryption feature configuration
+        private readonly AppSettings _appSettings; // Global application configuration
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DocumentsController"/> class with the dependencies required to orchestrate document operations.
+        /// </summary>
+        /// <param name="mediator">Mediator used to dispatch commands.</param>
+        /// <param name="env">Host environment describing the application context.</param>
+        /// <param name="currentUserService">Service that exposes the current user's identity.</param>
+        /// <param name="mapper">Mapper used to translate read models to DTOs.</param>
+        /// <param name="localizer">Localization provider for user-facing messages.</param>
+        /// <param name="documentAccessService">Service that validates document access rules.</param>
+        /// <param name="tokenService">Token generator for secure delivery URLs.</param>
+        /// <param name="encryptionSettings">Encryption settings used for token expiry.</param>
+        /// <param name="appSettings">Application-wide configuration options.</param>
         public DocumentsController(
             IMediator mediator,
             IWebHostEnvironment env,
@@ -47,7 +62,7 @@ namespace ArquivoMate2.API.Controllers
             IDocumentAccessService documentAccessService,
             IFileAccessTokenService tokenService,
             EncryptionSettings encryptionSettings,
-            AppSettings appSettings) // NEW
+            AppSettings appSettings)
         {
             _mediator = mediator;
             _env = env;
@@ -57,9 +72,17 @@ namespace ArquivoMate2.API.Controllers
             _documentAccessService = documentAccessService;
             _tokenService = tokenService;
             _encryptionSettings = encryptionSettings;
-            _appSettings = appSettings; // NEW
+            _appSettings = appSettings;
         }
 
+        /// <summary>
+        /// Uploads a new document, starts its import stream, and schedules the background processing workflow.
+        /// </summary>
+        /// <param name="request">Form payload containing the file to upload.</param>
+        /// <param name="cancellationToken">Cancellation token propagated from the HTTP request.</param>
+        /// <param name="ocrSettings">OCR configuration required by the processing pipeline.</param>
+        /// <param name="querySession">Document session used to persist the import start event.</param>
+        /// <returns>A <see cref="CreatedAtActionResult"/> containing the newly created document identifier.</returns>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         public async Task<IActionResult> Upload([FromForm] UploadDocumentRequest request, CancellationToken cancellationToken, [FromServices] OcrSettings ocrSettings, [FromServices] IDocumentSession querySession)
@@ -84,6 +107,14 @@ namespace ArquivoMate2.API.Controllers
             return CreatedAtAction(nameof(Upload), new { id }, id);
         }
 
+        /// <summary>
+        /// Updates mutable document metadata fields and refreshes the search index when necessary.
+        /// </summary>
+        /// <param name="id">Identifier of the document whose fields should be updated.</param>
+        /// <param name="dto">Set of field updates to apply.</param>
+        /// <param name="cancellationToken">Cancellation token propagated from the HTTP request.</param>
+        /// <param name="querySession">Query session used to load projections for validation and response construction.</param>
+        /// <returns>The updated document representation or an appropriate error response.</returns>
         [HttpPatch("{id}/update-fields")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentDto))]
         public async Task<IActionResult> UpdateFields(Guid id, [FromBody] UpdateDocumentFieldsDto dto, CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
@@ -91,7 +122,7 @@ namespace ArquivoMate2.API.Controllers
             if (dto == null || !dto.Fields.Any())
                 return BadRequest(_localizer.GetString("No fields provided.").Value);
 
-            // Prüfen, ob das Dokument existiert und nicht gelöscht ist
+            // Ensure the document exists and is owned by the current user
             var userId = _currentUserService.UserId;
             var document = await querySession.Query<DocumentView>()
                 .Where(d => d.Id == id && d.UserId == userId && !d.Deleted)
@@ -108,7 +139,7 @@ namespace ArquivoMate2.API.Controllers
                 {
                     case PatchResult.Success:
                         var rawDoc = await querySession.Events.AggregateStreamAsync<Document>(id);
-                        // update index
+                        // Update the search index with the new document values
                         await _mediator.Send(new UpdateIndexCommand(id, rawDoc!), cancellationToken);
 
                         document = await querySession.Query<DocumentView>()
@@ -133,6 +164,14 @@ namespace ArquivoMate2.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves a paginated document list using optional full-text search, filtering, and sorting criteria.
+        /// </summary>
+        /// <param name="requestDto">Query parameters describing paging, filters, and sorting.</param>
+        /// <param name="cancellationToken">Cancellation token propagated from the HTTP request.</param>
+        /// <param name="querySession">Query session used to compose the Marten query.</param>
+        /// <param name="searchClient">Search client used to resolve full-text document hits.</param>
+        /// <returns>A paged list of documents visible to the current user.</returns>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentListDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -145,7 +184,7 @@ namespace ArquivoMate2.API.Controllers
             IReadOnlyList<Guid>? searchIds = null;
             long? searchTotal = null;
 
-            // Wenn Volltext vorhanden: zuerst Meili
+            // Run a full-text search first when a search term is provided
             if (!string.IsNullOrWhiteSpace(requestDto.Search))
             {
                 var (ids, total) = await searchClient.SearchDocumentIdsAsync(userId, requestDto.Search, requestDto.Page, requestDto.PageSize, cancellationToken);
@@ -181,7 +220,7 @@ namespace ArquivoMate2.API.Controllers
 
             if (searchIds != null)
             {
-                // Eingrenzen auf Treffer aus Meili
+                // Restrict the result set to the Meilisearch hits
                 baseQuery = baseQuery.Where(d => searchIds.Contains(d.Id));
             }
 
@@ -189,8 +228,9 @@ namespace ArquivoMate2.API.Controllers
 
             if (searchIds != null)
             {
-                // Reihenfolge der Meili-Suche beibehalten
+                // Preserve the ordering provided by Meilisearch
                 var dict = searchIds.Select((id, idx) => new { id, idx }).ToDictionary(x => x.id, x => x.idx);
+                // Materialize the query here so that we can reapply the search ranking order afterwards
                 var docs = await baseQuery.Where(d => searchIds.Contains(d.Id)).ToListAsync(cancellationToken);
                 var ordered = docs.OrderBy(d => dict[d.Id]).ToList();
 
@@ -218,6 +258,7 @@ namespace ArquivoMate2.API.Controllers
             }
             else
             {
+                // No search term was used, so rely on Marten's pagination to fetch the current page only
                 var paged = await baseQuery.ToPagedListAsync(requestDto.Page, requestDto.PageSize, cancellationToken);
                 var mapped = paged.Count == 0 ? new List<DocumentListItemDto>() : _mapper.Map<IList<DocumentListItemDto>>(paged);
                 for (int i = 0; i < paged.Count; i++)
@@ -242,6 +283,13 @@ namespace ArquivoMate2.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Returns aggregate document statistics and search facets for the current user.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token propagated from the HTTP request.</param>
+        /// <param name="querySession">Query session used to count documents.</param>
+        /// <param name="searchClient">Search client used to retrieve facet information.</param>
+        /// <returns>A <see cref="DocumentStatsDto"/> representing the user's library statistics.</returns>
         [HttpGet("stats")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentStatsDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -275,6 +323,13 @@ namespace ArquivoMate2.API.Controllers
             return Ok(stats);
         }
 
+        /// <summary>
+        /// Retrieves a single document including its projection and event history.
+        /// </summary>
+        /// <param name="id">Identifier of the document to retrieve.</param>
+        /// <param name="cancellationToken">Cancellation token propagated from the HTTP request.</param>
+        /// <param name="querySession">Query session used to load the document projection and event stream.</param>
+        /// <returns>The requested document if available to the current user.</returns>
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -320,6 +375,10 @@ namespace ArquivoMate2.API.Controllers
             return Ok(documentDto);
         }
 
+        /// <summary>
+        /// Applies signed delivery URLs to encrypted document artifacts so they can be fetched securely.
+        /// </summary>
+        /// <param name="dto">Document DTO whose artifact paths should be replaced with secure URLs.</param>
         private void ApplyDeliveryTokens(DocumentDto dto)
         {
             dto.FilePath = string.IsNullOrEmpty(dto.FilePath) ? dto.FilePath : BuildDeliveryUrl(dto.Id, "file");
@@ -329,6 +388,12 @@ namespace ArquivoMate2.API.Controllers
             dto.ArchivePath = string.IsNullOrEmpty(dto.ArchivePath) ? dto.ArchivePath : BuildDeliveryUrl(dto.Id, "archive");
         }
 
+        /// <summary>
+        /// Builds a signed delivery URL for a specific document artifact.
+        /// </summary>
+        /// <param name="documentId">Document identifier that owns the artifact.</param>
+        /// <param name="artifact">Artifact name (file, preview, thumb, metadata, archive).</param>
+        /// <returns>A fully-qualified URL containing a time-limited signature.</returns>
         private string BuildDeliveryUrl(Guid documentId, string artifact)
         {
             var expires = DateTimeOffset.UtcNow.AddMinutes(_encryptionSettings.TokenTtlMinutes);
@@ -339,6 +404,14 @@ namespace ArquivoMate2.API.Controllers
             return $"{baseUrl}/api/delivery/{documentId}/{artifact}?token={Uri.EscapeDataString(token)}";
         }
 
+        /// <summary>
+        /// Creates a time-limited external share link for a document artifact.
+        /// </summary>
+        /// <param name="request">Request describing the document, artifact, and TTL.</param>
+        /// <param name="shareService">Service responsible for persisting share definitions.</param>
+        /// <param name="appSettings">Application settings used to enforce TTL limits.</param>
+        /// <param name="ct">Cancellation token propagated from the HTTP request.</param>
+        /// <returns>Information about the created share including its public URL.</returns>
         [HttpPost("share")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ShareCreatedDto))]
         public async Task<IActionResult> CreateShare([FromBody] CreateShareRequest request, [FromServices] IExternalShareService shareService, [FromServices] AppSettings appSettings, CancellationToken ct)

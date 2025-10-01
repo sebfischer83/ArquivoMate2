@@ -19,6 +19,23 @@ Dependencies follow clean architecture principles:
 - Tests can reference any project as needed.
 
 ---
+## .NET Project Inventory
+
+| Project | Target Framework | Responsibilities | Notable Dependencies |
+| --- | --- | --- | --- |
+| `src/ArquivoMate2.API` | net9.0 | ASP.NET Core host, HTTP endpoints, delivery token issuance, background job scheduling. | ASP.NET Core, Hangfire, MediatR, Marten (query session), AutoMapper |
+| `src/ArquivoMate2.Application` | net9.0 | Application services, commands/handlers, background processing, service interfaces. | MediatR, Marten abstractions, Mime types, OCR settings, custom interfaces |
+| `src/ArquivoMate2.Domain` | net9.0 | Aggregates (`Document`), processes (`ImportProcess`), domain events, value objects. | Pure BCL, shared enums |
+| `src/ArquivoMate2.Infrastructure` | net9.0 | Marten projections, storage/delivery providers, email connectors, search + LLM integrations. | Marten, Meilisearch, Minio/S3, OpenAI, EasyCaching |
+| `src/ArquivoMate2.Shared` | net9.0 | DTOs and request/response contracts shared with UI and external clients. | None beyond BCL |
+| `tests/ArquivoMate2.Application.Tests` | net9.0 | Unit tests for application handlers/services. | xUnit, FluentAssertions (check csproj for references) |
+| `tests/ArquivoMate2.Domain.Tests` | net9.0 | Unit tests for domain aggregates and value objects. | xUnit, FluentAssertions |
+| `tests/ArquivoMate2.Infrastructure.Tests` | net9.0 | Tests for infrastructure services (paths, storage adapters). | xUnit, FluentAssertions |
+| `tests/ArquivoMate2.Tests` | net9.0 | Legacy test project for regression coverage; migrate scenarios into layered tests over time. | xUnit |
+
+Use this table to quickly locate the correct project when adding features or tests.
+
+---
 ## Project Details
 
 ### ArquivoMate2.API

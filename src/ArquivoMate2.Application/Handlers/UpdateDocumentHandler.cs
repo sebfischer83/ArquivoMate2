@@ -14,6 +14,9 @@ using System.Threading.Tasks;
 
 namespace ArquivoMate2.Application.Handlers
 {
+    /// <summary>
+    /// Applies partial updates to document aggregates while validating field constraints and payload types.
+    /// </summary>
     public class UpdateDocumentHandler : IRequestHandler<UpdateDocumentCommand, PatchResult>
     {
         private readonly IDocumentSession _session;
@@ -21,12 +24,23 @@ namespace ArquivoMate2.Application.Handlers
         private static readonly string[] DisallowedProperties = { "Id", "UserId", "FilePath", "ThumbnailPath", "MetadataPath",
         "PreviewPath", "OccurredOn" };
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UpdateDocumentHandler"/> class.
+        /// </summary>
+        /// <param name="session">Document session used to append events.</param>
+        /// <param name="logger">Logger for diagnostic messages.</param>
         public UpdateDocumentHandler(IDocumentSession session, ILogger<UpdateDocumentHandler> logger)
         {
             _session = session;
             _logger = logger;
         }
 
+        /// <summary>
+        /// Validates and applies document field updates, emitting a <see cref="DocumentUpdated"/> event when successful.
+        /// </summary>
+        /// <param name="request">Command containing the document identifier and the modified fields.</param>
+        /// <param name="cancellationToken">Cancellation token propagated from the caller.</param>
+        /// <returns>The result of the patch operation.</returns>
         public async Task<PatchResult> Handle(UpdateDocumentCommand request, CancellationToken cancellationToken)
         {
             var doc = await _session.Events.AggregateStreamAsync<Document>(request.DocumentId);
@@ -48,6 +62,7 @@ namespace ArquivoMate2.Application.Handlers
                 return PatchResult.Forbidden;
             }
 
+            // Translate the incoming dictionary into strongly typed values compatible with the aggregate
             foreach (var kvp in request.Dto.Fields)
             {
                 var propertyInfo = typeof(Document).GetProperty(kvp.Key);
@@ -66,7 +81,7 @@ namespace ArquivoMate2.Application.Handlers
                     }
                     else if (targetType == typeof(string))
                     {
-                        // Robust: Prüfe, ob der Wert wirklich ein String ist und kein Array/Objekt
+                        // Validate that the payload is truly a string and not an array/object
                         if (kvp.Value is string s)
                         {
                             value = s;
@@ -83,12 +98,13 @@ namespace ArquivoMate2.Application.Handlers
                     }
                     else
                     {
-                        // Zusätzliche Prüfung: Wenn Ziel kein Array/List ist, aber Wert ein Array, Fehler
+                        // Additional guard: reject arrays when the target type is not a collection
                         if (kvp.Value is System.Text.Json.JsonElement je && je.ValueKind == JsonValueKind.Array && !targetType.IsArray && !(targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(List<>)))
                         {
                             _logger.LogError("Type mismatch: Property {property} expects {targetType} but got array.", kvp.Key, targetType.Name);
                             return PatchResult.Invalid;
                         }
+                        // Serialize + deserialize as a general-purpose conversion when the JSON payload matches the target type
                         var json = JsonSerializer.Serialize(kvp.Value);
                         value = JsonSerializer.Deserialize(json, targetType);
                     }

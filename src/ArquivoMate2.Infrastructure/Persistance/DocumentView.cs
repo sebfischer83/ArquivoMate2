@@ -41,13 +41,13 @@ namespace ArquivoMate2.Infrastructure.Persistance
         public DateTime UploadedAt { get; set; }
         public DateTime? ProcessedAt { get; set; }
 
-        public string ChatBotModel { get; set; } = string.Empty; // NEW
-        public string ChatBotClass { get; set; } = string.Empty; // NEW
+        public string ChatBotModel { get; set; } = string.Empty; // LLM model name used for enrichment
+        public string ChatBotClass { get; set; } = string.Empty; // LLM-provided classification label
 
-        public int NotesCount { get; set; } // NEW
+        public int NotesCount { get; set; } // Number of notes currently associated with the document
 
-        public string Language { get; set; } = string.Empty; // NEW
+        public string Language { get; set; } = string.Empty; // ISO code of the detected document language
 
-        public bool Encrypted { get; set; } // NEW
+        public bool Encrypted { get; set; } // Indicates whether encrypted delivery must be used
     }
 }

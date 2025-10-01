@@ -24,7 +24,8 @@ namespace ArquivoMate2.Application.Handlers
             string ThumbnailPath,
             string PreviewPdfPath,
             string ArchivePdfPath,
-            DocumentMetadata EffectiveMetadata);
+            DocumentMetadata EffectiveMetadata,
+            List<EncryptedArtifactKey> EncryptionKeys);
 
         private readonly IDocumentSession _session;
         private readonly ILogger<ProcessDocumentHandler> _logger;
@@ -36,13 +37,14 @@ namespace ArquivoMate2.Application.Handlers
         private readonly IChatBot _chatBot;
         private readonly IDocumentProcessingNotifier _documentProcessingNotifier;
         private readonly ILanguageDetectionService _languageDetection;
+        private readonly IEncryptionService _encryptionService;
 
         private static readonly byte[] PdfMagicNumber = [0x25, 0x50, 0x44, 0x46]; // %PDF
         private static readonly HashSet<string> SupportedImageExtensions = new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp" };
 
         public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger, IDocumentProcessor documentTextExtractor, IFileMetadataService fileMetadataService, IPathService pathService,
-            IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot, IDocumentProcessingNotifier documentProcessingNotifier, ICurrentUserService currentUserService, ILanguageDetectionService languageDetection)
-            => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService, _chatBot, _documentProcessingNotifier, _languageDetection) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService, chatBot, documentProcessingNotifier, languageDetection);
+            IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot, IDocumentProcessingNotifier documentProcessingNotifier, ICurrentUserService currentUserService, ILanguageDetectionService languageDetection, IEncryptionService encryptionService)
+            => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService, _chatBot, _documentProcessingNotifier, _languageDetection, _encryptionService) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService, chatBot, documentProcessingNotifier, languageDetection, encryptionService);
 
         public async Task<(Document? Document, string? TempFilePath)> Handle(ProcessDocumentCommand request, CancellationToken cancellationToken)
         {
@@ -60,6 +62,10 @@ namespace ArquivoMate2.Application.Handlers
                 loaded = loaded with { Metadata = metaAfterLang };
 
                 var artifacts = await ExtractAndGenerateAsync(request, loaded, cancellationToken);
+                if (_encryptionService.IsEnabled && artifacts.EncryptionKeys.Count > 0)
+                {
+                    Append(request.DocumentId, new DocumentEncryptionKeysAdded(request.DocumentId, artifacts.EncryptionKeys, DateTime.UtcNow));
+                }
                 await RunChatBotAsync(request.DocumentId, artifacts.Content, cancellationToken);
 
                 Append(request.ImportProcessId, new MarkSucceededDocumentImport(request.ImportProcessId, request.DocumentId, DateTime.UtcNow));
@@ -190,26 +196,44 @@ namespace ArquivoMate2.Application.Handlers
 
         private async Task<ExtractionArtifacts> PersistAndGenerateDerivativesAsync(ProcessDocumentCommand request, LoadedContext ctx, FileStream openStream, CancellationToken ct)
         {
+            var keys = new List<EncryptedArtifactKey>();
             var originalBytes = File.ReadAllBytes(ctx.PhysicalPath);
-            var filePath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.GetFileName(ctx.PhysicalPath), originalBytes);
-            var metaPath = await _storage.SaveFile(request.UserId, request.DocumentId, Path.ChangeExtension(Path.GetFileName(ctx.PhysicalPath), "metadata"), JsonSerializer.SerializeToUtf8Bytes(ctx.Metadata));
+            var (filePath, k1) = await SaveMaybeEncryptedAsync(request.UserId, request.DocumentId, Path.GetFileName(ctx.PhysicalPath), originalBytes, "file", ct);
+            if (k1 != null) keys.Add(k1);
+
+            var metaBytes = JsonSerializer.SerializeToUtf8Bytes(ctx.Metadata);
+            var (metaPath, kMeta) = await SaveMaybeEncryptedAsync(request.UserId, request.DocumentId, Path.ChangeExtension(Path.GetFileName(ctx.PhysicalPath), "metadata"), metaBytes, "metadata", ct);
+            if (kMeta != null) keys.Add(kMeta);
 
             openStream.Position = 0;
             var thumbBytes = _thumbnailService.GenerateThumbnail(openStream);
             string baseName = Path.GetFileNameWithoutExtension(ctx.PhysicalPath);
-            var thumbPath = await _storage.SaveFile(request.UserId, request.DocumentId, $"{baseName}-thumb.webp", thumbBytes);
+            var (thumbPath, kThumb) = await SaveMaybeEncryptedAsync(request.UserId, request.DocumentId, $"{baseName}-thumb.webp", thumbBytes, "thumb", ct);
+            if (kThumb != null) keys.Add(kThumb);
 
             openStream.Position = 0;
             var previewPdf = await _documentTextExtractor.GeneratePreviewPdf(openStream, ctx.Metadata, ct);
-            var previewPath = await _storage.SaveFile(request.UserId, request.DocumentId, $"{baseName}-preview.pdf", previewPdf);
+            var (previewPath, kPrev) = await SaveMaybeEncryptedAsync(request.UserId, request.DocumentId, $"{baseName}-preview.pdf", previewPdf, "preview", ct);
+            if (kPrev != null) keys.Add(kPrev);
 
             openStream.Position = 0;
             var archivePdf = await _documentTextExtractor.GenerateArchivePdf(openStream, ctx.Metadata, ct);
-            var archivePath = await _storage.SaveFile(request.UserId, request.DocumentId, $"{baseName}-archive.pdf", archivePdf);
+            var (archivePath, kArch) = await SaveMaybeEncryptedAsync(request.UserId, request.DocumentId, $"{baseName}-archive.pdf", archivePdf, "archive", ct);
+            if (kArch != null) keys.Add(kArch);
 
             Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, archivePath, DateTime.UtcNow));
 
-            return new ExtractionArtifacts(string.Empty, filePath, metaPath, thumbPath, previewPath, archivePath, ctx.Metadata);
+            return new ExtractionArtifacts(string.Empty, filePath, metaPath, thumbPath, previewPath, archivePath, ctx.Metadata, keys);
+        }
+
+        private async Task<(string path, EncryptedArtifactKey? key)> SaveMaybeEncryptedAsync(string userId, Guid docId, string filename, byte[] bytes, string artifact, CancellationToken ct)
+        {
+            if (_encryptionService.IsEnabled)
+            {
+                return await _encryptionService.SaveAsync(userId, docId, filename, bytes, artifact, ct);
+            }
+            var p = await _storage.SaveFile(userId, docId, filename, bytes, artifact);
+            return (p, null);
         }
         #endregion
 

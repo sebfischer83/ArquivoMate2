@@ -15,21 +15,24 @@ ArquivoMate2 is a lightweight, extensible .NET 9 document ingestion and processi
 
 ## Planned Features
 Multiple storage backends:
-- [ ] S3 compatible services
+- [X] S3 compatible services
 - [ ] BunnyCDN storage
 - [ ] Local filesystem
 - [ ] OneDrive integration
 
+## Privacy
+- [X] Encrypted files on the storage backend
+
 Delivery options:
-- [ ] S3 pre‑signed URLs
+- [X] S3 pre‑signed URLs
 - [ ] BunnyCDN direct delivery
-- [ ] BunnyCDN as accelerator in front of S3
+- [X] BunnyCDN as accelerator in front of S3
 - [ ] Reverse proxy delivery via ArquivoMate2
 - [ ] Amazon CloudFront integration
 
 AI based enrichment:
-- [ ] Document summaries
-- [ ] Auto tagging
+- [X] Document summaries
+- [X] Auto tagging
 
 Ingestion channels:
 - [ ] Browser uploads
@@ -41,7 +44,6 @@ Performance & reliability:
 - [ ] Caching layer for frequent count endpoints
 - [ ] Resilience (Polly) policies for external services
 - [ ] Projection rebuild monitoring dashboard
-- [ ] Metrics dashboard (Prometheus / Grafana)
 
 Bulk & admin tooling:
 - [ ] Bulk hide/unhide operations

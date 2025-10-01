@@ -18,8 +18,9 @@ namespace ArquivoMate2.Application.Handlers
         private readonly IPathService _pathService;
         private readonly OcrSettings _ocrSettings;
         private readonly IAutoShareService _autoShareService;
+        private readonly IEncryptionService _encryptionService;
 
-        public UploadDocumentHandler(IDocumentSession session, IFileMetadataService fileMetadataService, ICurrentUserService currentUserService, IPathService pathService, OcrSettings ocrSettings, IAutoShareService autoShareService)
+        public UploadDocumentHandler(IDocumentSession session, IFileMetadataService fileMetadataService, ICurrentUserService currentUserService, IPathService pathService, OcrSettings ocrSettings, IAutoShareService autoShareService, IEncryptionService encryptionService)
         {
             _session = session;
             _fileMetadataService = fileMetadataService;
@@ -27,6 +28,7 @@ namespace ArquivoMate2.Application.Handlers
             _pathService = pathService;
             _ocrSettings = ocrSettings;
             _autoShareService = autoShareService;
+            _encryptionService = encryptionService;
         }
 
         public async Task<Guid> Handle(UploadDocumentCommand request, CancellationToken cancellationToken)
@@ -53,6 +55,11 @@ namespace ArquivoMate2.Application.Handlers
 
             var uploaded = new DocumentUploaded(fileId, _currentUserService.UserId, fileHash, DateTime.UtcNow);
             _session.Events.StartStream<Document>(uploaded.AggregateId, uploaded);
+
+            if (_encryptionService.IsEnabled)
+            {
+                _session.Events.Append(fileId, new DocumentEncryptionEnabled(fileId, DateTime.UtcNow));
+            }
 
             // Default Titel
             var defaultTitle = TitleNormalizer.FromFileName(request.request.File.FileName);

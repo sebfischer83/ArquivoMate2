@@ -4,54 +4,35 @@ using System.Text.Json; // NEW
 
 namespace ArquivoMate2.Domain.Document
 {
-
     public class Document
     {
         public Guid Id { get; private set; }
         public string FilePath { get; private set; } = string.Empty;
-
         public string ThumbnailPath { get; private set; } = string.Empty;
-
         public string MetadataPath { get; private set; } = string.Empty;
-
         public string PreviewPath { get; private set; } = string.Empty;
-        public string ArchivePath { get; private set; } = string.Empty; // NEW
-
+        public string ArchivePath { get; private set; } = string.Empty;
         public string UserId { get; private set; } = string.Empty;
         public bool Accepted { get; private set; }
-
         public bool Processed { get; private set; }
-
         public bool Deleted { get; private set; }
-
-        // content
         public string Content { get; private set; } = string.Empty;
-
         public string Hash { get; private set; } = string.Empty;
-
         public DateTime? Date { get; private set; } = null;
-
         public Guid Sender { get; private set; } = Guid.Empty;
-
         public Guid Recipient { get; private set; } = Guid.Empty;
-
         public string Type { get; set; } = string.Empty;
-
         public string CustomerNumber { get; private set; } = string.Empty;
         public string InvoiceNumber { get; private set; } = string.Empty;
         public decimal? TotalPrice { get; private set; }
         public List<string> Keywords { get; private set; } = new List<string>();
         public string Summary { get; private set; } = string.Empty;
-
         public string Title { get; private set; } = string.Empty;
-
-        public string ChatBotModel { get; private set; } = string.Empty; // NEW
-        public string ChatBotClass { get; private set; } = string.Empty; // NEW
-
-        public int NotesCount { get; private set; } = 0; // NEW
-
-        public string Language { get; private set; } = string.Empty; // NEW
-
+        public string ChatBotModel { get; private set; } = string.Empty;
+        public string ChatBotClass { get; private set; } = string.Empty;
+        public int NotesCount { get; private set; } = 0;
+        public string Language { get; private set; } = string.Empty;
+        public bool Encrypted { get; private set; } // NEW
         public DateTime? OccurredOn { get; private set; }
 
         private string? _initialTitle;
@@ -64,6 +45,18 @@ namespace ArquivoMate2.Domain.Document
             UserId = e.UserId;
             OccurredOn = e.OccurredOn;
             Hash = e.Hash;
+        }
+
+        public void Apply(DocumentEncryptionEnabled e)
+        {
+            Encrypted = true;
+            OccurredOn = e.OccurredOn;
+        }
+
+        public void Apply(DocumentEncryptionKeysAdded e)
+        {
+            // keys selbst nicht im Aggregate speichern (Security / Minimierung)
+            OccurredOn = e.OccurredOn;
         }
 
         public void Apply(DocumentTitleInitialized e)
@@ -88,7 +81,6 @@ namespace ArquivoMate2.Domain.Document
         public void Apply(DocumentContentExtracted e)
         {
             Content = e.Content;
-
             OccurredOn = e.OccurredOn;
         }
 
@@ -98,7 +90,7 @@ namespace ArquivoMate2.Domain.Document
             MetadataPath = e.MetadataPath;
             ThumbnailPath = e.ThumbnailPath;
             PreviewPath = e.PreviewPath;
-            ArchivePath = e.ArchivePath; // NEW
+            ArchivePath = e.ArchivePath;
             OccurredOn = e.OccurredOn;
         }
 
@@ -119,23 +111,22 @@ namespace ArquivoMate2.Domain.Document
             TotalPrice = e.TotalPrice;
             Keywords = e.Keywords;
             Summary = e.Summary;
-            ChatBotModel = e.ModelName; // NEW
-            ChatBotClass = e.ChatBotClass; // NEW
+            ChatBotModel = e.ModelName;
+            ChatBotClass = e.ChatBotClass;
             OccurredOn = e.OccurredOn;
         }
 
         public void Apply(DocumentUpdated e)
         {
-            var type = this.GetType();
+            var type = GetType();
             foreach (var kvp in e.Values)
             {
                 var prop = type.GetProperty(kvp.Key);
                 if (prop != null && prop.CanWrite)
                 {
-                    // Special handling for List<string> (Keywords etc.) supporting multiple incoming representations
-                    if (prop.PropertyType == typeof(List<string>))
+                    if (prop.PropertyType == typeof(List<string>) && kvp.Value is IEnumerable<string> enumerable)
                     {
-                        prop.SetValue(this, ToStringList(kvp.Value));
+                        prop.SetValue(this, enumerable.ToList());
                         continue;
                     }
 
@@ -150,7 +141,6 @@ namespace ArquivoMate2.Domain.Document
                     }
                     else
                     {
-                        // Try to convert value to property type
                         var converted = Convert.ChangeType(kvp.Value, prop.PropertyType);
                         prop.SetValue(this, converted);
                     }
@@ -164,20 +154,14 @@ namespace ArquivoMate2.Domain.Document
         private static List<string> ToStringList(object? value)
         {
             if (value == null) return new List<string>();
-
             switch (value)
             {
-                case List<string> ls:
-                    return ls;
-                case IEnumerable<string> enumStr:
-                    return enumStr.ToList();
+                case List<string> ls: return ls;
+                case IEnumerable<string> enumStr: return enumStr.ToList();
                 case IEnumerable<object> enumObj:
-                    return enumObj.Select(o => o?.ToString() ?? string.Empty)
-                                   .Where(s => !string.IsNullOrWhiteSpace(s))
-                                   .ToList();
+                    return enumObj.Select(o => o?.ToString() ?? string.Empty).Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
                 case string s:
                     if (string.IsNullOrWhiteSpace(s)) return new List<string>();
-                    // Try JSON array first
                     var trimmed = s.Trim();
                     if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
                     {
@@ -186,12 +170,10 @@ namespace ArquivoMate2.Domain.Document
                             var arr = JsonSerializer.Deserialize<List<string>>(trimmed);
                             if (arr != null) return arr.Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
                         }
-                        catch { /* ignore and fallback */ }
+                        catch { }
                     }
-                    // Fallback: comma / semicolon separated
                     return s.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                            .Where(x => !string.IsNullOrWhiteSpace(x))
-                            .ToList();
+                            .Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
                 case JsonElement je:
                     if (je.ValueKind == JsonValueKind.Array)
                     {
@@ -218,12 +200,10 @@ namespace ArquivoMate2.Domain.Document
                     }
                     break;
             }
-            // Last resort: ToString() and split
             var fallback = value.ToString();
             if (string.IsNullOrWhiteSpace(fallback)) return new List<string>();
             return fallback.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                           .Where(x => !string.IsNullOrWhiteSpace(x))
-                           .ToList();
+                           .Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
         }
 
         public void Apply(DocumentDeleted e)

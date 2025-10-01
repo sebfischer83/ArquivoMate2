@@ -51,6 +51,7 @@ using Weasel.Postgresql.Tables;
 using EmailCriteria = ArquivoMate2.Domain.Email.EmailCriteria;
 using JasperFx.Events.Projections;
 using ArquivoMate2.Application.Interfaces.Sharing;
+using ArquivoMate2.Infrastructure.Services.Encryption; // NEW using
 
 namespace ArquivoMate2.Infrastructure.Configuration
 {
@@ -84,9 +85,11 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     typeof(HideDocumentImport),
                     typeof(DocumentTitleInitialized),
                     typeof(DocumentTitleSuggested),
-                    typeof(DocumentNoteAdded), // NEW
-                    typeof(DocumentNoteDeleted), // NEW
-                    typeof(DocumentLanguageDetected) // NEW
+                    typeof(DocumentEncryptionEnabled),
+                    typeof(DocumentEncryptionKeysAdded),
+                    typeof(DocumentNoteAdded), // RESTORED
+                    typeof(DocumentNoteDeleted), // RESTORED
+                    typeof(DocumentLanguageDetected) // RESTORED
                 });
 
                 options.Schema.For<PartyInfo>();
@@ -158,6 +161,10 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 options.Schema.For<ArquivoMate2.Domain.Notes.DocumentNote>()
                     .Index(x => x.DocumentId)
                     .Index(x => x.UserId);
+
+                options.Schema.For<ExternalShare>()
+                    .Index(x => x.DocumentId)
+                    .Index(x => x.ExpiresAtUtc);
             });
 
             services.AddScoped<IDocumentSession>(sp => sp.GetRequiredService<IDocumentStore>().LightweightSession());
@@ -267,6 +274,15 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 r.DBConfig.Endpoints.Add(new EasyCaching.Core.Configurations.ServerEndPoint("cache", int.Parse("6379")));
                 r.DBConfig.AbortOnConnectFail = false;
             }).WithSystemTextJson("A"));
+
+            services.Configure<EncryptionSettings>(config.GetSection("Encryption"));
+            services.AddSingleton(sp => sp.GetRequiredService<IOptions<EncryptionSettings>>().Value);
+            services.AddTransient<IEncryptionService, EncryptionService>();
+            services.AddTransient<IFileAccessTokenService, FileAccessTokenService>();
+            services.Configure<AppSettings>(config.GetSection("App"));
+            services.AddSingleton(sp => sp.GetRequiredService<IOptions<AppSettings>>().Value);
+            services.AddTransient<IExternalShareService, ExternalShareService>();
+            services.AddTransient<IDocumentArtifactStreamer, DocumentArtifactStreamer>();
 
             return services;
         }

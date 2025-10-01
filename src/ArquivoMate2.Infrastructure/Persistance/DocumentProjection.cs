@@ -16,6 +16,12 @@ namespace ArquivoMate2.Infrastructure.Persistance
             view.UploadedAt = e.OccurredOn; // neu gesetzt
         }
 
+        public void Apply(DocumentEncryptionEnabled e, DocumentView view)
+        {
+            view.Encrypted = true;
+            view.OccurredOn = e.OccurredOn;
+        }
+
         public void Apply(DocumentTitleInitialized e, DocumentView view)
         {
             if (string.IsNullOrWhiteSpace(view.Title))

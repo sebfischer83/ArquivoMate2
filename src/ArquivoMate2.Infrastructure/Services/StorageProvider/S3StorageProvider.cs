@@ -1,19 +1,8 @@
 ﻿using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Infrastructure.Configuration.StorageProvider;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Mime;
-using System.Text;
-using System.Threading.Tasks;
 using MimeTypes;
-using FluentStorage.Blobs;
-using FluentStorage;
-using FluentStorage.AWS.Blobs;
 using EasyCaching.Core;
-using Microsoft.AspNetCore.Mvc.Routing;
-using Microsoft.AspNetCore.DataProtection;
 using Minio;
 using Minio.DataModel.Args;
 
@@ -21,38 +10,41 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
 {
     public class S3StorageProvider : IStorageProvider
     {
-        private readonly S3StorageProviderSettings   _settings;
+        private readonly S3StorageProviderSettings _settings;
         private readonly IMinioClient _storage;
-        private readonly IMinioClientFactory _minioClientFactory;
-        private readonly IEasyCachingProviderFactory _easyCachingProviderFactory;
         private readonly IPathService _pathService;
-        private readonly IEasyCachingProvider _cache;
 
         public S3StorageProvider(IOptions<S3StorageProviderSettings> opts, IMinioClientFactory minioClientFactory, IEasyCachingProviderFactory easyCachingProviderFactory, IPathService pathService)
         {
             _settings = opts.Value;
             _storage = minioClientFactory.CreateClient();
-            _minioClientFactory = minioClientFactory;
-            _easyCachingProviderFactory = easyCachingProviderFactory;
             _pathService = pathService;
-            _cache = easyCachingProviderFactory.GetCachingProvider(EasyCachingConstValue.DefaultRedisName);
         }
 
-        public async Task<string> SaveFile(string userId, Guid documentId, string filename, byte[] file)
+        public async Task<string> SaveFile(string userId, Guid documentId, string filename, byte[] file, string artifact = "file")
         {
             var mimeType = MimeTypeMap.GetMimeType(filename);
             using var stream = new MemoryStream(file);
-            
-            string fullPath = "arquivomate/" + string.Join('/', (_pathService.GetStoragePath(userId, documentId, filename)));
+            string fullPath = "arquivomate/" + string.Join('/', _pathService.GetStoragePath(userId, documentId, filename));
             var putObjectArgs = new PutObjectArgs()
-                    .WithBucket(_settings.BucketName)
-                    .WithObject(fullPath)
-                    .WithStreamData(stream)
-                    .WithObjectSize(stream.Length)
-                    .WithContentType(mimeType);
+                .WithBucket(_settings.BucketName)
+                .WithObject(fullPath)
+                .WithStreamData(stream)
+                .WithObjectSize(stream.Length)
+                .WithContentType(mimeType);
             await _storage.PutObjectAsync(putObjectArgs);
-
             return fullPath;
+        }
+
+        public async Task<byte[]> GetFileAsync(string fullPath, CancellationToken ct = default)
+        {
+            using var ms = new MemoryStream();
+            var args = new GetObjectArgs()
+                .WithBucket(_settings.BucketName)
+                .WithObject(fullPath)
+                .WithCallbackStream(stream => stream.CopyTo(ms));
+            await _storage.GetObjectAsync(args, ct);
+            return ms.ToArray();
         }
     }
 }

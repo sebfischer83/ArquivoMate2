@@ -6,15 +6,11 @@ namespace ArquivoMate2.Infrastructure.Persistance
     {
         public Guid Id { get; set; }
         public string FilePath { get; set; } = string.Empty;
-
         public string ThumbnailPath { get; set; } = string.Empty;
-
         public string MetadataPath { get; set; } = string.Empty;
         public string PreviewPath { get; set; } = string.Empty;
-        public string ArchivePath { get; set; } = string.Empty; // NEW
-
+        public string ArchivePath { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
-
         public DateTime? OccurredOn { get; set; } = null;
 
         /// <summary>
@@ -42,6 +38,9 @@ namespace ArquivoMate2.Infrastructure.Persistance
         public string Title { get; set; } = string.Empty;
         public int ContentLength { get; set; }
 
+        public DateTime UploadedAt { get; set; }
+        public DateTime? ProcessedAt { get; set; }
+
         public string ChatBotModel { get; set; } = string.Empty; // NEW
         public string ChatBotClass { get; set; } = string.Empty; // NEW
 
@@ -49,7 +48,6 @@ namespace ArquivoMate2.Infrastructure.Persistance
 
         public string Language { get; set; } = string.Empty; // NEW
 
-        public DateTime UploadedAt { get; set; }
-        public DateTime? ProcessedAt { get; set; }
+        public bool Encrypted { get; set; } // NEW
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Amazon.Runtime.Internal;
 using ArquivoMate2.Application.Commands;
 using ArquivoMate2.Application.Configuration;
+using ArquivoMate2.Application.DTOs; // ensure DTOs
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Services;
 using ArquivoMate2.Domain.Document;
@@ -33,6 +34,9 @@ namespace ArquivoMate2.API.Controllers
         private readonly IMapper _mapper;
         private readonly IStringLocalizer<DocumentsController> _localizer;
         private readonly IDocumentAccessService _documentAccessService;
+        private readonly IFileAccessTokenService _tokenService; // NEW
+        private readonly EncryptionSettings _encryptionSettings; // NEW
+        private readonly AppSettings _appSettings; // NEW
 
         public DocumentsController(
             IMediator mediator,
@@ -40,7 +44,10 @@ namespace ArquivoMate2.API.Controllers
             ICurrentUserService currentUserService,
             IMapper mapper,
             IStringLocalizer<DocumentsController> localizer,
-            IDocumentAccessService documentAccessService)
+            IDocumentAccessService documentAccessService,
+            IFileAccessTokenService tokenService,
+            EncryptionSettings encryptionSettings,
+            AppSettings appSettings) // NEW
         {
             _mediator = mediator;
             _env = env;
@@ -48,6 +55,9 @@ namespace ArquivoMate2.API.Controllers
             _mapper = mapper;
             _localizer = localizer;
             _documentAccessService = documentAccessService;
+            _tokenService = tokenService;
+            _encryptionSettings = encryptionSettings;
+            _appSettings = appSettings; // NEW
         }
 
         [HttpPost]
@@ -104,7 +114,9 @@ namespace ArquivoMate2.API.Controllers
                         document = await querySession.Query<DocumentView>()
                             .Where(d => d.Id == id && d.UserId == userId && !d.Deleted)
                             .FirstOrDefaultAsync(cancellationToken);
-                        return Ok(_mapper.Map<DocumentDto>(document));
+                        var mapped = _mapper.Map<DocumentDto>(document);
+                        if (document!.Encrypted) ApplyDeliveryTokens(mapped);
+                        return Ok(mapped);
                     case PatchResult.Forbidden:
                         return Forbid(_localizer.GetString("Some fields are not allowed to update.").Value);
                     case PatchResult.Failed:
@@ -183,6 +195,12 @@ namespace ArquivoMate2.API.Controllers
                 var ordered = docs.OrderBy(d => dict[d.Id]).ToList();
 
                 var mapped = _mapper.Map<IList<DocumentListItemDto>>(ordered);
+                // Replace thumbnail for encrypted docs
+                for (int i = 0; i < ordered.Count; i++)
+                {
+                    if (ordered[i].Encrypted && !string.IsNullOrEmpty(mapped[i].ThumbnailPath))
+                        mapped[i].ThumbnailPath = BuildDeliveryUrl(ordered[i].Id, "thumb");
+                }
                 var total = searchTotal ?? mapped.Count;
                 var pageCount = (int)Math.Ceiling(total / (double)requestDto.PageSize);
 
@@ -201,10 +219,16 @@ namespace ArquivoMate2.API.Controllers
             else
             {
                 var paged = await baseQuery.ToPagedListAsync(requestDto.Page, requestDto.PageSize, cancellationToken);
+                var mapped = paged.Count == 0 ? new List<DocumentListItemDto>() : _mapper.Map<IList<DocumentListItemDto>>(paged);
+                for (int i = 0; i < paged.Count; i++)
+                {
+                    if (paged[i].Encrypted && !string.IsNullOrEmpty(mapped[i].ThumbnailPath))
+                        mapped[i].ThumbnailPath = BuildDeliveryUrl(paged[i].Id, "thumb");
+                }
 
                 var dto = new DocumentListDto
                 {
-                    Documents = paged.Count == 0 ? new List<DocumentListItemDto>() : _mapper.Map<IList<DocumentListItemDto>>(paged),
+                    Documents = mapped,
                     TotalCount = paged.TotalItemCount,
                     HasNextPage = paged.HasNextPage,
                     HasPreviousPage = paged.HasPreviousPage,
@@ -274,8 +298,8 @@ namespace ArquivoMate2.API.Controllers
 
             var events = await querySession.Events.FetchStreamAsync(id, token: cancellationToken);
             var documentDto = _mapper.Map<DocumentDto>(view);
+            if (view.Encrypted) ApplyDeliveryTokens(documentDto);
 
-            // Historie mappen
             var history = new List<DocumentEventDto>();
             foreach (var e in events)
             {
@@ -294,6 +318,57 @@ namespace ArquivoMate2.API.Controllers
             documentDto.History = history;
 
             return Ok(documentDto);
+        }
+
+        private void ApplyDeliveryTokens(DocumentDto dto)
+        {
+            dto.FilePath = string.IsNullOrEmpty(dto.FilePath) ? dto.FilePath : BuildDeliveryUrl(dto.Id, "file");
+            dto.PreviewPath = string.IsNullOrEmpty(dto.PreviewPath) ? dto.PreviewPath : BuildDeliveryUrl(dto.Id, "preview");
+            dto.ThumbnailPath = string.IsNullOrEmpty(dto.ThumbnailPath) ? dto.ThumbnailPath : BuildDeliveryUrl(dto.Id, "thumb");
+            dto.MetadataPath = string.IsNullOrEmpty(dto.MetadataPath) ? dto.MetadataPath : BuildDeliveryUrl(dto.Id, "metadata");
+            dto.ArchivePath = string.IsNullOrEmpty(dto.ArchivePath) ? dto.ArchivePath : BuildDeliveryUrl(dto.Id, "archive");
+        }
+
+        private string BuildDeliveryUrl(Guid documentId, string artifact)
+        {
+            var expires = DateTimeOffset.UtcNow.AddMinutes(_encryptionSettings.TokenTtlMinutes);
+            var token = _tokenService.Create(documentId, artifact, expires);
+            var baseUrl = !string.IsNullOrWhiteSpace(_appSettings.PublicBaseUrl)
+                ? _appSettings.PublicBaseUrl!.TrimEnd('/')
+                : ($"{Request.Scheme}://{Request.Host}");
+            return $"{baseUrl}/api/delivery/{documentId}/{artifact}?token={Uri.EscapeDataString(token)}";
+        }
+
+        [HttpPost("share")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ShareCreatedDto))]
+        public async Task<IActionResult> CreateShare([FromBody] CreateShareRequest request, [FromServices] IExternalShareService shareService, [FromServices] AppSettings appSettings, CancellationToken ct)
+        {
+            if (request == null || request.DocumentId == Guid.Empty)
+                return BadRequest();
+            var artifact = string.IsNullOrWhiteSpace(request.Artifact) ? "file" : request.Artifact.Trim().ToLowerInvariant();
+            var allowed = new[] { "file", "preview", "thumb", "metadata", "archive" };
+            if (!allowed.Contains(artifact)) return BadRequest("Invalid artifact");
+
+            var hasAccess = await _documentAccessService.HasAccessToDocumentAsync(request.DocumentId, _currentUserService.UserId, ct);
+            if (!hasAccess) return NotFound();
+
+            int ttlReq = request.TtlMinutes ?? appSettings.PublicShareDefaultTtlMinutes;
+            if (ttlReq <= 0) ttlReq = appSettings.PublicShareDefaultTtlMinutes;
+            if (ttlReq > appSettings.PublicShareMaxTtlMinutes) ttlReq = appSettings.PublicShareMaxTtlMinutes;
+            var ttl = TimeSpan.FromMinutes(ttlReq);
+
+            var share = await shareService.CreateAsync(request.DocumentId, _currentUserService.UserId, artifact, ttl, ct);
+            var token = _tokenService.CreateShareToken(share.Id, share.ExpiresAtUtc);
+            var baseUrl = !string.IsNullOrWhiteSpace(appSettings.PublicBaseUrl) ? appSettings.PublicBaseUrl.TrimEnd('/') : ($"{Request.Scheme}://{Request.Host}");
+            var url = $"{baseUrl}/api/share/{share.Id}?token={Uri.EscapeDataString(token)}";
+
+            return Ok(new ShareCreatedDto
+            {
+                ShareId = share.Id,
+                Artifact = artifact,
+                ExpiresAtUtc = share.ExpiresAtUtc,
+                Url = url
+            });
         }
     }
 }

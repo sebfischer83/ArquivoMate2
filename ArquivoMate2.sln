@@ -31,6 +31,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		.mcp.json = .mcp.json
+		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArquivoMate2.Domain.Tests", "tests\ArquivoMate2.Domain.Tests\ArquivoMate2.Domain.Tests.csproj", "{FAB44361-B814-4905-A6D8-970E26D84277}"

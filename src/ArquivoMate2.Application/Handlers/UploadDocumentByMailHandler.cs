@@ -14,6 +14,9 @@ using System.Threading.Tasks;
 
 namespace ArquivoMate2.Application.Handlers
 {
+    /// <summary>
+    /// Handles the ingestion of email attachments into the document system.
+    /// </summary>
     public class UploadDocumentByMailHandler : IRequestHandler<UploadDocumentByMailCommand, Guid>
     {
         private readonly IDocumentSession _session;
@@ -21,6 +24,14 @@ namespace ArquivoMate2.Application.Handlers
         private readonly IPathService _pathService;
         private readonly OcrSettings _ocrSettings;
 
+        /// <summary>
+        /// Initializes a new <see cref="UploadDocumentByMailHandler"/> instance.
+        /// </summary>
+        /// <param name="session">Document session used to append events.</param>
+        /// <param name="fileMetadataService">Service that persists metadata alongside the file.</param>
+        /// <param name="currentUserService">Unused dependency kept for backwards compatibility (resolved by container).</param>
+        /// <param name="pathService">Service that resolves the storage path for the uploaded file.</param>
+        /// <param name="ocrSettings">OCR configuration for metadata defaults.</param>
         public UploadDocumentByMailHandler(IDocumentSession session, IFileMetadataService fileMetadataService, ICurrentUserService currentUserService, IPathService pathService, OcrSettings ocrSettings)
         {
             _session = session;
@@ -29,6 +40,12 @@ namespace ArquivoMate2.Application.Handlers
             _ocrSettings = ocrSettings;
         }
 
+        /// <summary>
+        /// Persists an email attachment, emits domain events, and stores metadata for further processing.
+        /// </summary>
+        /// <param name="request">Command containing the email attachment details.</param>
+        /// <param name="cancellationToken">Cancellation token propagated from the caller.</param>
+        /// <returns>The identifier of the created document.</returns>
         public async Task<Guid> Handle(UploadDocumentByMailCommand request, CancellationToken cancellationToken)
         {
             var userFolder = _pathService.GetDocumentUploadPath(request.UserId);
@@ -42,11 +59,11 @@ namespace ArquivoMate2.Application.Handlers
             await using var fs = new FileStream(filePath, FileMode.Create);
             await fs.WriteAsync(request.EmailDocument.File, 0, request.EmailDocument.File.Length, cancellationToken);
 
-            // Berechnung des Hashes der Datei
+            // Calculate the file hash for deduplication and integrity checks
             string fileHash;
             using (var hashAlgorithm = System.Security.Cryptography.SHA256.Create())
             {
-                fs.Position = 0; // Zurücksetzen des Streams
+                fs.Position = 0; // Reset the stream before hashing
                 var hashBytes = hashAlgorithm.ComputeHash(fs);
                 fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
             }

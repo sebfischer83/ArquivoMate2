@@ -51,17 +51,26 @@ using Weasel.Postgresql.Tables;
 using EmailCriteria = ArquivoMate2.Domain.Email.EmailCriteria;
 using JasperFx.Events.Projections;
 using ArquivoMate2.Application.Interfaces.Sharing;
-using ArquivoMate2.Infrastructure.Services.Encryption; // NEW using
+using ArquivoMate2.Infrastructure.Services.Encryption; // Encryption helpers
 
 namespace ArquivoMate2.Infrastructure.Configuration
 {
+    /// <summary>
+    /// Extension methods for wiring up infrastructure services and data access.
+    /// </summary>
     public static class DependencyInjectionConfiguration
     {
+        /// <summary>
+        /// Registers infrastructure services including persistence, projections, search, and integrations.
+        /// </summary>
+        /// <param name="services">Service collection to configure.</param>
+        /// <param name="config">Application configuration source.</param>
+        /// <returns>The updated service collection.</returns>
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
         {
             services.AddMarten(options =>
             {
-                // Verbindungszeichenfolge aus appsettings.json
+                // Connection string sourced from appsettings.json
                 options.Connection(config.GetConnectionString("Default")!);
 
                 var env = config["ASPNETCORE_ENVIRONMENT"] ?? "Production";
@@ -69,7 +78,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     ? JasperFx.AutoCreate.All
                     : JasperFx.AutoCreate.CreateOrUpdate;
 
-                // Domain‑Events registrieren
+                // Register domain events used by the aggregates
                 options.Events.AddEventTypes(new[]
                 {
                     typeof(DocumentUploaded),
@@ -124,8 +133,8 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     .Index(x => x.OwnerUserId)
                     .Index(x => x.Target.Identifier);
 
-                options.Schema.For<DocumentAccessView>() // NEW
-                    .Index(x => x.OwnerUserId); // basic index (future: custom GIN for EffectiveUserIds)
+                options.Schema.For<DocumentAccessView>()
+                    .Index(x => x.OwnerUserId); // Base index (extend with custom GIN for EffectiveUserIds if required)
 
                 options.Schema.For<ImportProcess>()
                     .Index(d => d.UserId)
@@ -140,7 +149,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     .Index(x => x.Source)
                     .Index(x => x.IsHidden);
 
-                // Indizes für DocumentView (Sortierung & Filter)
+                // Indexes to support DocumentView sorting and filtering
                 var docView = options.Schema.For<DocumentView>();
                 docView.Index(x => x.UserId);
                 docView.Index(x => x.Date);
@@ -150,9 +159,9 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 docView.Index(x => x.Accepted);
                 docView.Index(x => x.CustomerNumber);
                 docView.Index(x => x.InvoiceNumber);
-                // Composite für häufige Sortierung/Filter (user + date)
+                // Composite index for the common (user + date) combination
                 docView.Index(x => new { x.UserId, x.Date });
-                // Erweiterte partielle / GIN Indizes bei Bedarf per separatem SQL-Migrationsskript hinzufügen (nicht im Code, um Build zu vereinfachen)
+                // Add advanced partial or GIN indexes via SQL migrations if required (kept out of code for simpler builds)
 
                 options.Projections.Add<DocumentProjection>(ProjectionLifecycle.Inline);
                 options.Projections.Add<ImportHistoryProjection>(ProjectionLifecycle.Inline);
@@ -180,9 +189,9 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddScoped<IDocumentAccessService, DocumentAccessService>();
             services.AddScoped<IAutoShareService, AutoShareService>();
             services.AddHttpClient();
-            services.AddScoped<ILanguageDetectionService, LanguageDetectionService>(); // NEW
-            services.AddScoped<IDocumentOwnershipLookup, DocumentOwnershipLookup>(); // NEW
-            services.AddScoped<IDocumentAccessUpdater, DocumentAccessUpdater>(); // NEW
+            services.AddScoped<ILanguageDetectionService, LanguageDetectionService>(); // Detects document languages
+            services.AddScoped<IDocumentOwnershipLookup, DocumentOwnershipLookup>(); // Provides ownership lookups for sharing
+            services.AddScoped<IDocumentAccessUpdater, DocumentAccessUpdater>(); // Updates the read model for document access
 
             services.AddSingleton<ChatBotSettingsFactory>();
             var chatbotSettings = new ChatBotSettingsFactory(config).GetChatBotSettings();

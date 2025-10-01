@@ -9,15 +9,15 @@ namespace ArquivoMate2.Infrastructure.Persistance
 {
     public class ImportHistoryView
     {
-        public Guid Id { get; set; } // Eindeutige ID des Imports
-        public string FileName { get; set; } = string.Empty; // Name der hochgeladenen Datei
-        public string UserId { get; set; } = string.Empty; // ID des Benutzers, der den Import initiiert hat
-        public ImportSource Source { get; set; } = ImportSource.User; // Quelle des Imports (Benutzer oder Email)
-        public DateTime StartedAt { get; set; } // Zeitpunkt des Starts des Imports
-        public DateTime? CompletedAt { get; set; } // Zeitpunkt des Abschlusses (falls erfolgreich)
-        public DocumentProcessingStatus Status { get; set; } = DocumentProcessingStatus.Pending; // Status des Imports
-        public string? ErrorMessage { get; set; } // Fehlermeldung (falls fehlgeschlagen)
-        public Guid? DocumentId { get; set; } // Verknüpfte Dokument-ID (falls erfolgreich)
+        public Guid Id { get; set; } // Unique identifier of the import
+        public string FileName { get; set; } = string.Empty; // Original name of the uploaded file
+        public string UserId { get; set; } = string.Empty; // Identifier of the user who initiated the import
+        public ImportSource Source { get; set; } = ImportSource.User; // Source of the import (user upload or email)
+        public DateTime StartedAt { get; set; } // Timestamp when the import started processing
+        public DateTime? CompletedAt { get; set; } // Timestamp when the import finished successfully
+        public DocumentProcessingStatus Status { get; set; } = DocumentProcessingStatus.Pending; // Current processing status
+        public string? ErrorMessage { get; set; } // Error message captured for failed imports
+        public Guid? DocumentId { get; set; } // Identifier of the resulting document when processing succeeded
 
         public bool IsCompleted => Status == DocumentProcessingStatus.Completed;
 

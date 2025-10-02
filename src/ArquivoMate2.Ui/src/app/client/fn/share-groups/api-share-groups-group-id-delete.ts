@@ -9,16 +9,14 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 
-export interface ApiDocumentsPost$Params {
-      body: {
-'File'?: Blob;
-}
+export interface ApiShareGroupsGroupIdDelete$Params {
+  groupId: string;
 }
 
-export function apiDocumentsPost(http: HttpClient, rootUrl: string, params: ApiDocumentsPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, apiDocumentsPost.PATH, 'post');
+export function apiShareGroupsGroupIdDelete(http: HttpClient, rootUrl: string, params: ApiShareGroupsGroupIdDelete$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  const rb = new RequestBuilder(rootUrl, apiShareGroupsGroupIdDelete.PATH, 'delete');
   if (params) {
-    rb.body(params.body, 'application/x-www-form-urlencoded');
+    rb.path('groupId', params.groupId, {});
   }
 
   return http.request(
@@ -31,4 +29,4 @@ export function apiDocumentsPost(http: HttpClient, rootUrl: string, params: ApiD
   );
 }
 
-apiDocumentsPost.PATH = '/api/documents';
+apiShareGroupsGroupIdDelete.PATH = '/api/share-groups/{groupId}';

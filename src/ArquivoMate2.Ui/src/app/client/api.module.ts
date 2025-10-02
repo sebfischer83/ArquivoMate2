@@ -6,10 +6,16 @@ import { NgModule, ModuleWithProviders, SkipSelf, Optional } from '@angular/core
 import { HttpClient } from '@angular/common/http';
 import { ApiConfiguration, ApiConfigurationParams } from './api-configuration';
 
+import { DeliveryService } from './services/delivery.service';
 import { DocumentNotesService } from './services/document-notes.service';
 import { DocumentsService } from './services/documents.service';
+import { DocumentSharesService } from './services/document-shares.service';
 import { EmailService } from './services/email.service';
 import { ImportHistoryService } from './services/import-history.service';
+import { PublicShareService } from './services/public-share.service';
+import { ShareAutomationRulesService } from './services/share-automation-rules.service';
+import { ShareGroupsService } from './services/share-groups.service';
+import { UsersService } from './services/users.service';
 
 /**
  * Module that provides all services and configuration.
@@ -19,10 +25,16 @@ import { ImportHistoryService } from './services/import-history.service';
   exports: [],
   declarations: [],
   providers: [
+    DeliveryService,
     DocumentNotesService,
     DocumentsService,
+    DocumentSharesService,
     EmailService,
     ImportHistoryService,
+    PublicShareService,
+    ShareAutomationRulesService,
+    ShareGroupsService,
+    UsersService,
     ApiConfiguration
   ],
 })

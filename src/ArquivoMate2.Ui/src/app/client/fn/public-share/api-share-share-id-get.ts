@@ -9,16 +9,16 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 
-export interface ApiDocumentsPost$Params {
-      body: {
-'File'?: Blob;
-}
+export interface ApiShareShareIdGet$Params {
+  shareId: string;
+  token?: string;
 }
 
-export function apiDocumentsPost(http: HttpClient, rootUrl: string, params: ApiDocumentsPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, apiDocumentsPost.PATH, 'post');
+export function apiShareShareIdGet(http: HttpClient, rootUrl: string, params: ApiShareShareIdGet$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  const rb = new RequestBuilder(rootUrl, apiShareShareIdGet.PATH, 'get');
   if (params) {
-    rb.body(params.body, 'application/x-www-form-urlencoded');
+    rb.path('shareId', params.shareId, {});
+    rb.query('token', params.token, {});
   }
 
   return http.request(
@@ -31,4 +31,4 @@ export function apiDocumentsPost(http: HttpClient, rootUrl: string, params: ApiD
   );
 }
 
-apiDocumentsPost.PATH = '/api/documents';
+apiShareShareIdGet.PATH = '/api/share/{shareId}';

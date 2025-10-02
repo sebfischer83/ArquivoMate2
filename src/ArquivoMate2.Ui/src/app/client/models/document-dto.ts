@@ -12,11 +12,13 @@ export interface DocumentDto {
   content?: string;
   contentLength?: number;
   customerNumber?: string;
+  encrypted?: boolean;
   filePath?: string;
   history?: Array<DocumentEventDto>;
   id?: string;
   invoiceNumber?: string;
   keywords?: Array<string>;
+  language?: string;
   metadataPath?: string;
   notesCount?: number;
   previewPath?: string;

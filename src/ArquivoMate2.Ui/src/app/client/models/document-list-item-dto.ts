@@ -4,6 +4,7 @@
 
 export interface DocumentListItemDto {
   accepted?: boolean;
+  encrypted?: boolean;
   id?: string;
   keywords?: Array<string>;
   summary?: string;

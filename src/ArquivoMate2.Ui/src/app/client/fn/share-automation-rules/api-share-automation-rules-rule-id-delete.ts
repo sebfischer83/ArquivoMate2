@@ -9,16 +9,14 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 
-export interface ApiDocumentsPost$Params {
-      body: {
-'File'?: Blob;
-}
+export interface ApiShareAutomationRulesRuleIdDelete$Params {
+  ruleId: string;
 }
 
-export function apiDocumentsPost(http: HttpClient, rootUrl: string, params: ApiDocumentsPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, apiDocumentsPost.PATH, 'post');
+export function apiShareAutomationRulesRuleIdDelete(http: HttpClient, rootUrl: string, params: ApiShareAutomationRulesRuleIdDelete$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  const rb = new RequestBuilder(rootUrl, apiShareAutomationRulesRuleIdDelete.PATH, 'delete');
   if (params) {
-    rb.body(params.body, 'application/x-www-form-urlencoded');
+    rb.path('ruleId', params.ruleId, {});
   }
 
   return http.request(
@@ -31,4 +29,4 @@ export function apiDocumentsPost(http: HttpClient, rootUrl: string, params: ApiD
   );
 }
 
-apiDocumentsPost.PATH = '/api/documents';
+apiShareAutomationRulesRuleIdDelete.PATH = '/api/share-automation-rules/{ruleId}';

@@ -70,12 +70,26 @@ namespace ArquivoMate2.Infrastructure.Configuration.DeliveryProvider
             return type switch
             {
                 DeliveryProviderType.Noop => new DeliveryProviderSettings { Type = DeliveryProviderType.Noop },
-                DeliveryProviderType.S3 => section.GetSection("Args").Get<S3DeliveryProviderSettings>()
-                                        ?? throw new InvalidOperationException("S3DeliveryProviderSettings fehlt."),
-                DeliveryProviderType.Bunny => section.GetSection("Args").Get<BunnyDeliveryProviderSettings>()
-                                        ?? throw new InvalidOperationException("BunnyDeliveryProviderSettings fehlt."),
+                DeliveryProviderType.S3 => BindAndMarkS3(section),
+                DeliveryProviderType.Bunny => BindAndMarkBunny(section),
                 _ => throw new InvalidOperationException($"Unbekannter DeliveryProvider-Typ: {type}")
             };
+        }
+
+        private static S3DeliveryProviderSettings BindAndMarkS3(IConfigurationSection section)
+        {
+            var s3 = section.GetSection("Args").Get<S3DeliveryProviderSettings>()
+                     ?? throw new InvalidOperationException("S3DeliveryProviderSettings fehlt.");
+            s3.Type = DeliveryProviderType.S3; // Variante A: Type nach Binding setzen
+            return s3;
+        }
+
+        private static BunnyDeliveryProviderSettings BindAndMarkBunny(IConfigurationSection section)
+        {
+            var bunny = section.GetSection("Args").Get<BunnyDeliveryProviderSettings>()
+                        ?? throw new InvalidOperationException("BunnyDeliveryProviderSettings fehlt.");
+            bunny.Type = DeliveryProviderType.Bunny; // Variante A: Type nach Binding setzen
+            return bunny;
         }
     }
 }

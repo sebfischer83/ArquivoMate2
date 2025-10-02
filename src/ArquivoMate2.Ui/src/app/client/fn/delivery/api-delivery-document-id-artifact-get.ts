@@ -9,16 +9,18 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 
-export interface ApiDocumentsPost$Params {
-      body: {
-'File'?: Blob;
-}
+export interface ApiDeliveryDocumentIdArtifactGet$Params {
+  documentId: string;
+  artifact: string;
+  token?: string;
 }
 
-export function apiDocumentsPost(http: HttpClient, rootUrl: string, params: ApiDocumentsPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, apiDocumentsPost.PATH, 'post');
+export function apiDeliveryDocumentIdArtifactGet(http: HttpClient, rootUrl: string, params: ApiDeliveryDocumentIdArtifactGet$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  const rb = new RequestBuilder(rootUrl, apiDeliveryDocumentIdArtifactGet.PATH, 'get');
   if (params) {
-    rb.body(params.body, 'application/x-www-form-urlencoded');
+    rb.path('documentId', params.documentId, {});
+    rb.path('artifact', params.artifact, {});
+    rb.query('token', params.token, {});
   }
 
   return http.request(
@@ -31,4 +33,4 @@ export function apiDocumentsPost(http: HttpClient, rootUrl: string, params: ApiD
   );
 }
 
-apiDocumentsPost.PATH = '/api/documents';
+apiDeliveryDocumentIdArtifactGet.PATH = '/api/delivery/{documentId}/{artifact}';

@@ -25,6 +25,10 @@ import { apiDocumentsIdUpdateFieldsPatch$Plain } from '../fn/documents/api-docum
 import { ApiDocumentsIdUpdateFieldsPatch$Plain$Params } from '../fn/documents/api-documents-id-update-fields-patch-plain';
 import { apiDocumentsPost } from '../fn/documents/api-documents-post';
 import { ApiDocumentsPost$Params } from '../fn/documents/api-documents-post';
+import { apiDocumentsSharePost$Json } from '../fn/documents/api-documents-share-post-json';
+import { ApiDocumentsSharePost$Json$Params } from '../fn/documents/api-documents-share-post-json';
+import { apiDocumentsSharePost$Plain } from '../fn/documents/api-documents-share-post-plain';
+import { ApiDocumentsSharePost$Plain$Params } from '../fn/documents/api-documents-share-post-plain';
 import { apiDocumentsStatsGet$Json } from '../fn/documents/api-documents-stats-get-json';
 import { ApiDocumentsStatsGet$Json$Params } from '../fn/documents/api-documents-stats-get-json';
 import { apiDocumentsStatsGet$Plain } from '../fn/documents/api-documents-stats-get-plain';
@@ -32,6 +36,7 @@ import { ApiDocumentsStatsGet$Plain$Params } from '../fn/documents/api-documents
 import { DocumentDto } from '../models/document-dto';
 import { DocumentListDto } from '../models/document-list-dto';
 import { DocumentStatsDto } from '../models/document-stats-dto';
+import { ShareCreatedDto } from '../models/share-created-dto';
 
 @Injectable({ providedIn: 'root' })
 export class DocumentsService extends BaseService {
@@ -249,6 +254,53 @@ export class DocumentsService extends BaseService {
   apiDocumentsIdGet$Json(params: ApiDocumentsIdGet$Json$Params, context?: HttpContext): Observable<DocumentDto> {
     return this.apiDocumentsIdGet$Json$Response(params, context).pipe(
       map((r: StrictHttpResponse<DocumentDto>): DocumentDto => r.body)
+    );
+  }
+
+  /** Path part for operation `apiDocumentsSharePost()` */
+  static readonly ApiDocumentsSharePostPath = '/api/documents/share';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiDocumentsSharePost$Plain()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsSharePost$Plain$Response(params: ApiDocumentsSharePost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareCreatedDto>> {
+    return apiDocumentsSharePost$Plain(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiDocumentsSharePost$Plain$Response()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsSharePost$Plain(params: ApiDocumentsSharePost$Plain$Params, context?: HttpContext): Observable<ShareCreatedDto> {
+    return this.apiDocumentsSharePost$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<ShareCreatedDto>): ShareCreatedDto => r.body)
+    );
+  }
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiDocumentsSharePost$Json()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsSharePost$Json$Response(params: ApiDocumentsSharePost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareCreatedDto>> {
+    return apiDocumentsSharePost$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiDocumentsSharePost$Json$Response()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsSharePost$Json(params: ApiDocumentsSharePost$Json$Params, context?: HttpContext): Observable<ShareCreatedDto> {
+    return this.apiDocumentsSharePost$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<ShareCreatedDto>): ShareCreatedDto => r.body)
     );
   }
 

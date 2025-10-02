@@ -17,7 +17,8 @@ namespace ArquivoMate2.Infrastructure.Mapping
         public DocumentListItemMapping()
         {
             CreateMap<DocumentView, DocumentListItemDto>()
-                    .ForMember(dest => dest.ThumbnailPath, opt => opt.MapFrom<PathResolver, string>(src => src.ThumbnailPath));
+                    .ForMember(dest => dest.ThumbnailPath, opt => opt.MapFrom<PathResolver, string>(src => src.ThumbnailPath))
+                    .ForMember(dest => dest.Encrypted, opt => opt.MapFrom(src => src.Encrypted)); // NEW
         }
     }
 

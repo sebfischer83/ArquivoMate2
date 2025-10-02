@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ArquivoMate2.Application.Commands.Users;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Queries.Users;
@@ -43,5 +44,24 @@ public class UsersController : ControllerBase
         var currentId = _currentUserService.UserId;
         var users = await _mediator.Send(new ListOtherUsersQuery(currentId), cancellationToken);
         return Ok(users);
+    }
+
+    /// <summary>
+    ///     Generates a new API key for the authenticated user and stores it with the profile.
+    /// </summary>
+    [HttpPost("api-key")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UserApiKeyDto))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GenerateApiKey(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _mediator.Send(new GenerateUserApiKeyCommand(_currentUserService.UserId), cancellationToken);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
     }
 }

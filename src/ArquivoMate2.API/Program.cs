@@ -23,7 +23,6 @@ using Serilog;
 using Serilog.Configuration;
 using System.Globalization;
 using System.Reflection;
-using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Models; // added for OpenApiInfo
 
@@ -196,6 +195,7 @@ namespace ArquivoMate2.API
                                   options.Authority = oidcSettings!.Authority;
                                   options.Audience = oidcSettings.Audience;
                                   options.RequireHttpsMetadata = true;
+                                  options.MapInboundClaims = false;
 
                                   options.TokenValidationParameters = new TokenValidationParameters
                                   {
@@ -203,7 +203,9 @@ namespace ArquivoMate2.API
                                       ValidIssuer = oidcSettings.Issuer,
                                       ValidateAudience = false,
                                       ValidAudience = oidcSettings.Audience,
-                                      ValidateLifetime = false
+                                      ValidateLifetime = false,
+                                      NameClaimType = "name",
+                                      RoleClaimType = "roles"
                                   };
 
                                   options.Events = new JwtBearerEvents

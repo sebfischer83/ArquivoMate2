@@ -50,6 +50,7 @@ public class UsersController : ControllerBase
     ///     Generates a new API key for the authenticated user and stores it with the profile.
     /// </summary>
     [HttpPost("api-key")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UserApiKeyDto))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GenerateApiKey(CancellationToken cancellationToken)

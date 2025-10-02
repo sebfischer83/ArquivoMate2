@@ -13,4 +13,9 @@ public class DocumentShareDto
     public DateTime SharedAt { get; set; }
 
     public string? GrantedBy { get; set; }
+
+    public DocumentPermissions Permissions { get; set; }
+
+    [Obsolete("Use Permissions")]
+    public bool CanEdit => Permissions.HasFlag(DocumentPermissions.Edit);
 }

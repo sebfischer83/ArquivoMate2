@@ -58,27 +58,42 @@ public class CreateDocumentShareHandler : IRequestHandler<CreateDocumentShareCom
             }
         }
 
-        var exists = await _querySession.Query<DocumentShare>()
+        var requestedPermissions = NormalizePermissions(request.Permissions);
+
+        var existingShare = await _querySession.Query<DocumentShare>()
             .Where(s => s.DocumentId == request.DocumentId && s.Target.Type == request.Target.Type && s.Target.Identifier == request.Target.Identifier)
-            .AnyAsync(cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (exists)
+        DocumentShare share;
+        if (existingShare is not null)
         {
-            throw new InvalidOperationException("Document is already shared with the selected target.");
-        }
+            var newPermissions = existingShare.Permissions | requestedPermissions;
 
-        var share = new DocumentShare
-        {
-            DocumentId = request.DocumentId,
-            OwnerUserId = request.OwnerUserId,
-            Target = new ShareTarget
+            if (newPermissions == existingShare.Permissions)
             {
-                Type = request.Target.Type,
-                Identifier = request.Target.Identifier
-            },
-            SharedAt = DateTime.UtcNow,
-            GrantedBy = request.OwnerUserId
-        };
+                throw new InvalidOperationException("Document is already shared with the selected target.");
+            }
+
+            existingShare.Permissions = newPermissions;
+            existingShare.GrantedBy = request.OwnerUserId;
+            share = existingShare;
+        }
+        else
+        {
+            share = new DocumentShare
+            {
+                DocumentId = request.DocumentId,
+                OwnerUserId = request.OwnerUserId,
+                Target = new ShareTarget
+                {
+                    Type = request.Target.Type,
+                    Identifier = request.Target.Identifier
+                },
+                SharedAt = DateTime.UtcNow,
+                GrantedBy = request.OwnerUserId,
+                Permissions = requestedPermissions
+            };
+        }
 
         _session.Store(share);
         await _session.SaveChangesAsync(cancellationToken);
@@ -91,7 +106,23 @@ public class CreateDocumentShareHandler : IRequestHandler<CreateDocumentShareCom
             DocumentId = share.DocumentId,
             Target = share.Target,
             SharedAt = share.SharedAt,
-            GrantedBy = share.GrantedBy
+            GrantedBy = share.GrantedBy,
+            Permissions = share.Permissions
         };
+    }
+
+    private static DocumentPermissions NormalizePermissions(DocumentPermissions permissions)
+    {
+        if (permissions == DocumentPermissions.None)
+        {
+            throw new InvalidOperationException("Cannot share a document without granting any permissions.");
+        }
+
+        if (!permissions.HasFlag(DocumentPermissions.Read))
+        {
+            permissions |= DocumentPermissions.Read;
+        }
+
+        return permissions;
     }
 }

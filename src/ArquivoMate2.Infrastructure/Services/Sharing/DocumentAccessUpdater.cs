@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,38 +33,21 @@ internal sealed class DocumentAccessUpdater : IDocumentAccessUpdater
             OwnerUserId = share.OwnerUserId
         };
 
-        // Ensure owner always in effective users
-        view.EffectiveUserIds.Add(view.OwnerUserId);
+        EnsureCollections(view);
+
+        var permissions = NormalizePermissions(share.Permissions);
 
         switch (share.Target.Type)
         {
             case ShareTargetType.User:
-                if (view.DirectUserIds.Add(share.Target.Identifier))
-                {
-                    view.EffectiveUserIds.Add(share.Target.Identifier);
-                }
+                MergePermissions(view.DirectUserPermissions, share.Target.Identifier, permissions);
                 break;
             case ShareTargetType.Group:
-                if (view.GroupIds.Add(share.Target.Identifier))
-                {
-                    var group = await _querySession.Query<ShareGroup>()
-                        .Where(g => g.Id == share.Target.Identifier)
-                        .Select(g => new { g.MemberUserIds })
-                        .FirstOrDefaultAsync(cancellationToken);
-
-                    if (group != null)
-                    {
-                        foreach (var member in group.MemberUserIds)
-                        {
-                            view.EffectiveUserIds.Add(member);
-                        }
-                    }
-                }
+                MergePermissions(view.GroupPermissions, share.Target.Identifier, permissions);
                 break;
         }
 
-        view.DirectUserShareCount = view.DirectUserIds.Count;
-        view.GroupShareCount = view.GroupIds.Count;
+        await RecalculateEffectiveUsersAsync(view, cancellationToken);
 
         _session.Store(view);
         await _session.SaveChangesAsync(cancellationToken);
@@ -81,60 +65,112 @@ internal sealed class DocumentAccessUpdater : IDocumentAccessUpdater
             return; // nothing to do
         }
 
-        var changed = false;
+        EnsureCollections(view);
+
         switch (share.Target.Type)
         {
             case ShareTargetType.User:
-                if (view.DirectUserIds.Remove(share.Target.Identifier))
-                {
-                    changed = true;
-                }
+                view.DirectUserPermissions.Remove(share.Target.Identifier);
                 break;
             case ShareTargetType.Group:
-                if (view.GroupIds.Remove(share.Target.Identifier))
-                {
-                    changed = true;
-                }
+                view.GroupPermissions.Remove(share.Target.Identifier);
                 break;
         }
 
-        if (!changed)
-        {
-            return; // share not represented
-        }
-
-        // Recompute effective user set (owner + direct users + all members of groups)
-        var effective = new HashSet<string> { view.OwnerUserId };
-
-        foreach (var u in view.DirectUserIds)
-        {
-            effective.Add(u);
-        }
-
-        if (view.GroupIds.Count > 0)
-        {
-            var memberSets = await _querySession.Query<ShareGroup>()
-                .Where(g => view.GroupIds.Contains(g.Id))
-                .Select(g => g.MemberUserIds)
-                .ToListAsync(cancellationToken);
-
-            foreach (var set in memberSets)
-            {
-                foreach (var m in set)
-                {
-                    effective.Add(m);
-                }
-            }
-        }
-
-        view.EffectiveUserIds = effective;
-        view.DirectUserShareCount = view.DirectUserIds.Count;
-        view.GroupShareCount = view.GroupIds.Count;
+        await RecalculateEffectiveUsersAsync(view, cancellationToken);
 
         _session.Store(view);
         await _session.SaveChangesAsync(cancellationToken);
 
         var allowed = view.EffectiveUserIds.Where(u => !string.Equals(u, view.OwnerUserId, StringComparison.Ordinal)).Distinct().ToArray();
         await _searchClient.UpdateDocumentAccessAsync(view.Id, allowed, cancellationToken);
+    }
+
+    private static void EnsureCollections(DocumentAccessView view)
+    {
+        view.DirectUserPermissions ??= new Dictionary<string, DocumentPermissions>(StringComparer.Ordinal);
+        view.GroupPermissions ??= new Dictionary<string, DocumentPermissions>(StringComparer.Ordinal);
+        view.EffectiveUserPermissions ??= new Dictionary<string, DocumentPermissions>(StringComparer.Ordinal);
+        view.EffectiveUserIds ??= new HashSet<string>(StringComparer.Ordinal);
+        view.EffectiveEditUserIds ??= new HashSet<string>(StringComparer.Ordinal);
+        view.EffectiveDeleteUserIds ??= new HashSet<string>(StringComparer.Ordinal);
+    }
+
+    private static DocumentPermissions NormalizePermissions(DocumentPermissions permissions)
+    {
+        if (permissions == DocumentPermissions.None)
+        {
+            return DocumentPermissions.Read;
+        }
+
+        if (!permissions.HasFlag(DocumentPermissions.Read))
+        {
+            permissions |= DocumentPermissions.Read;
+        }
+
+        return permissions;
+    }
+
+    private static void MergePermissions(IDictionary<string, DocumentPermissions> assignments, string identifier, DocumentPermissions permissions)
+    {
+        permissions = NormalizePermissions(permissions);
+
+        if (assignments.TryGetValue(identifier, out var existing))
+        {
+            assignments[identifier] = existing | permissions;
+            return;
+        }
+
+        assignments[identifier] = permissions;
+    }
+
+    private async Task RecalculateEffectiveUsersAsync(DocumentAccessView view, CancellationToken cancellationToken)
+    {
+        EnsureCollections(view);
+
+        var effectivePermissions = new Dictionary<string, DocumentPermissions>(StringComparer.Ordinal)
+        {
+            [view.OwnerUserId] = DocumentPermissions.All
+        };
+
+        foreach (var assignment in view.DirectUserPermissions)
+        {
+            MergePermissions(effectivePermissions, assignment.Key, assignment.Value);
+        }
+
+        if (view.GroupPermissions.Count > 0)
+        {
+            var groupIds = view.GroupPermissions.Keys.ToArray();
+            var groups = await _querySession.Query<ShareGroup>()
+                .Where(g => groupIds.Contains(g.Id))
+                .Select(g => new { g.Id, g.MemberUserIds })
+                .ToListAsync(cancellationToken);
+
+            foreach (var group in groups)
+            {
+                if (!view.GroupPermissions.TryGetValue(group.Id, out var permissions))
+                {
+                    continue;
+                }
+
+                foreach (var member in group.MemberUserIds)
+                {
+                    MergePermissions(effectivePermissions, member, permissions);
+                }
+            }
+        }
+
+        view.EffectiveUserPermissions = effectivePermissions;
+        view.EffectiveUserIds = new HashSet<string>(effectivePermissions
+            .Where(kv => kv.Value.HasFlag(DocumentPermissions.Read))
+            .Select(kv => kv.Key), StringComparer.Ordinal);
+        view.EffectiveEditUserIds = new HashSet<string>(effectivePermissions
+            .Where(kv => kv.Value.HasFlag(DocumentPermissions.Edit))
+            .Select(kv => kv.Key), StringComparer.Ordinal);
+        view.EffectiveDeleteUserIds = new HashSet<string>(effectivePermissions
+            .Where(kv => kv.Value.HasFlag(DocumentPermissions.Delete))
+            .Select(kv => kv.Key), StringComparer.Ordinal);
+        view.DirectUserShareCount = view.DirectUserPermissions.Count;
+        view.GroupShareCount = view.GroupPermissions.Count;
     }
 }

@@ -41,7 +41,7 @@ public class DocumentSharesController : ControllerBase
             return BadRequest();
         }
 
-        var share = await _mediator.Send(new CreateDocumentShareCommand(documentId, _currentUserService.UserId, request.Target), cancellationToken);
+        var share = await _mediator.Send(new CreateDocumentShareCommand(documentId, _currentUserService.UserId, request.Target, request.Permissions), cancellationToken);
         return CreatedAtAction(nameof(List), new { documentId }, share);
     }
 

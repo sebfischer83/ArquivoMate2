@@ -43,7 +43,8 @@ public class GetDocumentSharesHandler : IRequestHandler<GetDocumentSharesQuery, 
             DocumentId = s.DocumentId,
             Target = s.Target,
             SharedAt = s.SharedAt,
-            GrantedBy = s.GrantedBy
+            GrantedBy = s.GrantedBy,
+            Permissions = s.Permissions
         }).ToList();
     }
 }

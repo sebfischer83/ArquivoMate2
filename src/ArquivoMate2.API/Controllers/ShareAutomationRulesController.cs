@@ -41,7 +41,7 @@ public class ShareAutomationRulesController : ControllerBase
             return BadRequest();
         }
 
-        var rule = await _mediator.Send(new CreateShareAutomationRuleCommand(_currentUserService.UserId, request.Target, request.Scope), cancellationToken);
+        var rule = await _mediator.Send(new CreateShareAutomationRuleCommand(_currentUserService.UserId, request.Target, request.Scope, request.Permissions), cancellationToken);
         return CreatedAtAction(nameof(List), null, rule);
     }
 

@@ -57,6 +57,8 @@ public class CreateShareAutomationRuleHandler : IRequestHandler<CreateShareAutom
             throw new InvalidOperationException("An automation rule for this target already exists.");
         }
 
+        var permissions = NormalizePermissions(request.Permissions);
+
         var rule = new ShareAutomationRule
         {
             OwnerUserId = request.OwnerUserId,
@@ -65,7 +67,8 @@ public class CreateShareAutomationRuleHandler : IRequestHandler<CreateShareAutom
                 Type = request.Target.Type,
                 Identifier = request.Target.Identifier
             },
-            Scope = request.Scope
+            Scope = request.Scope,
+            Permissions = permissions
         };
 
         _session.Store(rule);
@@ -80,7 +83,23 @@ public class CreateShareAutomationRuleHandler : IRequestHandler<CreateShareAutom
         {
             Id = rule.Id,
             Target = rule.Target,
-            Scope = rule.Scope
+            Scope = rule.Scope,
+            Permissions = rule.Permissions
         };
+    }
+
+    private static DocumentPermissions NormalizePermissions(DocumentPermissions permissions)
+    {
+        if (permissions == DocumentPermissions.None)
+        {
+            throw new InvalidOperationException("Automation rules must grant at least read access.");
+        }
+
+        if (!permissions.HasFlag(DocumentPermissions.Read))
+        {
+            permissions |= DocumentPermissions.Read;
+        }
+
+        return permissions;
     }
 }

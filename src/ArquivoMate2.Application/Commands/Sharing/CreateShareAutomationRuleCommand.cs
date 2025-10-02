@@ -3,4 +3,4 @@ using MediatR;
 
 namespace ArquivoMate2.Application.Commands.Sharing;
 
-public record CreateShareAutomationRuleCommand(string OwnerUserId, ShareTarget Target, ShareAutomationScope Scope) : IRequest<ShareAutomationRuleDto>;
+public record CreateShareAutomationRuleCommand(string OwnerUserId, ShareTarget Target, ShareAutomationScope Scope, DocumentPermissions Permissions) : IRequest<ShareAutomationRuleDto>;

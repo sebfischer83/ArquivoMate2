@@ -59,7 +59,8 @@ public class AutoShareService : IAutoShareService
                     Identifier = rule.Target.Identifier
                 },
                 SharedAt = DateTime.UtcNow,
-                GrantedBy = ownerUserId
+                GrantedBy = ownerUserId,
+                Permissions = rule.Permissions
             });
         }
 
@@ -106,7 +107,8 @@ public class AutoShareService : IAutoShareService
                 Identifier = rule.Target.Identifier
             },
             SharedAt = DateTime.UtcNow,
-            GrantedBy = rule.OwnerUserId
+            GrantedBy = rule.OwnerUserId,
+            Permissions = rule.Permissions
         }).ToList();
 
         await using var session = _documentStore.LightweightSession();

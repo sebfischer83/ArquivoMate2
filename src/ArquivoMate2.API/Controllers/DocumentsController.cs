@@ -122,14 +122,19 @@ namespace ArquivoMate2.API.Controllers
             if (dto == null || !dto.Fields.Any())
                 return BadRequest(_localizer.GetString("No fields provided.").Value);
 
-            // Ensure the document exists and is owned by the current user
             var userId = _currentUserService.UserId;
             var document = await querySession.Query<DocumentView>()
-                .Where(d => d.Id == id && d.UserId == userId && !d.Deleted)
+                .Where(d => d.Id == id && !d.Deleted)
                 .FirstOrDefaultAsync(cancellationToken);
-            
+
             if (document == null)
                 return NotFound(_localizer.GetString("Document with ID {0} was not found.", id).Value);
+
+            var hasEditAccess = await _documentAccessService.HasEditAccessToDocumentAsync(id, userId, cancellationToken);
+            if (!hasEditAccess)
+            {
+                return NotFound(_localizer.GetString("Document with ID {0} was not found.", id).Value);
+            }
 
             try
             {
@@ -143,7 +148,7 @@ namespace ArquivoMate2.API.Controllers
                         await _mediator.Send(new UpdateIndexCommand(id, rawDoc!), cancellationToken);
 
                         document = await querySession.Query<DocumentView>()
-                            .Where(d => d.Id == id && d.UserId == userId && !d.Deleted)
+                            .Where(d => d.Id == id && !d.Deleted)
                             .FirstOrDefaultAsync(cancellationToken);
                         var mapped = _mapper.Map<DocumentDto>(document);
                         if (document!.Encrypted) ApplyDeliveryTokens(mapped);

@@ -30,7 +30,8 @@ public class GetShareAutomationRulesHandler : IRequestHandler<GetShareAutomation
         {
             Id = r.Id,
             Target = r.Target,
-            Scope = r.Scope
+            Scope = r.Scope,
+            Permissions = r.Permissions
         }).ToList();
     }
 }

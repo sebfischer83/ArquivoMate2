@@ -1,3 +1,5 @@
+using System;
+
 namespace ArquivoMate2.Shared.Models.Sharing;
 
 public class ShareAutomationRuleDto
@@ -7,4 +9,9 @@ public class ShareAutomationRuleDto
     public ShareTarget Target { get; set; } = new();
 
     public ShareAutomationScope Scope { get; set; }
+
+    public DocumentPermissions Permissions { get; set; }
+
+    [Obsolete("Use Permissions")]
+    public bool CanEdit => Permissions.HasFlag(DocumentPermissions.Edit);
 }

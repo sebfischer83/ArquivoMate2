@@ -6,10 +6,10 @@ export interface ImportHistoryListItemDto {
   completedAt?: string | null;
   documentId?: string | null;
   errorMessage?: string | null;
-  fileName?: string;
+  fileName?: string | null;
   id?: string;
   occurredOn?: string;
-  source?: string;
+  source?: string | null;
   startedAt?: string;
-  status?: string;
+  status?: string | null;
 }

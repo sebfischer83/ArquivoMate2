@@ -50,6 +50,10 @@ export class EmailService extends BaseService {
   static readonly ApiEmailCountGetPath = '/api/Email/count';
 
   /**
+   * Gets the total count of emails in the mailbox.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiEmailCountGet$Plain()` instead.
    *
@@ -60,6 +64,10 @@ export class EmailService extends BaseService {
   }
 
   /**
+   * Gets the total count of emails in the mailbox.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiEmailCountGet$Plain$Response()` instead.
    *
@@ -72,6 +80,10 @@ export class EmailService extends BaseService {
   }
 
   /**
+   * Gets the total count of emails in the mailbox.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiEmailCountGet$Json()` instead.
    *
@@ -82,6 +94,10 @@ export class EmailService extends BaseService {
   }
 
   /**
+   * Gets the total count of emails in the mailbox.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiEmailCountGet$Json$Response()` instead.
    *
@@ -97,6 +113,10 @@ export class EmailService extends BaseService {
   static readonly ApiEmailTestConnectionPostPath = '/api/Email/test-connection';
 
   /**
+   * Tests the email connection with current settings.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiEmailTestConnectionPost$Plain()` instead.
    *
@@ -107,6 +127,10 @@ export class EmailService extends BaseService {
   }
 
   /**
+   * Tests the email connection with current settings.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiEmailTestConnectionPost$Plain$Response()` instead.
    *
@@ -119,6 +143,10 @@ export class EmailService extends BaseService {
   }
 
   /**
+   * Tests the email connection with current settings.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiEmailTestConnectionPost$Json()` instead.
    *
@@ -129,6 +157,10 @@ export class EmailService extends BaseService {
   }
 
   /**
+   * Tests the email connection with current settings.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiEmailTestConnectionPost$Json$Response()` instead.
    *
@@ -144,6 +176,10 @@ export class EmailService extends BaseService {
   static readonly ApiEmailSettingsGetPath = '/api/Email/settings';
 
   /**
+   * Gets the current user's email settings.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiEmailSettingsGet$Plain()` instead.
    *
@@ -154,6 +190,10 @@ export class EmailService extends BaseService {
   }
 
   /**
+   * Gets the current user's email settings.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiEmailSettingsGet$Plain$Response()` instead.
    *
@@ -166,6 +206,10 @@ export class EmailService extends BaseService {
   }
 
   /**
+   * Gets the current user's email settings.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiEmailSettingsGet$Json()` instead.
    *
@@ -176,6 +220,10 @@ export class EmailService extends BaseService {
   }
 
   /**
+   * Gets the current user's email settings.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiEmailSettingsGet$Json$Response()` instead.
    *
@@ -191,22 +239,30 @@ export class EmailService extends BaseService {
   static readonly ApiEmailSettingsPostPath = '/api/Email/settings';
 
   /**
+   * Saves or updates email settings for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiEmailSettingsPost()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiEmailSettingsPost$Response(params: ApiEmailSettingsPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  apiEmailSettingsPost$Response(params?: ApiEmailSettingsPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
     return apiEmailSettingsPost(this.http, this.rootUrl, params, context);
   }
 
   /**
+   * Saves or updates email settings for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiEmailSettingsPost$Response()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiEmailSettingsPost(params: ApiEmailSettingsPost$Params, context?: HttpContext): Observable<void> {
+  apiEmailSettingsPost(params?: ApiEmailSettingsPost$Params, context?: HttpContext): Observable<void> {
     return this.apiEmailSettingsPost$Response(params, context).pipe(
       map((r: StrictHttpResponse<void>): void => r.body)
     );
@@ -216,6 +272,10 @@ export class EmailService extends BaseService {
   static readonly ApiEmailSettingsDeletePath = '/api/Email/settings';
 
   /**
+   * Deletes email settings for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiEmailSettingsDelete()` instead.
    *
@@ -226,6 +286,10 @@ export class EmailService extends BaseService {
   }
 
   /**
+   * Deletes email settings for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiEmailSettingsDelete$Response()` instead.
    *
@@ -241,6 +305,10 @@ export class EmailService extends BaseService {
   static readonly ApiEmailCriteriaGetPath = '/api/Email/criteria';
 
   /**
+   * Gets the email criteria for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiEmailCriteriaGet$Plain()` instead.
    *
@@ -251,6 +319,10 @@ export class EmailService extends BaseService {
   }
 
   /**
+   * Gets the email criteria for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiEmailCriteriaGet$Plain$Response()` instead.
    *
@@ -263,6 +335,10 @@ export class EmailService extends BaseService {
   }
 
   /**
+   * Gets the email criteria for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiEmailCriteriaGet$Json()` instead.
    *
@@ -273,6 +349,10 @@ export class EmailService extends BaseService {
   }
 
   /**
+   * Gets the email criteria for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiEmailCriteriaGet$Json$Response()` instead.
    *
@@ -288,44 +368,60 @@ export class EmailService extends BaseService {
   static readonly ApiEmailCriteriaPostPath = '/api/Email/criteria';
 
   /**
+   * Saves (creates or updates) email criteria for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiEmailCriteriaPost$Plain()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiEmailCriteriaPost$Plain$Response(params: ApiEmailCriteriaPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDto>> {
+  apiEmailCriteriaPost$Plain$Response(params?: ApiEmailCriteriaPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDto>> {
     return apiEmailCriteriaPost$Plain(this.http, this.rootUrl, params, context);
   }
 
   /**
+   * Saves (creates or updates) email criteria for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiEmailCriteriaPost$Plain$Response()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiEmailCriteriaPost$Plain(params: ApiEmailCriteriaPost$Plain$Params, context?: HttpContext): Observable<EmailCriteriaDto> {
+  apiEmailCriteriaPost$Plain(params?: ApiEmailCriteriaPost$Plain$Params, context?: HttpContext): Observable<EmailCriteriaDto> {
     return this.apiEmailCriteriaPost$Plain$Response(params, context).pipe(
       map((r: StrictHttpResponse<EmailCriteriaDto>): EmailCriteriaDto => r.body)
     );
   }
 
   /**
+   * Saves (creates or updates) email criteria for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiEmailCriteriaPost$Json()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiEmailCriteriaPost$Json$Response(params: ApiEmailCriteriaPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDto>> {
+  apiEmailCriteriaPost$Json$Response(params?: ApiEmailCriteriaPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDto>> {
     return apiEmailCriteriaPost$Json(this.http, this.rootUrl, params, context);
   }
 
   /**
+   * Saves (creates or updates) email criteria for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiEmailCriteriaPost$Json$Response()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiEmailCriteriaPost$Json(params: ApiEmailCriteriaPost$Json$Params, context?: HttpContext): Observable<EmailCriteriaDto> {
+  apiEmailCriteriaPost$Json(params?: ApiEmailCriteriaPost$Json$Params, context?: HttpContext): Observable<EmailCriteriaDto> {
     return this.apiEmailCriteriaPost$Json$Response(params, context).pipe(
       map((r: StrictHttpResponse<EmailCriteriaDto>): EmailCriteriaDto => r.body)
     );
@@ -335,6 +431,10 @@ export class EmailService extends BaseService {
   static readonly ApiEmailCriteriaDeletePath = '/api/Email/criteria';
 
   /**
+   * Deletes email criteria for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiEmailCriteriaDelete()` instead.
    *
@@ -345,6 +445,10 @@ export class EmailService extends BaseService {
   }
 
   /**
+   * Deletes email criteria for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiEmailCriteriaDelete$Response()` instead.
    *

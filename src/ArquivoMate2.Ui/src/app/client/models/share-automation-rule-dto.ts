@@ -6,8 +6,8 @@ import { DocumentPermissions } from '../models/document-permissions';
 import { ShareAutomationScope } from '../models/share-automation-scope';
 import { ShareTarget } from '../models/share-target';
 export interface ShareAutomationRuleDto {
-  canEdit?: boolean;
-  id?: string;
+  /** @deprecated */canEdit?: boolean;
+  id?: string | null;
   permissions?: DocumentPermissions;
   scope?: ShareAutomationScope;
   target?: ShareTarget;

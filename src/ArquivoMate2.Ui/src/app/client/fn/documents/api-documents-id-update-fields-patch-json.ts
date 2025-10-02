@@ -12,8 +12,16 @@ import { DocumentDto } from '../../models/document-dto';
 import { UpdateDocumentFieldsDto } from '../../models/update-document-fields-dto';
 
 export interface ApiDocumentsIdUpdateFieldsPatch$Json$Params {
+
+/**
+ * Identifier of the document whose fields should be updated.
+ */
   id: string;
-      body: UpdateDocumentFieldsDto
+  
+    /**
+     * Set of field updates to apply.
+     */
+    body?: UpdateDocumentFieldsDto
 }
 
 export function apiDocumentsIdUpdateFieldsPatch$Json(http: HttpClient, rootUrl: string, params: ApiDocumentsIdUpdateFieldsPatch$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentDto>> {

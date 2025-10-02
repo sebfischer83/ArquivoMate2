@@ -12,10 +12,14 @@ import { CreateShareGroupRequest } from '../../models/create-share-group-request
 import { ShareGroupDto } from '../../models/share-group-dto';
 
 export interface ApiShareGroupsPost$Plain$Params {
-      body: CreateShareGroupRequest
+  
+    /**
+     * Group definition including its name and members.
+     */
+    body?: CreateShareGroupRequest
 }
 
-export function apiShareGroupsPost$Plain(http: HttpClient, rootUrl: string, params: ApiShareGroupsPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDto>> {
+export function apiShareGroupsPost$Plain(http: HttpClient, rootUrl: string, params?: ApiShareGroupsPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDto>> {
   const rb = new RequestBuilder(rootUrl, apiShareGroupsPost$Plain.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/*+json');

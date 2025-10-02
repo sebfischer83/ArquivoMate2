@@ -33,6 +33,10 @@ export class DocumentSharesService extends BaseService {
   static readonly ApiDocumentsDocumentIdSharesGetPath = '/api/documents/{documentId}/shares';
 
   /**
+   * Lists all shares that are configured for the specified document.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsDocumentIdSharesGet$Plain()` instead.
    *
@@ -43,6 +47,10 @@ export class DocumentSharesService extends BaseService {
   }
 
   /**
+   * Lists all shares that are configured for the specified document.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsDocumentIdSharesGet$Plain$Response()` instead.
    *
@@ -55,6 +63,10 @@ export class DocumentSharesService extends BaseService {
   }
 
   /**
+   * Lists all shares that are configured for the specified document.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsDocumentIdSharesGet$Json()` instead.
    *
@@ -65,6 +77,10 @@ export class DocumentSharesService extends BaseService {
   }
 
   /**
+   * Lists all shares that are configured for the specified document.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsDocumentIdSharesGet$Json$Response()` instead.
    *
@@ -80,6 +96,10 @@ export class DocumentSharesService extends BaseService {
   static readonly ApiDocumentsDocumentIdSharesPostPath = '/api/documents/{documentId}/shares';
 
   /**
+   * Creates a new share for the selected document using the provided permissions.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsDocumentIdSharesPost$Plain()` instead.
    *
@@ -90,6 +110,10 @@ export class DocumentSharesService extends BaseService {
   }
 
   /**
+   * Creates a new share for the selected document using the provided permissions.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsDocumentIdSharesPost$Plain$Response()` instead.
    *
@@ -102,6 +126,10 @@ export class DocumentSharesService extends BaseService {
   }
 
   /**
+   * Creates a new share for the selected document using the provided permissions.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsDocumentIdSharesPost$Json()` instead.
    *
@@ -112,6 +140,10 @@ export class DocumentSharesService extends BaseService {
   }
 
   /**
+   * Creates a new share for the selected document using the provided permissions.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsDocumentIdSharesPost$Json$Response()` instead.
    *
@@ -127,6 +159,10 @@ export class DocumentSharesService extends BaseService {
   static readonly ApiDocumentsDocumentIdSharesShareIdDeletePath = '/api/documents/{documentId}/shares/{shareId}';
 
   /**
+   * Removes a specific share from the selected document.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsDocumentIdSharesShareIdDelete()` instead.
    *
@@ -137,6 +173,10 @@ export class DocumentSharesService extends BaseService {
   }
 
   /**
+   * Removes a specific share from the selected document.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsDocumentIdSharesShareIdDelete$Response()` instead.
    *

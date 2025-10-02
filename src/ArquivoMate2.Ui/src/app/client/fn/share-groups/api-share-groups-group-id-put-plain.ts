@@ -12,8 +12,16 @@ import { ShareGroupDto } from '../../models/share-group-dto';
 import { UpdateShareGroupRequest } from '../../models/update-share-group-request';
 
 export interface ApiShareGroupsGroupIdPut$Plain$Params {
+
+/**
+ * Identifier of the group that should be updated.
+ */
   groupId: string;
-      body: UpdateShareGroupRequest
+  
+    /**
+     * Updated group details.
+     */
+    body?: UpdateShareGroupRequest
 }
 
 export function apiShareGroupsGroupIdPut$Plain(http: HttpClient, rootUrl: string, params: ApiShareGroupsGroupIdPut$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDto>> {

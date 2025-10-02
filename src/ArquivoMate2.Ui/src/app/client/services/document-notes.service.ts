@@ -33,6 +33,10 @@ export class DocumentNotesService extends BaseService {
   static readonly ApiDocumentsDocumentIdNotesGetPath = '/api/documents/{documentId}/notes';
 
   /**
+   * Lists notes for the specified document filtered by an optional search term.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsDocumentIdNotesGet$Plain()` instead.
    *
@@ -43,6 +47,10 @@ export class DocumentNotesService extends BaseService {
   }
 
   /**
+   * Lists notes for the specified document filtered by an optional search term.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsDocumentIdNotesGet$Plain$Response()` instead.
    *
@@ -55,6 +63,10 @@ export class DocumentNotesService extends BaseService {
   }
 
   /**
+   * Lists notes for the specified document filtered by an optional search term.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsDocumentIdNotesGet$Json()` instead.
    *
@@ -65,6 +77,10 @@ export class DocumentNotesService extends BaseService {
   }
 
   /**
+   * Lists notes for the specified document filtered by an optional search term.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsDocumentIdNotesGet$Json$Response()` instead.
    *
@@ -80,6 +96,10 @@ export class DocumentNotesService extends BaseService {
   static readonly ApiDocumentsDocumentIdNotesPostPath = '/api/documents/{documentId}/notes';
 
   /**
+   * Creates a note that is attached to the specified document for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsDocumentIdNotesPost$Plain()` instead.
    *
@@ -90,6 +110,10 @@ export class DocumentNotesService extends BaseService {
   }
 
   /**
+   * Creates a note that is attached to the specified document for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsDocumentIdNotesPost$Plain$Response()` instead.
    *
@@ -102,6 +126,10 @@ export class DocumentNotesService extends BaseService {
   }
 
   /**
+   * Creates a note that is attached to the specified document for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsDocumentIdNotesPost$Json()` instead.
    *
@@ -112,6 +140,10 @@ export class DocumentNotesService extends BaseService {
   }
 
   /**
+   * Creates a note that is attached to the specified document for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsDocumentIdNotesPost$Json$Response()` instead.
    *
@@ -127,6 +159,10 @@ export class DocumentNotesService extends BaseService {
   static readonly ApiDocumentsDocumentIdNotesNoteIdDeletePath = '/api/documents/{documentId}/notes/{noteId}';
 
   /**
+   * Removes a single document note that belongs to the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsDocumentIdNotesNoteIdDelete()` instead.
    *
@@ -137,6 +173,10 @@ export class DocumentNotesService extends BaseService {
   }
 
   /**
+   * Removes a single document note that belongs to the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsDocumentIdNotesNoteIdDelete$Response()` instead.
    *

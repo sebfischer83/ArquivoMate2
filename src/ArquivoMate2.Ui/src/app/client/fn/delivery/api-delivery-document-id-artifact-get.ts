@@ -10,8 +10,20 @@ import { RequestBuilder } from '../../request-builder';
 
 
 export interface ApiDeliveryDocumentIdArtifactGet$Params {
+
+/**
+ * Identifier of the document whose artifact should be downloaded.
+ */
   documentId: string;
+
+/**
+ * Artifact type such as file, preview, thumb, metadata or archive.
+ */
   artifact: string;
+
+/**
+ * Signed delivery token that authorises the download.
+ */
   token?: string;
 }
 

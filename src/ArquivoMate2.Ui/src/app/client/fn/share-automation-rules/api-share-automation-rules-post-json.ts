@@ -12,10 +12,14 @@ import { CreateShareAutomationRuleRequest } from '../../models/create-share-auto
 import { ShareAutomationRuleDto } from '../../models/share-automation-rule-dto';
 
 export interface ApiShareAutomationRulesPost$Json$Params {
-      body: CreateShareAutomationRuleRequest
+  
+    /**
+     * Definition of the automation rule to create.
+     */
+    body?: CreateShareAutomationRuleRequest
 }
 
-export function apiShareAutomationRulesPost$Json(http: HttpClient, rootUrl: string, params: ApiShareAutomationRulesPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareAutomationRuleDto>> {
+export function apiShareAutomationRulesPost$Json(http: HttpClient, rootUrl: string, params?: ApiShareAutomationRulesPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareAutomationRuleDto>> {
   const rb = new RequestBuilder(rootUrl, apiShareAutomationRulesPost$Json.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/*+json');

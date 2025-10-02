@@ -61,6 +61,10 @@ export class ImportHistoryService extends BaseService {
   static readonly ApiHistoryHideByStatusPostPath = '/api/history/hideByStatus';
 
   /**
+   * Hides every import history entry that matches the supplied processing status for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryHideByStatusPost()` instead.
    *
@@ -71,6 +75,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Hides every import history entry that matches the supplied processing status for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryHideByStatusPost$Response()` instead.
    *
@@ -86,6 +94,10 @@ export class ImportHistoryService extends BaseService {
   static readonly ApiHistoryGetPath = '/api/history';
 
   /**
+   * Retrieves a paged list of import history entries for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryGet$Plain()` instead.
    *
@@ -96,6 +108,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Retrieves a paged list of import history entries for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryGet$Plain$Response()` instead.
    *
@@ -108,6 +124,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Retrieves a paged list of import history entries for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryGet$Json()` instead.
    *
@@ -118,6 +138,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Retrieves a paged list of import history entries for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryGet$Json$Response()` instead.
    *
@@ -133,6 +157,10 @@ export class ImportHistoryService extends BaseService {
   static readonly ApiHistoryInprogressCountGetPath = '/api/history/inprogress/count';
 
   /**
+   * Counts all imports that are currently being processed for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryInprogressCountGet$Plain()` instead.
    *
@@ -143,6 +171,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Counts all imports that are currently being processed for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryInprogressCountGet$Plain$Response()` instead.
    *
@@ -155,6 +187,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Counts all imports that are currently being processed for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryInprogressCountGet$Json()` instead.
    *
@@ -165,6 +201,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Counts all imports that are currently being processed for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryInprogressCountGet$Json$Response()` instead.
    *
@@ -180,6 +220,10 @@ export class ImportHistoryService extends BaseService {
   static readonly ApiHistoryInprogressGetPath = '/api/history/inprogress';
 
   /**
+   * Lists imports that are currently in progress for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryInprogressGet$Plain()` instead.
    *
@@ -190,6 +234,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Lists imports that are currently in progress for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryInprogressGet$Plain$Response()` instead.
    *
@@ -202,6 +250,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Lists imports that are currently in progress for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryInprogressGet$Json()` instead.
    *
@@ -212,6 +264,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Lists imports that are currently in progress for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryInprogressGet$Json$Response()` instead.
    *
@@ -227,6 +283,10 @@ export class ImportHistoryService extends BaseService {
   static readonly ApiHistoryPendingCountGetPath = '/api/history/pending/count';
 
   /**
+   * Counts pending imports that are queued for processing.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryPendingCountGet$Plain()` instead.
    *
@@ -237,6 +297,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Counts pending imports that are queued for processing.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryPendingCountGet$Plain$Response()` instead.
    *
@@ -249,6 +313,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Counts pending imports that are queued for processing.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryPendingCountGet$Json()` instead.
    *
@@ -259,6 +327,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Counts pending imports that are queued for processing.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryPendingCountGet$Json$Response()` instead.
    *
@@ -274,6 +346,10 @@ export class ImportHistoryService extends BaseService {
   static readonly ApiHistoryPendingGetPath = '/api/history/pending';
 
   /**
+   * Lists pending imports that are waiting to be processed.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryPendingGet$Plain()` instead.
    *
@@ -284,6 +360,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Lists pending imports that are waiting to be processed.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryPendingGet$Plain$Response()` instead.
    *
@@ -296,6 +376,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Lists pending imports that are waiting to be processed.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryPendingGet$Json()` instead.
    *
@@ -306,6 +390,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Lists pending imports that are waiting to be processed.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryPendingGet$Json$Response()` instead.
    *
@@ -321,6 +409,10 @@ export class ImportHistoryService extends BaseService {
   static readonly ApiHistoryCompletedCountGetPath = '/api/history/completed/count';
 
   /**
+   * Counts completed imports for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryCompletedCountGet$Plain()` instead.
    *
@@ -331,6 +423,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Counts completed imports for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryCompletedCountGet$Plain$Response()` instead.
    *
@@ -343,6 +439,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Counts completed imports for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryCompletedCountGet$Json()` instead.
    *
@@ -353,6 +453,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Counts completed imports for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryCompletedCountGet$Json$Response()` instead.
    *
@@ -368,6 +472,10 @@ export class ImportHistoryService extends BaseService {
   static readonly ApiHistoryCompletedGetPath = '/api/history/completed';
 
   /**
+   * Lists completed imports for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryCompletedGet$Plain()` instead.
    *
@@ -378,6 +486,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Lists completed imports for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryCompletedGet$Plain$Response()` instead.
    *
@@ -390,6 +502,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Lists completed imports for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryCompletedGet$Json()` instead.
    *
@@ -400,6 +516,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Lists completed imports for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryCompletedGet$Json$Response()` instead.
    *
@@ -415,6 +535,10 @@ export class ImportHistoryService extends BaseService {
   static readonly ApiHistoryFailedCountGetPath = '/api/history/failed/count';
 
   /**
+   * Counts failed imports for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryFailedCountGet$Plain()` instead.
    *
@@ -425,6 +549,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Counts failed imports for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryFailedCountGet$Plain$Response()` instead.
    *
@@ -437,6 +565,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Counts failed imports for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryFailedCountGet$Json()` instead.
    *
@@ -447,6 +579,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Counts failed imports for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryFailedCountGet$Json$Response()` instead.
    *
@@ -462,6 +598,10 @@ export class ImportHistoryService extends BaseService {
   static readonly ApiHistoryFailedGetPath = '/api/history/failed';
 
   /**
+   * Lists failed imports for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryFailedGet$Plain()` instead.
    *
@@ -472,6 +612,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Lists failed imports for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryFailedGet$Plain$Response()` instead.
    *
@@ -484,6 +628,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Lists failed imports for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiHistoryFailedGet$Json()` instead.
    *
@@ -494,6 +642,10 @@ export class ImportHistoryService extends BaseService {
   }
 
   /**
+   * Lists failed imports for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiHistoryFailedGet$Json$Response()` instead.
    *

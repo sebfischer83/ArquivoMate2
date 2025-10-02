@@ -15,7 +15,7 @@ export interface SaveEmailCriteriaRequest {
   isRead?: boolean | null;
   maxDaysBack?: number | null;
   maxResults?: number;
-  name?: string;
+  name?: string | null;
   skip?: number;
   sortBy?: EmailSortBy;
   sortDescending?: boolean;

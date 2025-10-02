@@ -31,44 +31,60 @@ export class UsersService extends BaseService {
   static readonly ApiUsersLoginPostPath = '/api/users/login';
 
   /**
+   * Synchronises the authenticated user with the application store.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiUsersLoginPost$Plain()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiUsersLoginPost$Plain$Response(params: ApiUsersLoginPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDto>> {
+  apiUsersLoginPost$Plain$Response(params?: ApiUsersLoginPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDto>> {
     return apiUsersLoginPost$Plain(this.http, this.rootUrl, params, context);
   }
 
   /**
+   * Synchronises the authenticated user with the application store.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiUsersLoginPost$Plain$Response()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiUsersLoginPost$Plain(params: ApiUsersLoginPost$Plain$Params, context?: HttpContext): Observable<UserDto> {
+  apiUsersLoginPost$Plain(params?: ApiUsersLoginPost$Plain$Params, context?: HttpContext): Observable<UserDto> {
     return this.apiUsersLoginPost$Plain$Response(params, context).pipe(
       map((r: StrictHttpResponse<UserDto>): UserDto => r.body)
     );
   }
 
   /**
+   * Synchronises the authenticated user with the application store.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiUsersLoginPost$Json()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiUsersLoginPost$Json$Response(params: ApiUsersLoginPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDto>> {
+  apiUsersLoginPost$Json$Response(params?: ApiUsersLoginPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDto>> {
     return apiUsersLoginPost$Json(this.http, this.rootUrl, params, context);
   }
 
   /**
+   * Synchronises the authenticated user with the application store.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiUsersLoginPost$Json$Response()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiUsersLoginPost$Json(params: ApiUsersLoginPost$Json$Params, context?: HttpContext): Observable<UserDto> {
+  apiUsersLoginPost$Json(params?: ApiUsersLoginPost$Json$Params, context?: HttpContext): Observable<UserDto> {
     return this.apiUsersLoginPost$Json$Response(params, context).pipe(
       map((r: StrictHttpResponse<UserDto>): UserDto => r.body)
     );
@@ -78,6 +94,10 @@ export class UsersService extends BaseService {
   static readonly ApiUsersOthersGetPath = '/api/users/others';
 
   /**
+   * Returns all other users (for sharing dialogs etc.).
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiUsersOthersGet$Plain()` instead.
    *
@@ -88,6 +108,10 @@ export class UsersService extends BaseService {
   }
 
   /**
+   * Returns all other users (for sharing dialogs etc.).
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiUsersOthersGet$Plain$Response()` instead.
    *
@@ -100,6 +124,10 @@ export class UsersService extends BaseService {
   }
 
   /**
+   * Returns all other users (for sharing dialogs etc.).
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiUsersOthersGet$Json()` instead.
    *
@@ -110,6 +138,10 @@ export class UsersService extends BaseService {
   }
 
   /**
+   * Returns all other users (for sharing dialogs etc.).
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiUsersOthersGet$Json$Response()` instead.
    *

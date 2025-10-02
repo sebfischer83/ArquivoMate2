@@ -12,10 +12,10 @@ import { UpsertUserRequest } from '../../models/upsert-user-request';
 import { UserDto } from '../../models/user-dto';
 
 export interface ApiUsersLoginPost$Json$Params {
-      body: UpsertUserRequest
+      body?: UpsertUserRequest
 }
 
-export function apiUsersLoginPost$Json(http: HttpClient, rootUrl: string, params: ApiUsersLoginPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDto>> {
+export function apiUsersLoginPost$Json(http: HttpClient, rootUrl: string, params?: ApiUsersLoginPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDto>> {
   const rb = new RequestBuilder(rootUrl, apiUsersLoginPost$Json.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/*+json');

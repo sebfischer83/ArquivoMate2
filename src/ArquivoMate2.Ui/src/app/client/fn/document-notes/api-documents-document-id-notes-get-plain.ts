@@ -11,7 +11,15 @@ import { RequestBuilder } from '../../request-builder';
 import { DocumentNoteDto } from '../../models/document-note-dto';
 
 export interface ApiDocumentsDocumentIdNotesGet$Plain$Params {
+
+/**
+ * Identifier of the document whose notes should be listed.
+ */
   documentId: string;
+
+/**
+ * Optional free text filter that narrows the result.
+ */
   q?: string;
 }
 

@@ -6,7 +6,7 @@ import { DocumentPermissions } from '../models/document-permissions';
 import { ShareAutomationScope } from '../models/share-automation-scope';
 import { ShareTarget } from '../models/share-target';
 export interface CreateShareAutomationRuleRequest {
-  canEdit?: boolean;
+  /** @deprecated */canEdit?: boolean;
   permissions?: DocumentPermissions;
   scope?: ShareAutomationScope;
   target?: ShareTarget;

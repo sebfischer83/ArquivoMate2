@@ -41,6 +41,10 @@ export class ShareGroupsService extends BaseService {
   static readonly ApiShareGroupsGetPath = '/api/share-groups';
 
   /**
+   * Lists all share groups owned by the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiShareGroupsGet$Plain()` instead.
    *
@@ -51,6 +55,10 @@ export class ShareGroupsService extends BaseService {
   }
 
   /**
+   * Lists all share groups owned by the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiShareGroupsGet$Plain$Response()` instead.
    *
@@ -63,6 +71,10 @@ export class ShareGroupsService extends BaseService {
   }
 
   /**
+   * Lists all share groups owned by the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiShareGroupsGet$Json()` instead.
    *
@@ -73,6 +85,10 @@ export class ShareGroupsService extends BaseService {
   }
 
   /**
+   * Lists all share groups owned by the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiShareGroupsGet$Json$Response()` instead.
    *
@@ -88,44 +104,60 @@ export class ShareGroupsService extends BaseService {
   static readonly ApiShareGroupsPostPath = '/api/share-groups';
 
   /**
+   * Creates a new share group with the specified members.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiShareGroupsPost$Plain()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareGroupsPost$Plain$Response(params: ApiShareGroupsPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDto>> {
+  apiShareGroupsPost$Plain$Response(params?: ApiShareGroupsPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDto>> {
     return apiShareGroupsPost$Plain(this.http, this.rootUrl, params, context);
   }
 
   /**
+   * Creates a new share group with the specified members.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiShareGroupsPost$Plain$Response()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareGroupsPost$Plain(params: ApiShareGroupsPost$Plain$Params, context?: HttpContext): Observable<ShareGroupDto> {
+  apiShareGroupsPost$Plain(params?: ApiShareGroupsPost$Plain$Params, context?: HttpContext): Observable<ShareGroupDto> {
     return this.apiShareGroupsPost$Plain$Response(params, context).pipe(
       map((r: StrictHttpResponse<ShareGroupDto>): ShareGroupDto => r.body)
     );
   }
 
   /**
+   * Creates a new share group with the specified members.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiShareGroupsPost$Json()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareGroupsPost$Json$Response(params: ApiShareGroupsPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDto>> {
+  apiShareGroupsPost$Json$Response(params?: ApiShareGroupsPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDto>> {
     return apiShareGroupsPost$Json(this.http, this.rootUrl, params, context);
   }
 
   /**
+   * Creates a new share group with the specified members.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiShareGroupsPost$Json$Response()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareGroupsPost$Json(params: ApiShareGroupsPost$Json$Params, context?: HttpContext): Observable<ShareGroupDto> {
+  apiShareGroupsPost$Json(params?: ApiShareGroupsPost$Json$Params, context?: HttpContext): Observable<ShareGroupDto> {
     return this.apiShareGroupsPost$Json$Response(params, context).pipe(
       map((r: StrictHttpResponse<ShareGroupDto>): ShareGroupDto => r.body)
     );
@@ -135,6 +167,10 @@ export class ShareGroupsService extends BaseService {
   static readonly ApiShareGroupsGroupIdGetPath = '/api/share-groups/{groupId}';
 
   /**
+   * Retrieves a single share group by its identifier.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiShareGroupsGroupIdGet$Plain()` instead.
    *
@@ -145,6 +181,10 @@ export class ShareGroupsService extends BaseService {
   }
 
   /**
+   * Retrieves a single share group by its identifier.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiShareGroupsGroupIdGet$Plain$Response()` instead.
    *
@@ -157,6 +197,10 @@ export class ShareGroupsService extends BaseService {
   }
 
   /**
+   * Retrieves a single share group by its identifier.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiShareGroupsGroupIdGet$Json()` instead.
    *
@@ -167,6 +211,10 @@ export class ShareGroupsService extends BaseService {
   }
 
   /**
+   * Retrieves a single share group by its identifier.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiShareGroupsGroupIdGet$Json$Response()` instead.
    *
@@ -182,6 +230,10 @@ export class ShareGroupsService extends BaseService {
   static readonly ApiShareGroupsGroupIdPutPath = '/api/share-groups/{groupId}';
 
   /**
+   * Updates a share group with new metadata or members.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiShareGroupsGroupIdPut$Plain()` instead.
    *
@@ -192,6 +244,10 @@ export class ShareGroupsService extends BaseService {
   }
 
   /**
+   * Updates a share group with new metadata or members.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiShareGroupsGroupIdPut$Plain$Response()` instead.
    *
@@ -204,6 +260,10 @@ export class ShareGroupsService extends BaseService {
   }
 
   /**
+   * Updates a share group with new metadata or members.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiShareGroupsGroupIdPut$Json()` instead.
    *
@@ -214,6 +274,10 @@ export class ShareGroupsService extends BaseService {
   }
 
   /**
+   * Updates a share group with new metadata or members.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiShareGroupsGroupIdPut$Json$Response()` instead.
    *
@@ -229,6 +293,10 @@ export class ShareGroupsService extends BaseService {
   static readonly ApiShareGroupsGroupIdDeletePath = '/api/share-groups/{groupId}';
 
   /**
+   * Deletes the specified share group.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiShareGroupsGroupIdDelete()` instead.
    *
@@ -239,6 +307,10 @@ export class ShareGroupsService extends BaseService {
   }
 
   /**
+   * Deletes the specified share group.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiShareGroupsGroupIdDelete$Response()` instead.
    *

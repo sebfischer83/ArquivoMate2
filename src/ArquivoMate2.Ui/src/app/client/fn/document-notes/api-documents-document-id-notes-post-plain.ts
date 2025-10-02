@@ -12,8 +12,16 @@ import { CreateDocumentNoteRequest } from '../../models/create-document-note-req
 import { DocumentNoteDto } from '../../models/document-note-dto';
 
 export interface ApiDocumentsDocumentIdNotesPost$Plain$Params {
+
+/**
+ * Identifier of the document that owns the note.
+ */
   documentId: string;
-      body: CreateDocumentNoteRequest
+  
+    /**
+     * Note payload containing the text that should be stored.
+     */
+    body?: CreateDocumentNoteRequest
 }
 
 export function apiDocumentsDocumentIdNotesPost$Plain(http: HttpClient, rootUrl: string, params: ApiDocumentsDocumentIdNotesPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentNoteDto>> {

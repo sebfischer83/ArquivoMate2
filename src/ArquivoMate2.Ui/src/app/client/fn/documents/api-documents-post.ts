@@ -10,15 +10,15 @@ import { RequestBuilder } from '../../request-builder';
 
 
 export interface ApiDocumentsPost$Params {
-      body: {
+      body?: {
 'File'?: Blob;
 }
 }
 
-export function apiDocumentsPost(http: HttpClient, rootUrl: string, params: ApiDocumentsPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+export function apiDocumentsPost(http: HttpClient, rootUrl: string, params?: ApiDocumentsPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
   const rb = new RequestBuilder(rootUrl, apiDocumentsPost.PATH, 'post');
   if (params) {
-    rb.body(params.body, 'application/x-www-form-urlencoded');
+    rb.body(params.body, 'multipart/form-data');
   }
 
   return http.request(

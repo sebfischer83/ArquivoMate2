@@ -24,6 +24,10 @@ export class PublicShareService extends BaseService {
   static readonly ApiShareShareIdGetPath = '/api/share/{shareId}';
 
   /**
+   * Streams a shared document artifact to anonymous callers with a valid share token.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiShareShareIdGet()` instead.
    *
@@ -34,6 +38,10 @@ export class PublicShareService extends BaseService {
   }
 
   /**
+   * Streams a shared document artifact to anonymous callers with a valid share token.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiShareShareIdGet$Response()` instead.
    *

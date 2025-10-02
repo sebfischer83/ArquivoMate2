@@ -5,7 +5,6 @@ using ArquivoMate2.Infrastructure.Persistance;
 using Marten;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.Options;
 using EasyCaching.Core;
 
@@ -47,7 +46,6 @@ namespace ArquivoMate2.API.Controllers
         /// <param name="token">Signed delivery token that authorises the download.</param>
         /// <param name="ct">Cancellation token forwarded from the HTTP request.</param>
         [HttpGet("{documentId:guid}/{artifact}")]
-        [OpenApiOperation(Summary = "Download a document artifact", Description = "Validates the provided token and streams the requested artifact back to the caller.")]
         public async Task<IActionResult> Get(Guid documentId, string artifact, [FromQuery] string token, CancellationToken ct)
         {
             // Token validation (primary security boundary)

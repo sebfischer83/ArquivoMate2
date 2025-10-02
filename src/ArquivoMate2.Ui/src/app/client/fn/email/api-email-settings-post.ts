@@ -11,10 +11,10 @@ import { RequestBuilder } from '../../request-builder';
 import { SaveEmailSettingsRequest } from '../../models/save-email-settings-request';
 
 export interface ApiEmailSettingsPost$Params {
-      body: SaveEmailSettingsRequest
+      body?: SaveEmailSettingsRequest
 }
 
-export function apiEmailSettingsPost(http: HttpClient, rootUrl: string, params: ApiEmailSettingsPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+export function apiEmailSettingsPost(http: HttpClient, rootUrl: string, params?: ApiEmailSettingsPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
   const rb = new RequestBuilder(rootUrl, apiEmailSettingsPost.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/*+json');

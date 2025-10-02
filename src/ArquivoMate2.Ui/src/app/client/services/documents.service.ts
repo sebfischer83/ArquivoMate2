@@ -38,6 +38,10 @@ import { DocumentListDto } from '../models/document-list-dto';
 import { DocumentStatsDto } from '../models/document-stats-dto';
 import { ShareCreatedDto } from '../models/share-created-dto';
 
+
+/**
+ * Provides endpoints for managing document metadata, importing files, and retrieving document content.
+ */
 @Injectable({ providedIn: 'root' })
 export class DocumentsService extends BaseService {
   constructor(config: ApiConfiguration, http: HttpClient) {
@@ -48,6 +52,10 @@ export class DocumentsService extends BaseService {
   static readonly ApiDocumentsGetPath = '/api/documents';
 
   /**
+   * Retrieves a paginated document list using optional full-text search, filtering, and sorting criteria.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsGet$Plain()` instead.
    *
@@ -58,6 +66,10 @@ export class DocumentsService extends BaseService {
   }
 
   /**
+   * Retrieves a paginated document list using optional full-text search, filtering, and sorting criteria.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsGet$Plain$Response()` instead.
    *
@@ -70,6 +82,10 @@ export class DocumentsService extends BaseService {
   }
 
   /**
+   * Retrieves a paginated document list using optional full-text search, filtering, and sorting criteria.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsGet$Json()` instead.
    *
@@ -80,6 +96,10 @@ export class DocumentsService extends BaseService {
   }
 
   /**
+   * Retrieves a paginated document list using optional full-text search, filtering, and sorting criteria.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsGet$Json$Response()` instead.
    *
@@ -95,22 +115,30 @@ export class DocumentsService extends BaseService {
   static readonly ApiDocumentsPostPath = '/api/documents';
 
   /**
+   * Uploads a new document, starts its import stream, and schedules the background processing workflow.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsPost()` instead.
    *
-   * This method sends `application/x-www-form-urlencoded` and handles request body of type `application/x-www-form-urlencoded`.
+   * This method sends `multipart/form-data` and handles request body of type `multipart/form-data`.
    */
-  apiDocumentsPost$Response(params: ApiDocumentsPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  apiDocumentsPost$Response(params?: ApiDocumentsPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
     return apiDocumentsPost(this.http, this.rootUrl, params, context);
   }
 
   /**
+   * Uploads a new document, starts its import stream, and schedules the background processing workflow.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsPost$Response()` instead.
    *
-   * This method sends `application/x-www-form-urlencoded` and handles request body of type `application/x-www-form-urlencoded`.
+   * This method sends `multipart/form-data` and handles request body of type `multipart/form-data`.
    */
-  apiDocumentsPost(params: ApiDocumentsPost$Params, context?: HttpContext): Observable<void> {
+  apiDocumentsPost(params?: ApiDocumentsPost$Params, context?: HttpContext): Observable<void> {
     return this.apiDocumentsPost$Response(params, context).pipe(
       map((r: StrictHttpResponse<void>): void => r.body)
     );
@@ -120,6 +148,10 @@ export class DocumentsService extends BaseService {
   static readonly ApiDocumentsIdUpdateFieldsPatchPath = '/api/documents/{id}/update-fields';
 
   /**
+   * Updates mutable document metadata fields and refreshes the search index when necessary.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsIdUpdateFieldsPatch$Plain()` instead.
    *
@@ -130,6 +162,10 @@ export class DocumentsService extends BaseService {
   }
 
   /**
+   * Updates mutable document metadata fields and refreshes the search index when necessary.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsIdUpdateFieldsPatch$Plain$Response()` instead.
    *
@@ -142,6 +178,10 @@ export class DocumentsService extends BaseService {
   }
 
   /**
+   * Updates mutable document metadata fields and refreshes the search index when necessary.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsIdUpdateFieldsPatch$Json()` instead.
    *
@@ -152,6 +192,10 @@ export class DocumentsService extends BaseService {
   }
 
   /**
+   * Updates mutable document metadata fields and refreshes the search index when necessary.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsIdUpdateFieldsPatch$Json$Response()` instead.
    *
@@ -167,6 +211,10 @@ export class DocumentsService extends BaseService {
   static readonly ApiDocumentsStatsGetPath = '/api/documents/stats';
 
   /**
+   * Returns aggregate document statistics and search facets for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsStatsGet$Plain()` instead.
    *
@@ -177,6 +225,10 @@ export class DocumentsService extends BaseService {
   }
 
   /**
+   * Returns aggregate document statistics and search facets for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsStatsGet$Plain$Response()` instead.
    *
@@ -189,6 +241,10 @@ export class DocumentsService extends BaseService {
   }
 
   /**
+   * Returns aggregate document statistics and search facets for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsStatsGet$Json()` instead.
    *
@@ -199,6 +255,10 @@ export class DocumentsService extends BaseService {
   }
 
   /**
+   * Returns aggregate document statistics and search facets for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsStatsGet$Json$Response()` instead.
    *
@@ -214,6 +274,10 @@ export class DocumentsService extends BaseService {
   static readonly ApiDocumentsIdGetPath = '/api/documents/{id}';
 
   /**
+   * Retrieves a single document including its projection and event history.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsIdGet$Plain()` instead.
    *
@@ -224,6 +288,10 @@ export class DocumentsService extends BaseService {
   }
 
   /**
+   * Retrieves a single document including its projection and event history.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsIdGet$Plain$Response()` instead.
    *
@@ -236,6 +304,10 @@ export class DocumentsService extends BaseService {
   }
 
   /**
+   * Retrieves a single document including its projection and event history.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsIdGet$Json()` instead.
    *
@@ -246,6 +318,10 @@ export class DocumentsService extends BaseService {
   }
 
   /**
+   * Retrieves a single document including its projection and event history.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsIdGet$Json$Response()` instead.
    *
@@ -261,44 +337,60 @@ export class DocumentsService extends BaseService {
   static readonly ApiDocumentsSharePostPath = '/api/documents/share';
 
   /**
+   * Creates a time-limited external share link for a document artifact.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsSharePost$Plain()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsSharePost$Plain$Response(params: ApiDocumentsSharePost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareCreatedDto>> {
+  apiDocumentsSharePost$Plain$Response(params?: ApiDocumentsSharePost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareCreatedDto>> {
     return apiDocumentsSharePost$Plain(this.http, this.rootUrl, params, context);
   }
 
   /**
+   * Creates a time-limited external share link for a document artifact.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsSharePost$Plain$Response()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsSharePost$Plain(params: ApiDocumentsSharePost$Plain$Params, context?: HttpContext): Observable<ShareCreatedDto> {
+  apiDocumentsSharePost$Plain(params?: ApiDocumentsSharePost$Plain$Params, context?: HttpContext): Observable<ShareCreatedDto> {
     return this.apiDocumentsSharePost$Plain$Response(params, context).pipe(
       map((r: StrictHttpResponse<ShareCreatedDto>): ShareCreatedDto => r.body)
     );
   }
 
   /**
+   * Creates a time-limited external share link for a document artifact.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDocumentsSharePost$Json()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsSharePost$Json$Response(params: ApiDocumentsSharePost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareCreatedDto>> {
+  apiDocumentsSharePost$Json$Response(params?: ApiDocumentsSharePost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareCreatedDto>> {
     return apiDocumentsSharePost$Json(this.http, this.rootUrl, params, context);
   }
 
   /**
+   * Creates a time-limited external share link for a document artifact.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDocumentsSharePost$Json$Response()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsSharePost$Json(params: ApiDocumentsSharePost$Json$Params, context?: HttpContext): Observable<ShareCreatedDto> {
+  apiDocumentsSharePost$Json(params?: ApiDocumentsSharePost$Json$Params, context?: HttpContext): Observable<ShareCreatedDto> {
     return this.apiDocumentsSharePost$Json$Response(params, context).pipe(
       map((r: StrictHttpResponse<ShareCreatedDto>): ShareCreatedDto => r.body)
     );

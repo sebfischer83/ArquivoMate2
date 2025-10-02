@@ -9,7 +9,7 @@ export interface ImportHistoryListDto {
   hasPreviousPage?: boolean;
   isFirstPage?: boolean;
   isLastPage?: boolean;
-  items?: Array<ImportHistoryListItemDto>;
+  items?: Array<ImportHistoryListItemDto> | null;
   pageCount?: number;
   totalCount?: number;
 }

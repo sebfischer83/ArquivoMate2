@@ -6,10 +6,10 @@ export interface DocumentListItemDto {
   accepted?: boolean;
   encrypted?: boolean;
   id?: string;
-  keywords?: Array<string>;
-  summary?: string;
-  thumbnailPath?: string;
-  title?: string;
-  type?: string;
+  keywords?: Array<string> | null;
+  summary?: string | null;
+  thumbnailPath?: string | null;
+  title?: string | null;
+  type?: string | null;
   uploadedAt?: string;
 }

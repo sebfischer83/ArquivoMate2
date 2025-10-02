@@ -4,6 +4,6 @@
 
 import { ShareTargetType } from '../models/share-target-type';
 export interface ShareTarget {
-  identifier?: string;
+  identifier?: string | null;
   type?: ShareTargetType;
 }

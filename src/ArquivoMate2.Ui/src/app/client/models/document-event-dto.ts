@@ -4,7 +4,7 @@
 
 export interface DocumentEventDto {
   data?: string | null;
-  eventType?: string;
+  eventType?: string | null;
   occurredOn?: string;
   userId?: string | null;
 }

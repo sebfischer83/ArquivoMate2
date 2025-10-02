@@ -6,6 +6,6 @@ export interface DocumentNoteDto {
   createdAt?: string;
   documentId?: string;
   id?: string;
-  text?: string;
-  userId?: string;
+  text?: string | null;
+  userId?: string | null;
 }

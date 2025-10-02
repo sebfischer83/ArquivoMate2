@@ -10,7 +10,15 @@ import { RequestBuilder } from '../../request-builder';
 
 
 export interface ApiDocumentsDocumentIdSharesShareIdDelete$Params {
+
+/**
+ * Document whose share should be removed.
+ */
   documentId: string;
+
+/**
+ * Identifier of the share to remove.
+ */
   shareId: string;
 }
 

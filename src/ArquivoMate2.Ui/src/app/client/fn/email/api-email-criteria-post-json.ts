@@ -12,10 +12,10 @@ import { EmailCriteriaDto } from '../../models/email-criteria-dto';
 import { SaveEmailCriteriaRequest } from '../../models/save-email-criteria-request';
 
 export interface ApiEmailCriteriaPost$Json$Params {
-      body: SaveEmailCriteriaRequest
+      body?: SaveEmailCriteriaRequest
 }
 
-export function apiEmailCriteriaPost$Json(http: HttpClient, rootUrl: string, params: ApiEmailCriteriaPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDto>> {
+export function apiEmailCriteriaPost$Json(http: HttpClient, rootUrl: string, params?: ApiEmailCriteriaPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDto>> {
   const rb = new RequestBuilder(rootUrl, apiEmailCriteriaPost$Json.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/*+json');

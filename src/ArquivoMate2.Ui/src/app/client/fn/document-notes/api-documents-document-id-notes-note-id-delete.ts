@@ -10,7 +10,15 @@ import { RequestBuilder } from '../../request-builder';
 
 
 export interface ApiDocumentsDocumentIdNotesNoteIdDelete$Params {
+
+/**
+ * Identifier of the document that owns the note.
+ */
   documentId: string;
+
+/**
+ * Identifier of the note to remove.
+ */
   noteId: string;
 }
 

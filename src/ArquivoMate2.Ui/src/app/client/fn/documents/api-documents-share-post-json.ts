@@ -12,10 +12,14 @@ import { CreateShareRequest } from '../../models/create-share-request';
 import { ShareCreatedDto } from '../../models/share-created-dto';
 
 export interface ApiDocumentsSharePost$Json$Params {
-      body: CreateShareRequest
+  
+    /**
+     * Request describing the document, artifact, and TTL.
+     */
+    body?: CreateShareRequest
 }
 
-export function apiDocumentsSharePost$Json(http: HttpClient, rootUrl: string, params: ApiDocumentsSharePost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareCreatedDto>> {
+export function apiDocumentsSharePost$Json(http: HttpClient, rootUrl: string, params?: ApiDocumentsSharePost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareCreatedDto>> {
   const rb = new RequestBuilder(rootUrl, apiDocumentsSharePost$Json.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/*+json');

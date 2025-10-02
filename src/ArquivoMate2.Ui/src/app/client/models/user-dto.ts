@@ -4,7 +4,7 @@
 
 export interface UserDto {
   createdAt?: string;
-  id?: string;
+  id?: string | null;
   lastLoginAt?: string;
-  name?: string;
+  name?: string | null;
 }

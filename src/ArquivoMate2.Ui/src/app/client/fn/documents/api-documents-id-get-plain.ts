@@ -11,6 +11,10 @@ import { RequestBuilder } from '../../request-builder';
 import { DocumentDto } from '../../models/document-dto';
 
 export interface ApiDocumentsIdGet$Plain$Params {
+
+/**
+ * Identifier of the document to retrieve.
+ */
   id: string;
 }
 

@@ -72,13 +72,13 @@ namespace ArquivoMate2.Infrastructure.Services.Encryption
             {
                 var raw = Encoding.UTF8.GetString(Convert.FromBase64String(token));
                 var parts = raw.Split('|');
-                if (parts.Length != 5) return false; // S | shareId | exp | sig (after base64 decode we have 5 parts)
+                // Expected layout after decoding: S | shareId | exp | sig -> 4 parts
+                if (parts.Length != 4) return false;
                 if (parts[0] != "S") return false;
                 if (!Guid.TryParse(parts[1], out shareId)) return false;
                 if (!long.TryParse(parts[2], out var exp)) return false;
-                var sig = parts[4];
-                var payload = string.Join('|', parts.Take(4).SkipLast(1)); // Actually simpler: rebuild payload = "S|shareId|exp"
-                payload = string.Join('|', parts[0], parts[1], parts[2]);
+                var sig = parts[3];
+                var payload = string.Join('|', parts[0], parts[1], parts[2]);
                 if (!TimingSafeEquals(sig, Sign(payload))) return false;
                 expiresAt = DateTimeOffset.FromUnixTimeSeconds(exp);
                 if (DateTimeOffset.UtcNow.ToUnixTimeSeconds() > exp) return false;

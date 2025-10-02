@@ -5,7 +5,6 @@ using ArquivoMate2.Shared.Models.Notes;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OpenApi;
 
 namespace ArquivoMate2.API.Controllers
 {
@@ -30,7 +29,6 @@ namespace ArquivoMate2.API.Controllers
         /// <param name="request">Note payload containing the text that should be stored.</param>
         /// <param name="ct">Cancellation token forwarded from the HTTP request.</param>
         [HttpPost]
-        [OpenApiOperation(Summary = "Create a document note", Description = "Creates a new note for the selected document and returns the persisted representation.")]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(DocumentNoteDto))]
         public async Task<IActionResult> Create(Guid documentId, [FromBody] CreateDocumentNoteRequest request, CancellationToken ct)
         {
@@ -45,7 +43,6 @@ namespace ArquivoMate2.API.Controllers
         /// <param name="q">Optional free text filter that narrows the result.</param>
         /// <param name="ct">Cancellation token forwarded from the HTTP request.</param>
         [HttpGet]
-        [OpenApiOperation(Summary = "List document notes", Description = "Retrieves all notes created for the specified document. A search term can be supplied to filter the results.")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<DocumentNoteDto>))]
         public async Task<IActionResult> List(Guid documentId, [FromQuery] string? q, CancellationToken ct)
         {
@@ -60,7 +57,6 @@ namespace ArquivoMate2.API.Controllers
         /// <param name="noteId">Identifier of the note to remove.</param>
         /// <param name="ct">Cancellation token forwarded from the HTTP request.</param>
         [HttpDelete("{noteId:guid}")]
-        [OpenApiOperation(Summary = "Delete a document note", Description = "Deletes the specified note if it belongs to the document and is owned by the current user.")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Delete(Guid documentId, Guid noteId, CancellationToken ct)
         {

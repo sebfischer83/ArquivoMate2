@@ -11,6 +11,10 @@ import { RequestBuilder } from '../../request-builder';
 import { ShareGroupDto } from '../../models/share-group-dto';
 
 export interface ApiShareGroupsGroupIdGet$Plain$Params {
+
+/**
+ * Identifier of the group that should be retrieved.
+ */
   groupId: string;
 }
 

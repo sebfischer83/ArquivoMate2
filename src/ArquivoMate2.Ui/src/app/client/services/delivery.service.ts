@@ -24,6 +24,10 @@ export class DeliveryService extends BaseService {
   static readonly ApiDeliveryDocumentIdArtifactGetPath = '/api/delivery/{documentId}/{artifact}';
 
   /**
+   * Delivers an encrypted artifact for a document when a valid access token is supplied.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiDeliveryDocumentIdArtifactGet()` instead.
    *
@@ -34,6 +38,10 @@ export class DeliveryService extends BaseService {
   }
 
   /**
+   * Delivers an encrypted artifact for a document when a valid access token is supplied.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiDeliveryDocumentIdArtifactGet$Response()` instead.
    *

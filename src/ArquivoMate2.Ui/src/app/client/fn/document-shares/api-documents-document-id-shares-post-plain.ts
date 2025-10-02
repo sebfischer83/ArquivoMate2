@@ -12,8 +12,16 @@ import { CreateDocumentShareRequest } from '../../models/create-document-share-r
 import { DocumentShareDto } from '../../models/document-share-dto';
 
 export interface ApiDocumentsDocumentIdSharesPost$Plain$Params {
+
+/**
+ * Document that should be shared.
+ */
   documentId: string;
-      body: CreateDocumentShareRequest
+  
+    /**
+     * Information about the target and permissions that should be granted.
+     */
+    body?: CreateDocumentShareRequest
 }
 
 export function apiDocumentsDocumentIdSharesPost$Plain(http: HttpClient, rootUrl: string, params: ApiDocumentsDocumentIdSharesPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentShareDto>> {

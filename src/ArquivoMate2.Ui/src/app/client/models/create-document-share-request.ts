@@ -5,7 +5,7 @@
 import { DocumentPermissions } from '../models/document-permissions';
 import { ShareTarget } from '../models/share-target';
 export interface CreateDocumentShareRequest {
-  canEdit?: boolean;
+  /** @deprecated */canEdit?: boolean;
   permissions?: DocumentPermissions;
   target?: ShareTarget;
 }

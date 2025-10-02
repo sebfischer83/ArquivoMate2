@@ -7,16 +7,16 @@ export interface EmailSettings {
   autoReconnect?: boolean;
   connectionTimeout?: number;
   createdAt?: string;
-  defaultFolder?: string;
-  displayName?: string;
+  defaultFolder?: string | null;
+  displayName?: string | null;
   id?: string;
   isActive?: boolean;
-  password?: string;
+  password?: string | null;
   port?: number;
   providerType?: EmailProviderType;
-  server?: string;
+  server?: string | null;
   updatedAt?: string;
   useSsl?: boolean;
-  userId?: string;
-  username?: string;
+  userId?: string | null;
+  username?: string | null;
 }

@@ -10,7 +10,15 @@ import { RequestBuilder } from '../../request-builder';
 
 
 export interface ApiShareShareIdGet$Params {
+
+/**
+ * Identifier of the public share that should be accessed.
+ */
   shareId: string;
+
+/**
+ * Share access token that validates the request.
+ */
   token?: string;
 }
 

@@ -10,6 +10,10 @@ import { RequestBuilder } from '../../request-builder';
 
 
 export interface ApiShareGroupsGroupIdDelete$Params {
+
+/**
+ * Identifier of the group that should be removed.
+ */
   groupId: string;
 }
 

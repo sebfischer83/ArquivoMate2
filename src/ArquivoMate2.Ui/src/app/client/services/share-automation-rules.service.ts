@@ -33,6 +33,10 @@ export class ShareAutomationRulesService extends BaseService {
   static readonly ApiShareAutomationRulesGetPath = '/api/share-automation-rules';
 
   /**
+   * Lists automation rules that automatically share documents for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiShareAutomationRulesGet$Plain()` instead.
    *
@@ -43,6 +47,10 @@ export class ShareAutomationRulesService extends BaseService {
   }
 
   /**
+   * Lists automation rules that automatically share documents for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiShareAutomationRulesGet$Plain$Response()` instead.
    *
@@ -55,6 +63,10 @@ export class ShareAutomationRulesService extends BaseService {
   }
 
   /**
+   * Lists automation rules that automatically share documents for the current user.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiShareAutomationRulesGet$Json()` instead.
    *
@@ -65,6 +77,10 @@ export class ShareAutomationRulesService extends BaseService {
   }
 
   /**
+   * Lists automation rules that automatically share documents for the current user.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiShareAutomationRulesGet$Json$Response()` instead.
    *
@@ -80,44 +96,60 @@ export class ShareAutomationRulesService extends BaseService {
   static readonly ApiShareAutomationRulesPostPath = '/api/share-automation-rules';
 
   /**
+   * Creates a new automation rule that shares matching documents automatically.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiShareAutomationRulesPost$Plain()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareAutomationRulesPost$Plain$Response(params: ApiShareAutomationRulesPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareAutomationRuleDto>> {
+  apiShareAutomationRulesPost$Plain$Response(params?: ApiShareAutomationRulesPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareAutomationRuleDto>> {
     return apiShareAutomationRulesPost$Plain(this.http, this.rootUrl, params, context);
   }
 
   /**
+   * Creates a new automation rule that shares matching documents automatically.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiShareAutomationRulesPost$Plain$Response()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareAutomationRulesPost$Plain(params: ApiShareAutomationRulesPost$Plain$Params, context?: HttpContext): Observable<ShareAutomationRuleDto> {
+  apiShareAutomationRulesPost$Plain(params?: ApiShareAutomationRulesPost$Plain$Params, context?: HttpContext): Observable<ShareAutomationRuleDto> {
     return this.apiShareAutomationRulesPost$Plain$Response(params, context).pipe(
       map((r: StrictHttpResponse<ShareAutomationRuleDto>): ShareAutomationRuleDto => r.body)
     );
   }
 
   /**
+   * Creates a new automation rule that shares matching documents automatically.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiShareAutomationRulesPost$Json()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareAutomationRulesPost$Json$Response(params: ApiShareAutomationRulesPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareAutomationRuleDto>> {
+  apiShareAutomationRulesPost$Json$Response(params?: ApiShareAutomationRulesPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareAutomationRuleDto>> {
     return apiShareAutomationRulesPost$Json(this.http, this.rootUrl, params, context);
   }
 
   /**
+   * Creates a new automation rule that shares matching documents automatically.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiShareAutomationRulesPost$Json$Response()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareAutomationRulesPost$Json(params: ApiShareAutomationRulesPost$Json$Params, context?: HttpContext): Observable<ShareAutomationRuleDto> {
+  apiShareAutomationRulesPost$Json(params?: ApiShareAutomationRulesPost$Json$Params, context?: HttpContext): Observable<ShareAutomationRuleDto> {
     return this.apiShareAutomationRulesPost$Json$Response(params, context).pipe(
       map((r: StrictHttpResponse<ShareAutomationRuleDto>): ShareAutomationRuleDto => r.body)
     );
@@ -127,6 +159,10 @@ export class ShareAutomationRulesService extends BaseService {
   static readonly ApiShareAutomationRulesRuleIdDeletePath = '/api/share-automation-rules/{ruleId}';
 
   /**
+   * Deletes an existing share automation rule.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `apiShareAutomationRulesRuleIdDelete()` instead.
    *
@@ -137,6 +173,10 @@ export class ShareAutomationRulesService extends BaseService {
   }
 
   /**
+   * Deletes an existing share automation rule.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `apiShareAutomationRulesRuleIdDelete$Response()` instead.
    *

@@ -5,7 +5,6 @@ using AutoMapper;
 using MailKit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OpenApi;
 using System.ComponentModel.DataAnnotations;
 using DomainEmailCriteria = ArquivoMate2.Domain.Email.EmailCriteria;
 
@@ -40,7 +39,6 @@ namespace ArquivoMate2.API.Controllers
         /// Gets the total count of emails in the mailbox
         /// </summary>
         [HttpGet("count")]
-        [OpenApiOperation(Summary = "Get email count", Description = "Returns the number of emails that are currently available in the connected mailbox.")]
         public async Task<ActionResult<int>> GetEmailCount(CancellationToken cancellationToken = default)
         {
             try
@@ -63,7 +61,6 @@ namespace ArquivoMate2.API.Controllers
         /// Tests the email connection with current settings
         /// </summary>
         [HttpPost("test-connection")]
-        [OpenApiOperation(Summary = "Test email connectivity", Description = "Checks whether the configured email account can be reached with the current settings.")]
         public async Task<ActionResult<bool>> TestConnection(CancellationToken cancellationToken = default)
         {
             try
@@ -82,7 +79,6 @@ namespace ArquivoMate2.API.Controllers
         /// Gets the current user's email settings
         /// </summary>
         [HttpGet("settings")]
-        [OpenApiOperation(Summary = "Get email settings", Description = "Returns the stored email configuration for the current user without sensitive fields.")]
         public async Task<ActionResult<EmailSettings>> GetEmailSettings(CancellationToken cancellationToken = default)
         {
             var userId = _currentUserService.UserId;
@@ -130,7 +126,6 @@ namespace ArquivoMate2.API.Controllers
         /// Saves or updates email settings for the current user
         /// </summary>
         [HttpPost("settings")]
-        [OpenApiOperation(Summary = "Save email settings", Description = "Creates or updates the email configuration for the signed-in user.")]
         public async Task<ActionResult> SaveEmailSettings([FromBody] SaveEmailSettingsRequest request, CancellationToken cancellationToken = default)
         {
             var userId = _currentUserService.UserId;
@@ -170,7 +165,6 @@ namespace ArquivoMate2.API.Controllers
         /// Deletes email settings for the current user
         /// </summary>
         [HttpDelete("settings")]
-        [OpenApiOperation(Summary = "Delete email settings", Description = "Removes the stored email configuration for the signed-in user.")]
         public async Task<ActionResult> DeleteEmailSettings(CancellationToken cancellationToken = default)
         {
             var userId = _currentUserService.UserId;
@@ -196,7 +190,6 @@ namespace ArquivoMate2.API.Controllers
         /// Gets the email criteria for the current user
         /// </summary>
         [HttpGet("criteria")]
-        [OpenApiOperation(Summary = "Get email import criteria", Description = "Returns the rules that determine which emails are processed for the current user.")]
         public async Task<ActionResult<EmailCriteriaDto>> GetEmailCriteria(CancellationToken cancellationToken = default)
         {
             var userId = _currentUserService.UserId;
@@ -226,7 +219,6 @@ namespace ArquivoMate2.API.Controllers
         /// Saves (creates or updates) email criteria for the current user
         /// </summary>
         [HttpPost("criteria")]
-        [OpenApiOperation(Summary = "Save email import criteria", Description = "Creates or updates the email import criteria for the signed-in user and returns the saved definition.")]
         public async Task<ActionResult<EmailCriteriaDto>> SaveEmailCriteria([FromBody] SaveEmailCriteriaRequest request, CancellationToken cancellationToken = default)
         {
             var userId = _currentUserService.UserId;
@@ -260,7 +252,6 @@ namespace ArquivoMate2.API.Controllers
         /// Deletes email criteria for the current user
         /// </summary>
         [HttpDelete("criteria")]
-        [OpenApiOperation(Summary = "Delete email import criteria", Description = "Removes the email import criteria associated with the signed-in user.")]
         public async Task<ActionResult> DeleteEmailCriteria(CancellationToken cancellationToken = default)
         {
             var userId = _currentUserService.UserId;

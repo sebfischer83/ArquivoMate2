@@ -3,7 +3,6 @@ using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Sharing;
 using Marten;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OpenApi;
 
 namespace ArquivoMate2.API.Controllers
 {
@@ -29,7 +28,6 @@ namespace ArquivoMate2.API.Controllers
         /// <param name="token">Share access token that validates the request.</param>
         /// <param name="ct">Cancellation token forwarded from the HTTP request.</param>
         [HttpGet("{shareId:guid}")]
-        [OpenApiOperation(Summary = "Download shared document", Description = "Validates a share token and streams the configured document artifact to the caller.")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Get(Guid shareId, [FromQuery] string token, CancellationToken ct)

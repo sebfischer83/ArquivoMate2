@@ -22,8 +22,10 @@ using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Configuration;
 using System.Globalization;
+using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
+using Microsoft.OpenApi.Models; // added for OpenApiInfo
 
 namespace ArquivoMate2.API
 {
@@ -32,7 +34,6 @@ namespace ArquivoMate2.API
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            //builder.Configuration.AddUserSecrets<Program>();
             builder.Configuration.AddEnvironmentVariables("AMate__");
             string connectionString = builder.Configuration.GetConnectionString("Default");
             string hangfireConnectionString = builder.Configuration.GetConnectionString("Hangfire");
@@ -55,7 +56,7 @@ namespace ArquivoMate2.API
               .ConfigureResource(r => r.AddService("ArquivoMate2"))
               .WithTracing(tracing =>
               {
-                  tracing.AddSource(typeof(Program).Assembly.GetName().Name);
+                  tracing.AddSource(typeof(Program).Assembly.GetName().Name!);
                   tracing.AddAspNetCoreInstrumentation();
                   tracing.AddHttpClientInstrumentation();
                   tracing.AddSource("Marten");
@@ -69,7 +70,6 @@ namespace ArquivoMate2.API
                           opt.Headers = $"X-Seq-ApiKey={seqApiKey}";
                       });
                   }
-                 
               });
 
             builder.Services.AddControllers();
@@ -81,7 +81,6 @@ namespace ArquivoMate2.API
                 options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
             builder.Services.AddScoped<IDocumentProcessingNotifier, SignalRDocumentProcessingNotifier>();
-
 
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(UploadDocumentHandler).Assembly));
             builder.Services.AddHangfire(config =>
@@ -111,8 +110,16 @@ namespace ArquivoMate2.API
 
             builder.Services.AddHostedService<EmailDocumentBackgroundService>();
 
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "ArquivoMate2 API", Version = "v1" });
+                var basePath = AppContext.BaseDirectory;
+                foreach (var xml in Directory.GetFiles(basePath, "*.xml", SearchOption.TopDirectoryOnly))
+                {
+                    try { c.IncludeXmlComments(xml, includeControllerXmlComments: true); } catch { }
+                }
+            });
 
             AddAuth(builder, builder.Configuration);
 
@@ -128,10 +135,17 @@ namespace ArquivoMate2.API
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                app.MapOpenApi();
+                app.UseSwagger(c =>
+                {
+                    c.RouteTemplate = "openapi/{documentName}.json";
+                });
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/openapi/v1.json", "ArquivoMate2 API v1");
+                    c.RoutePrefix = "swagger";
+                });
                 app.MapScalarApiReference(opt =>
                 {
                     opt.AddServer("http://localhost:5000", "Local Development");
@@ -155,10 +169,7 @@ namespace ArquivoMate2.API
             app.MapControllers();
             app.MapHangfireDashboard();
 
-            app.MapHub<DocumentProcessingHub>("/hubs/documents", opt =>
-            {
-
-            }).RequireCors("AllowAllOrigins");
+            app.MapHub<DocumentProcessingHub>("/hubs/documents", opt => { }).RequireCors("AllowAllOrigins");
 
             var supportedCultures = new[] { "en", "de" };
             var localizationOptions = new RequestLocalizationOptions()
@@ -169,7 +180,6 @@ namespace ArquivoMate2.API
             app.UseRequestLocalization(localizationOptions);
 
             app.Run();
-          
         }
 
         private static void AddAuth(WebApplicationBuilder builder, ConfigurationManager configuration)
@@ -183,11 +193,10 @@ namespace ArquivoMate2.API
                 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                               .AddJwtBearer(options =>
                               {
-                                  options.Authority = oidcSettings.Authority;
+                                  options.Authority = oidcSettings!.Authority;
                                   options.Audience = oidcSettings.Audience;
                                   options.RequireHttpsMetadata = true;
 
-                                  // Optional: Feineinstellungen
                                   options.TokenValidationParameters = new TokenValidationParameters
                                   {
                                       ValidateIssuer = false,

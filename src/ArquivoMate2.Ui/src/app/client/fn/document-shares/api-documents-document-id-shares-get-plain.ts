@@ -11,6 +11,10 @@ import { RequestBuilder } from '../../request-builder';
 import { DocumentShareDto } from '../../models/document-share-dto';
 
 export interface ApiDocumentsDocumentIdSharesGet$Plain$Params {
+
+/**
+ * Document whose shares should be returned.
+ */
   documentId: string;
 }
 

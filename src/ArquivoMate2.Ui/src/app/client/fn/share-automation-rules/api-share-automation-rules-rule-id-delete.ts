@@ -10,6 +10,10 @@ import { RequestBuilder } from '../../request-builder';
 
 
 export interface ApiShareAutomationRulesRuleIdDelete$Params {
+
+/**
+ * Identifier of the rule that should be removed.
+ */
   ruleId: string;
 }
 

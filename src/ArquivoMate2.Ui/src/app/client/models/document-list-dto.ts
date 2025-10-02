@@ -5,7 +5,7 @@
 import { DocumentListItemDto } from '../models/document-list-item-dto';
 export interface DocumentListDto {
   currentPage?: number;
-  documents?: Array<DocumentListItemDto>;
+  documents?: Array<DocumentListItemDto> | null;
   hasNextPage?: boolean;
   hasPreviousPage?: boolean;
   isFirstPage?: boolean;

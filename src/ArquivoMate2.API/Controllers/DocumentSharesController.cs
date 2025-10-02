@@ -7,7 +7,6 @@ using ArquivoMate2.Shared.Models.Sharing;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OpenApi;
 
 namespace ArquivoMate2.API.Controllers;
 
@@ -31,7 +30,6 @@ public class DocumentSharesController : ControllerBase
     /// <param name="documentId">Document whose shares should be returned.</param>
     /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
     [HttpGet]
-    [OpenApiOperation(Summary = "List document shares", Description = "Returns every share that grants access to the provided document.")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<DocumentShareDto>))]
     public async Task<IActionResult> List(Guid documentId, CancellationToken cancellationToken)
     {
@@ -46,7 +44,6 @@ public class DocumentSharesController : ControllerBase
     /// <param name="request">Information about the target and permissions that should be granted.</param>
     /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
     [HttpPost]
-    [OpenApiOperation(Summary = "Create a document share", Description = "Creates a share for the specified document and returns the created configuration.")]
     [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(DocumentShareDto))]
     public async Task<IActionResult> Create(Guid documentId, [FromBody] CreateDocumentShareRequest request, CancellationToken cancellationToken)
     {
@@ -66,7 +63,6 @@ public class DocumentSharesController : ControllerBase
     /// <param name="shareId">Identifier of the share to remove.</param>
     /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
     [HttpDelete("{shareId:guid}")]
-    [OpenApiOperation(Summary = "Delete a document share", Description = "Deletes the selected share if it belongs to the document and user.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(Guid documentId, Guid shareId, CancellationToken cancellationToken)
     {

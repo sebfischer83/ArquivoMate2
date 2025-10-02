@@ -16,6 +16,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.Localization;
 using System.Linq;
 using System.Threading;
@@ -84,6 +85,7 @@ namespace ArquivoMate2.API.Controllers
         /// <param name="querySession">Document session used to persist the import start event.</param>
         /// <returns>A <see cref="CreatedAtActionResult"/> containing the newly created document identifier.</returns>
         [HttpPost]
+        [OpenApiOperation(Summary = "Upload document", Description = "Uploads a new document and schedules background processing for it.")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         public async Task<IActionResult> Upload([FromForm] UploadDocumentRequest request, CancellationToken cancellationToken, [FromServices] OcrSettings ocrSettings, [FromServices] IDocumentSession querySession)
         {
@@ -116,6 +118,7 @@ namespace ArquivoMate2.API.Controllers
         /// <param name="querySession">Query session used to load projections for validation and response construction.</param>
         /// <returns>The updated document representation or an appropriate error response.</returns>
         [HttpPatch("{id}/update-fields")]
+        [OpenApiOperation(Summary = "Update document fields", Description = "Updates metadata fields of an existing document and refreshes the search index as required.")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentDto))]
         public async Task<IActionResult> UpdateFields(Guid id, [FromBody] UpdateDocumentFieldsDto dto, CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
         {
@@ -178,6 +181,7 @@ namespace ArquivoMate2.API.Controllers
         /// <param name="searchClient">Search client used to resolve full-text document hits.</param>
         /// <returns>A paged list of documents visible to the current user.</returns>
         [HttpGet]
+        [OpenApiOperation(Summary = "List documents", Description = "Returns a filtered and paged collection of documents visible to the current user.")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentListDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Get([FromQuery] DocumentListRequestDto requestDto,
@@ -296,6 +300,7 @@ namespace ArquivoMate2.API.Controllers
         /// <param name="searchClient">Search client used to retrieve facet information.</param>
         /// <returns>A <see cref="DocumentStatsDto"/> representing the user's library statistics.</returns>
         [HttpGet("stats")]
+        [OpenApiOperation(Summary = "Get document statistics", Description = "Returns aggregated statistics for the current user's document library.")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentStatsDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> StatsAsync(CancellationToken cancellationToken, [FromServices] IQuerySession querySession, [FromServices] ISearchClient searchClient)
@@ -336,6 +341,7 @@ namespace ArquivoMate2.API.Controllers
         /// <param name="querySession">Query session used to load the document projection and event stream.</param>
         /// <returns>The requested document if available to the current user.</returns>
         [HttpGet("{id:guid}")]
+        [OpenApiOperation(Summary = "Get document details", Description = "Returns the full details of the requested document including access tokens when applicable.")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentDto))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -418,6 +424,7 @@ namespace ArquivoMate2.API.Controllers
         /// <param name="ct">Cancellation token propagated from the HTTP request.</param>
         /// <returns>Information about the created share including its public URL.</returns>
         [HttpPost("share")]
+        [OpenApiOperation(Summary = "Create document share", Description = "Creates a time-limited public share link for the selected document artifact.")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ShareCreatedDto))]
         public async Task<IActionResult> CreateShare([FromBody] CreateShareRequest request, [FromServices] IExternalShareService shareService, [FromServices] AppSettings appSettings, CancellationToken ct)
         {

@@ -5,6 +5,7 @@ using ArquivoMate2.Shared.Models.Users;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OpenApi;
 
 namespace ArquivoMate2.API.Controllers;
 
@@ -26,6 +27,7 @@ public class UsersController : ControllerBase
     ///     Synchronises the authenticated user with the application store.
     /// </summary>
     [HttpPost("login")]
+    [OpenApiOperation(Summary = "Synchronise current user", Description = "Creates or updates the authenticated user within the application data store.")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UserDto))]
     public async Task<IActionResult> Upsert([FromBody] UpsertUserRequest request, CancellationToken cancellationToken)
     {
@@ -37,6 +39,7 @@ public class UsersController : ControllerBase
     /// Returns all other users (for sharing dialogs etc.).
     /// </summary>
     [HttpGet("others")]
+    [OpenApiOperation(Summary = "List other users", Description = "Returns all users except the current one for use in sharing dialogs.")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<UserDto>))]
     public async Task<IActionResult> GetOthers(CancellationToken cancellationToken)
     {

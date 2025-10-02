@@ -9,6 +9,7 @@ namespace ArquivoMate2.Infrastructure.Configuration.DeliveryProvider
 {
     public enum DeliveryProviderType
     {
+        Noop,
         S3,
         Bunny,
         Cloudfront
@@ -68,6 +69,7 @@ namespace ArquivoMate2.Infrastructure.Configuration.DeliveryProvider
 
             return type switch
             {
+                DeliveryProviderType.Noop => new DeliveryProviderSettings { Type = DeliveryProviderType.Noop },
                 DeliveryProviderType.S3 => section.GetSection("Args").Get<S3DeliveryProviderSettings>()
                                         ?? throw new InvalidOperationException("S3DeliveryProviderSettings fehlt."),
                 DeliveryProviderType.Bunny => section.GetSection("Args").Get<BunnyDeliveryProviderSettings>()

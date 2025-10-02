@@ -5,6 +5,7 @@ using ArquivoMate2.Infrastructure.Persistance;
 using Marten;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.Options;
 using EasyCaching.Core;
 
@@ -38,7 +39,15 @@ namespace ArquivoMate2.API.Controllers
             _cache = cacheFactory.GetCachingProvider(EasyCachingConstValue.DefaultRedisName);
         }
 
+        /// <summary>
+        /// Delivers an encrypted artifact for a document when a valid access token is supplied.
+        /// </summary>
+        /// <param name="documentId">Identifier of the document whose artifact should be downloaded.</param>
+        /// <param name="artifact">Artifact type such as file, preview, thumb, metadata or archive.</param>
+        /// <param name="token">Signed delivery token that authorises the download.</param>
+        /// <param name="ct">Cancellation token forwarded from the HTTP request.</param>
         [HttpGet("{documentId:guid}/{artifact}")]
+        [OpenApiOperation(Summary = "Download a document artifact", Description = "Validates the provided token and streams the requested artifact back to the caller.")]
         public async Task<IActionResult> Get(Guid documentId, string artifact, [FromQuery] string token, CancellationToken ct)
         {
             // Token validation (primary security boundary)
@@ -50,7 +59,7 @@ namespace ArquivoMate2.API.Controllers
                 .Where(d => d.Id == documentId && !d.Deleted)
                 .FirstOrDefaultAsync(ct);
             if (view == null) return NotFound();
-            if (_settings.Enabled && !view.Encrypted) return NotFound(); // token darf nicht unverschlüsselte Artefakte liefern
+            if (_settings.Enabled && !view.Encrypted) return NotFound(); // token darf nicht unverschlÃ¼sselte Artefakte liefern
 
             string? fullPath = artifact switch
             {

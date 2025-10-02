@@ -7,6 +7,7 @@ using ArquivoMate2.Shared.Models.Sharing;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OpenApi;
 
 namespace ArquivoMate2.API.Controllers;
 
@@ -24,7 +25,12 @@ public class ShareAutomationRulesController : ControllerBase
         _currentUserService = currentUserService;
     }
 
+    /// <summary>
+    /// Lists automation rules that automatically share documents for the current user.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
     [HttpGet]
+    [OpenApiOperation(Summary = "List share automation rules", Description = "Returns all automation rules that apply sharing behaviour for the current user.")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<ShareAutomationRuleDto>))]
     public async Task<IActionResult> List(CancellationToken cancellationToken)
     {
@@ -32,7 +38,13 @@ public class ShareAutomationRulesController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// Creates a new automation rule that shares matching documents automatically.
+    /// </summary>
+    /// <param name="request">Definition of the automation rule to create.</param>
+    /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
     [HttpPost]
+    [OpenApiOperation(Summary = "Create share automation rule", Description = "Creates a share automation rule and returns the resulting configuration.")]
     [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ShareAutomationRuleDto))]
     public async Task<IActionResult> Create([FromBody] CreateShareAutomationRuleRequest request, CancellationToken cancellationToken)
     {
@@ -45,7 +57,13 @@ public class ShareAutomationRulesController : ControllerBase
         return CreatedAtAction(nameof(List), null, rule);
     }
 
+    /// <summary>
+    /// Deletes an existing share automation rule.
+    /// </summary>
+    /// <param name="ruleId">Identifier of the rule that should be removed.</param>
+    /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
     [HttpDelete("{ruleId}")]
+    [OpenApiOperation(Summary = "Delete share automation rule", Description = "Removes the specified automation rule if it belongs to the current user.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(string ruleId, CancellationToken cancellationToken)
     {

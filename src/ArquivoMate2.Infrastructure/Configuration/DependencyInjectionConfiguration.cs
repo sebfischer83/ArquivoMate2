@@ -256,6 +256,9 @@ namespace ArquivoMate2.Infrastructure.Configuration
 
             switch (deliverySettings)
             {
+                case DeliveryProviderSettings noop when noop.Type == DeliveryProviderType.Noop:
+                    services.AddScoped<IDeliveryProvider, NoopDeliveryProvider>();
+                    break;
                 case S3DeliveryProviderSettings s3:
                     services.Configure<S3DeliveryProviderSettings>(config.GetSection("DeliveryProvider").GetSection("Args"));
                     services.AddScoped<IDeliveryProvider, S3DeliveryProvider>();

@@ -1,3 +1,4 @@
+using ArquivoMate2.API.Filters;
 using ArquivoMate2.API.Hubs;
 using ArquivoMate2.API.Notifications;
 using ArquivoMate2.Application.Handlers;
@@ -72,6 +73,7 @@ namespace ArquivoMate2.API
               });
 
             builder.Services.AddControllers();
+            builder.Services.AddScoped<ApiKeyAuthorizationFilter>();
             builder.Services.AddInfrastructure(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
 

@@ -26,7 +26,10 @@ public class GenerateUserApiKeyHandler : IRequestHandler<GenerateUserApiKeyComma
             throw new KeyNotFoundException("User profile not found");
         }
 
-        var apiKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        var apiKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
+            .Replace('+', '-')
+            .Replace('/', '_')
+            .TrimEnd('=');
 
         user.ApiKey = apiKey;
         _session.Store(user);

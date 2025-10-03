@@ -1,5 +1,7 @@
+using ArquivoMate2.API.Filters;
 using ArquivoMate2.API.Hubs;
 using ArquivoMate2.API.Notifications;
+using ArquivoMate2.API.Maintenance;
 using ArquivoMate2.Application.Handlers;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Services;
@@ -24,6 +26,7 @@ using Serilog.Configuration;
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using System.Threading;
 using Microsoft.OpenApi.Models; // added for OpenApiInfo
 
 namespace ArquivoMate2.API
@@ -72,8 +75,13 @@ namespace ArquivoMate2.API
               });
 
             builder.Services.AddControllers();
+            builder.Services.AddScoped<ApiKeyAuthorizationFilter>();
             builder.Services.AddInfrastructure(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
+            builder.Services.AddSingleton<IDocumentEncryptionKeysExportStore, FileSystemDocumentEncryptionKeysExportStore>();
+            builder.Services.AddScoped<IDocumentEncryptionKeysExportService, DocumentEncryptionKeysExportService>();
+            builder.Services.AddTransient<DocumentEncryptionKeysExportJob>();
+            builder.Services.AddTransient<MaintenanceExportCleanupJob>();
 
             builder.Services.AddSignalR().AddJsonProtocol(options =>
             {
@@ -91,7 +99,7 @@ namespace ArquivoMate2.API
 
             builder.Services.AddHangfireServer(options =>
             {
-                options.Queues = new[] { "documents" };
+                options.Queues = new[] { "documents", "maintenance" };
                 options.WorkerCount = 5;
             });
             builder.Services.AddMemoryCache();
@@ -177,6 +185,16 @@ namespace ArquivoMate2.API
                 .AddSupportedUICultures(supportedCultures);
 
             app.UseRequestLocalization(localizationOptions);
+
+            RecurringJob.AddOrUpdate<MaintenanceExportCleanupJob>(
+                "maintenance-export-cleanup",
+                job => job.ExecuteAsync(CancellationToken.None),
+                Cron.Daily,
+                new RecurringJobOptions
+                {
+                    TimeZone = TimeZoneInfo.Utc,
+                    QueueName = "maintenance"
+                });
 
             app.Run();
         }

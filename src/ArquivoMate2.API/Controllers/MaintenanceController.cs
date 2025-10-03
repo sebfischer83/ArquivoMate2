@@ -1,9 +1,14 @@
-using System;
-using System.Threading;
+using System.IO.Compression;
+using System.Linq;
+using System.Text;
+using System.Text.Json;
 using ArquivoMate2.API.Filters;
+using ArquivoMate2.Domain.Document;
+using Marten;
+using Marten.Events;
+using Marten.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ArquivoMate2.API.Maintenance;
 
 namespace ArquivoMate2.API.Controllers;
 
@@ -12,71 +17,70 @@ namespace ArquivoMate2.API.Controllers;
 [ServiceFilter(typeof(ApiKeyAuthorizationFilter))]
 public class MaintenanceController : ControllerBase
 {
-    private readonly IDocumentEncryptionKeysExportService _exportService;
+    private readonly IQuerySession _querySession;
 
-    public MaintenanceController(IDocumentEncryptionKeysExportService exportService)
+    public MaintenanceController(IQuerySession querySession)
     {
-        _exportService = exportService;
+        _querySession = querySession;
     }
 
     /// <summary>
-    /// Starts preparing a ZIP archive containing all DocumentEncryptionKeysAdded events for backup purposes.
+    /// Creates a ZIP archive containing all DocumentEncryptionKeysAdded events for backup purposes.
     /// </summary>
-    [HttpPost("document-encryption-keys/export")]
-    [ProducesResponseType(StatusCodes.Status202Accepted)]
-    public async Task<IActionResult> StartDocumentEncryptionKeysExportAsync(CancellationToken cancellationToken)
-    {
-        var operationId = await _exportService.StartExportAsync(cancellationToken);
-        return AcceptedAtAction(nameof(GetDocumentEncryptionKeysExportStatusAsync), new { operationId }, new DocumentEncryptionKeysExportCreatedResponse(operationId));
-    }
-
-    /// <summary>
-    /// Returns the current status for a previously started document encryption key export.
-    /// </summary>
-    [HttpGet("document-encryption-keys/export/{operationId:guid}")]
+    [HttpGet("document-encryption-keys")] 
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<DocumentEncryptionKeysExportStatusResponse>> GetDocumentEncryptionKeysExportStatusAsync(Guid operationId, CancellationToken cancellationToken)
+    public async Task<IActionResult> DownloadDocumentEncryptionKeysAsync(CancellationToken cancellationToken)
     {
-        var metadata = await _exportService.GetExportStatusAsync(operationId, cancellationToken);
-        if (metadata is null)
+        var events = await _querySession.Events
+            .QueryAllRawEvents()
+            .Where(e => e.EventTypeName == nameof(DocumentEncryptionKeysAdded)
+                        || e.EventTypeName == typeof(DocumentEncryptionKeysAdded).FullName)
+            .OrderBy(e => e.Sequence)
+            .ToListAsync(cancellationToken);
+
+        var payload = events
+            .Select(e => new
+            {
+                Event = e,
+                Data = e.Data as DocumentEncryptionKeysAdded
+            })
+            .Where(e => e.Data is not null)
+            .Select(e => new DocumentEncryptionKeysBackupItem
+            {
+                StreamId = e.Event.StreamId,
+                EventId = e.Event.Id,
+                Sequence = e.Event.Sequence,
+                Timestamp = e.Event.Timestamp.UtcDateTime,
+                Event = e.Data!
+            })
+            .ToList();
+
+        var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions
         {
-            return NotFound();
+            WriteIndented = true
+        });
+
+        using var archiveStream = new MemoryStream();
+        using (var archive = new ZipArchive(archiveStream, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            var entry = archive.CreateEntry("document-encryption-keys.json", CompressionLevel.Optimal);
+            using var entryStream = entry.Open();
+            using var writer = new StreamWriter(entryStream, new UTF8Encoding(false));
+            await writer.WriteAsync(json);
+            await writer.FlushAsync();
         }
 
-        string? downloadUrl = null;
-        if (metadata.State == MaintenanceExportState.Completed)
-        {
-            downloadUrl = Url.ActionLink(nameof(DownloadDocumentEncryptionKeysExportAsync), values: new { operationId });
-        }
-
-        var response = new DocumentEncryptionKeysExportStatusResponse(
-            metadata.OperationId,
-            metadata.State,
-            metadata.CreatedUtc,
-            metadata.CompletedUtc,
-            metadata.ErrorMessage,
-            downloadUrl,
-            metadata.ArchiveFileName);
-
-        return Ok(response);
+        archiveStream.Position = 0;
+        var fileName = $"document-encryption-keys-backup-{DateTime.UtcNow:yyyyMMddHHmmss}.zip";
+        return File(archiveStream.ToArray(), "application/zip", fileName);
     }
 
-    /// <summary>
-    /// Downloads the generated ZIP archive after the export is complete.
-    /// </summary>
-    [HttpGet("document-encryption-keys/export/{operationId:guid}/download")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DownloadDocumentEncryptionKeysExportAsync(Guid operationId, CancellationToken cancellationToken)
+    private sealed class DocumentEncryptionKeysBackupItem
     {
-        var download = await _exportService.GetDownloadAsync(operationId, cancellationToken);
-        if (download is null)
-        {
-            return NotFound();
-        }
-
-        var contentType = "application/zip";
-        return PhysicalFile(download.FilePath, contentType, download.DownloadFileName);
+        public Guid StreamId { get; init; }
+        public Guid EventId { get; init; }
+        public long Sequence { get; init; }
+        public DateTime Timestamp { get; init; }
+        public DocumentEncryptionKeysAdded Event { get; init; } = default!;
     }
 }

@@ -58,6 +58,119 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
 
+## Runtime Configuration
+
+Die Anwendung lädt zur Initialisierung nur noch die Datei `public/runtime-config.json`. Diese bündelt jetzt sowohl Backend-Basis-URL (`apiBaseUrl`) als auch OIDC/OAuth Einstellungen unter dem Schlüssel `auth`.
+
+Beispiel:
+```json
+{
+  "apiBaseUrl": "https://api.example.com",
+  "auth": {
+    "issuer": "https://auth.example.com/realms/arquivomate2/",
+    "clientId": "spa-client-id",
+    "scope": "openid profile email"
+  }
+}
+```
+
+Fallbacks:
+- Fehlt ein Wert, greift der Default aus `app.config.ts` (`defaultAuthConfig`).
+- `redirectUri` wird immer zur Laufzeit auf `window.location.origin + '/app'` gesetzt (kein Eintrag nötig).
+
+Entfernt: `auth-config.json` (war früher zweite Datei). Bitte keine alte Datei mehr ausrollen – sonst unnötiger Request.
+
+Deployment-Hinweis:
+- Diese JSON kann beim Container-/Server-Start überschrieben oder templated werden (kein Rebuild notwendig).
+- Achte darauf, dass sie ohne Caching (oder mit Cache-Busting Headern) ausgeliefert wird, falls Umgebungen wechseln.
+
+## Docker Deployment
+
+Multi-Stage Dockerfile (`Dockerfile`) erstellt Produktionsbuild und serviert ihn via Nginx (Port 8080). Unterstützt Multi-Arch (amd64 & arm64) durch Buildx.
+
+### Dynamische Version (Env Variable)
+`runtime-config.json` enthält das Feld `version` mit Platzhalter `__VERSION__`. Beim Container-Start ersetzt der Entrypoint (`docker-entrypoint.sh`) diesen durch die Umgebungsvariable `VERSION` oder nutzt den Fallback `0.0.0-dev`.
+
+Beispiel Run mit Version:
+```bash
+docker run --rm -e VERSION=1.3.7 -p 8080:8080 arquivomate2-ui:dev
+```
+
+Innerhalb der App kann dieser Wert clientseitig (HTTP Fetch der runtime-config) angezeigt oder für Debug-Zwecke geloggt werden.
+
+### Konfiguration per Environment Variablen (Base URL & Auth)
+`runtime-config.json` verwendet Platzhalter, die beim Container-Start ersetzt werden:
+
+| Platzhalter            | Env Var            | Fallback                          |
+|------------------------|--------------------|------------------------------------|
+| `__API_BASE_URL__`     | `API_BASE_URL`     | `http://localhost:5000`            |
+| `__OIDC_ISSUER__`      | `OIDC_ISSUER`      | `https://example-issuer.local/realms/app/` |
+| `__OIDC_CLIENT_ID__`   | `OIDC_CLIENT_ID`   | `spa-client`                       |
+| `__OIDC_SCOPE__`       | `OIDC_SCOPE`       | `openid profile email`            |
+| `__VERSION__`          | `VERSION`          | `0.0.0-dev`                        |
+
+Der Austausch passiert im Entrypoint `docker-entrypoint.sh` via `sed` bevor Nginx startet.
+
+Lokale Entwicklung vs. Container:
+- `public/runtime-config.json` enthält reale Dev-Werte (schnelles Debugging mit `ng serve`).
+- `public/runtime-config.template.json` enthält Platzhalter und wird nur im Container verwendet (EntryPoint kopiert Template → `runtime-config.json` → ersetzt Tokens).
+- Vorteil: Keine Token-Verschmutzung im lokalen Flow, aber flexible Substitution im Deployment.
+
+### docker-compose Beispiel
+```yaml
+services:
+  ui:
+    image: dein-registry/arquivomate2-ui:latest
+    container_name: arquivomate2-ui
+    environment:
+      API_BASE_URL: "https://api.prod.example.com"
+      OIDC_ISSUER: "https://auth.prod.example.com/realms/arquivomate2/"
+      OIDC_CLIENT_ID: "arquivomate2-spa"
+      OIDC_SCOPE: "openid profile email offline_access"
+      VERSION: "1.5.0"
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+```
+
+Für mehrere Umgebungen (dev/stage/prod) können unterschiedliche Compose Override Files genutzt werden (`docker-compose -f compose.yml -f compose.prod.yml up -d`).
+
+Buildx aktivieren (einmalig):
+```bash
+docker buildx create --use --name arquivomate2-builder
+```
+
+Multi-Arch Image bauen:
+```bash
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t dein-registry/arquivomate2-ui:latest \
+  --push .
+```
+
+Lokaler einfacher Build (nur Host-Arch):
+```bash
+docker build -t arquivomate2-ui:dev .
+```
+
+Container starten:
+```bash
+docker run --rm -p 8080:8080 arquivomate2-ui:dev
+```
+
+Runtime Config austauschen ohne Rebuild:
+```bash
+docker run --rm -p 8080:8080 \
+  -v $(pwd)/public/runtime-config.json:/usr/share/nginx/html/runtime-config.json:ro \
+  arquivomate2-ui:dev
+```
+
+Hinweise:
+- `runtime-config.json` wird mit `no-cache` Headern ausgeliefert (siehe `nginx.conf`).
+- Statischer Asset Cache: 1 Jahr immutable (hash-basierte Dateinamen vom Angular Build).
+- Exponierter Port im Container: 8080 (nicht 80) für Plattform-Kompatibilität.
+- Nicht benötigte Dev-Abhängigkeiten landen nicht im finalen Nginx Layer.
+
 ## Reusable Components
 
 ### `am-document-card-grid`

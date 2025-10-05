@@ -1,0 +1,15 @@
+node_modules
+.git
+.gitignore
+Dockerfile
+.dockerignore
+npm-debug.log
+dist
+tmp
+temp
+.cache
+.eslintcache
+coverage
+.idea
+.vscode
+**/*.spec.ts

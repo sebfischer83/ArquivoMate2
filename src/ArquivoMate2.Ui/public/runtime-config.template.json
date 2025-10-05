@@ -1,0 +1,9 @@
+{
+  "apiBaseUrl": "__API_BASE_URL__",
+  "version": "__VERSION__",
+  "auth": {
+    "issuer": "__OIDC_ISSUER__",
+    "clientId": "__OIDC_CLIENT_ID__",
+    "scope": "__OIDC_SCOPE__"
+  }
+}

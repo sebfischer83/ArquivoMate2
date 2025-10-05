@@ -6,7 +6,7 @@ import { provideOAuthClient } from 'angular-oauth2-oidc';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { AuthConfig } from 'angular-oauth2-oidc';
 import { routes } from './app.routes';
-import { firstValueFrom, of, forkJoin } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { provideZonelessChangeDetection, isDevMode } from '@angular/core';
 import { AuthGuard } from "./guards/auth.guard";
@@ -34,6 +34,7 @@ let authCodeFlowConfig: AuthConfig = { ...defaultAuthConfig };
 interface RuntimeConfigFile {
   apiBaseUrl?: string;
   auth?: Partial<AuthConfig>;
+  version?: string;
 }
 
 const intializeAppFn = () => {
@@ -41,8 +42,7 @@ const intializeAppFn = () => {
   const http = inject(HttpClient);
   const transloco = inject(TranslocoService);
 
-  // Parallel laden: auth + runtime config
-  const authCfg$ = http.get<Partial<AuthConfig>>('auth-config.json').pipe(catchError(() => of({}))); 
+  // Lade allein runtime-config.json (enthält jetzt apiBaseUrl + auth)
   const runtimeCfg$ = http.get<RuntimeConfigFile>('runtime-config.json').pipe(catchError(() => of({} as RuntimeConfigFile)));
 
   // Attempt to activate previously stored language early
@@ -51,15 +51,15 @@ const intializeAppFn = () => {
     transloco.setActiveLang(persistedLang);
   }
 
-  return firstValueFrom(forkJoin([authCfg$, runtimeCfg$]))
-    .then(([authFile, runtimeFile]) => {
-      // API Base URL Priorität: runtime-config.json > auth-config.json(apiBaseUrl?) > default
-      const apiBase = runtimeFile.apiBaseUrl || (authFile as any).apiBaseUrl || 'http://localhost:5000';
+  return firstValueFrom(runtimeCfg$)
+    .then(runtimeFile => {
+      const apiBase = runtimeFile.apiBaseUrl || 'http://localhost:5000';
       apiConfig.rootUrl = apiBase;
-
-      // Merge Auth config
-      const authPart = runtimeFile.auth || authFile || {};
+      const authPart = runtimeFile.auth || {};
       authCodeFlowConfig = { ...defaultAuthConfig, ...authPart, redirectUri: window.location.origin + '/app' };
+      const version = runtimeFile.version || 'unknown';
+      // eslint-disable-next-line no-console
+      console.info(`[ArquivoMate2] Runtime config loaded (apiBaseUrl=${apiBase}, version=${version})`);
     })
     .catch(() => {
       apiConfig.rootUrl = 'http://localhost:5000';

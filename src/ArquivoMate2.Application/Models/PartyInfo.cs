@@ -9,6 +9,7 @@ namespace ArquivoMate2.Application.Models
 
     public class PartyInfo
     {
+        public required string UserId { get; init; }
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string CompanyName { get; set; } = string.Empty;

@@ -101,7 +101,8 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     typeof(DocumentLanguageDetected) // RESTORED
                 });
 
-                options.Schema.For<PartyInfo>();
+                options.Schema.For<PartyInfo>()
+                    .Index(x => x.UserId);
                 options.Schema.For<EmailSettings>()
                     .Index(x => x.UserId)
                     .Index(x => x.IsActive);

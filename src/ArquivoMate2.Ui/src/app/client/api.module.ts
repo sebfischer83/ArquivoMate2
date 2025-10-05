@@ -12,6 +12,7 @@ import { DocumentsService } from './services/documents.service';
 import { DocumentSharesService } from './services/document-shares.service';
 import { EmailService } from './services/email.service';
 import { ImportHistoryService } from './services/import-history.service';
+import { MaintenanceService } from './services/maintenance.service';
 import { PublicShareService } from './services/public-share.service';
 import { ShareAutomationRulesService } from './services/share-automation-rules.service';
 import { ShareGroupsService } from './services/share-groups.service';
@@ -31,6 +32,7 @@ import { UsersService } from './services/users.service';
     DocumentSharesService,
     EmailService,
     ImportHistoryService,
+    MaintenanceService,
     PublicShareService,
     ShareAutomationRulesService,
     ShareGroupsService,

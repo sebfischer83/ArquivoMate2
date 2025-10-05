@@ -11,20 +11,93 @@ import { BaseService } from '../base-service';
 import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
+import { apiUsersApiKeyPost$Json } from '../fn/users/api-users-api-key-post-json';
+import { ApiUsersApiKeyPost$Json$Params } from '../fn/users/api-users-api-key-post-json';
+import { apiUsersApiKeyPost$Plain } from '../fn/users/api-users-api-key-post-plain';
+import { ApiUsersApiKeyPost$Plain$Params } from '../fn/users/api-users-api-key-post-plain';
 import { apiUsersLoginPost$Json } from '../fn/users/api-users-login-post-json';
 import { ApiUsersLoginPost$Json$Params } from '../fn/users/api-users-login-post-json';
 import { apiUsersLoginPost$Plain } from '../fn/users/api-users-login-post-plain';
 import { ApiUsersLoginPost$Plain$Params } from '../fn/users/api-users-login-post-plain';
+import { apiUsersMeGet$Json } from '../fn/users/api-users-me-get-json';
+import { ApiUsersMeGet$Json$Params } from '../fn/users/api-users-me-get-json';
+import { apiUsersMeGet$Plain } from '../fn/users/api-users-me-get-plain';
+import { ApiUsersMeGet$Plain$Params } from '../fn/users/api-users-me-get-plain';
 import { apiUsersOthersGet$Json } from '../fn/users/api-users-others-get-json';
 import { ApiUsersOthersGet$Json$Params } from '../fn/users/api-users-others-get-json';
 import { apiUsersOthersGet$Plain } from '../fn/users/api-users-others-get-plain';
 import { ApiUsersOthersGet$Plain$Params } from '../fn/users/api-users-others-get-plain';
+import { CurrentUserDto } from '../models/current-user-dto';
+import { UserApiKeyDto } from '../models/user-api-key-dto';
 import { UserDto } from '../models/user-dto';
 
 @Injectable({ providedIn: 'root' })
 export class UsersService extends BaseService {
   constructor(config: ApiConfiguration, http: HttpClient) {
     super(config, http);
+  }
+
+  /** Path part for operation `apiUsersMeGet()` */
+  static readonly ApiUsersMeGetPath = '/api/users/me';
+
+  /**
+   * Returns the current authenticated user profile without updating timestamps.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiUsersMeGet$Plain()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiUsersMeGet$Plain$Response(params?: ApiUsersMeGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<CurrentUserDto>> {
+    return apiUsersMeGet$Plain(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Returns the current authenticated user profile without updating timestamps.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiUsersMeGet$Plain$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiUsersMeGet$Plain(params?: ApiUsersMeGet$Plain$Params, context?: HttpContext): Observable<CurrentUserDto> {
+    return this.apiUsersMeGet$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<CurrentUserDto>): CurrentUserDto => r.body)
+    );
+  }
+
+  /**
+   * Returns the current authenticated user profile without updating timestamps.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiUsersMeGet$Json()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiUsersMeGet$Json$Response(params?: ApiUsersMeGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<CurrentUserDto>> {
+    return apiUsersMeGet$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Returns the current authenticated user profile without updating timestamps.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiUsersMeGet$Json$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiUsersMeGet$Json(params?: ApiUsersMeGet$Json$Params, context?: HttpContext): Observable<CurrentUserDto> {
+    return this.apiUsersMeGet$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<CurrentUserDto>): CurrentUserDto => r.body)
+    );
   }
 
   /** Path part for operation `apiUsersLoginPost()` */
@@ -150,6 +223,69 @@ export class UsersService extends BaseService {
   apiUsersOthersGet$Json(params?: ApiUsersOthersGet$Json$Params, context?: HttpContext): Observable<Array<UserDto>> {
     return this.apiUsersOthersGet$Json$Response(params, context).pipe(
       map((r: StrictHttpResponse<Array<UserDto>>): Array<UserDto> => r.body)
+    );
+  }
+
+  /** Path part for operation `apiUsersApiKeyPost()` */
+  static readonly ApiUsersApiKeyPostPath = '/api/users/api-key';
+
+  /**
+   * Generates a new API key for the authenticated user and stores it with the profile.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiUsersApiKeyPost$Plain()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiUsersApiKeyPost$Plain$Response(params?: ApiUsersApiKeyPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<UserApiKeyDto>> {
+    return apiUsersApiKeyPost$Plain(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Generates a new API key for the authenticated user and stores it with the profile.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiUsersApiKeyPost$Plain$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiUsersApiKeyPost$Plain(params?: ApiUsersApiKeyPost$Plain$Params, context?: HttpContext): Observable<UserApiKeyDto> {
+    return this.apiUsersApiKeyPost$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<UserApiKeyDto>): UserApiKeyDto => r.body)
+    );
+  }
+
+  /**
+   * Generates a new API key for the authenticated user and stores it with the profile.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiUsersApiKeyPost$Json()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiUsersApiKeyPost$Json$Response(params?: ApiUsersApiKeyPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<UserApiKeyDto>> {
+    return apiUsersApiKeyPost$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Generates a new API key for the authenticated user and stores it with the profile.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiUsersApiKeyPost$Json$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiUsersApiKeyPost$Json(params?: ApiUsersApiKeyPost$Json$Params, context?: HttpContext): Observable<UserApiKeyDto> {
+    return this.apiUsersApiKeyPost$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<UserApiKeyDto>): UserApiKeyDto => r.body)
     );
   }
 

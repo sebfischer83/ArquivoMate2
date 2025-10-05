@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using EasyCaching.Core;
+using ArquivoMate2.Shared.Models; // DocumentArtifact
 
 namespace ArquivoMate2.API.Controllers
 {
@@ -21,7 +22,7 @@ namespace ArquivoMate2.API.Controllers
         private readonly IEncryptionService _encryption;
         private readonly EncryptionSettings _settings;
         private readonly IEasyCachingProvider _cache;
-        private static readonly string[] Artifacts = new[] {"file","preview","thumb","metadata","archive"};
+        private const int OneYearSeconds = 31536000; // 365 * 24 * 60 * 60
 
         public DeliveryController(IQuerySession query,
             IStorageProvider storage,
@@ -39,38 +40,36 @@ namespace ArquivoMate2.API.Controllers
         }
 
         /// <summary>
-        /// Delivers an encrypted artifact for a document when a valid access token is supplied.
+        /// Delivers an (optionally encrypted) artifact for a document when a valid access token is supplied.
         /// </summary>
-        /// <param name="documentId">Identifier of the document whose artifact should be downloaded.</param>
-        /// <param name="artifact">Artifact type such as file, preview, thumb, metadata or archive.</param>
-        /// <param name="token">Signed delivery token that authorises the download.</param>
-        /// <param name="ct">Cancellation token forwarded from the HTTP request.</param>
         [HttpGet("{documentId:guid}/{artifact}")]
-        public async Task<IActionResult> Get(Guid documentId, string artifact, [FromQuery] string token, CancellationToken ct)
+        public async Task<IActionResult> Get(Guid documentId, DocumentArtifact artifact, [FromQuery] string token, CancellationToken ct)
         {
-            // Token validation (primary security boundary)
-            if (!_tokenService.TryValidate(token, out var tDoc, out var tArtifact) || tDoc != documentId || !string.Equals(artifact, tArtifact, StringComparison.OrdinalIgnoreCase))
+            // Validate token first
+            if (!_tokenService.TryValidate(token, out var tDoc, out var tArtifactStr) || tDoc != documentId)
                 return NotFound();
-            if (!Artifacts.Contains(artifact)) return NotFound();
+            if (!DocumentArtifactExtensions.TryParse(tArtifactStr, out var tokenArtifact) || tokenArtifact != artifact)
+                return NotFound();
 
             var view = await _query.Query<DocumentView>()
                 .Where(d => d.Id == documentId && !d.Deleted)
                 .FirstOrDefaultAsync(ct);
             if (view == null) return NotFound();
-            if (_settings.Enabled && !view.Encrypted) return NotFound(); // token darf nicht unverschlüsselte Artefakte liefern
+            if (_settings.Enabled && !view.Encrypted) return NotFound();
 
             string? fullPath = artifact switch
             {
-                "file" => view.FilePath,
-                "preview" => view.PreviewPath,
-                "thumb" => view.ThumbnailPath,
-                "metadata" => view.MetadataPath,
-                "archive" => view.ArchivePath,
+                DocumentArtifact.File => view.FilePath,
+                DocumentArtifact.Preview => view.PreviewPath,
+                DocumentArtifact.Thumb => view.ThumbnailPath,
+                DocumentArtifact.Metadata => view.MetadataPath,
+                DocumentArtifact.Archive => view.ArchivePath,
                 _ => null
             };
             if (fullPath == null) return NotFound();
 
-            var cacheKey = $"encfile:{documentId}:{artifact}";
+            var artifactWire = artifact.ToWireValue();
+            var cacheKey = $"encfile:{documentId}:{artifactWire}";
             if (_settings.Enabled)
             {
                 byte[]? encrypted = null;
@@ -90,7 +89,7 @@ namespace ArquivoMate2.API.Controllers
                 var events = await _query.Events.FetchStreamAsync(documentId, token: ct);
                 var keysEvent = events.Select(e => e.Data).OfType<DocumentEncryptionKeysAdded>().LastOrDefault();
                 if (keysEvent == null) return NotFound();
-                var entry = keysEvent.Artifacts.FirstOrDefault(a => a.Artifact == artifact);
+                var entry = keysEvent.Artifacts.FirstOrDefault(a => a.Artifact == artifactWire);
                 if (entry == null) return NotFound();
                 if (entry.WrappedDek.Length < 32 + 16) return NotFound();
                 var wrapped = entry.WrappedDek.AsSpan(0, 32).ToArray();
@@ -100,7 +99,7 @@ namespace ArquivoMate2.API.Controllers
                 try
                 {
                     using var aesWrap = new System.Security.Cryptography.AesGcm(Convert.FromBase64String(_settings.MasterKeyBase64), 16);
-                    aesWrap.Decrypt(entry.WrapNonce, wrapped, wrapTag, dek, System.Text.Encoding.UTF8.GetBytes("DEK:" + artifact));
+                    aesWrap.Decrypt(entry.WrapNonce, wrapped, wrapTag, dek, System.Text.Encoding.UTF8.GetBytes("DEK:" + artifactWire));
                 }
                 catch { return NotFound(); }
 
@@ -112,20 +111,28 @@ namespace ArquivoMate2.API.Controllers
                 }
                 catch { return NotFound(); }
 
+                ApplyClientCacheHeaders();
                 return File(plain, GetContentType(artifact, fullPath));
             }
             else
             {
                 var plainBytes = await _storage.GetFileAsync(fullPath, ct);
+                ApplyClientCacheHeaders();
                 return File(plainBytes, GetContentType(artifact, fullPath));
             }
         }
 
-        private static string GetContentType(string artifact, string path) => artifact switch
+        private void ApplyClientCacheHeaders()
         {
-            "thumb" => "image/webp",
-            "metadata" => "application/json",
-            "preview" or "archive" or "file" => "application/pdf",
+            Response.Headers["Cache-Control"] = $"public, max-age={OneYearSeconds}, immutable";
+            Response.Headers["Expires"] = DateTime.UtcNow.AddSeconds(OneYearSeconds).ToString("R");
+        }
+
+        private static string GetContentType(DocumentArtifact artifact, string path) => artifact switch
+        {
+            DocumentArtifact.Thumb => "image/webp",
+            DocumentArtifact.Metadata => "application/json",
+            DocumentArtifact.Preview or DocumentArtifact.Archive or DocumentArtifact.File => "application/pdf",
             _ => "application/octet-stream"
         };
     }

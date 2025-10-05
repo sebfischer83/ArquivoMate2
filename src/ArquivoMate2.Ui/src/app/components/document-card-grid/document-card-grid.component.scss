@@ -1,0 +1,56 @@
+/* Theming: verwendet CSS Custom Properties, damit Dark/Light via Host Theme (z.B. body[data-theme='dark']) angepasst werden kann. */
+:host { /* Fallbacks falls Theme Vars fehlen */
+  --am-bg-surface: var(--tui-base-01, #ffffff);
+  --am-bg-elevated: var(--tui-base-02, #f5f5f5);
+  --am-border: var(--tui-base-03, #d9d9d9);
+  --am-border-strong: var(--tui-base-04, #b5b5b5);
+  --am-text-primary: var(--tui-text-01, #1f1f1f);
+  --am-text-secondary: var(--tui-text-02, #666666);
+  --am-text-invert: var(--tui-text-invert, #ffffff);
+  --am-accent: var(--tui-accent, #3b82f6);
+  --am-overlay: var(--tui-overlay, rgba(0,0,0,0.45));
+  --am-skeleton-base: var(--tui-base-03, #e0e0e0);
+  --am-skeleton-highlight: var(--tui-base-02, #f3f3f3);
+  --am-danger: var(--tui-error-fill, #b00020);
+}
+
+:host-context([data-theme='dark']) {
+  --am-bg-surface: var(--tui-base-02, #1f1f1f);
+  --am-bg-elevated: var(--tui-base-03, #2a2a2a);
+  --am-border: var(--tui-base-04, #3a3a3a);
+  --am-border-strong: var(--tui-base-05, #555555);
+  --am-text-primary: var(--tui-text-01, #f5f5f5);
+  --am-text-secondary: var(--tui-text-02, #b0b0b0);
+  --am-overlay: rgba(0,0,0,0.6);
+  --am-skeleton-base: #3a3a3a;
+  --am-skeleton-highlight: #505050;
+}
+
+.document-card-grid-wrapper { position:relative; display:flex; flex-direction:column; gap: .75rem; color:var(--am-text-primary); }
+.document-card-grid-wrapper.is-loading { pointer-events:none; }
+.loading-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.75rem; background:linear-gradient(135deg, var(--am-bg-surface, #fff) 85%, var(--am-bg-elevated, #f5f5f5)); backdrop-filter:blur(2px); z-index:2; animation:fadeIn .25s ease; }
+.loading-text { font-size:.85rem; color:var(--am-text-secondary); }
+.spinner { width:38px; height:38px; border-radius:50%; border:4px solid var(--am-border); border-top-color: var(--am-accent); animation:spin 0.8s linear infinite; }
+
+.header-row { display:flex; align-items:center; gap:.75rem; }
+.header-row .spacer { flex:1; }
+.icon-btn { width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--am-border); background:var(--am-bg-surface); color:var(--am-text-primary); border-radius:6px; cursor:pointer; font-size:16px; line-height:1; transition:background .15s, border-color .15s, color .15s; }
+.icon-btn:hover:not(:disabled) { background:var(--am-bg-elevated); border-color:var(--am-border-strong); }
+.icon-btn:active:not(:disabled) { background:var(--am-border); }
+.icon-btn:disabled { opacity:.5; cursor:default; }
+
+.grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(var(--am-card-min-width, 300px), 1fr)); gap: .6rem; }
+.skeletons { display:grid; grid-template-columns: repeat(auto-fill, minmax(var(--am-card-min-width, 300px), 1fr)); gap:.6rem; }
+.skeleton .thumb { position:relative; }
+.skeleton .line { height:8px; background:var(--am-skeleton-base); border-radius:4px; }
+.skeleton .w1 { width:80%; }
+.skeleton .w2 { width:60%; }
+.skeleton .w3 { width:40%; }
+
+.shimmer { background:linear-gradient(110deg,var(--am-skeleton-base) 8%,var(--am-skeleton-highlight) 18%,var(--am-skeleton-base) 33%); background-size:200% 100%; animation:shimmer 1.2s ease-in-out infinite; }
+.error { color:var(--am-danger); }
+.empty { font-size:.85rem; color:var(--am-text-secondary); text-align:center; padding:1rem 0; }
+
+@keyframes shimmer { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }

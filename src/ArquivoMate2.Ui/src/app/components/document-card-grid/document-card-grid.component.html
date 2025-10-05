@@ -1,0 +1,51 @@
+<div class="document-card-grid-wrapper" [class.is-loading]="displayLoading()" role="region" [attr.aria-busy]="displayLoading()" aria-live="polite">
+  @if (displayLoading() && showOverlay) {
+    <div class="loading-overlay">
+      <div class="spinner" aria-hidden="true"></div>
+      <div class="loading-text">Lade Dokumente…</div>
+    </div>
+  }
+  <div class="header-row">
+    @if (totalCount) { <div class="counts">{{ totalCount }} Dokumente</div> }
+    <div class="spacer"></div>
+    <button type="button" class="icon-btn" (click)="reload.emit()" [disabled]="loading" aria-label="Neu laden" title="Neu laden">⟳</button>
+  </div>
+
+  @if (error && !displayLoading()) {
+    <div class="error">{{ error }}</div>
+  }
+
+  @if (displayLoading() && (!preserveItemsWhileLoading || !hasItems())) {
+    <div class="skeletons">
+      @for (i of [].constructor(skeletonCount); track i) {
+        <div class="card skeleton">
+          <div class="thumb placeholder shimmer"></div>
+          <div class="meta">
+            <div class="line w1 shimmer"></div>
+            <div class="line w2 shimmer"></div>
+            <div class="line w3 shimmer"></div>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    @if (hasItems()) {
+      <div class="grid" [style.--am-card-min-width.px]="cardMinWidth">
+  @for (d of items; track trackById($index, d)) {
+          <am-document-card [document]="d" (cardClick)="onCardClick(d)"></am-document-card>
+        }
+      </div>
+    } @else {
+      @if (!displayLoading()) { <div class="empty">Keine Dokumente gefunden.</div> }
+    }
+  }
+
+  @if (alwaysShowControls || pageCount > 1 || totalCount > pageSize) {
+    <tui-pagination
+      [length]="pageCount || 1"
+      [index]="page - 1"
+      (indexChange)="onIndexChange($event)"
+      class="pagination-taiga"
+    />
+  }
+</div>

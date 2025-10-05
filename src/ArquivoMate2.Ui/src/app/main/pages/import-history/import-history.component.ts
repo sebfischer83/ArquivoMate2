@@ -115,7 +115,8 @@ export class ImportHistoryComponent implements OnInit {
   /**
    * Mappt Backend-Status auf UI-Status für Filter und Anzeige
    */
-  private mapStatusToUiType(status?: string): string {
+  // Accepts status which may be string, null or undefined.
+  private mapStatusToUiType(status: string | null | undefined): string {
     switch (status) {
       case 'Completed': return 'success';
       case 'Failed': return 'error';

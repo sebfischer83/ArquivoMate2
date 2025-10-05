@@ -223,6 +223,33 @@ namespace ArquivoMate2.API.Controllers
             var baseQuery = querySession.Query<DocumentView>()
                 .ApplyDocumentFilters(requestDto, userId, sharedAccessibleIds);
 
+            // Collection filter (if specified)
+            if (requestDto.CollectionIds is { Count: > 0 })
+            {
+                var colIds = requestDto.CollectionIds.Distinct().ToList();
+                var docIdsForCollections = await querySession.Query<ArquivoMate2.Domain.Collections.DocumentCollectionMembership>()
+                    .Where(m => m.OwnerUserId == userId && colIds.Contains(m.CollectionId))
+                    .Select(m => m.DocumentId)
+                    .Distinct()
+                    .ToListAsync(cancellationToken);
+
+                if (docIdsForCollections.Count == 0)
+                {
+                    return Ok(new DocumentListDto
+                    {
+                        Documents = new List<DocumentListItemDto>(),
+                        TotalCount = 0,
+                        PageCount = 0,
+                        HasNextPage = false,
+                        HasPreviousPage = false,
+                        IsFirstPage = requestDto.Page == 1,
+                        IsLastPage = true,
+                        CurrentPage = requestDto.Page
+                    });
+                }
+                baseQuery = baseQuery.Where(d => docIdsForCollections.Contains(d.Id));
+            }
+
             if (searchIds != null)
             {
                 // Restrict the result set to the Meilisearch hits

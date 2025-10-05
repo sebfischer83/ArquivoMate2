@@ -32,8 +32,8 @@ namespace ArquivoMate2.Application.Handlers.Notes
                 throw new KeyNotFoundException("Document not found");
             if (doc.UserId != request.UserId)
                 throw new UnauthorizedAccessException("Not allowed to add notes to this document");
-            if (doc.NotesCount >= 10)
-                throw new InvalidOperationException("Maximum number of notes (10) reached");
+            if (doc.NotesCount >= 20)
+                throw new InvalidOperationException("Maximum number of notes (20) reached");
 
             var note = new DocumentNote
             {

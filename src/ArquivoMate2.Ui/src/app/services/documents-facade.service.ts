@@ -1,4 +1,4 @@
-import { inject, Injectable, signal, computed } from '@angular/core';
+import { inject, Injectable, signal, computed, effect } from '@angular/core';
 import { DocumentsService } from '../client/services/documents.service';
 import { TranslocoService } from '@jsverse/transloco';
 import { DocumentListDto } from '../client/models/document-list-dto';
@@ -20,6 +20,11 @@ export class DocumentsFacadeService {
   private page = signal<number>(1);
   private pageSizeInternal = signal<number>(20);
 
+  // New filter signals
+  private searchTerm = signal<string>('');
+  private typeFilter = signal<string | null>(null);
+  private acceptedFilter = signal<boolean | null>(null);
+
   readonly documents = computed(() => this.documentsSignal());
   readonly totalCount = computed(() => this.documentsSignal()?.totalCount ?? 0);
   readonly isLoading = computed(() => this.loadingSignal());
@@ -27,13 +32,24 @@ export class DocumentsFacadeService {
   readonly currentPage = computed(() => this.page());
   readonly pageSize = computed(() => this.pageSizeInternal());
   readonly totalPages = computed(() => this.documentsSignal()?.pageCount ?? 0);
+  readonly currentSearch = computed(() => this.searchTerm());
+
+  // Debounce mechanism (simple) for search
+  private searchTimer: any;
+  private readonly searchDebounceMs = 300;
 
   load(force = false): void {
     const now = Date.now();
     if (!force && this.lastLoadedAt && now - this.lastLoadedAt < this.ttlMs && this.documentsSignal()) {
       return; // serve from cache
     }
-  const params: ApiDocumentsGet$Json$Params = { Page: this.page(), PageSize: this.pageSizeInternal() };
+    const params: ApiDocumentsGet$Json$Params = {
+      Page: this.page(),
+      PageSize: this.pageSizeInternal(),
+      Search: this.searchTerm() || undefined,
+      Type: this.typeFilter() || undefined,
+      Accepted: this.acceptedFilter() ?? undefined,
+    };
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
     this.api.apiDocumentsGet$Json(params).subscribe({
@@ -65,6 +81,30 @@ export class DocumentsFacadeService {
     if (size < 1) return;
     this.pageSizeInternal.set(size);
     this.page.set(1); // reset to first page
+    this.invalidate();
+    this.load(true);
+  }
+
+  setSearchTerm(term: string): void {
+    this.searchTerm.set(term); // update signal immediately
+    this.page.set(1); // reset page on filter change
+    this.invalidate();
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => {
+      this.load(true);
+    }, this.searchDebounceMs);
+  }
+
+  setType(type: string | null): void {
+    this.typeFilter.set(type);
+    this.page.set(1);
+    this.invalidate();
+    this.load(true);
+  }
+
+  setAccepted(val: boolean | null): void {
+    this.acceptedFilter.set(val);
+    this.page.set(1);
     this.invalidate();
     this.load(true);
   }

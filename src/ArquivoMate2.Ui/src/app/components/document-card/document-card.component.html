@@ -1,0 +1,27 @@
+<div class="am-doc-card" [class.compact]="variant==='compact'" [class.mini]="variant==='mini'" (click)="onClick()" (keydown.enter)="onClick()" (keydown.space)="onClick(); $event.preventDefault()" tabindex="0" role="button" [attr.aria-label]="document.title || document.id">
+  <div class="thumb" [class.placeholder]="!document.thumbnailPath">
+    <div class="thumb-head">
+      <div class="title" [title]="document.title || document.id">{{ document.title || document.id }}</div>
+      <div class="flags">
+  @if (document.accepted) { <tui-badge size="s" appearance="success" value="OK"></tui-badge> }
+  @if (document.encrypted) { <tui-badge size="s" appearance="neutral" value="LOCK"></tui-badge> }
+      </div>
+    </div>
+    @if (document.thumbnailPath) { <img [ngSrc]="document.thumbnailPath!" width="160" height="200" alt="" /> }
+    @else { <span class="ph">Kein Vorschaubild</span> }
+    @if (document.uploadedAt || document.type) {
+      <div class="thumb-foot">
+        <div class="details">
+          @if (document.uploadedAt) { <span class="uploaded">{{ document.uploadedAt | date:'short' }}</span> }
+          @if (document.type) { <span class="type">{{ document.type }}</span> }
+        </div>
+      </div>
+    }
+    @if (document.summary) {
+      <div class="thumb-summary">
+        <div class="summary-text">{{ document.summary }}</div>
+      </div>
+    }
+  </div>
+  <!-- meta container intentionally left out; all info now in overlays -->
+</div>

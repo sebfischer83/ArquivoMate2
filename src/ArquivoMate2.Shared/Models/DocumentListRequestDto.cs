@@ -20,6 +20,12 @@ namespace ArquivoMate2.Shared.Models
         public List<string>? Keywords { get; set; }
         public bool KeywordMatchAll { get; set; } = false;
 
+        // Additional hierarchical / metadata filters
+        public List<Guid>? CollectionIds { get; set; } // Filter documents that are in any of these collections
+        public int? Year { get; set; } // Derived from (Date ?? UploadedAt)
+        public int? Month { get; set; } // 1..12 derived from (Date ?? UploadedAt)
+        public string? Language { get; set; } // ISO code
+
         // Full-text search (via Meilisearch)
         public string? Search { get; set; }
 

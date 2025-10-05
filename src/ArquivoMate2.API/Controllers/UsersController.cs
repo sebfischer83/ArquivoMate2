@@ -24,6 +24,21 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
+    ///     Returns the current authenticated user profile without updating timestamps.
+    /// </summary>
+    [HttpGet("me")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CurrentUserDto))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetMe(CancellationToken cancellationToken)
+    {
+        var userId = _currentUserService.UserId;
+        var dto = await _mediator.Send(new GetCurrentUserQuery(userId), cancellationToken);
+        if (dto is null)
+            return NotFound();
+        return Ok(dto);
+    }
+
+    /// <summary>
     ///     Synchronises the authenticated user with the application store.
     /// </summary>
     [HttpPost("login")]
@@ -50,7 +65,7 @@ public class UsersController : ControllerBase
     ///     Generates a new API key for the authenticated user and stores it with the profile.
     /// </summary>
     [HttpPost("api-key")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UserApiKeyDto))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GenerateApiKey(CancellationToken cancellationToken)

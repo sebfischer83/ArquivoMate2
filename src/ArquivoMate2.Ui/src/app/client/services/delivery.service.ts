@@ -24,7 +24,7 @@ export class DeliveryService extends BaseService {
   static readonly ApiDeliveryDocumentIdArtifactGetPath = '/api/delivery/{documentId}/{artifact}';
 
   /**
-   * Delivers an encrypted artifact for a document when a valid access token is supplied.
+   * Delivers an (optionally encrypted) artifact for a document when a valid access token is supplied.
    *
    *
    *
@@ -38,7 +38,7 @@ export class DeliveryService extends BaseService {
   }
 
   /**
-   * Delivers an encrypted artifact for a document when a valid access token is supplied.
+   * Delivers an (optionally encrypted) artifact for a document when a valid access token is supplied.
    *
    *
    *

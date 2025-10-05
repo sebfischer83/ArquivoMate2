@@ -8,22 +8,11 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { DocumentArtifact } from '../../models/document-artifact';
 
 export interface ApiDeliveryDocumentIdArtifactGet$Params {
-
-/**
- * Identifier of the document whose artifact should be downloaded.
- */
   documentId: string;
-
-/**
- * Artifact type such as file, preview, thumb, metadata or archive.
- */
-  artifact: string;
-
-/**
- * Signed delivery token that authorises the download.
- */
+  artifact: DocumentArtifact;
   token?: string;
 }
 

@@ -28,6 +28,8 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Threading;
 using Microsoft.OpenApi.Models; // added for OpenApiInfo
+using ArquivoMate2.Shared.Models.Sharing; // added for enum schema mapping
+using Microsoft.OpenApi.Any; // for OpenApiString
 
 namespace ArquivoMate2.API
 {
@@ -40,8 +42,8 @@ namespace ArquivoMate2.API
             string connectionString = builder.Configuration.GetConnectionString("Default");
             string hangfireConnectionString = builder.Configuration.GetConnectionString("Hangfire");
 
-            var seqUrl = builder.Configuration["Seq:ServerUrl"];
-            var seqApiKey = builder.Configuration["Seq:ApiKey"];
+            var seqUrl = builder.Configuration["Seq:ServerUrl"]; 
+            var seqApiKey = builder.Configuration["Seq:ApiKey"]; 
 
             builder.Host.UseSerilog((context, config) =>
             {
@@ -97,6 +99,9 @@ namespace ArquivoMate2.API
                 config.UsePostgreSqlStorage(opt => opt.UseNpgsqlConnection(hangfireConnectionString));
             });
 
+            // Grouping service registration (Infrastructure implementation)
+            builder.Services.AddScoped<ArquivoMate2.Application.Interfaces.Grouping.IDocumentGroupingService, ArquivoMate2.Infrastructure.Services.Grouping.DocumentGroupingService>();
+
             builder.Services.AddHangfireServer(options =>
             {
                 options.Queues = new[] { "documents", "maintenance" };
@@ -126,6 +131,29 @@ namespace ArquivoMate2.API
                 {
                     try { c.IncludeXmlComments(xml, includeControllerXmlComments: true); } catch { }
                 }
+
+                // Map ShareTargetType as string enum (explicit to override default numeric schema)
+                c.MapType<ShareTargetType>(() => new OpenApiSchema
+                {
+                    Type = "string",
+                    Enum = Enum.GetNames(typeof(ShareTargetType))
+                        .Select(n => (IOpenApiAny)new OpenApiString(n))
+                        .ToList()
+                });
+
+                // Map DocumentPermissions as array of strings (flags)
+                c.MapType<DocumentPermissions>(() => new OpenApiSchema
+                {
+                    Type = "array",
+                    Items = new OpenApiSchema
+                    {
+                        Type = "string",
+                        Enum = new[] { "Read", "Edit", "Delete" }
+                            .Select(n => (IOpenApiAny)new OpenApiString(n))
+                            .ToList()
+                    },
+                    Description = "Flags: subset of [Read, Edit, Delete]. Empty array = None. Accepts legacy formats: comma string or numeric." 
+                });
             });
 
             AddAuth(builder, builder.Configuration);

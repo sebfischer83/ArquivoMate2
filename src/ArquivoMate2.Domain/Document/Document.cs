@@ -124,9 +124,11 @@ namespace ArquivoMate2.Domain.Document
                 var prop = type.GetProperty(kvp.Key);
                 if (prop != null && prop.CanWrite)
                 {
-                    if (prop.PropertyType == typeof(List<string>) && kvp.Value is IEnumerable<string> enumerable)
+                    if (prop.PropertyType == typeof(List<string>))
                     {
-                        prop.SetValue(this, enumerable.ToList());
+                        // Robust conversion (string, JsonElement, IEnumerable<object>, etc.)
+                        var list = ToStringList(kvp.Value);
+                        prop.SetValue(this, list);
                         continue;
                     }
 

@@ -1,13 +1,10 @@
 ﻿using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.ValueObjects;
 using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
+using System.Linq;
 
 namespace ArquivoMate2.Infrastructure.Services
 {
@@ -15,6 +12,18 @@ namespace ArquivoMate2.Infrastructure.Services
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly Paths _paths;
+
+        // Ordered list of claim types we consider to identify the user
+        private static readonly string[] EmailClaimCandidates = new[]
+        {
+            ClaimTypes.Email,      // Mapped email claim (when MapInboundClaims = true)
+            "email",              // Raw JWT email claim (MapInboundClaims = false)
+            "emails",             // Some providers deliver as list/CSV
+            "preferred_username", // OIDC fallback
+            "upn",                // AAD / ADFS
+            "mail",               // AD / Graph
+            "sub"                 // Last fallback (stable but not an email)
+        };
 
         public CurrentUserService(IHttpContextAccessor httpContextAccessor, Paths paths)
         {
@@ -24,55 +33,51 @@ namespace ArquivoMate2.Infrastructure.Services
 
         public string GetUserIdByClaimPrincipal(ClaimsPrincipal user)
         {
-            if (user == null)
-            {
-                throw new ArgumentNullException(nameof(user), "User cannot be null.");
-            }
-
-            var idClaim = user?.FindFirst(ClaimTypes.Email)?.Value;
-
-            if (string.IsNullOrEmpty(idClaim))
-            {
-                throw new InvalidOperationException("User ID claim is missing or empty.");
-            }
-
-            var normalized = idClaim.Trim().ToLowerInvariant();
-            var data = Encoding.UTF8.GetBytes(normalized);
-
-            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_paths.PathBuilderSecret));
-            var hash = hmac.ComputeHash(data);
-
-            var sb = new StringBuilder(hash.Length * 2);
-            foreach (var b in hash)
-                sb.Append(b.ToString("x2"));
-
-            return sb.ToString();
+            if (user == null) throw new ArgumentNullException(nameof(user));
+            var raw = ResolveUserIdentifier(user);
+            return HashIdentifier(raw);
         }
 
         public string UserId
         {
             get
             {
-                var user = _httpContextAccessor.HttpContext?.User;
-                var idClaim = user?.FindFirst(ClaimTypes.Email)?.Value;
+                var user = _httpContextAccessor.HttpContext?.User
+                           ?? throw new InvalidOperationException("No current HttpContext user.");
+                var raw = ResolveUserIdentifier(user);
+                return HashIdentifier(raw);
+            }
+        }
 
-                if (string.IsNullOrEmpty(idClaim))
+        private string ResolveUserIdentifier(ClaimsPrincipal user)
+        {
+            foreach (var type in EmailClaimCandidates)
+            {
+                var claim = user.Claims.FirstOrDefault(c => c.Type == type);
+                if (claim == null) continue;
+                var value = claim.Value?.Trim();
+                if (string.IsNullOrEmpty(value)) continue;
+
+                if (type == "emails" && value.Contains(','))
                 {
-                    throw new InvalidOperationException("User ID claim is missing or empty.");
+                    value = value.Split(',').Select(v => v.Trim()).FirstOrDefault(v => !string.IsNullOrEmpty(v));
+                    if (string.IsNullOrEmpty(value)) continue;
                 }
 
-                var normalized = idClaim.Trim().ToLowerInvariant();
-                var data = Encoding.UTF8.GetBytes(normalized);
-
-                using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_paths.PathBuilderSecret));
-                var hash = hmac.ComputeHash(data);
-
-                var sb = new StringBuilder(hash.Length * 2);
-                foreach (var b in hash)
-                    sb.Append(b.ToString("x2"));
-
-                return sb.ToString();
+                return value.ToLowerInvariant();
             }
+            throw new InvalidOperationException("No suitable user identifier claim (email/sub) found.");
+        }
+
+        private string HashIdentifier(string normalized)
+        {
+            var data = Encoding.UTF8.GetBytes(normalized);
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_paths.PathBuilderSecret));
+            var hash = hmac.ComputeHash(data);
+            var sb = new StringBuilder(hash.Length * 2);
+            foreach (var b in hash)
+                sb.Append(b.ToString("x2"));
+            return sb.ToString();
         }
     }
 }

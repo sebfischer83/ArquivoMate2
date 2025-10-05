@@ -3,12 +3,14 @@ import { OAuthService } from 'angular-oauth2-oidc';
 import { DocumentsFacadeService } from '../../../services/documents-facade.service';
 import { CommonModule, NgForOf, DatePipe } from '@angular/common';
 import { UploadWidgetComponent } from './upload-widget.component';
+import { DocumentCardGridComponent } from '../../../components/document-card-grid/document-card-grid.component';
+import { FormsModule } from '@angular/forms';
 
 
 @Component({
   standalone: true,
   selector: 'app-dashboard',
-  imports: [CommonModule, NgForOf, DatePipe, UploadWidgetComponent],
+  imports: [CommonModule, NgForOf, DatePipe, UploadWidgetComponent, DocumentCardGridComponent, FormsModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -22,13 +24,20 @@ export class DashboardComponent {
   currentPage = this.facade.currentPage;
   totalPages = this.facade.totalPages;
   pageSize = this.facade.pageSize;
+  currentSearch = this.facade.currentSearch;
   auth = inject(OAuthService);
 
-  // Upload widget always visible now; on completed uploads the widget itself should trigger facade refresh (can be wired later)
+  searchValue = '';
 
   ngOnInit(): void { this.facade.load(); }
 
-  nextPage(): void { this.facade.setPage(this.currentPage() + 1); }
-  prevPage(): void { this.facade.setPage(this.currentPage() - 1); }
-  changeSize(val: string): void { const size = parseInt(val, 10); this.facade.setPageSize(size); }
+  onPageChange(p: number) { this.facade.setPage(p); }
+  onPageSizeChange(s: number) { this.facade.setPageSize(s); }
+  onReload() { this.facade.load(true); }
+  onItemClick(doc: any) {
+    // placeholder for navigation or detail view integration
+    console.debug('Document clicked', doc?.id);
+  }
+
+  onSearchInput(val: string) { this.searchValue = val; this.facade.setSearchTerm(val.trim()); }
 }

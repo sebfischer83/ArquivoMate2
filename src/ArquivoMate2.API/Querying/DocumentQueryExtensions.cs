@@ -46,6 +46,29 @@ namespace ArquivoMate2.API.Querying
                     query = query.Where(d => d.Keywords.Contains(kLocal));
                 }
             }
+
+            // Year / Month derived from (Date ?? UploadedAt) => treat null Date as fallback UploadedAt
+            if (dto.Year.HasValue)
+            {
+                int year = dto.Year.Value;
+                query = query.Where(d => ((d.Date ?? d.UploadedAt).Year) == year);
+            }
+            if (dto.Month.HasValue)
+            {
+                int month = dto.Month.Value;
+                if (month is < 1 or > 12)
+                {
+                    // impossible month will yield no results; simplify by short-circuiting
+                    return query.Where(_ => false);
+                }
+                query = query.Where(d => ((d.Date ?? d.UploadedAt).Month) == month);
+            }
+            if (!string.IsNullOrWhiteSpace(dto.Language))
+            {
+                var lang = dto.Language.Trim();
+                query = query.Where(d => d.Language == lang);
+            }
+
             return query;
         }
 

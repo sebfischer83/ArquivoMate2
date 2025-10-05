@@ -60,6 +60,7 @@
 
   <ItemGroup>
     <Folder Include="logs\" />
+    <Folder Include="Queries\ImportHistory\" />
   </ItemGroup>
 
 </Project>

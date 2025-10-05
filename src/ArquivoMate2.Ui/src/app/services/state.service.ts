@@ -70,8 +70,10 @@ export class StateService {
   }
 
   private initializeServices(): void {
-    this.historyService.apiHistoryInprogressCountGet$Plain().subscribe((val) => {
-      DevConsole.log('Initial documents in progress count:', val);
+    this.historyService.apiHistoryInprogressCountGet$Plain().subscribe((resp: any) => {
+      const ok = resp?.success !== false;
+      const val: number = ok ? (resp?.data ?? 0) : 0;
+      DevConsole.log('Initial documents in progress count (enveloped):', val, resp);
       this.documentsInProgressCound.set(val);
     })
   }

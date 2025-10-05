@@ -8,17 +8,13 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { DocumentShareDto } from '../../models/document-share-dto';
+import { DocumentShareDtoIEnumerableApiResponse } from '../../models/document-share-dto-i-enumerable-api-response';
 
 export interface ApiDocumentsDocumentIdSharesGet$Json$Params {
-
-/**
- * Document whose shares should be returned.
- */
   documentId: string;
 }
 
-export function apiDocumentsDocumentIdSharesGet$Json(http: HttpClient, rootUrl: string, params: ApiDocumentsDocumentIdSharesGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<DocumentShareDto>>> {
+export function apiDocumentsDocumentIdSharesGet$Json(http: HttpClient, rootUrl: string, params: ApiDocumentsDocumentIdSharesGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentShareDtoIEnumerableApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiDocumentsDocumentIdSharesGet$Json.PATH, 'get');
   if (params) {
     rb.path('documentId', params.documentId, {});
@@ -29,7 +25,7 @@ export function apiDocumentsDocumentIdSharesGet$Json(http: HttpClient, rootUrl: 
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Array<DocumentShareDto>>;
+      return r as StrictHttpResponse<DocumentShareDtoIEnumerableApiResponse>;
     })
   );
 }

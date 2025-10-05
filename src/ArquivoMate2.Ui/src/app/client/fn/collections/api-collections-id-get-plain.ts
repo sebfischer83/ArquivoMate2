@@ -8,13 +8,13 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { CollectionDto } from '../../models/collection-dto';
+import { CollectionDtoApiResponse } from '../../models/collection-dto-api-response';
 
 export interface ApiCollectionsIdGet$Plain$Params {
   id: string;
 }
 
-export function apiCollectionsIdGet$Plain(http: HttpClient, rootUrl: string, params: ApiCollectionsIdGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDto>> {
+export function apiCollectionsIdGet$Plain(http: HttpClient, rootUrl: string, params: ApiCollectionsIdGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiCollectionsIdGet$Plain.PATH, 'get');
   if (params) {
     rb.path('id', params.id, {});
@@ -25,7 +25,7 @@ export function apiCollectionsIdGet$Plain(http: HttpClient, rootUrl: string, par
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<CollectionDto>;
+      return r as StrictHttpResponse<CollectionDtoApiResponse>;
     })
   );
 }

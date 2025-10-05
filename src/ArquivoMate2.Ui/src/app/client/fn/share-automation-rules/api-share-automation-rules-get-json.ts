@@ -8,12 +8,12 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { ShareAutomationRuleDto } from '../../models/share-automation-rule-dto';
+import { ShareAutomationRuleDtoIEnumerableApiResponse } from '../../models/share-automation-rule-dto-i-enumerable-api-response';
 
 export interface ApiShareAutomationRulesGet$Json$Params {
 }
 
-export function apiShareAutomationRulesGet$Json(http: HttpClient, rootUrl: string, params?: ApiShareAutomationRulesGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<ShareAutomationRuleDto>>> {
+export function apiShareAutomationRulesGet$Json(http: HttpClient, rootUrl: string, params?: ApiShareAutomationRulesGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareAutomationRuleDtoIEnumerableApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiShareAutomationRulesGet$Json.PATH, 'get');
   if (params) {
   }
@@ -23,7 +23,7 @@ export function apiShareAutomationRulesGet$Json(http: HttpClient, rootUrl: strin
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Array<ShareAutomationRuleDto>>;
+      return r as StrictHttpResponse<ShareAutomationRuleDtoIEnumerableApiResponse>;
     })
   );
 }

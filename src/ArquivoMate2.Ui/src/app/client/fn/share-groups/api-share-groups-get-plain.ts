@@ -8,12 +8,12 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { ShareGroupDto } from '../../models/share-group-dto';
+import { ShareGroupDtoIEnumerableApiResponse } from '../../models/share-group-dto-i-enumerable-api-response';
 
 export interface ApiShareGroupsGet$Plain$Params {
 }
 
-export function apiShareGroupsGet$Plain(http: HttpClient, rootUrl: string, params?: ApiShareGroupsGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<ShareGroupDto>>> {
+export function apiShareGroupsGet$Plain(http: HttpClient, rootUrl: string, params?: ApiShareGroupsGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDtoIEnumerableApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiShareGroupsGet$Plain.PATH, 'get');
   if (params) {
   }
@@ -23,7 +23,7 @@ export function apiShareGroupsGet$Plain(http: HttpClient, rootUrl: string, param
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Array<ShareGroupDto>>;
+      return r as StrictHttpResponse<ShareGroupDtoIEnumerableApiResponse>;
     })
   );
 }

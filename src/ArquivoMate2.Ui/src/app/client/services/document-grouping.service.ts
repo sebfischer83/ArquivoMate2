@@ -15,7 +15,7 @@ import { apiDocumentsGroupingPost$Json } from '../fn/document-grouping/api-docum
 import { ApiDocumentsGroupingPost$Json$Params } from '../fn/document-grouping/api-documents-grouping-post-json';
 import { apiDocumentsGroupingPost$Plain } from '../fn/document-grouping/api-documents-grouping-post-plain';
 import { ApiDocumentsGroupingPost$Plain$Params } from '../fn/document-grouping/api-documents-grouping-post-plain';
-import { DocumentGroupingNode } from '../models/document-grouping-node';
+import { DocumentGroupingNodeIEnumerableApiResponse } from '../models/document-grouping-node-i-enumerable-api-response';
 
 @Injectable({ providedIn: 'root' })
 export class DocumentGroupingService extends BaseService {
@@ -32,7 +32,7 @@ export class DocumentGroupingService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsGroupingPost$Plain$Response(params?: ApiDocumentsGroupingPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<DocumentGroupingNode>>> {
+  apiDocumentsGroupingPost$Plain$Response(params?: ApiDocumentsGroupingPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentGroupingNodeIEnumerableApiResponse>> {
     return apiDocumentsGroupingPost$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -42,9 +42,9 @@ export class DocumentGroupingService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsGroupingPost$Plain(params?: ApiDocumentsGroupingPost$Plain$Params, context?: HttpContext): Observable<Array<DocumentGroupingNode>> {
+  apiDocumentsGroupingPost$Plain(params?: ApiDocumentsGroupingPost$Plain$Params, context?: HttpContext): Observable<DocumentGroupingNodeIEnumerableApiResponse> {
     return this.apiDocumentsGroupingPost$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<DocumentGroupingNode>>): Array<DocumentGroupingNode> => r.body)
+      map((r: StrictHttpResponse<DocumentGroupingNodeIEnumerableApiResponse>): DocumentGroupingNodeIEnumerableApiResponse => r.body)
     );
   }
 
@@ -54,7 +54,7 @@ export class DocumentGroupingService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsGroupingPost$Json$Response(params?: ApiDocumentsGroupingPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<DocumentGroupingNode>>> {
+  apiDocumentsGroupingPost$Json$Response(params?: ApiDocumentsGroupingPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentGroupingNodeIEnumerableApiResponse>> {
     return apiDocumentsGroupingPost$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -64,9 +64,9 @@ export class DocumentGroupingService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsGroupingPost$Json(params?: ApiDocumentsGroupingPost$Json$Params, context?: HttpContext): Observable<Array<DocumentGroupingNode>> {
+  apiDocumentsGroupingPost$Json(params?: ApiDocumentsGroupingPost$Json$Params, context?: HttpContext): Observable<DocumentGroupingNodeIEnumerableApiResponse> {
     return this.apiDocumentsGroupingPost$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<DocumentGroupingNode>>): Array<DocumentGroupingNode> => r.body)
+      map((r: StrictHttpResponse<DocumentGroupingNodeIEnumerableApiResponse>): DocumentGroupingNodeIEnumerableApiResponse => r.body)
     );
   }
 

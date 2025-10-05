@@ -29,7 +29,8 @@ import { apiShareGroupsPost$Json } from '../fn/share-groups/api-share-groups-pos
 import { ApiShareGroupsPost$Json$Params } from '../fn/share-groups/api-share-groups-post-json';
 import { apiShareGroupsPost$Plain } from '../fn/share-groups/api-share-groups-post-plain';
 import { ApiShareGroupsPost$Plain$Params } from '../fn/share-groups/api-share-groups-post-plain';
-import { ShareGroupDto } from '../models/share-group-dto';
+import { ShareGroupDtoApiResponse } from '../models/share-group-dto-api-response';
+import { ShareGroupDtoIEnumerableApiResponse } from '../models/share-group-dto-i-enumerable-api-response';
 
 @Injectable({ providedIn: 'root' })
 export class ShareGroupsService extends BaseService {
@@ -50,7 +51,7 @@ export class ShareGroupsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiShareGroupsGet$Plain$Response(params?: ApiShareGroupsGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<ShareGroupDto>>> {
+  apiShareGroupsGet$Plain$Response(params?: ApiShareGroupsGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDtoIEnumerableApiResponse>> {
     return apiShareGroupsGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -64,9 +65,9 @@ export class ShareGroupsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiShareGroupsGet$Plain(params?: ApiShareGroupsGet$Plain$Params, context?: HttpContext): Observable<Array<ShareGroupDto>> {
+  apiShareGroupsGet$Plain(params?: ApiShareGroupsGet$Plain$Params, context?: HttpContext): Observable<ShareGroupDtoIEnumerableApiResponse> {
     return this.apiShareGroupsGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<ShareGroupDto>>): Array<ShareGroupDto> => r.body)
+      map((r: StrictHttpResponse<ShareGroupDtoIEnumerableApiResponse>): ShareGroupDtoIEnumerableApiResponse => r.body)
     );
   }
 
@@ -80,7 +81,7 @@ export class ShareGroupsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiShareGroupsGet$Json$Response(params?: ApiShareGroupsGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<ShareGroupDto>>> {
+  apiShareGroupsGet$Json$Response(params?: ApiShareGroupsGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDtoIEnumerableApiResponse>> {
     return apiShareGroupsGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -94,9 +95,9 @@ export class ShareGroupsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiShareGroupsGet$Json(params?: ApiShareGroupsGet$Json$Params, context?: HttpContext): Observable<Array<ShareGroupDto>> {
+  apiShareGroupsGet$Json(params?: ApiShareGroupsGet$Json$Params, context?: HttpContext): Observable<ShareGroupDtoIEnumerableApiResponse> {
     return this.apiShareGroupsGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<ShareGroupDto>>): Array<ShareGroupDto> => r.body)
+      map((r: StrictHttpResponse<ShareGroupDtoIEnumerableApiResponse>): ShareGroupDtoIEnumerableApiResponse => r.body)
     );
   }
 
@@ -113,7 +114,7 @@ export class ShareGroupsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareGroupsPost$Plain$Response(params?: ApiShareGroupsPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDto>> {
+  apiShareGroupsPost$Plain$Response(params?: ApiShareGroupsPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDtoApiResponse>> {
     return apiShareGroupsPost$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -127,9 +128,9 @@ export class ShareGroupsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareGroupsPost$Plain(params?: ApiShareGroupsPost$Plain$Params, context?: HttpContext): Observable<ShareGroupDto> {
+  apiShareGroupsPost$Plain(params?: ApiShareGroupsPost$Plain$Params, context?: HttpContext): Observable<ShareGroupDtoApiResponse> {
     return this.apiShareGroupsPost$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ShareGroupDto>): ShareGroupDto => r.body)
+      map((r: StrictHttpResponse<ShareGroupDtoApiResponse>): ShareGroupDtoApiResponse => r.body)
     );
   }
 
@@ -143,7 +144,7 @@ export class ShareGroupsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareGroupsPost$Json$Response(params?: ApiShareGroupsPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDto>> {
+  apiShareGroupsPost$Json$Response(params?: ApiShareGroupsPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDtoApiResponse>> {
     return apiShareGroupsPost$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -157,9 +158,9 @@ export class ShareGroupsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareGroupsPost$Json(params?: ApiShareGroupsPost$Json$Params, context?: HttpContext): Observable<ShareGroupDto> {
+  apiShareGroupsPost$Json(params?: ApiShareGroupsPost$Json$Params, context?: HttpContext): Observable<ShareGroupDtoApiResponse> {
     return this.apiShareGroupsPost$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ShareGroupDto>): ShareGroupDto => r.body)
+      map((r: StrictHttpResponse<ShareGroupDtoApiResponse>): ShareGroupDtoApiResponse => r.body)
     );
   }
 
@@ -176,7 +177,7 @@ export class ShareGroupsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiShareGroupsGroupIdGet$Plain$Response(params: ApiShareGroupsGroupIdGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDto>> {
+  apiShareGroupsGroupIdGet$Plain$Response(params: ApiShareGroupsGroupIdGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDtoApiResponse>> {
     return apiShareGroupsGroupIdGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -190,9 +191,9 @@ export class ShareGroupsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiShareGroupsGroupIdGet$Plain(params: ApiShareGroupsGroupIdGet$Plain$Params, context?: HttpContext): Observable<ShareGroupDto> {
+  apiShareGroupsGroupIdGet$Plain(params: ApiShareGroupsGroupIdGet$Plain$Params, context?: HttpContext): Observable<ShareGroupDtoApiResponse> {
     return this.apiShareGroupsGroupIdGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ShareGroupDto>): ShareGroupDto => r.body)
+      map((r: StrictHttpResponse<ShareGroupDtoApiResponse>): ShareGroupDtoApiResponse => r.body)
     );
   }
 
@@ -206,7 +207,7 @@ export class ShareGroupsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiShareGroupsGroupIdGet$Json$Response(params: ApiShareGroupsGroupIdGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDto>> {
+  apiShareGroupsGroupIdGet$Json$Response(params: ApiShareGroupsGroupIdGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDtoApiResponse>> {
     return apiShareGroupsGroupIdGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -220,9 +221,9 @@ export class ShareGroupsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiShareGroupsGroupIdGet$Json(params: ApiShareGroupsGroupIdGet$Json$Params, context?: HttpContext): Observable<ShareGroupDto> {
+  apiShareGroupsGroupIdGet$Json(params: ApiShareGroupsGroupIdGet$Json$Params, context?: HttpContext): Observable<ShareGroupDtoApiResponse> {
     return this.apiShareGroupsGroupIdGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ShareGroupDto>): ShareGroupDto => r.body)
+      map((r: StrictHttpResponse<ShareGroupDtoApiResponse>): ShareGroupDtoApiResponse => r.body)
     );
   }
 
@@ -239,7 +240,7 @@ export class ShareGroupsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareGroupsGroupIdPut$Plain$Response(params: ApiShareGroupsGroupIdPut$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDto>> {
+  apiShareGroupsGroupIdPut$Plain$Response(params: ApiShareGroupsGroupIdPut$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDtoApiResponse>> {
     return apiShareGroupsGroupIdPut$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -253,9 +254,9 @@ export class ShareGroupsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareGroupsGroupIdPut$Plain(params: ApiShareGroupsGroupIdPut$Plain$Params, context?: HttpContext): Observable<ShareGroupDto> {
+  apiShareGroupsGroupIdPut$Plain(params: ApiShareGroupsGroupIdPut$Plain$Params, context?: HttpContext): Observable<ShareGroupDtoApiResponse> {
     return this.apiShareGroupsGroupIdPut$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ShareGroupDto>): ShareGroupDto => r.body)
+      map((r: StrictHttpResponse<ShareGroupDtoApiResponse>): ShareGroupDtoApiResponse => r.body)
     );
   }
 
@@ -269,7 +270,7 @@ export class ShareGroupsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareGroupsGroupIdPut$Json$Response(params: ApiShareGroupsGroupIdPut$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDto>> {
+  apiShareGroupsGroupIdPut$Json$Response(params: ApiShareGroupsGroupIdPut$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDtoApiResponse>> {
     return apiShareGroupsGroupIdPut$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -283,9 +284,9 @@ export class ShareGroupsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareGroupsGroupIdPut$Json(params: ApiShareGroupsGroupIdPut$Json$Params, context?: HttpContext): Observable<ShareGroupDto> {
+  apiShareGroupsGroupIdPut$Json(params: ApiShareGroupsGroupIdPut$Json$Params, context?: HttpContext): Observable<ShareGroupDtoApiResponse> {
     return this.apiShareGroupsGroupIdPut$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ShareGroupDto>): ShareGroupDto => r.body)
+      map((r: StrictHttpResponse<ShareGroupDtoApiResponse>): ShareGroupDtoApiResponse => r.body)
     );
   }
 

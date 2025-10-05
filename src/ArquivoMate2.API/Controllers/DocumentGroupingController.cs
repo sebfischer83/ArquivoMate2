@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using ArquivoMate2.Application.Interfaces.Grouping;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Shared.Models.Grouping;
+using ArquivoMate2.Shared.ApiModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,9 +26,9 @@ public class DocumentGroupingController : ControllerBase
     }
 
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<DocumentGroupingNode>))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<IEnumerable<DocumentGroupingNode>>))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Group([FromBody] DocumentGroupingRequest request, CancellationToken ct)
+    public async Task<ActionResult<ApiResponse<IEnumerable<DocumentGroupingNode>>>> Group([FromBody] DocumentGroupingRequest request, CancellationToken ct)
     {
         if (request == null) return BadRequest();
         try

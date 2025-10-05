@@ -15,8 +15,10 @@ import { apiEmailCountGet$Json } from '../fn/email/api-email-count-get-json';
 import { ApiEmailCountGet$Json$Params } from '../fn/email/api-email-count-get-json';
 import { apiEmailCountGet$Plain } from '../fn/email/api-email-count-get-plain';
 import { ApiEmailCountGet$Plain$Params } from '../fn/email/api-email-count-get-plain';
-import { apiEmailCriteriaDelete } from '../fn/email/api-email-criteria-delete';
-import { ApiEmailCriteriaDelete$Params } from '../fn/email/api-email-criteria-delete';
+import { apiEmailCriteriaDelete$Json } from '../fn/email/api-email-criteria-delete-json';
+import { ApiEmailCriteriaDelete$Json$Params } from '../fn/email/api-email-criteria-delete-json';
+import { apiEmailCriteriaDelete$Plain } from '../fn/email/api-email-criteria-delete-plain';
+import { ApiEmailCriteriaDelete$Plain$Params } from '../fn/email/api-email-criteria-delete-plain';
 import { apiEmailCriteriaGet$Json } from '../fn/email/api-email-criteria-get-json';
 import { ApiEmailCriteriaGet$Json$Params } from '../fn/email/api-email-criteria-get-json';
 import { apiEmailCriteriaGet$Plain } from '../fn/email/api-email-criteria-get-plain';
@@ -25,20 +27,25 @@ import { apiEmailCriteriaPost$Json } from '../fn/email/api-email-criteria-post-j
 import { ApiEmailCriteriaPost$Json$Params } from '../fn/email/api-email-criteria-post-json';
 import { apiEmailCriteriaPost$Plain } from '../fn/email/api-email-criteria-post-plain';
 import { ApiEmailCriteriaPost$Plain$Params } from '../fn/email/api-email-criteria-post-plain';
-import { apiEmailSettingsDelete } from '../fn/email/api-email-settings-delete';
-import { ApiEmailSettingsDelete$Params } from '../fn/email/api-email-settings-delete';
+import { apiEmailSettingsDelete$Json } from '../fn/email/api-email-settings-delete-json';
+import { ApiEmailSettingsDelete$Json$Params } from '../fn/email/api-email-settings-delete-json';
+import { apiEmailSettingsDelete$Plain } from '../fn/email/api-email-settings-delete-plain';
+import { ApiEmailSettingsDelete$Plain$Params } from '../fn/email/api-email-settings-delete-plain';
 import { apiEmailSettingsGet$Json } from '../fn/email/api-email-settings-get-json';
 import { ApiEmailSettingsGet$Json$Params } from '../fn/email/api-email-settings-get-json';
 import { apiEmailSettingsGet$Plain } from '../fn/email/api-email-settings-get-plain';
 import { ApiEmailSettingsGet$Plain$Params } from '../fn/email/api-email-settings-get-plain';
-import { apiEmailSettingsPost } from '../fn/email/api-email-settings-post';
-import { ApiEmailSettingsPost$Params } from '../fn/email/api-email-settings-post';
+import { apiEmailSettingsPost$Json } from '../fn/email/api-email-settings-post-json';
+import { ApiEmailSettingsPost$Json$Params } from '../fn/email/api-email-settings-post-json';
+import { apiEmailSettingsPost$Plain } from '../fn/email/api-email-settings-post-plain';
+import { ApiEmailSettingsPost$Plain$Params } from '../fn/email/api-email-settings-post-plain';
 import { apiEmailTestConnectionPost$Json } from '../fn/email/api-email-test-connection-post-json';
 import { ApiEmailTestConnectionPost$Json$Params } from '../fn/email/api-email-test-connection-post-json';
 import { apiEmailTestConnectionPost$Plain } from '../fn/email/api-email-test-connection-post-plain';
 import { ApiEmailTestConnectionPost$Plain$Params } from '../fn/email/api-email-test-connection-post-plain';
-import { EmailCriteriaDto } from '../models/email-criteria-dto';
-import { EmailSettings } from '../models/email-settings';
+import { EmailCriteriaDtoApiResponse } from '../models/email-criteria-dto-api-response';
+import { Int32ApiResponse } from '../models/int-32-api-response';
+import { ObjectApiResponse } from '../models/object-api-response';
 
 @Injectable({ providedIn: 'root' })
 export class EmailService extends BaseService {
@@ -59,7 +66,7 @@ export class EmailService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiEmailCountGet$Plain$Response(params?: ApiEmailCountGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+  apiEmailCountGet$Plain$Response(params?: ApiEmailCountGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<Int32ApiResponse>> {
     return apiEmailCountGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -73,9 +80,9 @@ export class EmailService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiEmailCountGet$Plain(params?: ApiEmailCountGet$Plain$Params, context?: HttpContext): Observable<number> {
+  apiEmailCountGet$Plain(params?: ApiEmailCountGet$Plain$Params, context?: HttpContext): Observable<Int32ApiResponse> {
     return this.apiEmailCountGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<number>): number => r.body)
+      map((r: StrictHttpResponse<Int32ApiResponse>): Int32ApiResponse => r.body)
     );
   }
 
@@ -89,7 +96,7 @@ export class EmailService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiEmailCountGet$Json$Response(params?: ApiEmailCountGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+  apiEmailCountGet$Json$Response(params?: ApiEmailCountGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Int32ApiResponse>> {
     return apiEmailCountGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -103,9 +110,9 @@ export class EmailService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiEmailCountGet$Json(params?: ApiEmailCountGet$Json$Params, context?: HttpContext): Observable<number> {
+  apiEmailCountGet$Json(params?: ApiEmailCountGet$Json$Params, context?: HttpContext): Observable<Int32ApiResponse> {
     return this.apiEmailCountGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<number>): number => r.body)
+      map((r: StrictHttpResponse<Int32ApiResponse>): Int32ApiResponse => r.body)
     );
   }
 
@@ -122,7 +129,7 @@ export class EmailService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiEmailTestConnectionPost$Plain$Response(params?: ApiEmailTestConnectionPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<boolean>> {
+  apiEmailTestConnectionPost$Plain$Response(params?: ApiEmailTestConnectionPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ObjectApiResponse>> {
     return apiEmailTestConnectionPost$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -136,9 +143,9 @@ export class EmailService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiEmailTestConnectionPost$Plain(params?: ApiEmailTestConnectionPost$Plain$Params, context?: HttpContext): Observable<boolean> {
+  apiEmailTestConnectionPost$Plain(params?: ApiEmailTestConnectionPost$Plain$Params, context?: HttpContext): Observable<ObjectApiResponse> {
     return this.apiEmailTestConnectionPost$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<boolean>): boolean => r.body)
+      map((r: StrictHttpResponse<ObjectApiResponse>): ObjectApiResponse => r.body)
     );
   }
 
@@ -152,7 +159,7 @@ export class EmailService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiEmailTestConnectionPost$Json$Response(params?: ApiEmailTestConnectionPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<boolean>> {
+  apiEmailTestConnectionPost$Json$Response(params?: ApiEmailTestConnectionPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ObjectApiResponse>> {
     return apiEmailTestConnectionPost$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -166,9 +173,9 @@ export class EmailService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiEmailTestConnectionPost$Json(params?: ApiEmailTestConnectionPost$Json$Params, context?: HttpContext): Observable<boolean> {
+  apiEmailTestConnectionPost$Json(params?: ApiEmailTestConnectionPost$Json$Params, context?: HttpContext): Observable<ObjectApiResponse> {
     return this.apiEmailTestConnectionPost$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<boolean>): boolean => r.body)
+      map((r: StrictHttpResponse<ObjectApiResponse>): ObjectApiResponse => r.body)
     );
   }
 
@@ -185,7 +192,7 @@ export class EmailService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiEmailSettingsGet$Plain$Response(params?: ApiEmailSettingsGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailSettings>> {
+  apiEmailSettingsGet$Plain$Response(params?: ApiEmailSettingsGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ObjectApiResponse>> {
     return apiEmailSettingsGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -199,9 +206,9 @@ export class EmailService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiEmailSettingsGet$Plain(params?: ApiEmailSettingsGet$Plain$Params, context?: HttpContext): Observable<EmailSettings> {
+  apiEmailSettingsGet$Plain(params?: ApiEmailSettingsGet$Plain$Params, context?: HttpContext): Observable<ObjectApiResponse> {
     return this.apiEmailSettingsGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<EmailSettings>): EmailSettings => r.body)
+      map((r: StrictHttpResponse<ObjectApiResponse>): ObjectApiResponse => r.body)
     );
   }
 
@@ -215,7 +222,7 @@ export class EmailService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiEmailSettingsGet$Json$Response(params?: ApiEmailSettingsGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailSettings>> {
+  apiEmailSettingsGet$Json$Response(params?: ApiEmailSettingsGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ObjectApiResponse>> {
     return apiEmailSettingsGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -229,9 +236,9 @@ export class EmailService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiEmailSettingsGet$Json(params?: ApiEmailSettingsGet$Json$Params, context?: HttpContext): Observable<EmailSettings> {
+  apiEmailSettingsGet$Json(params?: ApiEmailSettingsGet$Json$Params, context?: HttpContext): Observable<ObjectApiResponse> {
     return this.apiEmailSettingsGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<EmailSettings>): EmailSettings => r.body)
+      map((r: StrictHttpResponse<ObjectApiResponse>): ObjectApiResponse => r.body)
     );
   }
 
@@ -244,12 +251,12 @@ export class EmailService extends BaseService {
    *
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `apiEmailSettingsPost()` instead.
+   * To access only the response body, use `apiEmailSettingsPost$Plain()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiEmailSettingsPost$Response(params?: ApiEmailSettingsPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-    return apiEmailSettingsPost(this.http, this.rootUrl, params, context);
+  apiEmailSettingsPost$Plain$Response(params?: ApiEmailSettingsPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ObjectApiResponse>> {
+    return apiEmailSettingsPost$Plain(this.http, this.rootUrl, params, context);
   }
 
   /**
@@ -258,13 +265,43 @@ export class EmailService extends BaseService {
    *
    *
    * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `apiEmailSettingsPost$Response()` instead.
+   * To access the full response (for headers, for example), `apiEmailSettingsPost$Plain$Response()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiEmailSettingsPost(params?: ApiEmailSettingsPost$Params, context?: HttpContext): Observable<void> {
-    return this.apiEmailSettingsPost$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+  apiEmailSettingsPost$Plain(params?: ApiEmailSettingsPost$Plain$Params, context?: HttpContext): Observable<ObjectApiResponse> {
+    return this.apiEmailSettingsPost$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<ObjectApiResponse>): ObjectApiResponse => r.body)
+    );
+  }
+
+  /**
+   * Saves or updates email settings for the current user.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiEmailSettingsPost$Json()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiEmailSettingsPost$Json$Response(params?: ApiEmailSettingsPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ObjectApiResponse>> {
+    return apiEmailSettingsPost$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Saves or updates email settings for the current user.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiEmailSettingsPost$Json$Response()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiEmailSettingsPost$Json(params?: ApiEmailSettingsPost$Json$Params, context?: HttpContext): Observable<ObjectApiResponse> {
+    return this.apiEmailSettingsPost$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<ObjectApiResponse>): ObjectApiResponse => r.body)
     );
   }
 
@@ -277,12 +314,12 @@ export class EmailService extends BaseService {
    *
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `apiEmailSettingsDelete()` instead.
+   * To access only the response body, use `apiEmailSettingsDelete$Plain()` instead.
    *
    * This method doesn't expect any request body.
    */
-  apiEmailSettingsDelete$Response(params?: ApiEmailSettingsDelete$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-    return apiEmailSettingsDelete(this.http, this.rootUrl, params, context);
+  apiEmailSettingsDelete$Plain$Response(params?: ApiEmailSettingsDelete$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ObjectApiResponse>> {
+    return apiEmailSettingsDelete$Plain(this.http, this.rootUrl, params, context);
   }
 
   /**
@@ -291,13 +328,43 @@ export class EmailService extends BaseService {
    *
    *
    * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `apiEmailSettingsDelete$Response()` instead.
+   * To access the full response (for headers, for example), `apiEmailSettingsDelete$Plain$Response()` instead.
    *
    * This method doesn't expect any request body.
    */
-  apiEmailSettingsDelete(params?: ApiEmailSettingsDelete$Params, context?: HttpContext): Observable<void> {
-    return this.apiEmailSettingsDelete$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+  apiEmailSettingsDelete$Plain(params?: ApiEmailSettingsDelete$Plain$Params, context?: HttpContext): Observable<ObjectApiResponse> {
+    return this.apiEmailSettingsDelete$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<ObjectApiResponse>): ObjectApiResponse => r.body)
+    );
+  }
+
+  /**
+   * Deletes email settings for the current user.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiEmailSettingsDelete$Json()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiEmailSettingsDelete$Json$Response(params?: ApiEmailSettingsDelete$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ObjectApiResponse>> {
+    return apiEmailSettingsDelete$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Deletes email settings for the current user.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiEmailSettingsDelete$Json$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiEmailSettingsDelete$Json(params?: ApiEmailSettingsDelete$Json$Params, context?: HttpContext): Observable<ObjectApiResponse> {
+    return this.apiEmailSettingsDelete$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<ObjectApiResponse>): ObjectApiResponse => r.body)
     );
   }
 
@@ -314,7 +381,7 @@ export class EmailService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiEmailCriteriaGet$Plain$Response(params?: ApiEmailCriteriaGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDto>> {
+  apiEmailCriteriaGet$Plain$Response(params?: ApiEmailCriteriaGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDtoApiResponse>> {
     return apiEmailCriteriaGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -328,9 +395,9 @@ export class EmailService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiEmailCriteriaGet$Plain(params?: ApiEmailCriteriaGet$Plain$Params, context?: HttpContext): Observable<EmailCriteriaDto> {
+  apiEmailCriteriaGet$Plain(params?: ApiEmailCriteriaGet$Plain$Params, context?: HttpContext): Observable<EmailCriteriaDtoApiResponse> {
     return this.apiEmailCriteriaGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<EmailCriteriaDto>): EmailCriteriaDto => r.body)
+      map((r: StrictHttpResponse<EmailCriteriaDtoApiResponse>): EmailCriteriaDtoApiResponse => r.body)
     );
   }
 
@@ -344,7 +411,7 @@ export class EmailService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiEmailCriteriaGet$Json$Response(params?: ApiEmailCriteriaGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDto>> {
+  apiEmailCriteriaGet$Json$Response(params?: ApiEmailCriteriaGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDtoApiResponse>> {
     return apiEmailCriteriaGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -358,9 +425,9 @@ export class EmailService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiEmailCriteriaGet$Json(params?: ApiEmailCriteriaGet$Json$Params, context?: HttpContext): Observable<EmailCriteriaDto> {
+  apiEmailCriteriaGet$Json(params?: ApiEmailCriteriaGet$Json$Params, context?: HttpContext): Observable<EmailCriteriaDtoApiResponse> {
     return this.apiEmailCriteriaGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<EmailCriteriaDto>): EmailCriteriaDto => r.body)
+      map((r: StrictHttpResponse<EmailCriteriaDtoApiResponse>): EmailCriteriaDtoApiResponse => r.body)
     );
   }
 
@@ -377,7 +444,7 @@ export class EmailService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiEmailCriteriaPost$Plain$Response(params?: ApiEmailCriteriaPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDto>> {
+  apiEmailCriteriaPost$Plain$Response(params?: ApiEmailCriteriaPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDtoApiResponse>> {
     return apiEmailCriteriaPost$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -391,9 +458,9 @@ export class EmailService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiEmailCriteriaPost$Plain(params?: ApiEmailCriteriaPost$Plain$Params, context?: HttpContext): Observable<EmailCriteriaDto> {
+  apiEmailCriteriaPost$Plain(params?: ApiEmailCriteriaPost$Plain$Params, context?: HttpContext): Observable<EmailCriteriaDtoApiResponse> {
     return this.apiEmailCriteriaPost$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<EmailCriteriaDto>): EmailCriteriaDto => r.body)
+      map((r: StrictHttpResponse<EmailCriteriaDtoApiResponse>): EmailCriteriaDtoApiResponse => r.body)
     );
   }
 
@@ -407,7 +474,7 @@ export class EmailService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiEmailCriteriaPost$Json$Response(params?: ApiEmailCriteriaPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDto>> {
+  apiEmailCriteriaPost$Json$Response(params?: ApiEmailCriteriaPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDtoApiResponse>> {
     return apiEmailCriteriaPost$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -421,9 +488,9 @@ export class EmailService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiEmailCriteriaPost$Json(params?: ApiEmailCriteriaPost$Json$Params, context?: HttpContext): Observable<EmailCriteriaDto> {
+  apiEmailCriteriaPost$Json(params?: ApiEmailCriteriaPost$Json$Params, context?: HttpContext): Observable<EmailCriteriaDtoApiResponse> {
     return this.apiEmailCriteriaPost$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<EmailCriteriaDto>): EmailCriteriaDto => r.body)
+      map((r: StrictHttpResponse<EmailCriteriaDtoApiResponse>): EmailCriteriaDtoApiResponse => r.body)
     );
   }
 
@@ -436,12 +503,12 @@ export class EmailService extends BaseService {
    *
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `apiEmailCriteriaDelete()` instead.
+   * To access only the response body, use `apiEmailCriteriaDelete$Plain()` instead.
    *
    * This method doesn't expect any request body.
    */
-  apiEmailCriteriaDelete$Response(params?: ApiEmailCriteriaDelete$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-    return apiEmailCriteriaDelete(this.http, this.rootUrl, params, context);
+  apiEmailCriteriaDelete$Plain$Response(params?: ApiEmailCriteriaDelete$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ObjectApiResponse>> {
+    return apiEmailCriteriaDelete$Plain(this.http, this.rootUrl, params, context);
   }
 
   /**
@@ -450,13 +517,43 @@ export class EmailService extends BaseService {
    *
    *
    * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `apiEmailCriteriaDelete$Response()` instead.
+   * To access the full response (for headers, for example), `apiEmailCriteriaDelete$Plain$Response()` instead.
    *
    * This method doesn't expect any request body.
    */
-  apiEmailCriteriaDelete(params?: ApiEmailCriteriaDelete$Params, context?: HttpContext): Observable<void> {
-    return this.apiEmailCriteriaDelete$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+  apiEmailCriteriaDelete$Plain(params?: ApiEmailCriteriaDelete$Plain$Params, context?: HttpContext): Observable<ObjectApiResponse> {
+    return this.apiEmailCriteriaDelete$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<ObjectApiResponse>): ObjectApiResponse => r.body)
+    );
+  }
+
+  /**
+   * Deletes email criteria for the current user.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiEmailCriteriaDelete$Json()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiEmailCriteriaDelete$Json$Response(params?: ApiEmailCriteriaDelete$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ObjectApiResponse>> {
+    return apiEmailCriteriaDelete$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Deletes email criteria for the current user.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiEmailCriteriaDelete$Json$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiEmailCriteriaDelete$Json(params?: ApiEmailCriteriaDelete$Json$Params, context?: HttpContext): Observable<ObjectApiResponse> {
+    return this.apiEmailCriteriaDelete$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<ObjectApiResponse>): ObjectApiResponse => r.body)
     );
   }
 

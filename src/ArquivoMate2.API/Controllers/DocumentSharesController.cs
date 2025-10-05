@@ -4,6 +4,7 @@ using ArquivoMate2.Application.Commands.Sharing;
 using ArquivoMate2.Application.Queries.Sharing;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Shared.Models.Sharing;
+using ArquivoMate2.Shared.ApiModels;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,11 +28,9 @@ public class DocumentSharesController : ControllerBase
     /// <summary>
     /// Lists all shares that are configured for the specified document.
     /// </summary>
-    /// <param name="documentId">Document whose shares should be returned.</param>
-    /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<DocumentShareDto>))]
-    public async Task<IActionResult> List(Guid documentId, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<IEnumerable<DocumentShareDto>>))]
+    public async Task<ActionResult<ApiResponse<IEnumerable<DocumentShareDto>>>> List(Guid documentId, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetDocumentSharesQuery(documentId, _currentUserService.UserId), cancellationToken);
         return Ok(result);
@@ -40,12 +39,9 @@ public class DocumentSharesController : ControllerBase
     /// <summary>
     /// Creates a new share for the selected document using the provided permissions.
     /// </summary>
-    /// <param name="documentId">Document that should be shared.</param>
-    /// <param name="request">Information about the target and permissions that should be granted.</param>
-    /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(DocumentShareDto))]
-    public async Task<IActionResult> Create(Guid documentId, [FromBody] CreateDocumentShareRequest request, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ApiResponse<DocumentShareDto>))]
+    public async Task<ActionResult<ApiResponse<DocumentShareDto>>> Create(Guid documentId, [FromBody] CreateDocumentShareRequest request, CancellationToken cancellationToken)
     {
         if (request is null)
         {
@@ -59,9 +55,6 @@ public class DocumentSharesController : ControllerBase
     /// <summary>
     /// Removes a specific share from the selected document.
     /// </summary>
-    /// <param name="documentId">Document whose share should be removed.</param>
-    /// <param name="shareId">Identifier of the share to remove.</param>
-    /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
     [HttpDelete("{shareId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(Guid documentId, Guid shareId, CancellationToken cancellationToken)

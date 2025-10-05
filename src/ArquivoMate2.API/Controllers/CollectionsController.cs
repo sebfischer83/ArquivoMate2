@@ -5,6 +5,7 @@ using ArquivoMate2.Application.Commands.Collections;
 using ArquivoMate2.Application.Queries.Collections;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Shared.Models.Collections;
+using ArquivoMate2.Shared.ApiModels;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,8 +27,8 @@ public class CollectionsController : ControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<CollectionDto>))]
-    public async Task<IActionResult> List(CancellationToken ct)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<IEnumerable<CollectionDto>>))]
+    public async Task<ActionResult<ApiResponse<IEnumerable<CollectionDto>>>> List(CancellationToken ct)
     {
         var userId = _currentUserService.UserId;
         var result = await _mediator.Send(new ListCollectionsQuery(userId), ct);
@@ -35,9 +36,9 @@ public class CollectionsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CollectionDto))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<CollectionDto>))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+    public async Task<ActionResult<ApiResponse<CollectionDto>>> GetById(Guid id, CancellationToken ct)
     {
         var userId = _currentUserService.UserId;
         var result = await _mediator.Send(new GetCollectionQuery(id, userId), ct);
@@ -46,9 +47,9 @@ public class CollectionsController : ControllerBase
     }
 
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(CollectionDto))]
+    [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ApiResponse<CollectionDto>))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create([FromBody] CreateCollectionRequest request, CancellationToken ct)
+    public async Task<ActionResult<ApiResponse<CollectionDto>>> Create([FromBody] CreateCollectionRequest request, CancellationToken ct)
     {
         if (request is null || string.IsNullOrWhiteSpace(request.Name)) return BadRequest();
         try
@@ -68,10 +69,10 @@ public class CollectionsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CollectionDto))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<CollectionDto>))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCollectionRequest request, CancellationToken ct)
+    public async Task<ActionResult<ApiResponse<CollectionDto>>> Update(Guid id, [FromBody] UpdateCollectionRequest request, CancellationToken ct)
     {
         if (request is null || string.IsNullOrWhiteSpace(request.Name)) return BadRequest();
         try
@@ -103,10 +104,10 @@ public class CollectionsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/assign")]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(AssignResultDto))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<AssignResultDto>))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Assign(Guid id, [FromBody] AssignDocumentsRequest request, CancellationToken ct)
+    public async Task<ActionResult<ApiResponse<AssignResultDto>>> Assign(Guid id, [FromBody] AssignDocumentsRequest request, CancellationToken ct)
     {
         if (request is null || request.DocumentIds is null) return BadRequest();
         if (request.CollectionId != Guid.Empty && request.CollectionId != id) return BadRequest(new { error = "CollectionId mismatch." });

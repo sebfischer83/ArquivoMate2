@@ -21,7 +21,8 @@ import { apiDocumentsDocumentIdNotesPost$Json } from '../fn/document-notes/api-d
 import { ApiDocumentsDocumentIdNotesPost$Json$Params } from '../fn/document-notes/api-documents-document-id-notes-post-json';
 import { apiDocumentsDocumentIdNotesPost$Plain } from '../fn/document-notes/api-documents-document-id-notes-post-plain';
 import { ApiDocumentsDocumentIdNotesPost$Plain$Params } from '../fn/document-notes/api-documents-document-id-notes-post-plain';
-import { DocumentNoteDto } from '../models/document-note-dto';
+import { DocumentNoteDtoApiResponse } from '../models/document-note-dto-api-response';
+import { DocumentNoteDtoIEnumerableApiResponse } from '../models/document-note-dto-i-enumerable-api-response';
 
 @Injectable({ providedIn: 'root' })
 export class DocumentNotesService extends BaseService {
@@ -42,7 +43,7 @@ export class DocumentNotesService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsDocumentIdNotesGet$Plain$Response(params: ApiDocumentsDocumentIdNotesGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<DocumentNoteDto>>> {
+  apiDocumentsDocumentIdNotesGet$Plain$Response(params: ApiDocumentsDocumentIdNotesGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentNoteDtoIEnumerableApiResponse>> {
     return apiDocumentsDocumentIdNotesGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -56,9 +57,9 @@ export class DocumentNotesService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsDocumentIdNotesGet$Plain(params: ApiDocumentsDocumentIdNotesGet$Plain$Params, context?: HttpContext): Observable<Array<DocumentNoteDto>> {
+  apiDocumentsDocumentIdNotesGet$Plain(params: ApiDocumentsDocumentIdNotesGet$Plain$Params, context?: HttpContext): Observable<DocumentNoteDtoIEnumerableApiResponse> {
     return this.apiDocumentsDocumentIdNotesGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<DocumentNoteDto>>): Array<DocumentNoteDto> => r.body)
+      map((r: StrictHttpResponse<DocumentNoteDtoIEnumerableApiResponse>): DocumentNoteDtoIEnumerableApiResponse => r.body)
     );
   }
 
@@ -72,7 +73,7 @@ export class DocumentNotesService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsDocumentIdNotesGet$Json$Response(params: ApiDocumentsDocumentIdNotesGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<DocumentNoteDto>>> {
+  apiDocumentsDocumentIdNotesGet$Json$Response(params: ApiDocumentsDocumentIdNotesGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentNoteDtoIEnumerableApiResponse>> {
     return apiDocumentsDocumentIdNotesGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -86,9 +87,9 @@ export class DocumentNotesService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsDocumentIdNotesGet$Json(params: ApiDocumentsDocumentIdNotesGet$Json$Params, context?: HttpContext): Observable<Array<DocumentNoteDto>> {
+  apiDocumentsDocumentIdNotesGet$Json(params: ApiDocumentsDocumentIdNotesGet$Json$Params, context?: HttpContext): Observable<DocumentNoteDtoIEnumerableApiResponse> {
     return this.apiDocumentsDocumentIdNotesGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<DocumentNoteDto>>): Array<DocumentNoteDto> => r.body)
+      map((r: StrictHttpResponse<DocumentNoteDtoIEnumerableApiResponse>): DocumentNoteDtoIEnumerableApiResponse => r.body)
     );
   }
 
@@ -105,7 +106,7 @@ export class DocumentNotesService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsDocumentIdNotesPost$Plain$Response(params: ApiDocumentsDocumentIdNotesPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentNoteDto>> {
+  apiDocumentsDocumentIdNotesPost$Plain$Response(params: ApiDocumentsDocumentIdNotesPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentNoteDtoApiResponse>> {
     return apiDocumentsDocumentIdNotesPost$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -119,9 +120,9 @@ export class DocumentNotesService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsDocumentIdNotesPost$Plain(params: ApiDocumentsDocumentIdNotesPost$Plain$Params, context?: HttpContext): Observable<DocumentNoteDto> {
+  apiDocumentsDocumentIdNotesPost$Plain(params: ApiDocumentsDocumentIdNotesPost$Plain$Params, context?: HttpContext): Observable<DocumentNoteDtoApiResponse> {
     return this.apiDocumentsDocumentIdNotesPost$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DocumentNoteDto>): DocumentNoteDto => r.body)
+      map((r: StrictHttpResponse<DocumentNoteDtoApiResponse>): DocumentNoteDtoApiResponse => r.body)
     );
   }
 
@@ -135,7 +136,7 @@ export class DocumentNotesService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsDocumentIdNotesPost$Json$Response(params: ApiDocumentsDocumentIdNotesPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentNoteDto>> {
+  apiDocumentsDocumentIdNotesPost$Json$Response(params: ApiDocumentsDocumentIdNotesPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentNoteDtoApiResponse>> {
     return apiDocumentsDocumentIdNotesPost$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -149,9 +150,9 @@ export class DocumentNotesService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsDocumentIdNotesPost$Json(params: ApiDocumentsDocumentIdNotesPost$Json$Params, context?: HttpContext): Observable<DocumentNoteDto> {
+  apiDocumentsDocumentIdNotesPost$Json(params: ApiDocumentsDocumentIdNotesPost$Json$Params, context?: HttpContext): Observable<DocumentNoteDtoApiResponse> {
     return this.apiDocumentsDocumentIdNotesPost$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DocumentNoteDto>): DocumentNoteDto => r.body)
+      map((r: StrictHttpResponse<DocumentNoteDtoApiResponse>): DocumentNoteDtoApiResponse => r.body)
     );
   }
 

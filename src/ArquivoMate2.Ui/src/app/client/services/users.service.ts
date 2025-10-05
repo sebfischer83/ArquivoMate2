@@ -27,9 +27,10 @@ import { apiUsersOthersGet$Json } from '../fn/users/api-users-others-get-json';
 import { ApiUsersOthersGet$Json$Params } from '../fn/users/api-users-others-get-json';
 import { apiUsersOthersGet$Plain } from '../fn/users/api-users-others-get-plain';
 import { ApiUsersOthersGet$Plain$Params } from '../fn/users/api-users-others-get-plain';
-import { CurrentUserDto } from '../models/current-user-dto';
-import { UserApiKeyDto } from '../models/user-api-key-dto';
-import { UserDto } from '../models/user-dto';
+import { CurrentUserDtoApiResponse } from '../models/current-user-dto-api-response';
+import { UserApiKeyDtoApiResponse } from '../models/user-api-key-dto-api-response';
+import { UserDtoApiResponse } from '../models/user-dto-api-response';
+import { UserDtoIEnumerableApiResponse } from '../models/user-dto-i-enumerable-api-response';
 
 @Injectable({ providedIn: 'root' })
 export class UsersService extends BaseService {
@@ -50,7 +51,7 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiUsersMeGet$Plain$Response(params?: ApiUsersMeGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<CurrentUserDto>> {
+  apiUsersMeGet$Plain$Response(params?: ApiUsersMeGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<CurrentUserDtoApiResponse>> {
     return apiUsersMeGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -64,9 +65,9 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiUsersMeGet$Plain(params?: ApiUsersMeGet$Plain$Params, context?: HttpContext): Observable<CurrentUserDto> {
+  apiUsersMeGet$Plain(params?: ApiUsersMeGet$Plain$Params, context?: HttpContext): Observable<CurrentUserDtoApiResponse> {
     return this.apiUsersMeGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<CurrentUserDto>): CurrentUserDto => r.body)
+      map((r: StrictHttpResponse<CurrentUserDtoApiResponse>): CurrentUserDtoApiResponse => r.body)
     );
   }
 
@@ -80,7 +81,7 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiUsersMeGet$Json$Response(params?: ApiUsersMeGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<CurrentUserDto>> {
+  apiUsersMeGet$Json$Response(params?: ApiUsersMeGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<CurrentUserDtoApiResponse>> {
     return apiUsersMeGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -94,9 +95,9 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiUsersMeGet$Json(params?: ApiUsersMeGet$Json$Params, context?: HttpContext): Observable<CurrentUserDto> {
+  apiUsersMeGet$Json(params?: ApiUsersMeGet$Json$Params, context?: HttpContext): Observable<CurrentUserDtoApiResponse> {
     return this.apiUsersMeGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<CurrentUserDto>): CurrentUserDto => r.body)
+      map((r: StrictHttpResponse<CurrentUserDtoApiResponse>): CurrentUserDtoApiResponse => r.body)
     );
   }
 
@@ -113,7 +114,7 @@ export class UsersService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiUsersLoginPost$Plain$Response(params?: ApiUsersLoginPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDto>> {
+  apiUsersLoginPost$Plain$Response(params?: ApiUsersLoginPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDtoApiResponse>> {
     return apiUsersLoginPost$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -127,9 +128,9 @@ export class UsersService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiUsersLoginPost$Plain(params?: ApiUsersLoginPost$Plain$Params, context?: HttpContext): Observable<UserDto> {
+  apiUsersLoginPost$Plain(params?: ApiUsersLoginPost$Plain$Params, context?: HttpContext): Observable<UserDtoApiResponse> {
     return this.apiUsersLoginPost$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<UserDto>): UserDto => r.body)
+      map((r: StrictHttpResponse<UserDtoApiResponse>): UserDtoApiResponse => r.body)
     );
   }
 
@@ -143,7 +144,7 @@ export class UsersService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiUsersLoginPost$Json$Response(params?: ApiUsersLoginPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDto>> {
+  apiUsersLoginPost$Json$Response(params?: ApiUsersLoginPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDtoApiResponse>> {
     return apiUsersLoginPost$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -157,9 +158,9 @@ export class UsersService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiUsersLoginPost$Json(params?: ApiUsersLoginPost$Json$Params, context?: HttpContext): Observable<UserDto> {
+  apiUsersLoginPost$Json(params?: ApiUsersLoginPost$Json$Params, context?: HttpContext): Observable<UserDtoApiResponse> {
     return this.apiUsersLoginPost$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<UserDto>): UserDto => r.body)
+      map((r: StrictHttpResponse<UserDtoApiResponse>): UserDtoApiResponse => r.body)
     );
   }
 
@@ -176,7 +177,7 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiUsersOthersGet$Plain$Response(params?: ApiUsersOthersGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<UserDto>>> {
+  apiUsersOthersGet$Plain$Response(params?: ApiUsersOthersGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDtoIEnumerableApiResponse>> {
     return apiUsersOthersGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -190,9 +191,9 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiUsersOthersGet$Plain(params?: ApiUsersOthersGet$Plain$Params, context?: HttpContext): Observable<Array<UserDto>> {
+  apiUsersOthersGet$Plain(params?: ApiUsersOthersGet$Plain$Params, context?: HttpContext): Observable<UserDtoIEnumerableApiResponse> {
     return this.apiUsersOthersGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<UserDto>>): Array<UserDto> => r.body)
+      map((r: StrictHttpResponse<UserDtoIEnumerableApiResponse>): UserDtoIEnumerableApiResponse => r.body)
     );
   }
 
@@ -206,7 +207,7 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiUsersOthersGet$Json$Response(params?: ApiUsersOthersGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<UserDto>>> {
+  apiUsersOthersGet$Json$Response(params?: ApiUsersOthersGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDtoIEnumerableApiResponse>> {
     return apiUsersOthersGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -220,9 +221,9 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiUsersOthersGet$Json(params?: ApiUsersOthersGet$Json$Params, context?: HttpContext): Observable<Array<UserDto>> {
+  apiUsersOthersGet$Json(params?: ApiUsersOthersGet$Json$Params, context?: HttpContext): Observable<UserDtoIEnumerableApiResponse> {
     return this.apiUsersOthersGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<UserDto>>): Array<UserDto> => r.body)
+      map((r: StrictHttpResponse<UserDtoIEnumerableApiResponse>): UserDtoIEnumerableApiResponse => r.body)
     );
   }
 
@@ -239,7 +240,7 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiUsersApiKeyPost$Plain$Response(params?: ApiUsersApiKeyPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<UserApiKeyDto>> {
+  apiUsersApiKeyPost$Plain$Response(params?: ApiUsersApiKeyPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<UserApiKeyDtoApiResponse>> {
     return apiUsersApiKeyPost$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -253,9 +254,9 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiUsersApiKeyPost$Plain(params?: ApiUsersApiKeyPost$Plain$Params, context?: HttpContext): Observable<UserApiKeyDto> {
+  apiUsersApiKeyPost$Plain(params?: ApiUsersApiKeyPost$Plain$Params, context?: HttpContext): Observable<UserApiKeyDtoApiResponse> {
     return this.apiUsersApiKeyPost$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<UserApiKeyDto>): UserApiKeyDto => r.body)
+      map((r: StrictHttpResponse<UserApiKeyDtoApiResponse>): UserApiKeyDtoApiResponse => r.body)
     );
   }
 
@@ -269,7 +270,7 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiUsersApiKeyPost$Json$Response(params?: ApiUsersApiKeyPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<UserApiKeyDto>> {
+  apiUsersApiKeyPost$Json$Response(params?: ApiUsersApiKeyPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<UserApiKeyDtoApiResponse>> {
     return apiUsersApiKeyPost$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -283,9 +284,9 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiUsersApiKeyPost$Json(params?: ApiUsersApiKeyPost$Json$Params, context?: HttpContext): Observable<UserApiKeyDto> {
+  apiUsersApiKeyPost$Json(params?: ApiUsersApiKeyPost$Json$Params, context?: HttpContext): Observable<UserApiKeyDtoApiResponse> {
     return this.apiUsersApiKeyPost$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<UserApiKeyDto>): UserApiKeyDto => r.body)
+      map((r: StrictHttpResponse<UserApiKeyDtoApiResponse>): UserApiKeyDtoApiResponse => r.body)
     );
   }
 

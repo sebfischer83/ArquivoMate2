@@ -193,7 +193,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddScoped<ILanguageDetectionService, LanguageDetectionService>(); // Detects document languages
             services.AddScoped<IDocumentOwnershipLookup, DocumentOwnershipLookup>(); // Provides ownership lookups for sharing
             services.AddScoped<IDocumentAccessUpdater, DocumentAccessUpdater>(); // Updates the read model for document access
-
+            services.AddScoped<ArquivoMate2.Application.Interfaces.ImportHistory.IImportHistoryReadStore, ArquivoMate2.Infrastructure.Services.ImportHistory.ImportHistoryReadStore>();
             services.AddSingleton<ChatBotSettingsFactory>();
             var chatbotSettings = new ChatBotSettingsFactory(config).GetChatBotSettings();
 

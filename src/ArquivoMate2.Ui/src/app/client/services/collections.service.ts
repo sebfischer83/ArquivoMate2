@@ -35,8 +35,9 @@ import { apiCollectionsPost$Json } from '../fn/collections/api-collections-post-
 import { ApiCollectionsPost$Json$Params } from '../fn/collections/api-collections-post-json';
 import { apiCollectionsPost$Plain } from '../fn/collections/api-collections-post-plain';
 import { ApiCollectionsPost$Plain$Params } from '../fn/collections/api-collections-post-plain';
-import { AssignResultDto } from '../models/assign-result-dto';
-import { CollectionDto } from '../models/collection-dto';
+import { AssignResultDtoApiResponse } from '../models/assign-result-dto-api-response';
+import { CollectionDtoApiResponse } from '../models/collection-dto-api-response';
+import { CollectionDtoIEnumerableApiResponse } from '../models/collection-dto-i-enumerable-api-response';
 
 @Injectable({ providedIn: 'root' })
 export class CollectionsService extends BaseService {
@@ -53,7 +54,7 @@ export class CollectionsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiCollectionsGet$Plain$Response(params?: ApiCollectionsGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<CollectionDto>>> {
+  apiCollectionsGet$Plain$Response(params?: ApiCollectionsGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDtoIEnumerableApiResponse>> {
     return apiCollectionsGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -63,9 +64,9 @@ export class CollectionsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiCollectionsGet$Plain(params?: ApiCollectionsGet$Plain$Params, context?: HttpContext): Observable<Array<CollectionDto>> {
+  apiCollectionsGet$Plain(params?: ApiCollectionsGet$Plain$Params, context?: HttpContext): Observable<CollectionDtoIEnumerableApiResponse> {
     return this.apiCollectionsGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<CollectionDto>>): Array<CollectionDto> => r.body)
+      map((r: StrictHttpResponse<CollectionDtoIEnumerableApiResponse>): CollectionDtoIEnumerableApiResponse => r.body)
     );
   }
 
@@ -75,7 +76,7 @@ export class CollectionsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiCollectionsGet$Json$Response(params?: ApiCollectionsGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<CollectionDto>>> {
+  apiCollectionsGet$Json$Response(params?: ApiCollectionsGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDtoIEnumerableApiResponse>> {
     return apiCollectionsGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -85,9 +86,9 @@ export class CollectionsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiCollectionsGet$Json(params?: ApiCollectionsGet$Json$Params, context?: HttpContext): Observable<Array<CollectionDto>> {
+  apiCollectionsGet$Json(params?: ApiCollectionsGet$Json$Params, context?: HttpContext): Observable<CollectionDtoIEnumerableApiResponse> {
     return this.apiCollectionsGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<CollectionDto>>): Array<CollectionDto> => r.body)
+      map((r: StrictHttpResponse<CollectionDtoIEnumerableApiResponse>): CollectionDtoIEnumerableApiResponse => r.body)
     );
   }
 
@@ -100,7 +101,7 @@ export class CollectionsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiCollectionsPost$Plain$Response(params?: ApiCollectionsPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDto>> {
+  apiCollectionsPost$Plain$Response(params?: ApiCollectionsPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDtoApiResponse>> {
     return apiCollectionsPost$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -110,9 +111,9 @@ export class CollectionsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiCollectionsPost$Plain(params?: ApiCollectionsPost$Plain$Params, context?: HttpContext): Observable<CollectionDto> {
+  apiCollectionsPost$Plain(params?: ApiCollectionsPost$Plain$Params, context?: HttpContext): Observable<CollectionDtoApiResponse> {
     return this.apiCollectionsPost$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<CollectionDto>): CollectionDto => r.body)
+      map((r: StrictHttpResponse<CollectionDtoApiResponse>): CollectionDtoApiResponse => r.body)
     );
   }
 
@@ -122,7 +123,7 @@ export class CollectionsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiCollectionsPost$Json$Response(params?: ApiCollectionsPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDto>> {
+  apiCollectionsPost$Json$Response(params?: ApiCollectionsPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDtoApiResponse>> {
     return apiCollectionsPost$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -132,9 +133,9 @@ export class CollectionsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiCollectionsPost$Json(params?: ApiCollectionsPost$Json$Params, context?: HttpContext): Observable<CollectionDto> {
+  apiCollectionsPost$Json(params?: ApiCollectionsPost$Json$Params, context?: HttpContext): Observable<CollectionDtoApiResponse> {
     return this.apiCollectionsPost$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<CollectionDto>): CollectionDto => r.body)
+      map((r: StrictHttpResponse<CollectionDtoApiResponse>): CollectionDtoApiResponse => r.body)
     );
   }
 
@@ -147,7 +148,7 @@ export class CollectionsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiCollectionsIdGet$Plain$Response(params: ApiCollectionsIdGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDto>> {
+  apiCollectionsIdGet$Plain$Response(params: ApiCollectionsIdGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDtoApiResponse>> {
     return apiCollectionsIdGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -157,9 +158,9 @@ export class CollectionsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiCollectionsIdGet$Plain(params: ApiCollectionsIdGet$Plain$Params, context?: HttpContext): Observable<CollectionDto> {
+  apiCollectionsIdGet$Plain(params: ApiCollectionsIdGet$Plain$Params, context?: HttpContext): Observable<CollectionDtoApiResponse> {
     return this.apiCollectionsIdGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<CollectionDto>): CollectionDto => r.body)
+      map((r: StrictHttpResponse<CollectionDtoApiResponse>): CollectionDtoApiResponse => r.body)
     );
   }
 
@@ -169,7 +170,7 @@ export class CollectionsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiCollectionsIdGet$Json$Response(params: ApiCollectionsIdGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDto>> {
+  apiCollectionsIdGet$Json$Response(params: ApiCollectionsIdGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDtoApiResponse>> {
     return apiCollectionsIdGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -179,9 +180,9 @@ export class CollectionsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiCollectionsIdGet$Json(params: ApiCollectionsIdGet$Json$Params, context?: HttpContext): Observable<CollectionDto> {
+  apiCollectionsIdGet$Json(params: ApiCollectionsIdGet$Json$Params, context?: HttpContext): Observable<CollectionDtoApiResponse> {
     return this.apiCollectionsIdGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<CollectionDto>): CollectionDto => r.body)
+      map((r: StrictHttpResponse<CollectionDtoApiResponse>): CollectionDtoApiResponse => r.body)
     );
   }
 
@@ -194,7 +195,7 @@ export class CollectionsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiCollectionsIdPut$Plain$Response(params: ApiCollectionsIdPut$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDto>> {
+  apiCollectionsIdPut$Plain$Response(params: ApiCollectionsIdPut$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDtoApiResponse>> {
     return apiCollectionsIdPut$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -204,9 +205,9 @@ export class CollectionsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiCollectionsIdPut$Plain(params: ApiCollectionsIdPut$Plain$Params, context?: HttpContext): Observable<CollectionDto> {
+  apiCollectionsIdPut$Plain(params: ApiCollectionsIdPut$Plain$Params, context?: HttpContext): Observable<CollectionDtoApiResponse> {
     return this.apiCollectionsIdPut$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<CollectionDto>): CollectionDto => r.body)
+      map((r: StrictHttpResponse<CollectionDtoApiResponse>): CollectionDtoApiResponse => r.body)
     );
   }
 
@@ -216,7 +217,7 @@ export class CollectionsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiCollectionsIdPut$Json$Response(params: ApiCollectionsIdPut$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDto>> {
+  apiCollectionsIdPut$Json$Response(params: ApiCollectionsIdPut$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDtoApiResponse>> {
     return apiCollectionsIdPut$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -226,9 +227,9 @@ export class CollectionsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiCollectionsIdPut$Json(params: ApiCollectionsIdPut$Json$Params, context?: HttpContext): Observable<CollectionDto> {
+  apiCollectionsIdPut$Json(params: ApiCollectionsIdPut$Json$Params, context?: HttpContext): Observable<CollectionDtoApiResponse> {
     return this.apiCollectionsIdPut$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<CollectionDto>): CollectionDto => r.body)
+      map((r: StrictHttpResponse<CollectionDtoApiResponse>): CollectionDtoApiResponse => r.body)
     );
   }
 
@@ -266,7 +267,7 @@ export class CollectionsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiCollectionsIdAssignPost$Plain$Response(params: ApiCollectionsIdAssignPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<AssignResultDto>> {
+  apiCollectionsIdAssignPost$Plain$Response(params: ApiCollectionsIdAssignPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<AssignResultDtoApiResponse>> {
     return apiCollectionsIdAssignPost$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -276,9 +277,9 @@ export class CollectionsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiCollectionsIdAssignPost$Plain(params: ApiCollectionsIdAssignPost$Plain$Params, context?: HttpContext): Observable<AssignResultDto> {
+  apiCollectionsIdAssignPost$Plain(params: ApiCollectionsIdAssignPost$Plain$Params, context?: HttpContext): Observable<AssignResultDtoApiResponse> {
     return this.apiCollectionsIdAssignPost$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<AssignResultDto>): AssignResultDto => r.body)
+      map((r: StrictHttpResponse<AssignResultDtoApiResponse>): AssignResultDtoApiResponse => r.body)
     );
   }
 
@@ -288,7 +289,7 @@ export class CollectionsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiCollectionsIdAssignPost$Json$Response(params: ApiCollectionsIdAssignPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<AssignResultDto>> {
+  apiCollectionsIdAssignPost$Json$Response(params: ApiCollectionsIdAssignPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<AssignResultDtoApiResponse>> {
     return apiCollectionsIdAssignPost$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -298,9 +299,9 @@ export class CollectionsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiCollectionsIdAssignPost$Json(params: ApiCollectionsIdAssignPost$Json$Params, context?: HttpContext): Observable<AssignResultDto> {
+  apiCollectionsIdAssignPost$Json(params: ApiCollectionsIdAssignPost$Json$Params, context?: HttpContext): Observable<AssignResultDtoApiResponse> {
     return this.apiCollectionsIdAssignPost$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<AssignResultDto>): AssignResultDto => r.body)
+      map((r: StrictHttpResponse<AssignResultDtoApiResponse>): AssignResultDtoApiResponse => r.body)
     );
   }
 

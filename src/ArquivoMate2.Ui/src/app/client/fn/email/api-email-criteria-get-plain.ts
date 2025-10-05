@@ -8,12 +8,12 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { EmailCriteriaDto } from '../../models/email-criteria-dto';
+import { EmailCriteriaDtoApiResponse } from '../../models/email-criteria-dto-api-response';
 
 export interface ApiEmailCriteriaGet$Plain$Params {
 }
 
-export function apiEmailCriteriaGet$Plain(http: HttpClient, rootUrl: string, params?: ApiEmailCriteriaGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDto>> {
+export function apiEmailCriteriaGet$Plain(http: HttpClient, rootUrl: string, params?: ApiEmailCriteriaGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiEmailCriteriaGet$Plain.PATH, 'get');
   if (params) {
   }
@@ -23,7 +23,7 @@ export function apiEmailCriteriaGet$Plain(http: HttpClient, rootUrl: string, par
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<EmailCriteriaDto>;
+      return r as StrictHttpResponse<EmailCriteriaDtoApiResponse>;
     })
   );
 }

@@ -8,11 +8,12 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { Int32ApiResponse } from '../../models/int-32-api-response';
 
 export interface ApiEmailCountGet$Plain$Params {
 }
 
-export function apiEmailCountGet$Plain(http: HttpClient, rootUrl: string, params?: ApiEmailCountGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+export function apiEmailCountGet$Plain(http: HttpClient, rootUrl: string, params?: ApiEmailCountGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<Int32ApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiEmailCountGet$Plain.PATH, 'get');
   if (params) {
   }
@@ -22,7 +23,7 @@ export function apiEmailCountGet$Plain(http: HttpClient, rootUrl: string, params
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return (r as HttpResponse<any>).clone({ body: parseFloat(String((r as HttpResponse<any>).body)) }) as StrictHttpResponse<number>;
+      return r as StrictHttpResponse<Int32ApiResponse>;
     })
   );
 }

@@ -8,11 +8,12 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { Int32ApiResponse } from '../../models/int-32-api-response';
 
 export interface ApiHistoryPendingCountGet$Json$Params {
 }
 
-export function apiHistoryPendingCountGet$Json(http: HttpClient, rootUrl: string, params?: ApiHistoryPendingCountGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+export function apiHistoryPendingCountGet$Json(http: HttpClient, rootUrl: string, params?: ApiHistoryPendingCountGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Int32ApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiHistoryPendingCountGet$Json.PATH, 'get');
   if (params) {
   }
@@ -22,7 +23,7 @@ export function apiHistoryPendingCountGet$Json(http: HttpClient, rootUrl: string
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return (r as HttpResponse<any>).clone({ body: parseFloat(String((r as HttpResponse<any>).body)) }) as StrictHttpResponse<number>;
+      return r as StrictHttpResponse<Int32ApiResponse>;
     })
   );
 }

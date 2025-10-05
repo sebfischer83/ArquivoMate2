@@ -2,6 +2,7 @@ using ArquivoMate2.Application.Commands.Notes;
 using ArquivoMate2.Application.Queries.Notes;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Shared.Models.Notes;
+using ArquivoMate2.Shared.ApiModels;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -29,8 +30,8 @@ namespace ArquivoMate2.API.Controllers
         /// <param name="request">Note payload containing the text that should be stored.</param>
         /// <param name="ct">Cancellation token forwarded from the HTTP request.</param>
         [HttpPost]
-        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(DocumentNoteDto))]
-        public async Task<IActionResult> Create(Guid documentId, [FromBody] CreateDocumentNoteRequest request, CancellationToken ct)
+        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ApiResponse<DocumentNoteDto>))]
+        public async Task<ActionResult<ApiResponse<DocumentNoteDto>>> Create(Guid documentId, [FromBody] CreateDocumentNoteRequest request, CancellationToken ct)
         {
             var result = await _mediator.Send(new CreateDocumentNoteCommand(documentId, _currentUserService.UserId, request.Text), ct);
             return CreatedAtAction(nameof(List), new { documentId }, result);
@@ -43,8 +44,8 @@ namespace ArquivoMate2.API.Controllers
         /// <param name="q">Optional free text filter that narrows the result.</param>
         /// <param name="ct">Cancellation token forwarded from the HTTP request.</param>
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<DocumentNoteDto>))]
-        public async Task<IActionResult> List(Guid documentId, [FromQuery] string? q, CancellationToken ct)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<IEnumerable<DocumentNoteDto>>))]
+        public async Task<ActionResult<ApiResponse<IEnumerable<DocumentNoteDto>>>> List(Guid documentId, [FromQuery] string? q, CancellationToken ct)
         {
             var result = await _mediator.Send(new GetDocumentNotesQuery(documentId, _currentUserService.UserId, q), ct);
             return Ok(result);

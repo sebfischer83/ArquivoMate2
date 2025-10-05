@@ -5,6 +5,7 @@ using ArquivoMate2.Application.Commands.Sharing;
 using ArquivoMate2.Application.Queries.Sharing;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Shared.Models.Sharing;
+using ArquivoMate2.Shared.ApiModels;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -30,8 +31,8 @@ public class ShareGroupsController : ControllerBase
     /// </summary>
     /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<ShareGroupDto>))]
-    public async Task<IActionResult> List(CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<IEnumerable<ShareGroupDto>>))]
+    public async Task<ActionResult<ApiResponse<IEnumerable<ShareGroupDto>>>> List(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetShareGroupsQuery(_currentUserService.UserId), cancellationToken);
         return Ok(result);
@@ -43,8 +44,8 @@ public class ShareGroupsController : ControllerBase
     /// <param name="request">Group definition including its name and members.</param>
     /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ShareGroupDto))]
-    public async Task<IActionResult> Create([FromBody] CreateShareGroupRequest request, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ApiResponse<ShareGroupDto>))]
+    public async Task<ActionResult<ApiResponse<ShareGroupDto>>> Create([FromBody] CreateShareGroupRequest request, CancellationToken cancellationToken)
     {
         if (request is null)
         {
@@ -61,9 +62,9 @@ public class ShareGroupsController : ControllerBase
     /// <param name="groupId">Identifier of the group that should be retrieved.</param>
     /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
     [HttpGet("{groupId}")]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ShareGroupDto))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<ShareGroupDto>))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetById(string groupId, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<ShareGroupDto>>> GetById(string groupId, CancellationToken cancellationToken)
     {
         var groups = await _mediator.Send(new GetShareGroupsQuery(_currentUserService.UserId), cancellationToken);
         var group = groups.FirstOrDefault(g => g.Id == groupId);
@@ -82,9 +83,9 @@ public class ShareGroupsController : ControllerBase
     /// <param name="request">Updated group details.</param>
     /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
     [HttpPut("{groupId}")]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ShareGroupDto))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<ShareGroupDto>))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update(string groupId, [FromBody] UpdateShareGroupRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<ShareGroupDto>>> Update(string groupId, [FromBody] UpdateShareGroupRequest request, CancellationToken cancellationToken)
     {
         if (request is null)
         {

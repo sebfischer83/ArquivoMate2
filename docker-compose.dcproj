@@ -19,7 +19,6 @@
     </None>
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
-    <None Include="docs\Grouping.md" />
     <None Include="docs\ProjectOverview.md" />
     <None Include="README.md" />
     <None Include="scripts\docker-build-multiarch.sh" />

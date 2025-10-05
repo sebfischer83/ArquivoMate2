@@ -21,7 +21,8 @@ import { apiDocumentsDocumentIdSharesPost$Plain } from '../fn/document-shares/ap
 import { ApiDocumentsDocumentIdSharesPost$Plain$Params } from '../fn/document-shares/api-documents-document-id-shares-post-plain';
 import { apiDocumentsDocumentIdSharesShareIdDelete } from '../fn/document-shares/api-documents-document-id-shares-share-id-delete';
 import { ApiDocumentsDocumentIdSharesShareIdDelete$Params } from '../fn/document-shares/api-documents-document-id-shares-share-id-delete';
-import { DocumentShareDto } from '../models/document-share-dto';
+import { DocumentShareDtoApiResponse } from '../models/document-share-dto-api-response';
+import { DocumentShareDtoIEnumerableApiResponse } from '../models/document-share-dto-i-enumerable-api-response';
 
 @Injectable({ providedIn: 'root' })
 export class DocumentSharesService extends BaseService {
@@ -42,7 +43,7 @@ export class DocumentSharesService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsDocumentIdSharesGet$Plain$Response(params: ApiDocumentsDocumentIdSharesGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<DocumentShareDto>>> {
+  apiDocumentsDocumentIdSharesGet$Plain$Response(params: ApiDocumentsDocumentIdSharesGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentShareDtoIEnumerableApiResponse>> {
     return apiDocumentsDocumentIdSharesGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -56,9 +57,9 @@ export class DocumentSharesService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsDocumentIdSharesGet$Plain(params: ApiDocumentsDocumentIdSharesGet$Plain$Params, context?: HttpContext): Observable<Array<DocumentShareDto>> {
+  apiDocumentsDocumentIdSharesGet$Plain(params: ApiDocumentsDocumentIdSharesGet$Plain$Params, context?: HttpContext): Observable<DocumentShareDtoIEnumerableApiResponse> {
     return this.apiDocumentsDocumentIdSharesGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<DocumentShareDto>>): Array<DocumentShareDto> => r.body)
+      map((r: StrictHttpResponse<DocumentShareDtoIEnumerableApiResponse>): DocumentShareDtoIEnumerableApiResponse => r.body)
     );
   }
 
@@ -72,7 +73,7 @@ export class DocumentSharesService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsDocumentIdSharesGet$Json$Response(params: ApiDocumentsDocumentIdSharesGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<DocumentShareDto>>> {
+  apiDocumentsDocumentIdSharesGet$Json$Response(params: ApiDocumentsDocumentIdSharesGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentShareDtoIEnumerableApiResponse>> {
     return apiDocumentsDocumentIdSharesGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -86,9 +87,9 @@ export class DocumentSharesService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsDocumentIdSharesGet$Json(params: ApiDocumentsDocumentIdSharesGet$Json$Params, context?: HttpContext): Observable<Array<DocumentShareDto>> {
+  apiDocumentsDocumentIdSharesGet$Json(params: ApiDocumentsDocumentIdSharesGet$Json$Params, context?: HttpContext): Observable<DocumentShareDtoIEnumerableApiResponse> {
     return this.apiDocumentsDocumentIdSharesGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<DocumentShareDto>>): Array<DocumentShareDto> => r.body)
+      map((r: StrictHttpResponse<DocumentShareDtoIEnumerableApiResponse>): DocumentShareDtoIEnumerableApiResponse => r.body)
     );
   }
 
@@ -105,7 +106,7 @@ export class DocumentSharesService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsDocumentIdSharesPost$Plain$Response(params: ApiDocumentsDocumentIdSharesPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentShareDto>> {
+  apiDocumentsDocumentIdSharesPost$Plain$Response(params: ApiDocumentsDocumentIdSharesPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentShareDtoApiResponse>> {
     return apiDocumentsDocumentIdSharesPost$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -119,9 +120,9 @@ export class DocumentSharesService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsDocumentIdSharesPost$Plain(params: ApiDocumentsDocumentIdSharesPost$Plain$Params, context?: HttpContext): Observable<DocumentShareDto> {
+  apiDocumentsDocumentIdSharesPost$Plain(params: ApiDocumentsDocumentIdSharesPost$Plain$Params, context?: HttpContext): Observable<DocumentShareDtoApiResponse> {
     return this.apiDocumentsDocumentIdSharesPost$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DocumentShareDto>): DocumentShareDto => r.body)
+      map((r: StrictHttpResponse<DocumentShareDtoApiResponse>): DocumentShareDtoApiResponse => r.body)
     );
   }
 
@@ -135,7 +136,7 @@ export class DocumentSharesService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsDocumentIdSharesPost$Json$Response(params: ApiDocumentsDocumentIdSharesPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentShareDto>> {
+  apiDocumentsDocumentIdSharesPost$Json$Response(params: ApiDocumentsDocumentIdSharesPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentShareDtoApiResponse>> {
     return apiDocumentsDocumentIdSharesPost$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -149,9 +150,9 @@ export class DocumentSharesService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsDocumentIdSharesPost$Json(params: ApiDocumentsDocumentIdSharesPost$Json$Params, context?: HttpContext): Observable<DocumentShareDto> {
+  apiDocumentsDocumentIdSharesPost$Json(params: ApiDocumentsDocumentIdSharesPost$Json$Params, context?: HttpContext): Observable<DocumentShareDtoApiResponse> {
     return this.apiDocumentsDocumentIdSharesPost$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DocumentShareDto>): DocumentShareDto => r.body)
+      map((r: StrictHttpResponse<DocumentShareDtoApiResponse>): DocumentShareDtoApiResponse => r.body)
     );
   }
 

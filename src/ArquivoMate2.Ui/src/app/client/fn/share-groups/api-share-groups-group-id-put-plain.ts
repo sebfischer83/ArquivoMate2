@@ -8,7 +8,7 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { ShareGroupDto } from '../../models/share-group-dto';
+import { ShareGroupDtoApiResponse } from '../../models/share-group-dto-api-response';
 import { UpdateShareGroupRequest } from '../../models/update-share-group-request';
 
 export interface ApiShareGroupsGroupIdPut$Plain$Params {
@@ -24,7 +24,7 @@ export interface ApiShareGroupsGroupIdPut$Plain$Params {
     body?: UpdateShareGroupRequest
 }
 
-export function apiShareGroupsGroupIdPut$Plain(http: HttpClient, rootUrl: string, params: ApiShareGroupsGroupIdPut$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDto>> {
+export function apiShareGroupsGroupIdPut$Plain(http: HttpClient, rootUrl: string, params: ApiShareGroupsGroupIdPut$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareGroupDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiShareGroupsGroupIdPut$Plain.PATH, 'put');
   if (params) {
     rb.path('groupId', params.groupId, {});
@@ -36,7 +36,7 @@ export function apiShareGroupsGroupIdPut$Plain(http: HttpClient, rootUrl: string
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<ShareGroupDto>;
+      return r as StrictHttpResponse<ShareGroupDtoApiResponse>;
     })
   );
 }

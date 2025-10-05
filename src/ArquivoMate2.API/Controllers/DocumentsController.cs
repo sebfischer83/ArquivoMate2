@@ -8,6 +8,7 @@ using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.Import;
 using ArquivoMate2.Infrastructure.Persistance; // Access to DocumentAccessView & DocumentView projections
 using ArquivoMate2.Shared.Models;
+using ArquivoMate2.Shared.ApiModels; // ApiResponse
 using AutoMapper;
 using Hangfire;
 using Marten;
@@ -44,15 +45,6 @@ namespace ArquivoMate2.API.Controllers
         /// <summary>
         /// Initializes a new instance of the <see cref="DocumentsController"/> class with the dependencies required to orchestrate document operations.
         /// </summary>
-        /// <param name="mediator">Mediator used to dispatch commands.</param>
-        /// <param name="env">Host environment describing the application context.</param>
-        /// <param name="currentUserService">Service that exposes the current user's identity.</param>
-        /// <param name="mapper">Mapper used to translate read models to DTOs.</param>
-        /// <param name="localizer">Localization provider for user-facing messages.</param>
-        /// <param name="documentAccessService">Service that validates document access rules.</param>
-        /// <param name="tokenService">Token generator for secure delivery URLs.</param>
-        /// <param name="encryptionSettings">Encryption settings used for token expiry.</param>
-        /// <param name="appSettings">Application-wide configuration options.</param>
         public DocumentsController(
             IMediator mediator,
             IWebHostEnvironment env,
@@ -78,14 +70,9 @@ namespace ArquivoMate2.API.Controllers
         /// <summary>
         /// Uploads a new document, starts its import stream, and schedules the background processing workflow.
         /// </summary>
-        /// <param name="request">Form payload containing the file to upload.</param>
-        /// <param name="cancellationToken">Cancellation token propagated from the HTTP request.</param>
-        /// <param name="ocrSettings">OCR configuration required by the processing pipeline.</param>
-        /// <param name="querySession">Document session used to persist the import start event.</param>
-        /// <returns>A <see cref="CreatedAtActionResult"/> containing the newly created document identifier.</returns>
         [HttpPost]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        public async Task<IActionResult> Upload([FromForm] UploadDocumentRequest request, CancellationToken cancellationToken, [FromServices] OcrSettings ocrSettings, [FromServices] IDocumentSession querySession)
+        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ApiResponse<Guid>))]
+        public async Task<ActionResult<ApiResponse<Guid>>> Upload([FromForm] UploadDocumentRequest request, CancellationToken cancellationToken, [FromServices] OcrSettings ocrSettings, [FromServices] IDocumentSession querySession)
         {
             if (request.File is null || request.File.Length == 0)
                 return BadRequest();
@@ -110,14 +97,9 @@ namespace ArquivoMate2.API.Controllers
         /// <summary>
         /// Updates mutable document metadata fields and refreshes the search index when necessary.
         /// </summary>
-        /// <param name="id">Identifier of the document whose fields should be updated.</param>
-        /// <param name="dto">Set of field updates to apply.</param>
-        /// <param name="cancellationToken">Cancellation token propagated from the HTTP request.</param>
-        /// <param name="querySession">Query session used to load projections for validation and response construction.</param>
-        /// <returns>The updated document representation or an appropriate error response.</returns>
         [HttpPatch("{id}/update-fields")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentDto))]
-        public async Task<IActionResult> UpdateFields(Guid id, [FromBody] UpdateDocumentFieldsDto dto, CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<DocumentDto>))]
+        public async Task<ActionResult<ApiResponse<DocumentDto>>> UpdateFields(Guid id, [FromBody] UpdateDocumentFieldsDto dto, CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
         {
             if (dto == null || !dto.Fields.Any())
                 return BadRequest(_localizer.GetString("No fields provided.").Value);
@@ -172,15 +154,10 @@ namespace ArquivoMate2.API.Controllers
         /// <summary>
         /// Retrieves a paginated document list using optional full-text search, filtering, and sorting criteria.
         /// </summary>
-        /// <param name="requestDto">Query parameters describing paging, filters, and sorting.</param>
-        /// <param name="cancellationToken">Cancellation token propagated from the HTTP request.</param>
-        /// <param name="querySession">Query session used to compose the Marten query.</param>
-        /// <param name="searchClient">Search client used to resolve full-text document hits.</param>
-        /// <returns>A paged list of documents visible to the current user.</returns>
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentListDto))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<DocumentListDto>))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> Get([FromQuery] DocumentListRequestDto requestDto,
+        public async Task<ActionResult<ApiResponse<DocumentListDto>>> Get([FromQuery] DocumentListRequestDto requestDto,
             CancellationToken cancellationToken, [FromServices] IQuerySession querySession, [FromServices] ISearchClient searchClient)
         {
             var userId = _currentUserService.UserId;
@@ -318,14 +295,10 @@ namespace ArquivoMate2.API.Controllers
         /// <summary>
         /// Returns aggregate document statistics and search facets for the current user.
         /// </summary>
-        /// <param name="cancellationToken">Cancellation token propagated from the HTTP request.</param>
-        /// <param name="querySession">Query session used to count documents.</param>
-        /// <param name="searchClient">Search client used to retrieve facet information.</param>
-        /// <returns>A <see cref="DocumentStatsDto"/> representing the user's library statistics.</returns>
         [HttpGet("stats")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentStatsDto))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<DocumentStatsDto>))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> StatsAsync(CancellationToken cancellationToken, [FromServices] IQuerySession querySession, [FromServices] ISearchClient searchClient)
+        public async Task<ActionResult<ApiResponse<DocumentStatsDto>>> StatsAsync(CancellationToken cancellationToken, [FromServices] IQuerySession querySession, [FromServices] ISearchClient searchClient)
         {
             var userId = _currentUserService.UserId;
 
@@ -358,15 +331,11 @@ namespace ArquivoMate2.API.Controllers
         /// <summary>
         /// Retrieves a single document including its projection and event history.
         /// </summary>
-        /// <param name="id">Identifier of the document to retrieve.</param>
-        /// <param name="cancellationToken">Cancellation token propagated from the HTTP request.</param>
-        /// <param name="querySession">Query session used to load the document projection and event stream.</param>
-        /// <returns>The requested document if available to the current user.</returns>
         [HttpGet("{id:guid}")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DocumentDto))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<DocumentDto>))]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
+        public async Task<ActionResult<ApiResponse<DocumentDto>>> Get(Guid id, CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
         {
             var userId = _currentUserService.UserId;
 
@@ -410,7 +379,6 @@ namespace ArquivoMate2.API.Controllers
         /// <summary>
         /// Applies signed delivery URLs to encrypted document artifacts so they can be fetched securely.
         /// </summary>
-        /// <param name="dto">Document DTO whose artifact paths should be replaced with secure URLs.</param>
         private void ApplyDeliveryTokens(DocumentDto dto)
         {
             dto.FilePath = string.IsNullOrEmpty(dto.FilePath) ? dto.FilePath : BuildDeliveryUrl(dto.Id, "file");
@@ -423,9 +391,6 @@ namespace ArquivoMate2.API.Controllers
         /// <summary>
         /// Builds a signed delivery URL for a specific document artifact.
         /// </summary>
-        /// <param name="documentId">Document identifier that owns the artifact.</param>
-        /// <param name="artifact">Artifact name (file, preview, thumb, metadata, archive).</param>
-        /// <returns>A fully-qualified URL containing a time-limited signature.</returns>
         private string BuildDeliveryUrl(Guid documentId, string artifact)
         {
             var expires = DateTimeOffset.UtcNow.AddMinutes(_encryptionSettings.TokenTtlMinutes);
@@ -439,14 +404,9 @@ namespace ArquivoMate2.API.Controllers
         /// <summary>
         /// Creates a time-limited external share link for a document artifact.
         /// </summary>
-        /// <param name="request">Request describing the document, artifact, and TTL.</param>
-        /// <param name="shareService">Service responsible for persisting share definitions.</param>
-        /// <param name="appSettings">Application settings used to enforce TTL limits.</param>
-        /// <param name="ct">Cancellation token propagated from the HTTP request.</param>
-        /// <returns>Information about the created share including its public URL.</returns>
         [HttpPost("share")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ShareCreatedDto))]
-        public async Task<IActionResult> CreateShare([FromBody] CreateShareRequest request, [FromServices] IExternalShareService shareService, [FromServices] AppSettings appSettings, CancellationToken ct)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<ShareCreatedDto>))]
+        public async Task<ActionResult<ApiResponse<ShareCreatedDto>>> CreateShare([FromBody] CreateShareRequest request, [FromServices] IExternalShareService shareService, [FromServices] AppSettings appSettings, CancellationToken ct)
         {
             if (request == null || request.DocumentId == Guid.Empty)
                 return BadRequest();

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using ArquivoMate2.Application.Commands.Users;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Queries.Users;
+using ArquivoMate2.Shared.ApiModels;
 using ArquivoMate2.Shared.Models.Users;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -27,9 +28,9 @@ public class UsersController : ControllerBase
     ///     Returns the current authenticated user profile without updating timestamps.
     /// </summary>
     [HttpGet("me")]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CurrentUserDto))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<CurrentUserDto>))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetMe(CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<CurrentUserDto>>> GetMe(CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId;
         var dto = await _mediator.Send(new GetCurrentUserQuery(userId), cancellationToken);
@@ -42,8 +43,8 @@ public class UsersController : ControllerBase
     ///     Synchronises the authenticated user with the application store.
     /// </summary>
     [HttpPost("login")]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UserDto))]
-    public async Task<IActionResult> Upsert([FromBody] UpsertUserRequest request, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<UserDto>))]
+    public async Task<ActionResult<ApiResponse<UserDto>>> Upsert([FromBody] UpsertUserRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new UpsertUserCommand(_currentUserService.UserId, request.Name), cancellationToken);
         return Ok(result);
@@ -53,8 +54,8 @@ public class UsersController : ControllerBase
     /// Returns all other users (for sharing dialogs etc.).
     /// </summary>
     [HttpGet("others")]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<UserDto>))]
-    public async Task<IActionResult> GetOthers(CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<IEnumerable<UserDto>>))]
+    public async Task<ActionResult<ApiResponse<IEnumerable<UserDto>>>> GetOthers(CancellationToken cancellationToken)
     {
         var currentId = _currentUserService.UserId;
         var users = await _mediator.Send(new ListOtherUsersQuery(currentId), cancellationToken);
@@ -66,9 +67,9 @@ public class UsersController : ControllerBase
     /// </summary>
     [HttpPost("api-key")]
     [Authorize(Roles = "admin")]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UserApiKeyDto))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<UserApiKeyDto>))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GenerateApiKey(CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<UserApiKeyDto>>> GenerateApiKey(CancellationToken cancellationToken)
     {
         try
         {

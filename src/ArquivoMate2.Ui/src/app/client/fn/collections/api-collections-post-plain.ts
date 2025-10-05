@@ -8,14 +8,14 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { CollectionDto } from '../../models/collection-dto';
+import { CollectionDtoApiResponse } from '../../models/collection-dto-api-response';
 import { CreateCollectionRequest } from '../../models/create-collection-request';
 
 export interface ApiCollectionsPost$Plain$Params {
       body?: CreateCollectionRequest
 }
 
-export function apiCollectionsPost$Plain(http: HttpClient, rootUrl: string, params?: ApiCollectionsPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDto>> {
+export function apiCollectionsPost$Plain(http: HttpClient, rootUrl: string, params?: ApiCollectionsPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiCollectionsPost$Plain.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/*+json');
@@ -26,7 +26,7 @@ export function apiCollectionsPost$Plain(http: HttpClient, rootUrl: string, para
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<CollectionDto>;
+      return r as StrictHttpResponse<CollectionDtoApiResponse>;
     })
   );
 }

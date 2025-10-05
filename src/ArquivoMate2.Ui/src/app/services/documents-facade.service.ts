@@ -2,10 +2,13 @@ import { inject, Injectable, signal, computed, effect } from '@angular/core';
 import { DocumentsService } from '../client/services/documents.service';
 import { TranslocoService } from '@jsverse/transloco';
 import { DocumentListDto } from '../client/models/document-list-dto';
+import { DocumentListDtoApiResponse } from '../client/models/document-list-dto-api-response';
 import { ToastService } from './toast.service';
 import { ApiDocumentsGet$Json$Params } from '../client/fn/documents/api-documents-get-json';
 
 // Facade: encapsulates retrieval, transformation & lightweight caching for documents list.
+// NOTE: Backend responses are now wrapped in an ApiResponse<T> envelope (success, message, errors, data,...).
+// This facade unwraps `data` and surfaces envelope message as user-facing error when `success === false`.
 @Injectable({ providedIn: 'root' })
 export class DocumentsFacadeService {
   private api = inject(DocumentsService);
@@ -53,8 +56,26 @@ export class DocumentsFacadeService {
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
     this.api.apiDocumentsGet$Json(params).subscribe({
-      next: dto => {
-        this.documentsSignal.set(dto);
+      next: (resp: DocumentListDtoApiResponse) => {
+        const success = resp.success !== false; // treat undefined as ok
+        if (!success) {
+          const message: string = resp.message ?? this.transloco.translate('Document.DocumentsLoadError');
+          this.errorSignal.set(message);
+          this.toast.error(message);
+          this.loadingSignal.set(false);
+          return;
+        }
+        const data = resp.data || null;
+        if (!data) {
+          // unexpected empty data when success
+      const fallbackMsg = this.transloco.translate('Document.DocumentsLoadEmpty');
+      this.errorSignal.set(fallbackMsg);
+      this.toast.info(fallbackMsg);
+            this.documentsSignal.set(null);
+            this.loadingSignal.set(false);
+            return;
+        }
+        this.documentsSignal.set(data);
         this.lastLoadedAt = now;
         this.loadingSignal.set(false);
       },

@@ -2,6 +2,7 @@ using ArquivoMate2.Application.Commands.Parties;
 using ArquivoMate2.Application.Queries.Parties;
 using ArquivoMate2.Shared.Models;
 using ArquivoMate2.Shared.Models.Party;
+using ArquivoMate2.Shared.ApiModels;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -22,17 +23,17 @@ public class PartiesController : ControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<PartyDto>))]
-    public async Task<IActionResult> List(CancellationToken ct)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<IEnumerable<PartyDto>>))]
+    public async Task<ActionResult<ApiResponse<IEnumerable<PartyDto>>>> List(CancellationToken ct)
     {
         var parties = await _mediator.Send(new ListPartiesQuery(), ct);
         return Ok(parties);
     }
 
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PartyDto))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<PartyDto>))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+    public async Task<ActionResult<ApiResponse<PartyDto>>> GetById(Guid id, CancellationToken ct)
     {
         var party = await _mediator.Send(new GetPartyQuery(id), ct);
         if (party is null) return NotFound();
@@ -40,9 +41,9 @@ public class PartiesController : ControllerBase
     }
 
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(PartyDto))]
+    [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ApiResponse<PartyDto>))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create([FromBody] CreatePartyRequest request, CancellationToken ct)
+    public async Task<ActionResult<ApiResponse<PartyDto>>> Create([FromBody] CreatePartyRequest request, CancellationToken ct)
     {
         if (request is null) return BadRequest();
 
@@ -59,10 +60,10 @@ public class PartiesController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PartyDto))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<PartyDto>))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePartyRequest request, CancellationToken ct)
+    public async Task<ActionResult<ApiResponse<PartyDto>>> Update(Guid id, [FromBody] UpdatePartyRequest request, CancellationToken ct)
     {
         if (request is null || request.Id == Guid.Empty || request.Id != id)
         {

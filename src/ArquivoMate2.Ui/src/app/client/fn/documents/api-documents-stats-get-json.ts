@@ -8,12 +8,12 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { DocumentStatsDto } from '../../models/document-stats-dto';
+import { DocumentStatsDtoApiResponse } from '../../models/document-stats-dto-api-response';
 
 export interface ApiDocumentsStatsGet$Json$Params {
 }
 
-export function apiDocumentsStatsGet$Json(http: HttpClient, rootUrl: string, params?: ApiDocumentsStatsGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentStatsDto>> {
+export function apiDocumentsStatsGet$Json(http: HttpClient, rootUrl: string, params?: ApiDocumentsStatsGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentStatsDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiDocumentsStatsGet$Json.PATH, 'get');
   if (params) {
   }
@@ -23,7 +23,7 @@ export function apiDocumentsStatsGet$Json(http: HttpClient, rootUrl: string, par
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<DocumentStatsDto>;
+      return r as StrictHttpResponse<DocumentStatsDtoApiResponse>;
     })
   );
 }

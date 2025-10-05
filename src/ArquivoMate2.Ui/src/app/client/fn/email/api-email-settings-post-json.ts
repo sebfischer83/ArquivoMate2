@@ -8,26 +8,27 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { ObjectApiResponse } from '../../models/object-api-response';
 import { SaveEmailSettingsRequest } from '../../models/save-email-settings-request';
 
-export interface ApiEmailSettingsPost$Params {
+export interface ApiEmailSettingsPost$Json$Params {
       body?: SaveEmailSettingsRequest
 }
 
-export function apiEmailSettingsPost(http: HttpClient, rootUrl: string, params?: ApiEmailSettingsPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, apiEmailSettingsPost.PATH, 'post');
+export function apiEmailSettingsPost$Json(http: HttpClient, rootUrl: string, params?: ApiEmailSettingsPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ObjectApiResponse>> {
+  const rb = new RequestBuilder(rootUrl, apiEmailSettingsPost$Json.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/*+json');
   }
 
   return http.request(
-    rb.build({ responseType: 'text', accept: '*/*', context })
+    rb.build({ responseType: 'json', accept: 'text/json', context })
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return (r as HttpResponse<any>).clone({ body: undefined }) as StrictHttpResponse<void>;
+      return r as StrictHttpResponse<ObjectApiResponse>;
     })
   );
 }
 
-apiEmailSettingsPost.PATH = '/api/Email/settings';
+apiEmailSettingsPost$Json.PATH = '/api/Email/settings';

@@ -8,14 +8,14 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { EmailCriteriaDto } from '../../models/email-criteria-dto';
+import { EmailCriteriaDtoApiResponse } from '../../models/email-criteria-dto-api-response';
 import { SaveEmailCriteriaRequest } from '../../models/save-email-criteria-request';
 
 export interface ApiEmailCriteriaPost$Plain$Params {
       body?: SaveEmailCriteriaRequest
 }
 
-export function apiEmailCriteriaPost$Plain(http: HttpClient, rootUrl: string, params?: ApiEmailCriteriaPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDto>> {
+export function apiEmailCriteriaPost$Plain(http: HttpClient, rootUrl: string, params?: ApiEmailCriteriaPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailCriteriaDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiEmailCriteriaPost$Plain.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/*+json');
@@ -26,7 +26,7 @@ export function apiEmailCriteriaPost$Plain(http: HttpClient, rootUrl: string, pa
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<EmailCriteriaDto>;
+      return r as StrictHttpResponse<EmailCriteriaDtoApiResponse>;
     })
   );
 }

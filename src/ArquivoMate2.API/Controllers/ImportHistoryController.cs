@@ -1,359 +1,170 @@
 using ArquivoMate2.Application.Commands;
 using ArquivoMate2.Application.Interfaces;
-using ArquivoMate2.Infrastructure.Persistance;
+using ArquivoMate2.Application.Queries.ImportHistory;
+using ArquivoMate2.Shared.ApiModels;
 using ArquivoMate2.Shared.Models;
-using Marten;
-using Marten.Pagination;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
-namespace ArquivoMate2.API.Controllers
+namespace ArquivoMate2.API.Controllers;
+
+[ApiController]
+[Authorize]
+[Route("api/history")]
+public class ImportHistoryController : ControllerBase
 {
-    [ApiController]
-    [Authorize]
-    [Route("api/history")]
-    public class ImportHistoryController : ControllerBase
+    private readonly ICurrentUserService _currentUserService;
+    private readonly ILogger<ImportHistoryController> _logger;
+    private readonly IStringLocalizer<ImportHistoryController> _stringLocalizer;
+    private readonly IMediator _mediator;
+
+    public ImportHistoryController(
+        ICurrentUserService currentUserService,
+        ILogger<ImportHistoryController> logger,
+        IStringLocalizer<ImportHistoryController> stringLocalizer,
+        IMediator mediator)
     {
-        private readonly ICurrentUserService _currentUserService;
-        private readonly ILogger<ImportHistoryController> _logger;
-        private readonly IStringLocalizer<ImportHistoryController> _stringLocalizer;
+        _currentUserService = currentUserService;
+        _logger = logger;
+        _stringLocalizer = stringLocalizer;
+        _mediator = mediator;
+    }
 
-        public ImportHistoryController(ICurrentUserService currentUserService, ILogger<ImportHistoryController> logger, IStringLocalizer<ImportHistoryController> stringLocalizer)
+    /// <summary>
+    /// Hides every import history entry that matches the supplied processing status for the current user.
+    /// </summary>
+    [HttpPost("hideByStatus")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> HideAllFromImportHistory(DocumentProcessingStatus documentProcessingStatus, CancellationToken cancellationToken)
+    {
+        var userId = _currentUserService.UserId;
+        var success = await _mediator.Send(new HideAllFromImportHistoryByStatusCommand(documentProcessingStatus, userId), cancellationToken);
+        if (!success)
         {
-            _currentUserService = currentUserService;
-            _logger = logger;
-            _stringLocalizer = stringLocalizer;
+            _logger.LogError("Failed to hide import history entries with status {Status} for user {UserId}", documentProcessingStatus, userId);
+            return StatusCode(StatusCodes.Status500InternalServerError, _stringLocalizer["Failed to hide import history entries."]);
         }
+        return NoContent();
+    }
 
-        /// <summary>
-        /// Hides every import history entry that matches the supplied processing status for the current user.
-        /// </summary>
-        /// <param name="documentProcessingStatus">Status value whose entries should be removed from the history.</param>
-        /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
-        /// <param name="mediator">Mediator used to execute the hide command.</param>
-        [HttpPost("hideByStatus")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> HideAllFromImportHistory(DocumentProcessingStatus documentProcessingStatus, CancellationToken cancellationToken, [FromServices] IMediator mediator)
-        {
-            var userId = _currentUserService.UserId;
-            
-            var success = await mediator.Send(new HideAllFromImportHistoryByStatusCommand(documentProcessingStatus, userId), cancellationToken);
+    /// <summary>
+    /// Retrieves a paged list of import history entries for the current user.
+    /// </summary>
+    [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<ImportHistoryListDto>))]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<ImportHistoryListDto>>> Get([FromQuery] ImportHistoryListRequestDto requestDto, CancellationToken cancellationToken)
+    {
+        var userId = _currentUserService.UserId;
+        var dto = await _mediator.Send(new GetImportHistoryListQuery(requestDto.Page, requestDto.PageSize, userId, null), cancellationToken);
+        return Ok(dto);
+    }
 
-            if (!success)
-            {
-                _logger.LogError("Failed to hide import history entries with status {Status} for user {UserId}", documentProcessingStatus, userId);
-                return StatusCode(StatusCodes.Status500InternalServerError, _stringLocalizer.GetString("Failed to hide import history entries."));
-            }
+    /// <summary>
+    /// Counts all imports that are currently being processed for the current user.
+    /// </summary>
+    [HttpGet("inprogress/count")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<int>))]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<int>>> GetInProgressCount(CancellationToken cancellationToken)
+    {
+        var userId = _currentUserService.UserId;
+        var count = await _mediator.Send(new GetImportHistoryCountQuery(userId, DocumentProcessingStatus.InProgress), cancellationToken);
+        return Ok(count);
+    }
 
-            return NoContent();
-        }
+    /// <summary>
+    /// Lists imports that are currently in progress for the current user.
+    /// </summary>
+    [HttpGet("inprogress")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<ImportHistoryListDto>))]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<ImportHistoryListDto>>> GetInProgress([FromQuery] ImportHistoryListRequestDto requestDto, CancellationToken cancellationToken)
+    {
+        var userId = _currentUserService.UserId;
+        var dto = await _mediator.Send(new GetImportHistoryListQuery(requestDto.Page, requestDto.PageSize, userId, DocumentProcessingStatus.InProgress), cancellationToken);
+        return Ok(dto);
+    }
 
-        /// <summary>
-        /// Retrieves a paged list of import history entries for the current user.
-        /// </summary>
-        /// <param name="requestDto">Paging information describing which page to load.</param>
-        /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
-        /// <param name="querySession">Query session used to read import history projections.</param>
-        /// <param name="mapper">Mapper instance that transforms projections into DTOs.</param>
-        [HttpGet()]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ImportHistoryListDto))]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> Get([FromQuery] ImportHistoryListRequestDto requestDto, CancellationToken cancellationToken, [FromServices] IQuerySession querySession, [FromServices] AutoMapper.IMapper mapper)
-        {
-            var userId = _currentUserService.UserId;
+    /// <summary>
+    /// Counts pending imports that are queued for processing.
+    /// </summary>
+    [HttpGet("pending/count")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<int>))]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<int>>> GetPendingCount(CancellationToken cancellationToken)
+    {
+        var userId = _currentUserService.UserId;
+        var count = await _mediator.Send(new GetImportHistoryCountQuery(userId, DocumentProcessingStatus.Pending), cancellationToken);
+        return Ok(count);
+    }
 
-            var view = await querySession.Query<ImportHistoryView>()
-                .Where(x => x.UserId == userId && !x.IsHidden)
-                .ToPagedListAsync(requestDto.Page, requestDto.PageSize, cancellationToken);
-            
-            if (view is null || view.Count == 0)
-            {
-                return Ok(new ImportHistoryListDto
-                {
-                    Items = Array.Empty<ImportHistoryListItemDto>(),
-                    TotalCount = 0,
-                    HasNextPage = false,
-                    PageCount = 0,
-                    HasPreviousPage = false,
-                    IsLastPage = true,
-                    IsFirstPage = true,
-                    CurrentPage = requestDto.Page
-                });
-            }
+    /// <summary>
+    /// Lists pending imports that are waiting to be processed.
+    /// </summary>
+    [HttpGet("pending")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<ImportHistoryListDto>))]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<ImportHistoryListDto>>> GetPending([FromQuery] ImportHistoryListRequestDto requestDto, CancellationToken cancellationToken)
+    {
+        var userId = _currentUserService.UserId;
+        var dto = await _mediator.Send(new GetImportHistoryListQuery(requestDto.Page, requestDto.PageSize, userId, DocumentProcessingStatus.Pending), cancellationToken);
+        return Ok(dto);
+    }
 
-            var items = mapper.Map<ImportHistoryListItemDto[]>(view);
-            var result = new ImportHistoryListDto
-            {
-                Items = items,
-                TotalCount = view.TotalItemCount,
-                HasNextPage = view.HasNextPage,
-                PageCount = view.PageCount,
-                HasPreviousPage = view.HasPreviousPage,
-                IsLastPage = view.IsLastPage,
-                IsFirstPage = view.IsFirstPage,
-                CurrentPage = requestDto.Page
-            };
-            return Ok(result);
-        }
+    /// <summary>
+    /// Counts completed imports for the current user.
+    /// </summary>
+    [HttpGet("completed/count")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<int>))]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<int>>> GetCompletedCount(CancellationToken cancellationToken)
+    {
+        var userId = _currentUserService.UserId;
+        var count = await _mediator.Send(new GetImportHistoryCountQuery(userId, DocumentProcessingStatus.Completed), cancellationToken);
+        return Ok(count);
+    }
 
-        /// <summary>
-        /// Counts all imports that are currently being processed for the current user.
-        /// </summary>
-        /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
-        /// <param name="querySession">Query session used to count import history entries.</param>
-        [HttpGet("inprogress/count")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(int))]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> GetInProgressCount(CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
-        {
-            var userId = _currentUserService.UserId;
-            var count = await querySession.Query<ImportHistoryView>()
-                .Where(x => x.UserId == userId && x.Status == DocumentProcessingStatus.InProgress && !x.IsHidden)
-                .CountAsync(cancellationToken);
-            return Ok(count);
-        }
+    /// <summary>
+    /// Lists completed imports for the current user.
+    /// </summary>
+    [HttpGet("completed")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<ImportHistoryListDto>))]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<ImportHistoryListDto>>> GetCompleted([FromQuery] ImportHistoryListRequestDto requestDto, CancellationToken cancellationToken)
+    {
+        var userId = _currentUserService.UserId;
+        var dto = await _mediator.Send(new GetImportHistoryListQuery(requestDto.Page, requestDto.PageSize, userId, DocumentProcessingStatus.Completed), cancellationToken);
+        return Ok(dto);
+    }
 
-        /// <summary>
-        /// Lists imports that are currently in progress for the current user.
-        /// </summary>
-        /// <param name="requestDto">Paging information describing which page to load.</param>
-        /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
-        /// <param name="querySession">Query session used to read import history projections.</param>
-        /// <param name="mapper">Mapper instance that transforms projections into DTOs.</param>
-        [HttpGet("inprogress")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ImportHistoryListDto))]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> GetInProgress([FromQuery] ImportHistoryListRequestDto requestDto, CancellationToken cancellationToken, [FromServices] IQuerySession querySession, [FromServices] AutoMapper.IMapper mapper)
-        {
-            var userId = _currentUserService.UserId;
-            var view = await querySession.Query<ImportHistoryView>()
-                .Where(x => x.UserId == userId && x.Status == DocumentProcessingStatus.InProgress && !x.IsHidden)
-                .ToPagedListAsync(requestDto.Page, requestDto.PageSize, cancellationToken);
-            
-            if (view is null || view.Count == 0)
-            {
-                return Ok(new ImportHistoryListDto
-                {
-                    Items = Array.Empty<ImportHistoryListItemDto>(),
-                    TotalCount = 0,
-                    HasNextPage = false,
-                    PageCount = 0,
-                    HasPreviousPage = false,
-                    IsLastPage = true,
-                    IsFirstPage = true,
-                    CurrentPage = requestDto.Page
-                });
-            }
+    /// <summary>
+    /// Counts failed imports for the current user.
+    /// </summary>
+    [HttpGet("failed/count")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<int>))]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<int>>> GetFailedCount(CancellationToken cancellationToken)
+    {
+        var userId = _currentUserService.UserId;
+        var count = await _mediator.Send(new GetImportHistoryCountQuery(userId, DocumentProcessingStatus.Failed), cancellationToken);
+        return Ok(count);
+    }
 
-            var items = mapper.Map<ImportHistoryListItemDto[]>(view);
-            var result = new ImportHistoryListDto
-            {
-                Items = items,
-                TotalCount = view.TotalItemCount,
-                HasNextPage = view.HasNextPage,
-                PageCount = view.PageCount,
-                HasPreviousPage = view.HasPreviousPage,
-                IsLastPage = view.IsLastPage,
-                IsFirstPage = view.IsFirstPage,
-                CurrentPage = requestDto.Page
-            };
-            return Ok(result);
-        }
-
-        /// <summary>
-        /// Counts pending imports that are queued for processing.
-        /// </summary>
-        /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
-        /// <param name="querySession">Query session used to count import history entries.</param>
-        [HttpGet("pending/count")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(int))]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> GetPendingCount(CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
-        {
-            var userId = _currentUserService.UserId;
-            var count = await querySession.Query<ImportHistoryView>()
-                .Where(x => x.UserId == userId && x.Status == DocumentProcessingStatus.Pending && !x.IsHidden)
-                .CountAsync(cancellationToken);
-            return Ok(count);
-        }
-
-        /// <summary>
-        /// Lists pending imports that are waiting to be processed.
-        /// </summary>
-        /// <param name="requestDto">Paging information describing which page to load.</param>
-        /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
-        /// <param name="querySession">Query session used to read import history projections.</param>
-        /// <param name="mapper">Mapper instance that transforms projections into DTOs.</param>
-        [HttpGet("pending")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ImportHistoryListDto))]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> GetPending([FromQuery] ImportHistoryListRequestDto requestDto, CancellationToken cancellationToken, [FromServices] IQuerySession querySession, [FromServices] AutoMapper.IMapper mapper)
-        {
-            var userId = _currentUserService.UserId;
-            var view = await querySession.Query<ImportHistoryView>()
-                .Where(x => x.UserId == userId && x.Status == DocumentProcessingStatus.Pending && !x.IsHidden)
-                .ToPagedListAsync(requestDto.Page, requestDto.PageSize, cancellationToken);
-            
-            if (view is null || view.Count == 0)
-            {
-                return Ok(new ImportHistoryListDto
-                {
-                    Items = Array.Empty<ImportHistoryListItemDto>(),
-                    TotalCount = 0,
-                    HasNextPage = false,
-                    PageCount = 0,
-                    HasPreviousPage = false,
-                    IsLastPage = true,
-                    IsFirstPage = true,
-                    CurrentPage = requestDto.Page
-                });
-            }
-
-            var items = mapper.Map<ImportHistoryListItemDto[]>(view);
-            var result = new ImportHistoryListDto
-            {
-                Items = items,
-                TotalCount = view.TotalItemCount,
-                HasNextPage = view.HasNextPage,
-                PageCount = view.PageCount,
-                HasPreviousPage = view.HasPreviousPage,
-                IsLastPage = view.IsLastPage,
-                IsFirstPage = view.IsFirstPage,
-                CurrentPage = requestDto.Page
-            };
-            return Ok(result);
-        }
-
-        /// <summary>
-        /// Counts completed imports for the current user.
-        /// </summary>
-        /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
-        /// <param name="querySession">Query session used to count import history entries.</param>
-        [HttpGet("completed/count")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(int))]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> GetCompletedCount(CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
-        {
-            var userId = _currentUserService.UserId;
-            var count = await querySession.Query<ImportHistoryView>()
-                .Where(x => x.UserId == userId && x.Status == DocumentProcessingStatus.Completed && !x.IsHidden)
-                .CountAsync(cancellationToken);
-            return Ok(count);
-        }
-
-        /// <summary>
-        /// Lists completed imports for the current user.
-        /// </summary>
-        /// <param name="requestDto">Paging information describing which page to load.</param>
-        /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
-        /// <param name="querySession">Query session used to read import history projections.</param>
-        /// <param name="mapper">Mapper instance that transforms projections into DTOs.</param>
-        [HttpGet("completed")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ImportHistoryListDto))]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> GetCompleted([FromQuery] ImportHistoryListRequestDto requestDto, CancellationToken cancellationToken, [FromServices] IQuerySession querySession, [FromServices] AutoMapper.IMapper mapper)
-        {
-            var userId = _currentUserService.UserId;
-            var view = await querySession.Query<ImportHistoryView>()
-                .Where(x => x.UserId == userId && x.Status == DocumentProcessingStatus.Completed && !x.IsHidden)
-                .ToPagedListAsync(requestDto.Page, requestDto.PageSize, cancellationToken);
-            
-            if (view is null || view.Count == 0)
-            {
-                return Ok(new ImportHistoryListDto
-                {
-                    Items = Array.Empty<ImportHistoryListItemDto>(),
-                    TotalCount = 0,
-                    HasNextPage = false,
-                    PageCount = 0,
-                    HasPreviousPage = false,
-                    IsLastPage = true,
-                    IsFirstPage = true,
-                    CurrentPage = requestDto.Page
-                });
-            }
-
-            var items = mapper.Map<ImportHistoryListItemDto[]>(view);
-            var result = new ImportHistoryListDto
-            {
-                Items = items,
-                TotalCount = view.TotalItemCount,
-                HasNextPage = view.HasNextPage,
-                PageCount = view.PageCount,
-                HasPreviousPage = view.HasPreviousPage,
-                IsLastPage = view.IsLastPage,
-                IsFirstPage = view.IsFirstPage,
-                CurrentPage = requestDto.Page
-            };
-            return Ok(result);
-        }
-
-        /// <summary>
-        /// Counts failed imports for the current user.
-        /// </summary>
-        /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
-        /// <param name="querySession">Query session used to count import history entries.</param>
-        [HttpGet("failed/count")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(int))]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> GetFailedCount(CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
-        {
-            var userId = _currentUserService.UserId;
-            var count = await querySession.Query<ImportHistoryView>()
-                .Where(x => x.UserId == userId && x.Status == DocumentProcessingStatus.Failed && !x.IsHidden)
-                .CountAsync(cancellationToken);
-            return Ok(count);
-        }
-
-        /// <summary>
-        /// Lists failed imports for the current user.
-        /// </summary>
-        /// <param name="requestDto">Paging information describing which page to load.</param>
-        /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
-        /// <param name="querySession">Query session used to read import history projections.</param>
-        /// <param name="mapper">Mapper instance that transforms projections into DTOs.</param>
-        [HttpGet("failed")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ImportHistoryListDto))]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> GetFailed([FromQuery] ImportHistoryListRequestDto requestDto, CancellationToken cancellationToken, [FromServices] IQuerySession querySession, [FromServices] AutoMapper.IMapper mapper)
-        {
-            var userId = _currentUserService.UserId;
-            var view = await querySession.Query<ImportHistoryView>()
-                .Where(x => x.UserId == userId && x.Status == DocumentProcessingStatus.Failed && !x.IsHidden)
-                .ToPagedListAsync(requestDto.Page, requestDto.PageSize, cancellationToken);
-            
-            if (view is null || view.Count == 0)
-            {
-                return Ok(new ImportHistoryListDto
-                {
-                    Items = Array.Empty<ImportHistoryListItemDto>(),
-                    TotalCount = 0,
-                    HasNextPage = false,
-                    PageCount = 0,
-                    HasPreviousPage = false,
-                    IsLastPage = true,
-                    IsFirstPage = true,
-                    CurrentPage = requestDto.Page
-                });
-            }
-
-            var items = mapper.Map<ImportHistoryListItemDto[]>(view);
-            var result = new ImportHistoryListDto
-            {
-                Items = items,
-                TotalCount = view.TotalItemCount,
-                HasNextPage = view.HasNextPage,
-                PageCount = view.PageCount,
-                HasPreviousPage = view.HasPreviousPage,
-                IsLastPage = view.IsLastPage,
-                IsFirstPage = view.IsFirstPage,
-                CurrentPage = requestDto.Page
-            };
-            return Ok(result);
-        }
+    /// <summary>
+    /// Lists failed imports for the current user.
+    /// </summary>
+    [HttpGet("failed")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<ImportHistoryListDto>))]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<ImportHistoryListDto>>> GetFailed([FromQuery] ImportHistoryListRequestDto requestDto, CancellationToken cancellationToken)
+    {
+        var userId = _currentUserService.UserId;
+        var dto = await _mediator.Send(new GetImportHistoryListQuery(requestDto.Page, requestDto.PageSize, userId, DocumentProcessingStatus.Failed), cancellationToken);
+        return Ok(dto);
     }
 }

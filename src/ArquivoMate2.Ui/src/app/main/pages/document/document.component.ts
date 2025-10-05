@@ -14,6 +14,8 @@ import { ActivatedRoute } from '@angular/router';
 import { DocumentsService } from '../../../client/services/documents.service';
 import { DocumentDownloadService } from '../../../services/document-download.service';
 import { DocumentDto } from '../../../client/models/document-dto';
+import { DocumentNoteDtoIEnumerableApiResponse } from '../../../client/models/document-note-dto-i-enumerable-api-response';
+import { DocumentNoteDtoApiResponse } from '../../../client/models/document-note-dto-api-response';
 import { ToastService } from '../../../services/toast.service';
 import { Location } from '@angular/common';
 import { DocumentNotesService } from '../../../client/services/document-notes.service';
@@ -94,8 +96,8 @@ export class DocumentComponent implements OnInit {
     const resolved: DocumentDto | null | undefined = this.route.snapshot.data['document'];
     if (resolved) {
       console.log(resolved);
-  this.document.set(resolved);
-  this.updateSafePreview();
+      this.document.set(resolved);
+      this.updateSafePreview();
       this.history.set(resolved.history ?? []);
       // initialize local keywords copy
       this.keywords.set([...(resolved.keywords ?? [])]);
@@ -113,19 +115,30 @@ export class DocumentComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
     this.api.apiDocumentsIdGet$Json({ id }).subscribe({
-      next: dto => {
-  this.document.set(dto);
-  this.updateSafePreview();
+      next: (resp: any) => {
+        // Expecting ApiResponse<DocumentDto>
+        const ok = resp?.success !== false;
+        const dto: DocumentDto | null | undefined = resp?.data;
+        if (!ok || !dto) {
+          this.loading.set(false);
+          const key = 'Document.DocumentLoadError';
+          const msg = this.transloco.translate(key);
+          this.error.set(msg);
+          this.toast.error(msg);
+          return;
+        }
+        this.document.set(dto);
+        this.updateSafePreview();
         this.history.set(dto.history ?? []);
         this.keywords.set([...(dto.keywords ?? [])]);
         this.loading.set(false);
       },
       error: () => {
         this.loading.set(false);
-  const key = 'Document.DocumentLoadError';
-  const msg = this.transloco.translate(key);
-  this.error.set(msg);
-  this.toast.error(msg);
+        const key = 'Document.DocumentLoadError';
+        const msg = this.transloco.translate(key);
+        this.error.set(msg);
+        this.toast.error(msg);
       }
     });
   }
@@ -281,8 +294,18 @@ export class DocumentComponent implements OnInit {
     this.notesLoading.set(true);
     this.notesError.set(null);
     this.notesApi.apiDocumentsDocumentIdNotesGet$Json({ documentId: id }).subscribe({
-      next: list => { this.notes.set(list); this.notesLoading.set(false); this.notesLoadedOnce = true; },
-  error: () => { this.notesLoading.set(false); this.notesError.set(this.transloco.translate('Document.NotesLoadError')); }
+      next: (resp: DocumentNoteDtoIEnumerableApiResponse) => {
+        const ok = resp?.success !== false;
+        if (!ok) {
+          this.notesLoading.set(false);
+          this.notesError.set(this.transloco.translate('Document.NotesLoadError'));
+          return;
+        }
+        this.notes.set(resp.data ?? []);
+        this.notesLoading.set(false);
+        this.notesLoadedOnce = true;
+      },
+      error: () => { this.notesLoading.set(false); this.notesError.set(this.transloco.translate('Document.NotesLoadError')); }
     });
   }
 
@@ -301,17 +324,28 @@ export class DocumentComponent implements OnInit {
     if (doc) { (doc as any).notesCount = (doc as any).notesCount ? (doc as any).notesCount + 1 : 1; this.document.set({ ...doc }); }
     this.addingNote.set(true);
     this.notesApi.apiDocumentsDocumentIdNotesPost$Json({ documentId: id, body: { text: text.trim() } as any }).subscribe({
-      next: saved => {
+      next: (resp: DocumentNoteDtoApiResponse) => {
+        const ok = resp?.success !== false;
+        const saved = ok ? resp.data : null;
+        if (!ok || !saved) {
+          // revert optimistic insert
+          const list = this.notes() || [];
+          this.notes.set(list.filter(n => n.id !== draft.id));
+          if (doc) { (doc as any).notesCount = Math.max(((doc as any).notesCount || 1) - 1, 0); this.document.set({ ...doc }); }
+          this.toast.error(this.transloco.translate('Document.NoteSaveError'));
+          this.addingNote.set(false);
+          return;
+        }
         const list = this.notes() || [];
         this.notes.set(list.map(n => n.id === draft.id ? saved : n));
         this.addingNote.set(false);
-  this.toast.success(this.transloco.translate('Document.NoteSaved'));
+        this.toast.success(this.transloco.translate('Document.NoteSaved'));
       },
       error: () => {
         const list = this.notes() || [];
         this.notes.set(list.filter(n => n.id !== draft.id));
         if (doc) { (doc as any).notesCount = Math.max(((doc as any).notesCount || 1) - 1, 0); this.document.set({ ...doc }); }
-  this.toast.error(this.transloco.translate('Document.NoteSaveError'));
+        this.toast.error(this.transloco.translate('Document.NoteSaveError'));
         this.addingNote.set(false);
       }
     });

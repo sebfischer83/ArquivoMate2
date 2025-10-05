@@ -49,7 +49,8 @@ import { apiHistoryPendingGet$Json } from '../fn/import-history/api-history-pend
 import { ApiHistoryPendingGet$Json$Params } from '../fn/import-history/api-history-pending-get-json';
 import { apiHistoryPendingGet$Plain } from '../fn/import-history/api-history-pending-get-plain';
 import { ApiHistoryPendingGet$Plain$Params } from '../fn/import-history/api-history-pending-get-plain';
-import { ImportHistoryListDto } from '../models/import-history-list-dto';
+import { ImportHistoryListDtoApiResponse } from '../models/import-history-list-dto-api-response';
+import { Int32ApiResponse } from '../models/int-32-api-response';
 
 @Injectable({ providedIn: 'root' })
 export class ImportHistoryService extends BaseService {
@@ -103,7 +104,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryGet$Plain$Response(params?: ApiHistoryGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDto>> {
+  apiHistoryGet$Plain$Response(params?: ApiHistoryGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDtoApiResponse>> {
     return apiHistoryGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -117,9 +118,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryGet$Plain(params?: ApiHistoryGet$Plain$Params, context?: HttpContext): Observable<ImportHistoryListDto> {
+  apiHistoryGet$Plain(params?: ApiHistoryGet$Plain$Params, context?: HttpContext): Observable<ImportHistoryListDtoApiResponse> {
     return this.apiHistoryGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ImportHistoryListDto>): ImportHistoryListDto => r.body)
+      map((r: StrictHttpResponse<ImportHistoryListDtoApiResponse>): ImportHistoryListDtoApiResponse => r.body)
     );
   }
 
@@ -133,7 +134,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryGet$Json$Response(params?: ApiHistoryGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDto>> {
+  apiHistoryGet$Json$Response(params?: ApiHistoryGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDtoApiResponse>> {
     return apiHistoryGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -147,9 +148,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryGet$Json(params?: ApiHistoryGet$Json$Params, context?: HttpContext): Observable<ImportHistoryListDto> {
+  apiHistoryGet$Json(params?: ApiHistoryGet$Json$Params, context?: HttpContext): Observable<ImportHistoryListDtoApiResponse> {
     return this.apiHistoryGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ImportHistoryListDto>): ImportHistoryListDto => r.body)
+      map((r: StrictHttpResponse<ImportHistoryListDtoApiResponse>): ImportHistoryListDtoApiResponse => r.body)
     );
   }
 
@@ -166,7 +167,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryInprogressCountGet$Plain$Response(params?: ApiHistoryInprogressCountGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+  apiHistoryInprogressCountGet$Plain$Response(params?: ApiHistoryInprogressCountGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<Int32ApiResponse>> {
     return apiHistoryInprogressCountGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -180,9 +181,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryInprogressCountGet$Plain(params?: ApiHistoryInprogressCountGet$Plain$Params, context?: HttpContext): Observable<number> {
+  apiHistoryInprogressCountGet$Plain(params?: ApiHistoryInprogressCountGet$Plain$Params, context?: HttpContext): Observable<Int32ApiResponse> {
     return this.apiHistoryInprogressCountGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<number>): number => r.body)
+      map((r: StrictHttpResponse<Int32ApiResponse>): Int32ApiResponse => r.body)
     );
   }
 
@@ -196,7 +197,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryInprogressCountGet$Json$Response(params?: ApiHistoryInprogressCountGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+  apiHistoryInprogressCountGet$Json$Response(params?: ApiHistoryInprogressCountGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Int32ApiResponse>> {
     return apiHistoryInprogressCountGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -210,9 +211,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryInprogressCountGet$Json(params?: ApiHistoryInprogressCountGet$Json$Params, context?: HttpContext): Observable<number> {
+  apiHistoryInprogressCountGet$Json(params?: ApiHistoryInprogressCountGet$Json$Params, context?: HttpContext): Observable<Int32ApiResponse> {
     return this.apiHistoryInprogressCountGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<number>): number => r.body)
+      map((r: StrictHttpResponse<Int32ApiResponse>): Int32ApiResponse => r.body)
     );
   }
 
@@ -229,7 +230,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryInprogressGet$Plain$Response(params?: ApiHistoryInprogressGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDto>> {
+  apiHistoryInprogressGet$Plain$Response(params?: ApiHistoryInprogressGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDtoApiResponse>> {
     return apiHistoryInprogressGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -243,9 +244,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryInprogressGet$Plain(params?: ApiHistoryInprogressGet$Plain$Params, context?: HttpContext): Observable<ImportHistoryListDto> {
+  apiHistoryInprogressGet$Plain(params?: ApiHistoryInprogressGet$Plain$Params, context?: HttpContext): Observable<ImportHistoryListDtoApiResponse> {
     return this.apiHistoryInprogressGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ImportHistoryListDto>): ImportHistoryListDto => r.body)
+      map((r: StrictHttpResponse<ImportHistoryListDtoApiResponse>): ImportHistoryListDtoApiResponse => r.body)
     );
   }
 
@@ -259,7 +260,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryInprogressGet$Json$Response(params?: ApiHistoryInprogressGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDto>> {
+  apiHistoryInprogressGet$Json$Response(params?: ApiHistoryInprogressGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDtoApiResponse>> {
     return apiHistoryInprogressGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -273,9 +274,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryInprogressGet$Json(params?: ApiHistoryInprogressGet$Json$Params, context?: HttpContext): Observable<ImportHistoryListDto> {
+  apiHistoryInprogressGet$Json(params?: ApiHistoryInprogressGet$Json$Params, context?: HttpContext): Observable<ImportHistoryListDtoApiResponse> {
     return this.apiHistoryInprogressGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ImportHistoryListDto>): ImportHistoryListDto => r.body)
+      map((r: StrictHttpResponse<ImportHistoryListDtoApiResponse>): ImportHistoryListDtoApiResponse => r.body)
     );
   }
 
@@ -292,7 +293,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryPendingCountGet$Plain$Response(params?: ApiHistoryPendingCountGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+  apiHistoryPendingCountGet$Plain$Response(params?: ApiHistoryPendingCountGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<Int32ApiResponse>> {
     return apiHistoryPendingCountGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -306,9 +307,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryPendingCountGet$Plain(params?: ApiHistoryPendingCountGet$Plain$Params, context?: HttpContext): Observable<number> {
+  apiHistoryPendingCountGet$Plain(params?: ApiHistoryPendingCountGet$Plain$Params, context?: HttpContext): Observable<Int32ApiResponse> {
     return this.apiHistoryPendingCountGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<number>): number => r.body)
+      map((r: StrictHttpResponse<Int32ApiResponse>): Int32ApiResponse => r.body)
     );
   }
 
@@ -322,7 +323,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryPendingCountGet$Json$Response(params?: ApiHistoryPendingCountGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+  apiHistoryPendingCountGet$Json$Response(params?: ApiHistoryPendingCountGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Int32ApiResponse>> {
     return apiHistoryPendingCountGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -336,9 +337,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryPendingCountGet$Json(params?: ApiHistoryPendingCountGet$Json$Params, context?: HttpContext): Observable<number> {
+  apiHistoryPendingCountGet$Json(params?: ApiHistoryPendingCountGet$Json$Params, context?: HttpContext): Observable<Int32ApiResponse> {
     return this.apiHistoryPendingCountGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<number>): number => r.body)
+      map((r: StrictHttpResponse<Int32ApiResponse>): Int32ApiResponse => r.body)
     );
   }
 
@@ -355,7 +356,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryPendingGet$Plain$Response(params?: ApiHistoryPendingGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDto>> {
+  apiHistoryPendingGet$Plain$Response(params?: ApiHistoryPendingGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDtoApiResponse>> {
     return apiHistoryPendingGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -369,9 +370,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryPendingGet$Plain(params?: ApiHistoryPendingGet$Plain$Params, context?: HttpContext): Observable<ImportHistoryListDto> {
+  apiHistoryPendingGet$Plain(params?: ApiHistoryPendingGet$Plain$Params, context?: HttpContext): Observable<ImportHistoryListDtoApiResponse> {
     return this.apiHistoryPendingGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ImportHistoryListDto>): ImportHistoryListDto => r.body)
+      map((r: StrictHttpResponse<ImportHistoryListDtoApiResponse>): ImportHistoryListDtoApiResponse => r.body)
     );
   }
 
@@ -385,7 +386,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryPendingGet$Json$Response(params?: ApiHistoryPendingGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDto>> {
+  apiHistoryPendingGet$Json$Response(params?: ApiHistoryPendingGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDtoApiResponse>> {
     return apiHistoryPendingGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -399,9 +400,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryPendingGet$Json(params?: ApiHistoryPendingGet$Json$Params, context?: HttpContext): Observable<ImportHistoryListDto> {
+  apiHistoryPendingGet$Json(params?: ApiHistoryPendingGet$Json$Params, context?: HttpContext): Observable<ImportHistoryListDtoApiResponse> {
     return this.apiHistoryPendingGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ImportHistoryListDto>): ImportHistoryListDto => r.body)
+      map((r: StrictHttpResponse<ImportHistoryListDtoApiResponse>): ImportHistoryListDtoApiResponse => r.body)
     );
   }
 
@@ -418,7 +419,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryCompletedCountGet$Plain$Response(params?: ApiHistoryCompletedCountGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+  apiHistoryCompletedCountGet$Plain$Response(params?: ApiHistoryCompletedCountGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<Int32ApiResponse>> {
     return apiHistoryCompletedCountGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -432,9 +433,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryCompletedCountGet$Plain(params?: ApiHistoryCompletedCountGet$Plain$Params, context?: HttpContext): Observable<number> {
+  apiHistoryCompletedCountGet$Plain(params?: ApiHistoryCompletedCountGet$Plain$Params, context?: HttpContext): Observable<Int32ApiResponse> {
     return this.apiHistoryCompletedCountGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<number>): number => r.body)
+      map((r: StrictHttpResponse<Int32ApiResponse>): Int32ApiResponse => r.body)
     );
   }
 
@@ -448,7 +449,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryCompletedCountGet$Json$Response(params?: ApiHistoryCompletedCountGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+  apiHistoryCompletedCountGet$Json$Response(params?: ApiHistoryCompletedCountGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Int32ApiResponse>> {
     return apiHistoryCompletedCountGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -462,9 +463,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryCompletedCountGet$Json(params?: ApiHistoryCompletedCountGet$Json$Params, context?: HttpContext): Observable<number> {
+  apiHistoryCompletedCountGet$Json(params?: ApiHistoryCompletedCountGet$Json$Params, context?: HttpContext): Observable<Int32ApiResponse> {
     return this.apiHistoryCompletedCountGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<number>): number => r.body)
+      map((r: StrictHttpResponse<Int32ApiResponse>): Int32ApiResponse => r.body)
     );
   }
 
@@ -481,7 +482,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryCompletedGet$Plain$Response(params?: ApiHistoryCompletedGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDto>> {
+  apiHistoryCompletedGet$Plain$Response(params?: ApiHistoryCompletedGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDtoApiResponse>> {
     return apiHistoryCompletedGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -495,9 +496,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryCompletedGet$Plain(params?: ApiHistoryCompletedGet$Plain$Params, context?: HttpContext): Observable<ImportHistoryListDto> {
+  apiHistoryCompletedGet$Plain(params?: ApiHistoryCompletedGet$Plain$Params, context?: HttpContext): Observable<ImportHistoryListDtoApiResponse> {
     return this.apiHistoryCompletedGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ImportHistoryListDto>): ImportHistoryListDto => r.body)
+      map((r: StrictHttpResponse<ImportHistoryListDtoApiResponse>): ImportHistoryListDtoApiResponse => r.body)
     );
   }
 
@@ -511,7 +512,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryCompletedGet$Json$Response(params?: ApiHistoryCompletedGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDto>> {
+  apiHistoryCompletedGet$Json$Response(params?: ApiHistoryCompletedGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDtoApiResponse>> {
     return apiHistoryCompletedGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -525,9 +526,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryCompletedGet$Json(params?: ApiHistoryCompletedGet$Json$Params, context?: HttpContext): Observable<ImportHistoryListDto> {
+  apiHistoryCompletedGet$Json(params?: ApiHistoryCompletedGet$Json$Params, context?: HttpContext): Observable<ImportHistoryListDtoApiResponse> {
     return this.apiHistoryCompletedGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ImportHistoryListDto>): ImportHistoryListDto => r.body)
+      map((r: StrictHttpResponse<ImportHistoryListDtoApiResponse>): ImportHistoryListDtoApiResponse => r.body)
     );
   }
 
@@ -544,7 +545,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryFailedCountGet$Plain$Response(params?: ApiHistoryFailedCountGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+  apiHistoryFailedCountGet$Plain$Response(params?: ApiHistoryFailedCountGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<Int32ApiResponse>> {
     return apiHistoryFailedCountGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -558,9 +559,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryFailedCountGet$Plain(params?: ApiHistoryFailedCountGet$Plain$Params, context?: HttpContext): Observable<number> {
+  apiHistoryFailedCountGet$Plain(params?: ApiHistoryFailedCountGet$Plain$Params, context?: HttpContext): Observable<Int32ApiResponse> {
     return this.apiHistoryFailedCountGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<number>): number => r.body)
+      map((r: StrictHttpResponse<Int32ApiResponse>): Int32ApiResponse => r.body)
     );
   }
 
@@ -574,7 +575,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryFailedCountGet$Json$Response(params?: ApiHistoryFailedCountGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<number>> {
+  apiHistoryFailedCountGet$Json$Response(params?: ApiHistoryFailedCountGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Int32ApiResponse>> {
     return apiHistoryFailedCountGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -588,9 +589,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryFailedCountGet$Json(params?: ApiHistoryFailedCountGet$Json$Params, context?: HttpContext): Observable<number> {
+  apiHistoryFailedCountGet$Json(params?: ApiHistoryFailedCountGet$Json$Params, context?: HttpContext): Observable<Int32ApiResponse> {
     return this.apiHistoryFailedCountGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<number>): number => r.body)
+      map((r: StrictHttpResponse<Int32ApiResponse>): Int32ApiResponse => r.body)
     );
   }
 
@@ -607,7 +608,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryFailedGet$Plain$Response(params?: ApiHistoryFailedGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDto>> {
+  apiHistoryFailedGet$Plain$Response(params?: ApiHistoryFailedGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDtoApiResponse>> {
     return apiHistoryFailedGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -621,9 +622,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryFailedGet$Plain(params?: ApiHistoryFailedGet$Plain$Params, context?: HttpContext): Observable<ImportHistoryListDto> {
+  apiHistoryFailedGet$Plain(params?: ApiHistoryFailedGet$Plain$Params, context?: HttpContext): Observable<ImportHistoryListDtoApiResponse> {
     return this.apiHistoryFailedGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ImportHistoryListDto>): ImportHistoryListDto => r.body)
+      map((r: StrictHttpResponse<ImportHistoryListDtoApiResponse>): ImportHistoryListDtoApiResponse => r.body)
     );
   }
 
@@ -637,7 +638,7 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryFailedGet$Json$Response(params?: ApiHistoryFailedGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDto>> {
+  apiHistoryFailedGet$Json$Response(params?: ApiHistoryFailedGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDtoApiResponse>> {
     return apiHistoryFailedGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -651,9 +652,9 @@ export class ImportHistoryService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiHistoryFailedGet$Json(params?: ApiHistoryFailedGet$Json$Params, context?: HttpContext): Observable<ImportHistoryListDto> {
+  apiHistoryFailedGet$Json(params?: ApiHistoryFailedGet$Json$Params, context?: HttpContext): Observable<ImportHistoryListDtoApiResponse> {
     return this.apiHistoryFailedGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ImportHistoryListDto>): ImportHistoryListDto => r.body)
+      map((r: StrictHttpResponse<ImportHistoryListDtoApiResponse>): ImportHistoryListDtoApiResponse => r.body)
     );
   }
 

@@ -8,27 +8,28 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { GuidApiResponse } from '../../models/guid-api-response';
 
-export interface ApiDocumentsPost$Params {
+export interface ApiDocumentsPost$Plain$Params {
       body?: {
 'File'?: Blob;
 }
 }
 
-export function apiDocumentsPost(http: HttpClient, rootUrl: string, params?: ApiDocumentsPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, apiDocumentsPost.PATH, 'post');
+export function apiDocumentsPost$Plain(http: HttpClient, rootUrl: string, params?: ApiDocumentsPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<GuidApiResponse>> {
+  const rb = new RequestBuilder(rootUrl, apiDocumentsPost$Plain.PATH, 'post');
   if (params) {
     rb.body(params.body, 'multipart/form-data');
   }
 
   return http.request(
-    rb.build({ responseType: 'text', accept: '*/*', context })
+    rb.build({ responseType: 'text', accept: 'text/plain', context })
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return (r as HttpResponse<any>).clone({ body: undefined }) as StrictHttpResponse<void>;
+      return r as StrictHttpResponse<GuidApiResponse>;
     })
   );
 }
 
-apiDocumentsPost.PATH = '/api/documents';
+apiDocumentsPost$Plain.PATH = '/api/documents';

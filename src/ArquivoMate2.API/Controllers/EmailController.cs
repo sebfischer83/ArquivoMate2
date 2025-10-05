@@ -1,6 +1,7 @@
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Email;
 using ArquivoMate2.Shared.Models;
+using ArquivoMate2.Shared.ApiModels;
 using AutoMapper;
 using MailKit;
 using Microsoft.AspNetCore.Authorization;
@@ -39,7 +40,8 @@ namespace ArquivoMate2.API.Controllers
         /// Gets the total count of emails in the mailbox
         /// </summary>
         [HttpGet("count")]
-        public async Task<ActionResult<int>> GetEmailCount(CancellationToken cancellationToken = default)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<int>))]
+        public async Task<ActionResult<ApiResponse<int>>> GetEmailCount(CancellationToken cancellationToken = default)
         {
             try
             {
@@ -61,7 +63,8 @@ namespace ArquivoMate2.API.Controllers
         /// Tests the email connection with current settings
         /// </summary>
         [HttpPost("test-connection")]
-        public async Task<ActionResult<bool>> TestConnection(CancellationToken cancellationToken = default)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<object>))]
+        public async Task<ActionResult<ApiResponse<object>>> TestConnection(CancellationToken cancellationToken = default)
         {
             try
             {
@@ -79,7 +82,8 @@ namespace ArquivoMate2.API.Controllers
         /// Gets the current user's email settings
         /// </summary>
         [HttpGet("settings")]
-        public async Task<ActionResult<EmailSettings>> GetEmailSettings(CancellationToken cancellationToken = default)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<object>))]
+        public async Task<ActionResult<ApiResponse<object>>> GetEmailSettings(CancellationToken cancellationToken = default)
         {
             var userId = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userId))
@@ -95,7 +99,6 @@ namespace ArquivoMate2.API.Controllers
                     return NotFound(new { message = "Email settings not found" });
                 }
 
-                // Remove password from response for security
                 var safeSettings = new
                 {
                     settings.Id,
@@ -126,7 +129,8 @@ namespace ArquivoMate2.API.Controllers
         /// Saves or updates email settings for the current user
         /// </summary>
         [HttpPost("settings")]
-        public async Task<ActionResult> SaveEmailSettings([FromBody] SaveEmailSettingsRequest request, CancellationToken cancellationToken = default)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<object>))]
+        public async Task<ActionResult<ApiResponse<object>>> SaveEmailSettings([FromBody] SaveEmailSettingsRequest request, CancellationToken cancellationToken = default)
         {
             var userId = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userId))
@@ -165,7 +169,8 @@ namespace ArquivoMate2.API.Controllers
         /// Deletes email settings for the current user
         /// </summary>
         [HttpDelete("settings")]
-        public async Task<ActionResult> DeleteEmailSettings(CancellationToken cancellationToken = default)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<object>))]
+        public async Task<ActionResult<ApiResponse<object>>> DeleteEmailSettings(CancellationToken cancellationToken = default)
         {
             var userId = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userId))
@@ -190,7 +195,8 @@ namespace ArquivoMate2.API.Controllers
         /// Gets the email criteria for the current user
         /// </summary>
         [HttpGet("criteria")]
-        public async Task<ActionResult<EmailCriteriaDto>> GetEmailCriteria(CancellationToken cancellationToken = default)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<EmailCriteriaDto>))]
+        public async Task<ActionResult<ApiResponse<EmailCriteriaDto>>> GetEmailCriteria(CancellationToken cancellationToken = default)
         {
             var userId = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userId))
@@ -219,7 +225,8 @@ namespace ArquivoMate2.API.Controllers
         /// Saves (creates or updates) email criteria for the current user
         /// </summary>
         [HttpPost("criteria")]
-        public async Task<ActionResult<EmailCriteriaDto>> SaveEmailCriteria([FromBody] SaveEmailCriteriaRequest request, CancellationToken cancellationToken = default)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<EmailCriteriaDto>))]
+        public async Task<ActionResult<ApiResponse<EmailCriteriaDto>>> SaveEmailCriteria([FromBody] SaveEmailCriteriaRequest request, CancellationToken cancellationToken = default)
         {
             var userId = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userId))
@@ -252,7 +259,8 @@ namespace ArquivoMate2.API.Controllers
         /// Deletes email criteria for the current user
         /// </summary>
         [HttpDelete("criteria")]
-        public async Task<ActionResult> DeleteEmailCriteria(CancellationToken cancellationToken = default)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<object>))]
+        public async Task<ActionResult<ApiResponse<object>>> DeleteEmailCriteria(CancellationToken cancellationToken = default)
         {
             var userId = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userId))

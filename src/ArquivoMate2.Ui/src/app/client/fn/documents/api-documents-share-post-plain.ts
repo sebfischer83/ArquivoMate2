@@ -9,17 +9,13 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 import { CreateShareRequest } from '../../models/create-share-request';
-import { ShareCreatedDto } from '../../models/share-created-dto';
+import { ShareCreatedDtoApiResponse } from '../../models/share-created-dto-api-response';
 
 export interface ApiDocumentsSharePost$Plain$Params {
-  
-    /**
-     * Request describing the document, artifact, and TTL.
-     */
-    body?: CreateShareRequest
+      body?: CreateShareRequest
 }
 
-export function apiDocumentsSharePost$Plain(http: HttpClient, rootUrl: string, params?: ApiDocumentsSharePost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareCreatedDto>> {
+export function apiDocumentsSharePost$Plain(http: HttpClient, rootUrl: string, params?: ApiDocumentsSharePost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareCreatedDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiDocumentsSharePost$Plain.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/*+json');
@@ -30,7 +26,7 @@ export function apiDocumentsSharePost$Plain(http: HttpClient, rootUrl: string, p
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<ShareCreatedDto>;
+      return r as StrictHttpResponse<ShareCreatedDtoApiResponse>;
     })
   );
 }

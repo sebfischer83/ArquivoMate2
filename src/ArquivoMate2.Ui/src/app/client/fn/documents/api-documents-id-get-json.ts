@@ -8,17 +8,13 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { DocumentDto } from '../../models/document-dto';
+import { DocumentDtoApiResponse } from '../../models/document-dto-api-response';
 
 export interface ApiDocumentsIdGet$Json$Params {
-
-/**
- * Identifier of the document to retrieve.
- */
   id: string;
 }
 
-export function apiDocumentsIdGet$Json(http: HttpClient, rootUrl: string, params: ApiDocumentsIdGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentDto>> {
+export function apiDocumentsIdGet$Json(http: HttpClient, rootUrl: string, params: ApiDocumentsIdGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiDocumentsIdGet$Json.PATH, 'get');
   if (params) {
     rb.path('id', params.id, {});
@@ -29,7 +25,7 @@ export function apiDocumentsIdGet$Json(http: HttpClient, rootUrl: string, params
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<DocumentDto>;
+      return r as StrictHttpResponse<DocumentDtoApiResponse>;
     })
   );
 }

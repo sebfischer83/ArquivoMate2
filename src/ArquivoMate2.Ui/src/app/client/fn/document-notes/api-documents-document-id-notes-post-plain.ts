@@ -9,7 +9,7 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 import { CreateDocumentNoteRequest } from '../../models/create-document-note-request';
-import { DocumentNoteDto } from '../../models/document-note-dto';
+import { DocumentNoteDtoApiResponse } from '../../models/document-note-dto-api-response';
 
 export interface ApiDocumentsDocumentIdNotesPost$Plain$Params {
 
@@ -24,7 +24,7 @@ export interface ApiDocumentsDocumentIdNotesPost$Plain$Params {
     body?: CreateDocumentNoteRequest
 }
 
-export function apiDocumentsDocumentIdNotesPost$Plain(http: HttpClient, rootUrl: string, params: ApiDocumentsDocumentIdNotesPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentNoteDto>> {
+export function apiDocumentsDocumentIdNotesPost$Plain(http: HttpClient, rootUrl: string, params: ApiDocumentsDocumentIdNotesPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentNoteDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiDocumentsDocumentIdNotesPost$Plain.PATH, 'post');
   if (params) {
     rb.path('documentId', params.documentId, {});
@@ -36,7 +36,7 @@ export function apiDocumentsDocumentIdNotesPost$Plain(http: HttpClient, rootUrl:
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<DocumentNoteDto>;
+      return r as StrictHttpResponse<DocumentNoteDtoApiResponse>;
     })
   );
 }

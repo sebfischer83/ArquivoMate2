@@ -11,6 +11,7 @@ export { DocumentSharesService } from './services/document-shares.service';
 export { EmailService } from './services/email.service';
 export { ImportHistoryService } from './services/import-history.service';
 export { MaintenanceService } from './services/maintenance.service';
+export { PartiesService } from './services/parties.service';
 export { PublicShareService } from './services/public-share.service';
 export { ShareAutomationRulesService } from './services/share-automation-rules.service';
 export { ShareGroupsService } from './services/share-groups.service';

@@ -8,12 +8,12 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { UserDto } from '../../models/user-dto';
+import { UserDtoIEnumerableApiResponse } from '../../models/user-dto-i-enumerable-api-response';
 
 export interface ApiUsersOthersGet$Json$Params {
 }
 
-export function apiUsersOthersGet$Json(http: HttpClient, rootUrl: string, params?: ApiUsersOthersGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<UserDto>>> {
+export function apiUsersOthersGet$Json(http: HttpClient, rootUrl: string, params?: ApiUsersOthersGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDtoIEnumerableApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiUsersOthersGet$Json.PATH, 'get');
   if (params) {
   }
@@ -23,7 +23,7 @@ export function apiUsersOthersGet$Json(http: HttpClient, rootUrl: string, params
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Array<UserDto>>;
+      return r as StrictHttpResponse<UserDtoIEnumerableApiResponse>;
     })
   );
 }

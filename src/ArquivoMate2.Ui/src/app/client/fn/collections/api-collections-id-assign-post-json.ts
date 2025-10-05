@@ -9,14 +9,14 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 import { AssignDocumentsRequest } from '../../models/assign-documents-request';
-import { AssignResultDto } from '../../models/assign-result-dto';
+import { AssignResultDtoApiResponse } from '../../models/assign-result-dto-api-response';
 
 export interface ApiCollectionsIdAssignPost$Json$Params {
   id: string;
       body?: AssignDocumentsRequest
 }
 
-export function apiCollectionsIdAssignPost$Json(http: HttpClient, rootUrl: string, params: ApiCollectionsIdAssignPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<AssignResultDto>> {
+export function apiCollectionsIdAssignPost$Json(http: HttpClient, rootUrl: string, params: ApiCollectionsIdAssignPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<AssignResultDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiCollectionsIdAssignPost$Json.PATH, 'post');
   if (params) {
     rb.path('id', params.id, {});
@@ -28,7 +28,7 @@ export function apiCollectionsIdAssignPost$Json(http: HttpClient, rootUrl: strin
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<AssignResultDto>;
+      return r as StrictHttpResponse<AssignResultDtoApiResponse>;
     })
   );
 }

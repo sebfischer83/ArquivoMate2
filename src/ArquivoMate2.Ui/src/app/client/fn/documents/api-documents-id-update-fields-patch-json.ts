@@ -8,23 +8,15 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { DocumentDto } from '../../models/document-dto';
+import { DocumentDtoApiResponse } from '../../models/document-dto-api-response';
 import { UpdateDocumentFieldsDto } from '../../models/update-document-fields-dto';
 
 export interface ApiDocumentsIdUpdateFieldsPatch$Json$Params {
-
-/**
- * Identifier of the document whose fields should be updated.
- */
   id: string;
-  
-    /**
-     * Set of field updates to apply.
-     */
-    body?: UpdateDocumentFieldsDto
+      body?: UpdateDocumentFieldsDto
 }
 
-export function apiDocumentsIdUpdateFieldsPatch$Json(http: HttpClient, rootUrl: string, params: ApiDocumentsIdUpdateFieldsPatch$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentDto>> {
+export function apiDocumentsIdUpdateFieldsPatch$Json(http: HttpClient, rootUrl: string, params: ApiDocumentsIdUpdateFieldsPatch$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiDocumentsIdUpdateFieldsPatch$Json.PATH, 'patch');
   if (params) {
     rb.path('id', params.id, {});
@@ -36,7 +28,7 @@ export function apiDocumentsIdUpdateFieldsPatch$Json(http: HttpClient, rootUrl: 
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<DocumentDto>;
+      return r as StrictHttpResponse<DocumentDtoApiResponse>;
     })
   );
 }

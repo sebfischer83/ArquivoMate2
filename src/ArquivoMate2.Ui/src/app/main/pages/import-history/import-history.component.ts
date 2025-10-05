@@ -6,6 +6,7 @@ import { TuiHeader } from '@taiga-ui/layout';
 import { ImportHistoryService } from '../../../client/services/import-history.service';
 import { Observable } from 'rxjs';
 import { ImportHistoryListDto } from '../../../client/models/import-history-list-dto';
+import { ImportHistoryListDtoApiResponse } from '../../../client/models/import-history-list-dto-api-response';
 import { ImportHistoryListItemDto } from '../../../client/models/import-history-list-item-dto';
 
 @Component({
@@ -56,7 +57,7 @@ export class ImportHistoryComponent implements OnInit {
       Page: this.currentPage(),
       PageSize: this.pageSize(),
     };
-    let apiCall: (p: any) => Observable<ImportHistoryListDto>;
+  let apiCall: (p: any) => Observable<ImportHistoryListDtoApiResponse>;
     switch (this.selectedFilter()) {
       case 'success':
         apiCall = this.importHistoryService.apiHistoryCompletedGet$Json.bind(this.importHistoryService);
@@ -77,8 +78,10 @@ export class ImportHistoryComponent implements OnInit {
     }
     apiCall(params)
       .subscribe({
-        next: (result: ImportHistoryListDto) => {
-          if (result && Array.isArray(result.items)) {
+        next: (resp: ImportHistoryListDtoApiResponse) => {
+          const ok = resp?.success !== false;
+          const result = resp?.data;
+          if (ok && result && Array.isArray(result.items)) {
             this.historyItems.set(result.items.map((item: ImportHistoryListItemDto) => ({
               id: item.id,
               title: item.fileName ?? '',
@@ -96,13 +99,14 @@ export class ImportHistoryComponent implements OnInit {
             this.pageCount.set(result.pageCount ?? 1);
             this.currentPage.set(result.currentPage ?? 1);
           } else {
+            this.error.set(resp?.message || 'Fehler beim Laden der Import-Historie');
             this.historyItems.set([]);
             this.totalCount.set(0);
             this.pageCount.set(1);
           }
           this.loading.set(false);
         },
-        error: (err: any) => {
+        error: () => {
           this.error.set('Fehler beim Laden der Import-Historie');
           this.historyItems.set([]);
           this.totalCount.set(0);

@@ -4,6 +4,7 @@ using ArquivoMate2.Application.Commands.Sharing;
 using ArquivoMate2.Application.Queries.Sharing;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Shared.Models.Sharing;
+using ArquivoMate2.Shared.ApiModels;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,10 +28,9 @@ public class ShareAutomationRulesController : ControllerBase
     /// <summary>
     /// Lists automation rules that automatically share documents for the current user.
     /// </summary>
-    /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<ShareAutomationRuleDto>))]
-    public async Task<IActionResult> List(CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<IEnumerable<ShareAutomationRuleDto>>))]
+    public async Task<ActionResult<ApiResponse<IEnumerable<ShareAutomationRuleDto>>>> List(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetShareAutomationRulesQuery(_currentUserService.UserId), cancellationToken);
         return Ok(result);
@@ -39,11 +39,9 @@ public class ShareAutomationRulesController : ControllerBase
     /// <summary>
     /// Creates a new automation rule that shares matching documents automatically.
     /// </summary>
-    /// <param name="request">Definition of the automation rule to create.</param>
-    /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ShareAutomationRuleDto))]
-    public async Task<IActionResult> Create([FromBody] CreateShareAutomationRuleRequest request, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ApiResponse<ShareAutomationRuleDto>))]
+    public async Task<ActionResult<ApiResponse<ShareAutomationRuleDto>>> Create([FromBody] CreateShareAutomationRuleRequest request, CancellationToken cancellationToken)
     {
         if (request is null)
         {
@@ -57,8 +55,6 @@ public class ShareAutomationRulesController : ControllerBase
     /// <summary>
     /// Deletes an existing share automation rule.
     /// </summary>
-    /// <param name="ruleId">Identifier of the rule that should be removed.</param>
-    /// <param name="cancellationToken">Cancellation token forwarded from the HTTP request.</param>
     [HttpDelete("{ruleId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(string ruleId, CancellationToken cancellationToken)

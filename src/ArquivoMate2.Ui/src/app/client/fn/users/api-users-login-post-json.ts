@@ -9,13 +9,13 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 import { UpsertUserRequest } from '../../models/upsert-user-request';
-import { UserDto } from '../../models/user-dto';
+import { UserDtoApiResponse } from '../../models/user-dto-api-response';
 
 export interface ApiUsersLoginPost$Json$Params {
       body?: UpsertUserRequest
 }
 
-export function apiUsersLoginPost$Json(http: HttpClient, rootUrl: string, params?: ApiUsersLoginPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDto>> {
+export function apiUsersLoginPost$Json(http: HttpClient, rootUrl: string, params?: ApiUsersLoginPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiUsersLoginPost$Json.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/*+json');
@@ -26,7 +26,7 @@ export function apiUsersLoginPost$Json(http: HttpClient, rootUrl: string, params
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<UserDto>;
+      return r as StrictHttpResponse<UserDtoApiResponse>;
     })
   );
 }

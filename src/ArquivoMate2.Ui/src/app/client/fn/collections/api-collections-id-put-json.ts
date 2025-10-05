@@ -8,7 +8,7 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { CollectionDto } from '../../models/collection-dto';
+import { CollectionDtoApiResponse } from '../../models/collection-dto-api-response';
 import { UpdateCollectionRequest } from '../../models/update-collection-request';
 
 export interface ApiCollectionsIdPut$Json$Params {
@@ -16,7 +16,7 @@ export interface ApiCollectionsIdPut$Json$Params {
       body?: UpdateCollectionRequest
 }
 
-export function apiCollectionsIdPut$Json(http: HttpClient, rootUrl: string, params: ApiCollectionsIdPut$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDto>> {
+export function apiCollectionsIdPut$Json(http: HttpClient, rootUrl: string, params: ApiCollectionsIdPut$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<CollectionDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiCollectionsIdPut$Json.PATH, 'put');
   if (params) {
     rb.path('id', params.id, {});
@@ -28,7 +28,7 @@ export function apiCollectionsIdPut$Json(http: HttpClient, rootUrl: string, para
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<CollectionDto>;
+      return r as StrictHttpResponse<CollectionDtoApiResponse>;
     })
   );
 }

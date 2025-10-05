@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { OAuthService } from 'angular-oauth2-oidc';
 import { DocumentsFacadeService } from '../../../services/documents-facade.service';
-import { CommonModule, NgForOf, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { UploadWidgetComponent } from './upload-widget.component';
 import { DocumentCardGridComponent } from '../../../components/document-card-grid/document-card-grid.component';
 import { FormsModule } from '@angular/forms';
@@ -10,7 +10,7 @@ import { FormsModule } from '@angular/forms';
 @Component({
   standalone: true,
   selector: 'app-dashboard',
-  imports: [CommonModule, NgForOf, DatePipe, UploadWidgetComponent, DocumentCardGridComponent, FormsModule],
+  imports: [CommonModule, UploadWidgetComponent, DocumentCardGridComponent, FormsModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

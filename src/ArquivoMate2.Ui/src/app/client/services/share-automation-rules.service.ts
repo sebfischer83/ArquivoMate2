@@ -21,7 +21,8 @@ import { apiShareAutomationRulesPost$Plain } from '../fn/share-automation-rules/
 import { ApiShareAutomationRulesPost$Plain$Params } from '../fn/share-automation-rules/api-share-automation-rules-post-plain';
 import { apiShareAutomationRulesRuleIdDelete } from '../fn/share-automation-rules/api-share-automation-rules-rule-id-delete';
 import { ApiShareAutomationRulesRuleIdDelete$Params } from '../fn/share-automation-rules/api-share-automation-rules-rule-id-delete';
-import { ShareAutomationRuleDto } from '../models/share-automation-rule-dto';
+import { ShareAutomationRuleDtoApiResponse } from '../models/share-automation-rule-dto-api-response';
+import { ShareAutomationRuleDtoIEnumerableApiResponse } from '../models/share-automation-rule-dto-i-enumerable-api-response';
 
 @Injectable({ providedIn: 'root' })
 export class ShareAutomationRulesService extends BaseService {
@@ -42,7 +43,7 @@ export class ShareAutomationRulesService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiShareAutomationRulesGet$Plain$Response(params?: ApiShareAutomationRulesGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<ShareAutomationRuleDto>>> {
+  apiShareAutomationRulesGet$Plain$Response(params?: ApiShareAutomationRulesGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareAutomationRuleDtoIEnumerableApiResponse>> {
     return apiShareAutomationRulesGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -56,9 +57,9 @@ export class ShareAutomationRulesService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiShareAutomationRulesGet$Plain(params?: ApiShareAutomationRulesGet$Plain$Params, context?: HttpContext): Observable<Array<ShareAutomationRuleDto>> {
+  apiShareAutomationRulesGet$Plain(params?: ApiShareAutomationRulesGet$Plain$Params, context?: HttpContext): Observable<ShareAutomationRuleDtoIEnumerableApiResponse> {
     return this.apiShareAutomationRulesGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<ShareAutomationRuleDto>>): Array<ShareAutomationRuleDto> => r.body)
+      map((r: StrictHttpResponse<ShareAutomationRuleDtoIEnumerableApiResponse>): ShareAutomationRuleDtoIEnumerableApiResponse => r.body)
     );
   }
 
@@ -72,7 +73,7 @@ export class ShareAutomationRulesService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiShareAutomationRulesGet$Json$Response(params?: ApiShareAutomationRulesGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<ShareAutomationRuleDto>>> {
+  apiShareAutomationRulesGet$Json$Response(params?: ApiShareAutomationRulesGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareAutomationRuleDtoIEnumerableApiResponse>> {
     return apiShareAutomationRulesGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -86,9 +87,9 @@ export class ShareAutomationRulesService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiShareAutomationRulesGet$Json(params?: ApiShareAutomationRulesGet$Json$Params, context?: HttpContext): Observable<Array<ShareAutomationRuleDto>> {
+  apiShareAutomationRulesGet$Json(params?: ApiShareAutomationRulesGet$Json$Params, context?: HttpContext): Observable<ShareAutomationRuleDtoIEnumerableApiResponse> {
     return this.apiShareAutomationRulesGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<Array<ShareAutomationRuleDto>>): Array<ShareAutomationRuleDto> => r.body)
+      map((r: StrictHttpResponse<ShareAutomationRuleDtoIEnumerableApiResponse>): ShareAutomationRuleDtoIEnumerableApiResponse => r.body)
     );
   }
 
@@ -105,7 +106,7 @@ export class ShareAutomationRulesService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareAutomationRulesPost$Plain$Response(params?: ApiShareAutomationRulesPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareAutomationRuleDto>> {
+  apiShareAutomationRulesPost$Plain$Response(params?: ApiShareAutomationRulesPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareAutomationRuleDtoApiResponse>> {
     return apiShareAutomationRulesPost$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -119,9 +120,9 @@ export class ShareAutomationRulesService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareAutomationRulesPost$Plain(params?: ApiShareAutomationRulesPost$Plain$Params, context?: HttpContext): Observable<ShareAutomationRuleDto> {
+  apiShareAutomationRulesPost$Plain(params?: ApiShareAutomationRulesPost$Plain$Params, context?: HttpContext): Observable<ShareAutomationRuleDtoApiResponse> {
     return this.apiShareAutomationRulesPost$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ShareAutomationRuleDto>): ShareAutomationRuleDto => r.body)
+      map((r: StrictHttpResponse<ShareAutomationRuleDtoApiResponse>): ShareAutomationRuleDtoApiResponse => r.body)
     );
   }
 
@@ -135,7 +136,7 @@ export class ShareAutomationRulesService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareAutomationRulesPost$Json$Response(params?: ApiShareAutomationRulesPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareAutomationRuleDto>> {
+  apiShareAutomationRulesPost$Json$Response(params?: ApiShareAutomationRulesPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareAutomationRuleDtoApiResponse>> {
     return apiShareAutomationRulesPost$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -149,9 +150,9 @@ export class ShareAutomationRulesService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiShareAutomationRulesPost$Json(params?: ApiShareAutomationRulesPost$Json$Params, context?: HttpContext): Observable<ShareAutomationRuleDto> {
+  apiShareAutomationRulesPost$Json(params?: ApiShareAutomationRulesPost$Json$Params, context?: HttpContext): Observable<ShareAutomationRuleDtoApiResponse> {
     return this.apiShareAutomationRulesPost$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ShareAutomationRuleDto>): ShareAutomationRuleDto => r.body)
+      map((r: StrictHttpResponse<ShareAutomationRuleDtoApiResponse>): ShareAutomationRuleDtoApiResponse => r.body)
     );
   }
 

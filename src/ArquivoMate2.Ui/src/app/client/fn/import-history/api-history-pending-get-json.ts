@@ -8,14 +8,14 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { ImportHistoryListDto } from '../../models/import-history-list-dto';
+import { ImportHistoryListDtoApiResponse } from '../../models/import-history-list-dto-api-response';
 
 export interface ApiHistoryPendingGet$Json$Params {
   Page?: number;
   PageSize?: number;
 }
 
-export function apiHistoryPendingGet$Json(http: HttpClient, rootUrl: string, params?: ApiHistoryPendingGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDto>> {
+export function apiHistoryPendingGet$Json(http: HttpClient, rootUrl: string, params?: ApiHistoryPendingGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ImportHistoryListDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiHistoryPendingGet$Json.PATH, 'get');
   if (params) {
     rb.query('Page', params.Page, {});
@@ -27,7 +27,7 @@ export function apiHistoryPendingGet$Json(http: HttpClient, rootUrl: string, par
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<ImportHistoryListDto>;
+      return r as StrictHttpResponse<ImportHistoryListDtoApiResponse>;
     })
   );
 }

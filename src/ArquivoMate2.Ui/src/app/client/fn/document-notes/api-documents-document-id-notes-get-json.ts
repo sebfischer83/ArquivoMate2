@@ -8,7 +8,7 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { DocumentNoteDto } from '../../models/document-note-dto';
+import { DocumentNoteDtoIEnumerableApiResponse } from '../../models/document-note-dto-i-enumerable-api-response';
 
 export interface ApiDocumentsDocumentIdNotesGet$Json$Params {
 
@@ -23,7 +23,7 @@ export interface ApiDocumentsDocumentIdNotesGet$Json$Params {
   q?: string;
 }
 
-export function apiDocumentsDocumentIdNotesGet$Json(http: HttpClient, rootUrl: string, params: ApiDocumentsDocumentIdNotesGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<DocumentNoteDto>>> {
+export function apiDocumentsDocumentIdNotesGet$Json(http: HttpClient, rootUrl: string, params: ApiDocumentsDocumentIdNotesGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentNoteDtoIEnumerableApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiDocumentsDocumentIdNotesGet$Json.PATH, 'get');
   if (params) {
     rb.path('documentId', params.documentId, {});
@@ -35,7 +35,7 @@ export function apiDocumentsDocumentIdNotesGet$Json(http: HttpClient, rootUrl: s
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Array<DocumentNoteDto>>;
+      return r as StrictHttpResponse<DocumentNoteDtoIEnumerableApiResponse>;
     })
   );
 }

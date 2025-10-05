@@ -1,6 +1,8 @@
 ﻿## Overview
 ArquivoMate2 is a lightweight, extensible .NET 9 document ingestion and processing platform. It tracks document processing lifecycle states (Pending, InProgress, Completed, Failed), provides history querying & counts, real-time status updates, background jobs, and localization.
 
+For detailed architecture, grouping and sharing documentation see `docs/ProjectOverview.md`.
+
 ## Current Features
 - Document lifecycle tracking (upload → processing → completion/failure)
 - History listing with pagination & status filtering

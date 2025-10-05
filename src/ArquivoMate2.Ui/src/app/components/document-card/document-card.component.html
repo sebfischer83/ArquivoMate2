@@ -3,7 +3,7 @@
     <div class="thumb-head">
       <div class="title" [title]="document.title || document.id">{{ document.title || document.id }}</div>
     </div>
-    @if (document.thumbnailPath) { <img [ngSrc]="document.thumbnailPath!" width="160" height="200" alt="" /> }
+  @if (document.thumbnailPath) { <img [ngSrc]="document.thumbnailPath!" width="160" height="200" alt="" priority fetchpriority="high" /> }
     @else { <span class="ph">Kein Vorschaubild</span> }
     @if (document.summary) {
       <div class="thumb-summary">

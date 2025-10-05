@@ -23,8 +23,10 @@ import { apiDocumentsIdUpdateFieldsPatch$Json } from '../fn/documents/api-docume
 import { ApiDocumentsIdUpdateFieldsPatch$Json$Params } from '../fn/documents/api-documents-id-update-fields-patch-json';
 import { apiDocumentsIdUpdateFieldsPatch$Plain } from '../fn/documents/api-documents-id-update-fields-patch-plain';
 import { ApiDocumentsIdUpdateFieldsPatch$Plain$Params } from '../fn/documents/api-documents-id-update-fields-patch-plain';
-import { apiDocumentsPost } from '../fn/documents/api-documents-post';
-import { ApiDocumentsPost$Params } from '../fn/documents/api-documents-post';
+import { apiDocumentsPost$Json } from '../fn/documents/api-documents-post-json';
+import { ApiDocumentsPost$Json$Params } from '../fn/documents/api-documents-post-json';
+import { apiDocumentsPost$Plain } from '../fn/documents/api-documents-post-plain';
+import { ApiDocumentsPost$Plain$Params } from '../fn/documents/api-documents-post-plain';
 import { apiDocumentsSharePost$Json } from '../fn/documents/api-documents-share-post-json';
 import { ApiDocumentsSharePost$Json$Params } from '../fn/documents/api-documents-share-post-json';
 import { apiDocumentsSharePost$Plain } from '../fn/documents/api-documents-share-post-plain';
@@ -33,10 +35,11 @@ import { apiDocumentsStatsGet$Json } from '../fn/documents/api-documents-stats-g
 import { ApiDocumentsStatsGet$Json$Params } from '../fn/documents/api-documents-stats-get-json';
 import { apiDocumentsStatsGet$Plain } from '../fn/documents/api-documents-stats-get-plain';
 import { ApiDocumentsStatsGet$Plain$Params } from '../fn/documents/api-documents-stats-get-plain';
-import { DocumentDto } from '../models/document-dto';
-import { DocumentListDto } from '../models/document-list-dto';
-import { DocumentStatsDto } from '../models/document-stats-dto';
-import { ShareCreatedDto } from '../models/share-created-dto';
+import { DocumentDtoApiResponse } from '../models/document-dto-api-response';
+import { DocumentListDtoApiResponse } from '../models/document-list-dto-api-response';
+import { DocumentStatsDtoApiResponse } from '../models/document-stats-dto-api-response';
+import { GuidApiResponse } from '../models/guid-api-response';
+import { ShareCreatedDtoApiResponse } from '../models/share-created-dto-api-response';
 
 
 /**
@@ -61,7 +64,7 @@ export class DocumentsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsGet$Plain$Response(params?: ApiDocumentsGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentListDto>> {
+  apiDocumentsGet$Plain$Response(params?: ApiDocumentsGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentListDtoApiResponse>> {
     return apiDocumentsGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -75,9 +78,9 @@ export class DocumentsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsGet$Plain(params?: ApiDocumentsGet$Plain$Params, context?: HttpContext): Observable<DocumentListDto> {
+  apiDocumentsGet$Plain(params?: ApiDocumentsGet$Plain$Params, context?: HttpContext): Observable<DocumentListDtoApiResponse> {
     return this.apiDocumentsGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DocumentListDto>): DocumentListDto => r.body)
+      map((r: StrictHttpResponse<DocumentListDtoApiResponse>): DocumentListDtoApiResponse => r.body)
     );
   }
 
@@ -91,7 +94,7 @@ export class DocumentsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsGet$Json$Response(params?: ApiDocumentsGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentListDto>> {
+  apiDocumentsGet$Json$Response(params?: ApiDocumentsGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentListDtoApiResponse>> {
     return apiDocumentsGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -105,9 +108,9 @@ export class DocumentsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsGet$Json(params?: ApiDocumentsGet$Json$Params, context?: HttpContext): Observable<DocumentListDto> {
+  apiDocumentsGet$Json(params?: ApiDocumentsGet$Json$Params, context?: HttpContext): Observable<DocumentListDtoApiResponse> {
     return this.apiDocumentsGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DocumentListDto>): DocumentListDto => r.body)
+      map((r: StrictHttpResponse<DocumentListDtoApiResponse>): DocumentListDtoApiResponse => r.body)
     );
   }
 
@@ -120,12 +123,12 @@ export class DocumentsService extends BaseService {
    *
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `apiDocumentsPost()` instead.
+   * To access only the response body, use `apiDocumentsPost$Plain()` instead.
    *
    * This method sends `multipart/form-data` and handles request body of type `multipart/form-data`.
    */
-  apiDocumentsPost$Response(params?: ApiDocumentsPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-    return apiDocumentsPost(this.http, this.rootUrl, params, context);
+  apiDocumentsPost$Plain$Response(params?: ApiDocumentsPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<GuidApiResponse>> {
+    return apiDocumentsPost$Plain(this.http, this.rootUrl, params, context);
   }
 
   /**
@@ -134,13 +137,43 @@ export class DocumentsService extends BaseService {
    *
    *
    * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `apiDocumentsPost$Response()` instead.
+   * To access the full response (for headers, for example), `apiDocumentsPost$Plain$Response()` instead.
    *
    * This method sends `multipart/form-data` and handles request body of type `multipart/form-data`.
    */
-  apiDocumentsPost(params?: ApiDocumentsPost$Params, context?: HttpContext): Observable<void> {
-    return this.apiDocumentsPost$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+  apiDocumentsPost$Plain(params?: ApiDocumentsPost$Plain$Params, context?: HttpContext): Observable<GuidApiResponse> {
+    return this.apiDocumentsPost$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<GuidApiResponse>): GuidApiResponse => r.body)
+    );
+  }
+
+  /**
+   * Uploads a new document, starts its import stream, and schedules the background processing workflow.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiDocumentsPost$Json()` instead.
+   *
+   * This method sends `multipart/form-data` and handles request body of type `multipart/form-data`.
+   */
+  apiDocumentsPost$Json$Response(params?: ApiDocumentsPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<GuidApiResponse>> {
+    return apiDocumentsPost$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Uploads a new document, starts its import stream, and schedules the background processing workflow.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiDocumentsPost$Json$Response()` instead.
+   *
+   * This method sends `multipart/form-data` and handles request body of type `multipart/form-data`.
+   */
+  apiDocumentsPost$Json(params?: ApiDocumentsPost$Json$Params, context?: HttpContext): Observable<GuidApiResponse> {
+    return this.apiDocumentsPost$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<GuidApiResponse>): GuidApiResponse => r.body)
     );
   }
 
@@ -157,7 +190,7 @@ export class DocumentsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsIdUpdateFieldsPatch$Plain$Response(params: ApiDocumentsIdUpdateFieldsPatch$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentDto>> {
+  apiDocumentsIdUpdateFieldsPatch$Plain$Response(params: ApiDocumentsIdUpdateFieldsPatch$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentDtoApiResponse>> {
     return apiDocumentsIdUpdateFieldsPatch$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -171,9 +204,9 @@ export class DocumentsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsIdUpdateFieldsPatch$Plain(params: ApiDocumentsIdUpdateFieldsPatch$Plain$Params, context?: HttpContext): Observable<DocumentDto> {
+  apiDocumentsIdUpdateFieldsPatch$Plain(params: ApiDocumentsIdUpdateFieldsPatch$Plain$Params, context?: HttpContext): Observable<DocumentDtoApiResponse> {
     return this.apiDocumentsIdUpdateFieldsPatch$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DocumentDto>): DocumentDto => r.body)
+      map((r: StrictHttpResponse<DocumentDtoApiResponse>): DocumentDtoApiResponse => r.body)
     );
   }
 
@@ -187,7 +220,7 @@ export class DocumentsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsIdUpdateFieldsPatch$Json$Response(params: ApiDocumentsIdUpdateFieldsPatch$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentDto>> {
+  apiDocumentsIdUpdateFieldsPatch$Json$Response(params: ApiDocumentsIdUpdateFieldsPatch$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentDtoApiResponse>> {
     return apiDocumentsIdUpdateFieldsPatch$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -201,9 +234,9 @@ export class DocumentsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsIdUpdateFieldsPatch$Json(params: ApiDocumentsIdUpdateFieldsPatch$Json$Params, context?: HttpContext): Observable<DocumentDto> {
+  apiDocumentsIdUpdateFieldsPatch$Json(params: ApiDocumentsIdUpdateFieldsPatch$Json$Params, context?: HttpContext): Observable<DocumentDtoApiResponse> {
     return this.apiDocumentsIdUpdateFieldsPatch$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DocumentDto>): DocumentDto => r.body)
+      map((r: StrictHttpResponse<DocumentDtoApiResponse>): DocumentDtoApiResponse => r.body)
     );
   }
 
@@ -220,7 +253,7 @@ export class DocumentsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsStatsGet$Plain$Response(params?: ApiDocumentsStatsGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentStatsDto>> {
+  apiDocumentsStatsGet$Plain$Response(params?: ApiDocumentsStatsGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentStatsDtoApiResponse>> {
     return apiDocumentsStatsGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -234,9 +267,9 @@ export class DocumentsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsStatsGet$Plain(params?: ApiDocumentsStatsGet$Plain$Params, context?: HttpContext): Observable<DocumentStatsDto> {
+  apiDocumentsStatsGet$Plain(params?: ApiDocumentsStatsGet$Plain$Params, context?: HttpContext): Observable<DocumentStatsDtoApiResponse> {
     return this.apiDocumentsStatsGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DocumentStatsDto>): DocumentStatsDto => r.body)
+      map((r: StrictHttpResponse<DocumentStatsDtoApiResponse>): DocumentStatsDtoApiResponse => r.body)
     );
   }
 
@@ -250,7 +283,7 @@ export class DocumentsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsStatsGet$Json$Response(params?: ApiDocumentsStatsGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentStatsDto>> {
+  apiDocumentsStatsGet$Json$Response(params?: ApiDocumentsStatsGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentStatsDtoApiResponse>> {
     return apiDocumentsStatsGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -264,9 +297,9 @@ export class DocumentsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsStatsGet$Json(params?: ApiDocumentsStatsGet$Json$Params, context?: HttpContext): Observable<DocumentStatsDto> {
+  apiDocumentsStatsGet$Json(params?: ApiDocumentsStatsGet$Json$Params, context?: HttpContext): Observable<DocumentStatsDtoApiResponse> {
     return this.apiDocumentsStatsGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DocumentStatsDto>): DocumentStatsDto => r.body)
+      map((r: StrictHttpResponse<DocumentStatsDtoApiResponse>): DocumentStatsDtoApiResponse => r.body)
     );
   }
 
@@ -283,7 +316,7 @@ export class DocumentsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsIdGet$Plain$Response(params: ApiDocumentsIdGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentDto>> {
+  apiDocumentsIdGet$Plain$Response(params: ApiDocumentsIdGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentDtoApiResponse>> {
     return apiDocumentsIdGet$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -297,9 +330,9 @@ export class DocumentsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsIdGet$Plain(params: ApiDocumentsIdGet$Plain$Params, context?: HttpContext): Observable<DocumentDto> {
+  apiDocumentsIdGet$Plain(params: ApiDocumentsIdGet$Plain$Params, context?: HttpContext): Observable<DocumentDtoApiResponse> {
     return this.apiDocumentsIdGet$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DocumentDto>): DocumentDto => r.body)
+      map((r: StrictHttpResponse<DocumentDtoApiResponse>): DocumentDtoApiResponse => r.body)
     );
   }
 
@@ -313,7 +346,7 @@ export class DocumentsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsIdGet$Json$Response(params: ApiDocumentsIdGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentDto>> {
+  apiDocumentsIdGet$Json$Response(params: ApiDocumentsIdGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentDtoApiResponse>> {
     return apiDocumentsIdGet$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -327,9 +360,9 @@ export class DocumentsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  apiDocumentsIdGet$Json(params: ApiDocumentsIdGet$Json$Params, context?: HttpContext): Observable<DocumentDto> {
+  apiDocumentsIdGet$Json(params: ApiDocumentsIdGet$Json$Params, context?: HttpContext): Observable<DocumentDtoApiResponse> {
     return this.apiDocumentsIdGet$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<DocumentDto>): DocumentDto => r.body)
+      map((r: StrictHttpResponse<DocumentDtoApiResponse>): DocumentDtoApiResponse => r.body)
     );
   }
 
@@ -346,7 +379,7 @@ export class DocumentsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsSharePost$Plain$Response(params?: ApiDocumentsSharePost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareCreatedDto>> {
+  apiDocumentsSharePost$Plain$Response(params?: ApiDocumentsSharePost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareCreatedDtoApiResponse>> {
     return apiDocumentsSharePost$Plain(this.http, this.rootUrl, params, context);
   }
 
@@ -360,9 +393,9 @@ export class DocumentsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsSharePost$Plain(params?: ApiDocumentsSharePost$Plain$Params, context?: HttpContext): Observable<ShareCreatedDto> {
+  apiDocumentsSharePost$Plain(params?: ApiDocumentsSharePost$Plain$Params, context?: HttpContext): Observable<ShareCreatedDtoApiResponse> {
     return this.apiDocumentsSharePost$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ShareCreatedDto>): ShareCreatedDto => r.body)
+      map((r: StrictHttpResponse<ShareCreatedDtoApiResponse>): ShareCreatedDtoApiResponse => r.body)
     );
   }
 
@@ -376,7 +409,7 @@ export class DocumentsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsSharePost$Json$Response(params?: ApiDocumentsSharePost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareCreatedDto>> {
+  apiDocumentsSharePost$Json$Response(params?: ApiDocumentsSharePost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ShareCreatedDtoApiResponse>> {
     return apiDocumentsSharePost$Json(this.http, this.rootUrl, params, context);
   }
 
@@ -390,9 +423,9 @@ export class DocumentsService extends BaseService {
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiDocumentsSharePost$Json(params?: ApiDocumentsSharePost$Json$Params, context?: HttpContext): Observable<ShareCreatedDto> {
+  apiDocumentsSharePost$Json(params?: ApiDocumentsSharePost$Json$Params, context?: HttpContext): Observable<ShareCreatedDtoApiResponse> {
     return this.apiDocumentsSharePost$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<ShareCreatedDto>): ShareCreatedDto => r.body)
+      map((r: StrictHttpResponse<ShareCreatedDtoApiResponse>): ShareCreatedDtoApiResponse => r.body)
     );
   }
 

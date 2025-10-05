@@ -1,6 +1,5 @@
 using ArquivoMate2.API.Filters;
 using ArquivoMate2.API.Hubs;
-using ArquivoMate2.API.Notifications;
 using ArquivoMate2.API.Maintenance;
 using ArquivoMate2.Application.Handlers;
 using ArquivoMate2.Application.Interfaces;
@@ -30,6 +29,7 @@ using System.Threading;
 using Microsoft.OpenApi.Models; // added for OpenApiInfo
 using ArquivoMate2.Shared.Models.Sharing; // added for enum schema mapping
 using Microsoft.OpenApi.Any; // for OpenApiString
+using ArquivoMate2.API.Middleware;
 
 namespace ArquivoMate2.API
 {
@@ -76,8 +76,13 @@ namespace ArquivoMate2.API
                   }
               });
 
-            builder.Services.AddControllers();
+            // Register ApiResponse wrapper filter globally for all controllers
+            builder.Services.AddControllers(options =>
+            {
+                options.Filters.Add<ApiResponseWrapperFilter>();
+            });
             builder.Services.AddScoped<ApiKeyAuthorizationFilter>();
+            builder.Services.AddScoped<ApiResponseWrapperFilter>();
             builder.Services.AddInfrastructure(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSingleton<IDocumentEncryptionKeysExportStore, FileSystemDocumentEncryptionKeysExportStore>();
@@ -89,7 +94,9 @@ namespace ArquivoMate2.API
             {
                 options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
-            builder.Services.AddScoped<IDocumentProcessingNotifier, SignalRDocumentProcessingNotifier>();
+            // register notifier implementation
+            builder.Services.AddScoped<ArquivoMate2.API.Notifications.SignalRDocumentProcessingNotifier>();
+            builder.Services.AddScoped<IDocumentProcessingNotifier>(sp => sp.GetRequiredService<ArquivoMate2.API.Notifications.SignalRDocumentProcessingNotifier>());
 
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(UploadDocumentHandler).Assembly));
             builder.Services.AddHangfire(config =>
@@ -154,6 +161,9 @@ namespace ArquivoMate2.API
                     },
                     Description = "Flags: subset of [Read, Edit, Delete]. Empty array = None. Accepts legacy formats: comma string or numeric." 
                 });
+
+                // Use operation filter to show ApiResponse<T> wrapper for successful responses
+                c.OperationFilter<ArquivoMate2.API.Swagger.ApiResponseOperationFilter>();
             });
 
             AddAuth(builder, builder.Configuration);
@@ -169,6 +179,9 @@ namespace ArquivoMate2.API
             });
 
             var app = builder.Build();
+
+            // Register middleware for producing ProblemDetails on unhandled exceptions
+            app.UseMiddleware<ProblemDetailsMiddleware>();
 
             if (app.Environment.IsDevelopment())
             {
@@ -202,6 +215,8 @@ namespace ArquivoMate2.API
             app.UseSerilogRequestLogging();
 
             app.MapControllers();
+            // controllers are already configured with the ApiResponse wrapper filter
+
             app.MapHangfireDashboard();
 
             app.MapHub<DocumentProcessingHub>("/hubs/documents", opt => { }).RequireCors("AllowAllOrigins");
@@ -217,12 +232,7 @@ namespace ArquivoMate2.API
             RecurringJob.AddOrUpdate<MaintenanceExportCleanupJob>(
                 "maintenance-export-cleanup",
                 job => job.ExecuteAsync(CancellationToken.None),
-                Cron.Daily,
-                new RecurringJobOptions
-                {
-                    TimeZone = TimeZoneInfo.Utc,
-                    QueueName = "maintenance"
-                });
+                Cron.Daily);
 
             app.Run();
         }

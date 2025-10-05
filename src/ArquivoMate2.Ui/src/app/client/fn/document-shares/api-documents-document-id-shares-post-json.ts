@@ -9,22 +9,14 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 import { CreateDocumentShareRequest } from '../../models/create-document-share-request';
-import { DocumentShareDto } from '../../models/document-share-dto';
+import { DocumentShareDtoApiResponse } from '../../models/document-share-dto-api-response';
 
 export interface ApiDocumentsDocumentIdSharesPost$Json$Params {
-
-/**
- * Document that should be shared.
- */
   documentId: string;
-  
-    /**
-     * Information about the target and permissions that should be granted.
-     */
-    body?: CreateDocumentShareRequest
+      body?: CreateDocumentShareRequest
 }
 
-export function apiDocumentsDocumentIdSharesPost$Json(http: HttpClient, rootUrl: string, params: ApiDocumentsDocumentIdSharesPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentShareDto>> {
+export function apiDocumentsDocumentIdSharesPost$Json(http: HttpClient, rootUrl: string, params: ApiDocumentsDocumentIdSharesPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentShareDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiDocumentsDocumentIdSharesPost$Json.PATH, 'post');
   if (params) {
     rb.path('documentId', params.documentId, {});
@@ -36,7 +28,7 @@ export function apiDocumentsDocumentIdSharesPost$Json(http: HttpClient, rootUrl:
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<DocumentShareDto>;
+      return r as StrictHttpResponse<DocumentShareDtoApiResponse>;
     })
   );
 }

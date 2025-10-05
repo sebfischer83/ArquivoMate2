@@ -8,14 +8,14 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { DocumentGroupingNode } from '../../models/document-grouping-node';
+import { DocumentGroupingNodeIEnumerableApiResponse } from '../../models/document-grouping-node-i-enumerable-api-response';
 import { DocumentGroupingRequest } from '../../models/document-grouping-request';
 
 export interface ApiDocumentsGroupingPost$Json$Params {
       body?: DocumentGroupingRequest
 }
 
-export function apiDocumentsGroupingPost$Json(http: HttpClient, rootUrl: string, params?: ApiDocumentsGroupingPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<DocumentGroupingNode>>> {
+export function apiDocumentsGroupingPost$Json(http: HttpClient, rootUrl: string, params?: ApiDocumentsGroupingPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentGroupingNodeIEnumerableApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiDocumentsGroupingPost$Json.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/*+json');
@@ -26,7 +26,7 @@ export function apiDocumentsGroupingPost$Json(http: HttpClient, rootUrl: string,
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Array<DocumentGroupingNode>>;
+      return r as StrictHttpResponse<DocumentGroupingNodeIEnumerableApiResponse>;
     })
   );
 }

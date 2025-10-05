@@ -9,12 +9,14 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 
-export interface ApiEmailCriteriaDelete$Params {
+export interface ApiPartiesIdDelete$Params {
+  id: string;
 }
 
-export function apiEmailCriteriaDelete(http: HttpClient, rootUrl: string, params?: ApiEmailCriteriaDelete$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, apiEmailCriteriaDelete.PATH, 'delete');
+export function apiPartiesIdDelete(http: HttpClient, rootUrl: string, params: ApiPartiesIdDelete$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  const rb = new RequestBuilder(rootUrl, apiPartiesIdDelete.PATH, 'delete');
   if (params) {
+    rb.path('id', params.id, {});
   }
 
   return http.request(
@@ -27,4 +29,4 @@ export function apiEmailCriteriaDelete(http: HttpClient, rootUrl: string, params
   );
 }
 
-apiEmailCriteriaDelete.PATH = '/api/Email/criteria';
+apiPartiesIdDelete.PATH = '/api/parties/{id}';

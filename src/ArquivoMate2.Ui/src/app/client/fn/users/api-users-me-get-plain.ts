@@ -8,12 +8,12 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { CurrentUserDto } from '../../models/current-user-dto';
+import { CurrentUserDtoApiResponse } from '../../models/current-user-dto-api-response';
 
 export interface ApiUsersMeGet$Plain$Params {
 }
 
-export function apiUsersMeGet$Plain(http: HttpClient, rootUrl: string, params?: ApiUsersMeGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<CurrentUserDto>> {
+export function apiUsersMeGet$Plain(http: HttpClient, rootUrl: string, params?: ApiUsersMeGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<CurrentUserDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiUsersMeGet$Plain.PATH, 'get');
   if (params) {
   }
@@ -23,7 +23,7 @@ export function apiUsersMeGet$Plain(http: HttpClient, rootUrl: string, params?: 
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<CurrentUserDto>;
+      return r as StrictHttpResponse<CurrentUserDtoApiResponse>;
     })
   );
 }

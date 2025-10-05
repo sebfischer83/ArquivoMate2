@@ -8,24 +8,21 @@ using Minio.DataModel.Args;
 
 namespace ArquivoMate2.Infrastructure.Services.StorageProvider
 {
-    public class S3StorageProvider : IStorageProvider
+    public class S3StorageProvider : StorageProviderBase<S3StorageProviderSettings>
     {
-        private readonly S3StorageProviderSettings _settings;
         private readonly IMinioClient _storage;
-        private readonly IPathService _pathService;
 
         public S3StorageProvider(IOptions<S3StorageProviderSettings> opts, IMinioClientFactory minioClientFactory, IEasyCachingProviderFactory easyCachingProviderFactory, IPathService pathService)
+            : base(opts, pathService)
         {
-            _settings = opts.Value;
             _storage = minioClientFactory.CreateClient();
-            _pathService = pathService;
         }
 
-        public async Task<string> SaveFile(string userId, Guid documentId, string filename, byte[] file, string artifact = "file")
+        public override async Task<string> SaveFile(string userId, Guid documentId, string filename, byte[] file, string artifact = "file")
         {
             var mimeType = MimeTypeMap.GetMimeType(filename);
             using var stream = new MemoryStream(file);
-            string fullPath = "arquivomate/" + string.Join('/', _pathService.GetStoragePath(userId, documentId, filename));
+            string fullPath = BuildObjectPath(userId, documentId, filename);
             var putObjectArgs = new PutObjectArgs()
                 .WithBucket(_settings.BucketName)
                 .WithObject(fullPath)
@@ -36,7 +33,7 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
             return fullPath;
         }
 
-        public async Task<byte[]> GetFileAsync(string fullPath, CancellationToken ct = default)
+        public override async Task<byte[]> GetFileAsync(string fullPath, CancellationToken ct = default)
         {
             using var ms = new MemoryStream();
             var args = new GetObjectArgs()

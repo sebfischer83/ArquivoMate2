@@ -358,6 +358,10 @@ namespace ArquivoMate2.Infrastructure.Persistance
             view.ChatBotModel = e.ModelName; // Persist the LLM model that generated the metadata
             view.ChatBotClass = e.ChatBotClass; // Persist the classification provided by the LLM
             view.OccurredOn = e.OccurredOn;
+
+            // store party references for later resolution in DTO mapping
+            view.SenderId = e.SenderId == Guid.Empty ? null : e.SenderId;
+            view.RecipientId = e.RecipientId == Guid.Empty ? null : e.RecipientId;
         }
 
         /// <summary>

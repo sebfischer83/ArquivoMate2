@@ -9,6 +9,8 @@ using AutoMapper;
 using ArquivoMate2.Application.Interfaces;
 using StackExchange.Redis;
 using System.IO;
+using Marten;
+using ArquivoMate2.Application.Models;
 
 namespace ArquivoMate2.Infrastructure.Mapping
 {
@@ -18,7 +20,8 @@ namespace ArquivoMate2.Infrastructure.Mapping
         {
             CreateMap<DocumentView, DocumentListItemDto>()
                     .ForMember(dest => dest.ThumbnailPath, opt => opt.MapFrom<PathResolver, string>(src => src.ThumbnailPath))
-                    .ForMember(dest => dest.Encrypted, opt => opt.MapFrom(src => src.Encrypted)); // NEW
+                    .ForMember(dest => dest.Encrypted, opt => opt.MapFrom(src => src.Encrypted)) // NEW
+                    .ForMember(dest => dest.Sender, opt => opt.MapFrom<PartyListResolver, Guid?>(src => src.SenderId));
         }
     }
 
@@ -39,7 +42,12 @@ namespace ArquivoMate2.Infrastructure.Mapping
                     .ForMember(dest => dest.ChatBotModel, opt => opt.MapFrom(src => src.ChatBotModel))
                     .ForMember(dest => dest.ChatBotClass, opt => opt.MapFrom(src => src.ChatBotClass))
                     .ForMember(dest => dest.NotesCount, opt => opt.MapFrom(src => src.NotesCount)) // NEW
-                    .ForMember(dest => dest.Language, opt => opt.MapFrom(src => src.Language)); // NEW
+                    .ForMember(dest => dest.Language, opt => opt.MapFrom(src => src.Language)) // NEW
+                    .ForMember(dest => dest.Sender, opt => opt.MapFrom<PartyResolver, Guid?>(src => src.SenderId)); // resolve sender
+
+            // Resolve sender PartyDto if SenderId present in DocumentView (new column required in view)
+            CreateMap<DocumentView, PartyDto>()
+                .ForMember(d => d.Id, o => o.Ignore());
         }
 
     }
@@ -59,6 +67,60 @@ namespace ArquivoMate2.Infrastructure.Mapping
                 return string.Empty;
 
             return _storageProvider.GetAccessUrl(sourceMember).GetAwaiter().GetResult();
+        }
+    }
+
+    public class PartyResolver : IMemberValueResolver<DocumentView, DocumentDto, Guid?, PartyDto?>
+    {
+        private readonly IQuerySession _query;
+
+        public PartyResolver(IQuerySession query)
+        {
+            _query = query;
+        }
+
+        public PartyDto? Resolve(DocumentView source, DocumentDto destination, Guid? sourceMember, PartyDto? destMember, ResolutionContext context)
+            => ResolveInternal(sourceMember);
+
+        private PartyDto? ResolveInternal(Guid? sourceMember)
+        {
+            if (!sourceMember.HasValue) return null;
+            // synchronous query to load party info
+            var party = _query.Query<PartyInfo>().FirstOrDefault(p => p.Id == sourceMember.Value);
+            if (party == null) return null;
+            return new PartyDto
+            {
+                Id = party.Id,
+                FirstName = party.FirstName,
+                LastName = party.LastName,
+                CompanyName = party.CompanyName,
+                Street = party.Street,
+                HouseNumber = party.HouseNumber,
+                PostalCode = party.PostalCode,
+                City = party.City
+            };
+        }
+    }
+
+    // Lightweight resolver for list items: only send Id and DisplayName
+    public class PartyListResolver : IMemberValueResolver<DocumentView, DocumentListItemDto, Guid?, PartyListDto?>
+    {
+        private readonly IQuerySession _query;
+
+        public PartyListResolver(IQuerySession query)
+        {
+            _query = query;
+        }
+
+        public PartyListDto? Resolve(DocumentView source, DocumentListItemDto destination, Guid? sourceMember, PartyListDto? destMember, ResolutionContext context)
+        {
+            if (!sourceMember.HasValue) return null;
+            var party = _query.Query<PartyInfo>().FirstOrDefault(p => p.Id == sourceMember.Value);
+            if (party == null) return null;
+            var display = string.IsNullOrWhiteSpace(party.CompanyName)
+                ? string.Join(' ', new[] { party.FirstName, party.LastName }.Where(s => !string.IsNullOrWhiteSpace(s))).Trim()
+                : party.CompanyName;
+            return new PartyListDto { Id = party.Id, DisplayName = display };
         }
     }
 }

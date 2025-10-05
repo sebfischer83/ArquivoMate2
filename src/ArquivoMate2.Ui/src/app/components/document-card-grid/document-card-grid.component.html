@@ -8,7 +8,17 @@
   <div class="header-row">
     @if (totalCount) { <div class="counts">{{ totalCount }} Dokumente</div> }
     <div class="spacer"></div>
-    <button type="button" class="icon-btn" (click)="reload.emit()" [disabled]="loading" aria-label="Neu laden" title="Neu laden">⟳</button>
+    <div class="view-switch" role="group" aria-label="Ansicht umschalten">
+      <button type="button" class="icon-btn" (click)="setView('grid')" [class.active]="!listView" aria-label="Kachelansicht" title="Kachelansicht">
+        <tui-icon icon="@tui.grid" />
+      </button>
+      <button type="button" class="icon-btn" (click)="setView('list')" [class.active]="listView" aria-label="Listenansicht" title="Listenansicht">
+        <tui-icon icon="@tui.list" />
+      </button>
+    </div>
+    <button type="button" class="icon-btn" (click)="reload.emit()" [disabled]="loading" aria-label="Neu laden" title="Neu laden">
+      <tui-icon icon="@tui.refresh-cw" />
+    </button>
   </div>
 
   @if (error && !displayLoading()) {
@@ -16,25 +26,94 @@
   }
 
   @if (displayLoading() && (!preserveItemsWhileLoading || !hasItems())) {
-    <div class="skeletons">
-      @for (i of [].constructor(skeletonCount); track i) {
-        <div class="card skeleton">
-          <div class="thumb placeholder shimmer"></div>
-          <div class="meta">
-            <div class="line w1 shimmer"></div>
-            <div class="line w2 shimmer"></div>
-            <div class="line w3 shimmer"></div>
+    @if (!listView) {
+      <div class="skeletons">
+        @for (i of [].constructor(skeletonCount); track i) {
+          <div class="card skeleton">
+            <div class="thumb placeholder shimmer"></div>
+            <div class="meta">
+              <div class="line w1 shimmer"></div>
+              <div class="line w2 shimmer"></div>
+              <div class="line w3 shimmer"></div>
+            </div>
           </div>
-        </div>
-      }
-    </div>
-  } @else {
-    @if (hasItems()) {
-      <div class="grid" [style.--am-card-min-width.px]="cardMinWidth">
-  @for (d of items; track trackById($index, d)) {
-          <am-document-card [document]="d" (cardClick)="onCardClick(d)"></am-document-card>
         }
       </div>
+    } @else {
+      <div class="list-view list-view-skeleton" role="table" aria-label="Dokumentenliste (lädt)">
+        <div class="list-head" role="row" aria-hidden="true">
+          <div role="columnheader" class="col col-thumb">Vorschau</div>
+          <div role="columnheader" class="col col-title">Titel</div>
+          <div role="columnheader" class="col col-summary">Zusammenfassung</div>
+          <div role="columnheader" class="col col-status">Status</div>
+          <div role="columnheader" class="col col-type">Typ</div>
+          <div role="columnheader" class="col col-date">Upload</div>
+        </div>
+        <div class="list-skeleton-rows" role="rowgroup">
+          @for (i of [].constructor(skeletonCount); track i) {
+            <div class="list-row skeleton" role="row" aria-hidden="true">
+              <div role="cell" class="col col-thumb">
+                <div class="sk-thumb shimmer"></div>
+              </div>
+              <div role="cell" class="col col-title">
+                <div class="sk-line shimmer sk-w1"></div>
+              </div>
+              <div role="cell" class="col col-summary">
+                <div class="sk-line shimmer sk-w2"></div>
+              </div>
+              <div role="cell" class="col col-status">
+                <div class="sk-ic shimmer"></div>
+                <div class="sk-ic shimmer"></div>
+              </div>
+              <div role="cell" class="col col-type">
+                <div class="sk-line shimmer sk-w3"></div>
+              </div>
+              <div role="cell" class="col col-date">
+                <div class="sk-line shimmer sk-w4"></div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  } @else {
+    @if (hasItems()) {
+      @if (!listView) {
+        <div class="grid" [style.--am-card-min-width.px]="cardMinWidth">
+          @for (d of items; track trackById($index, d)) {
+            <am-document-card [document]="d" (cardClick)="onCardClick(d)"></am-document-card>
+          }
+        </div>
+      } @else {
+        <div class="list-view" role="table" aria-label="Dokumentenliste">
+          <div class="list-head" role="row">
+            <div role="columnheader" class="col col-thumb">Vorschau</div>
+            <div role="columnheader" class="col col-title">Titel</div>
+            <div role="columnheader" class="col col-summary">Zusammenfassung</div>
+            <div role="columnheader" class="col col-status">Status</div>
+            <div role="columnheader" class="col col-type">Typ</div>
+            <div role="columnheader" class="col col-date">Upload</div>
+          </div>
+          @for (d of items; track trackById($index, d)) {
+            <div class="list-row" role="row" (click)="onCardClick(d)" tabindex="0" (keydown.enter)="onCardClick(d)" (keydown.space)="onCardClick(d); $event.preventDefault()" [attr.aria-label]="d.title || d.id">
+              <div role="cell" class="col col-thumb">
+                @if (d.thumbnailPath) { <img [src]="d.thumbnailPath" alt="" /> } @else { <span class="thumb-ph">—</span> }
+              </div>
+              <div role="cell" class="col col-title">
+                <div class="title-line">{{ d.title || d.id }}</div>
+                @if (d.sender?.displayName) { <div class="sender-line" [title]="d.sender?.displayName">{{ d.sender?.displayName }}</div> }
+              </div>
+              <div role="cell" class="col col-summary" [title]="d.summary || ''">{{ d.summary || '—' }}</div>
+              <div role="cell" class="col col-status">
+                @if (d.accepted) { <tui-icon icon="@tui.check" class="ok" aria-label="Accepted" /> }
+                @if (d.encrypted) { <tui-icon icon="@tui.lock" class="lock" aria-label="Verschlüsselt" /> }
+              </div>
+              <div role="cell" class="col col-type">{{ d.type || '—' }}</div>
+              <div role="cell" class="col col-date">@if (d.uploadedAt) { {{ d.uploadedAt | date:'short' }} } @else { — }</div>
+            </div>
+          }
+        </div>
+      }
     } @else {
       @if (!displayLoading()) { <div class="empty">Keine Dokumente gefunden.</div> }
     }

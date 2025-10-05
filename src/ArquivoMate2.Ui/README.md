@@ -176,6 +176,34 @@ Hinweise:
 ### `am-document-card-grid`
 A standalone component that displays a paginated grid of document cards (thumbnail + meta info).
 
+#### Neuer Listenmodus (Tabellarische Ansicht)
+Die Komponente unterstützt jetzt einen alternativen Listenmodus mit spaltenorientierter Darstellung (Vorschau, Titel, Zusammenfassung, Status, Typ, Upload-Datum). Ein Umschalter (Grid-Icon / List-Icon) befindet sich rechts in der Header-Leiste.
+
+Eigenschaften des Listenmodus:
+- Responsives Ausblenden weniger wichtiger Spalten (erst Datum, dann Typ, dann Summary) bei schmalen Viewports.
+- Zeilen sind fokussierbar (Keyboard Enter/Space löst denselben Click aus wie in der Grid-Ansicht).
+- Status-Icons (Accepted / Encrypted) analog zur Card-Ansicht.
+- Ellipsis + Tooltip (title) für lange Summary-Inhalte.
+
+Technische Umsetzung:
+- Interner State `listView` (boolean) im Component.
+- Bedingtes Template via `@if (!listView) { ... } @else { ... }`.
+- Zusätzliche Styles in `document-card-grid.component.scss` (`.list-view`, `.list-head`, `.list-row`).
+
+Persistenz & Ladezustände:
+- Der ausgewählte Modus (Grid oder Liste) wird jetzt automatisch in `localStorage` (`am-doc-grid-view`) gespeichert und beim nächsten Laden wiederhergestellt.
+- Während des Ladens (wenn keine vorhandenen Items gezeigt werden) erscheinen für den aktiven Modus passende Skeleton-Platzhalter:
+  - Grid: Karten mit Thumbnail- und Text-Lines
+  - Liste: Zeilen mit grauen Platzhalter-Blöcken für Vorschaubild, Text, Icons und Metadaten
+  - Skeletons sind per Debounce/Min-Visible Logik geschützt (kein Flackern)
+
+Optional zukünftige Erweiterungen:
+- Sortierbare Spalten (z.B. Klick auf Header)
+- Multi-Select (Checkbox-Spalte)
+- Virtuelles Scrolling bei sehr großen Datenmengen
+- Persistenz zusätzlicher User-Präferenzen (z.B. PageSize)
+
+
 Inputs:
 - `items: DocumentListItemDto[]` current page items
 - `totalCount: number` total number of documents

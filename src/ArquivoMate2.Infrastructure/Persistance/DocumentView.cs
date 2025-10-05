@@ -49,5 +49,9 @@ namespace ArquivoMate2.Infrastructure.Persistance
         public string Language { get; set; } = string.Empty; // ISO code of the detected document language
 
         public bool Encrypted { get; set; } // Indicates whether encrypted delivery must be used
+
+        // Reference to the resolved parties (stored as ids in events)
+        public Guid? SenderId { get; set; }
+        public Guid? RecipientId { get; set; }
     }
 }

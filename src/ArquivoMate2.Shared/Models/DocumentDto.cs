@@ -56,5 +56,8 @@ namespace ArquivoMate2.Shared.Models
         public bool Encrypted { get; set; } // NEW
 
         public List<DocumentEventDto> History { get; set; } = new List<DocumentEventDto>();
+
+        // Resolved sender details
+        public PartyDto? Sender { get; set; }
     }
 }

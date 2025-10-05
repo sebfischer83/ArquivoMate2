@@ -30,6 +30,8 @@ export type { EmailSettings } from './models/email-settings';
 export { EmailSortBy } from './models/email-sort-by';
 export type { ImportHistoryListDto } from './models/import-history-list-dto';
 export type { ImportHistoryListItemDto } from './models/import-history-list-item-dto';
+export type { PartyDto } from './models/party-dto';
+export type { PartyListDto } from './models/party-list-dto';
 export type { ProblemDetails } from './models/problem-details';
 export type { SaveEmailCriteriaRequest } from './models/save-email-criteria-request';
 export type { SaveEmailSettingsRequest } from './models/save-email-settings-request';

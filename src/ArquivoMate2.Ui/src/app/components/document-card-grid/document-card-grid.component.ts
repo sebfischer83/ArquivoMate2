@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, OnDestroy, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, OnDestroy, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DocumentListItemDto } from '../../client/models/document-list-item-dto';
 import { TuiPagination } from '@taiga-ui/kit';
 import { DocumentCardComponent } from '../document-card/document-card.component';
+import { TuiIcon } from '@taiga-ui/core';
 
 /**
  * Reusable grid component to display a paged list of documents as Taiga UI style cards.
@@ -11,12 +12,12 @@ import { DocumentCardComponent } from '../document-card/document-card.component'
 @Component({
   standalone: true,
   selector: 'am-document-card-grid',
-  imports: [CommonModule, TuiPagination, DocumentCardComponent],
+  imports: [CommonModule, TuiPagination, DocumentCardComponent, TuiIcon],
   templateUrl: './document-card-grid.component.html',
   styleUrl: './document-card-grid.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DocumentCardGridComponent implements OnChanges, OnDestroy {
+export class DocumentCardGridComponent implements OnChanges, OnDestroy, OnInit {
   // Inputs
   @Input() items: readonly DocumentListItemDto[] | null | undefined;
   @Input() totalCount = 0;
@@ -42,6 +43,30 @@ export class DocumentCardGridComponent implements OnChanges, OnDestroy {
   private loadingStartAt: number | null = null;
   private debounceTimer: any;
   private minVisibleTimer: any;
+
+  // View mode toggle (grid default vs. list table-like view)
+  listView = false;
+  private readonly viewModeStorageKey = 'am-doc-grid-view';
+  toggleView() { this.setView(this.listView ? 'grid' : 'list'); }
+  setView(mode: 'grid' | 'list') {
+    const target = mode === 'list';
+    if (this.listView === target) return; // no change
+    this.listView = target;
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem(this.viewModeStorageKey, target ? 'list' : 'grid'); } catch { /* ignore */ }
+    }
+  }
+
+  ngOnInit() {
+    // Restore persisted preference once at init
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(this.viewModeStorageKey);
+        if (stored === 'list') this.listView = true;
+        else if (stored === 'grid') this.listView = false; // explicit for clarity
+      } catch { /* ignore */ }
+    }
+  }
 
   get showOverlay(): boolean {
     if (!this.visibleLoading()) return false;

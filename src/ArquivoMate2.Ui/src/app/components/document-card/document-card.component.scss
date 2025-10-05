@@ -45,15 +45,21 @@
 /* Summary overlay inside thumbnail */
 .thumb-summary { position:absolute; left:0; right:0; bottom:0; pointer-events:none; z-index:4; }
 .thumb-summary .summary-text { 
-	position:absolute; left:.45rem; right:.45rem; bottom:2.1rem; /* hebe Summary über Fuß-Leiste */
-	font-size:.62rem; line-height:1.25; max-height:3.6em; 
-	overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; line-clamp:3; -webkit-box-orient:vertical; text-overflow:ellipsis; 
-	color:var(--tui-text-02, #4a4a4a); /* nicht weiß für weiße Dokumente */
-	background:linear-gradient(145deg, rgba(255,255,255,0.92), rgba(255,255,255,0.78));
-	padding:.35rem .4rem; border-radius:.4rem; box-shadow:0 2px 6px -2px rgba(0,0,0,0.25);
-	backdrop-filter:blur(2px) saturate(1.2);
+	position:absolute; left:.45rem; right:.45rem; 
+	bottom:var(--am-summary-bottom, 3.1rem);
+	font-size:.62rem; line-height:1.25; 
+	/* Use line clamp without hard max-height to avoid half-line clipping */
+	display:-webkit-box; -webkit-line-clamp:6; line-clamp:6; -webkit-box-orient:vertical;
+	overflow:hidden; text-overflow:ellipsis; 
+	color:var(--tui-text-02, #4a4a4a);
+	background:linear-gradient(145deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85));
+	padding:.45rem .5rem; border-radius:.55rem; box-shadow:0 4px 10px -4px rgba(0,0,0,0.3);
+	backdrop-filter:blur(2.5px) saturate(1.3);
+	/* Soft fade-out mask as fallback polish (supported in modern browsers) */
+	mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 80%, rgba(0,0,0,0));
+	-webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 80%, rgba(0,0,0,0));
 }
-.am-doc-card.compact .thumb-summary .summary-text { font-size:.58rem; -webkit-line-clamp:2; line-clamp:2; max-height:2.4em; bottom:1.9rem; }
+.am-doc-card.compact .thumb-summary .summary-text { font-size:.58rem; -webkit-line-clamp:5; line-clamp:5; bottom:2.8rem; }
 .am-doc-card.mini .thumb-summary { display:none; }
 
 :host-context([data-theme='dark']) .thumb-summary .summary-text { 
@@ -75,5 +81,8 @@
 .status-line .icon-status.encrypted { color: var(--tui-text-02, #555); filter:grayscale(.15); }
 .status-line .uploaded { opacity:.85; }
 .status-line .type { font-weight:500; }
+
+/* Sender line below status */
+.sender { font-size:.6rem; color:var(--am-text-secondary); line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
 /* Cleanup complete: removed .thumb-foot and .thumb-head .flags */

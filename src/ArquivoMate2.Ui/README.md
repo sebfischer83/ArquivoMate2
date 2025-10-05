@@ -197,7 +197,33 @@ Technische Umsetzung:
 - Entfernte separate Badge-Stack und H3 Titelblock
 
 ##### Summary im Overlay
-Die Summary wird jetzt (statt unter dem Bild) als eigenes Overlay-Panel (`.thumb-summary .summary-text`) innerhalb des Thumbnails dargestellt:
+-##### Status- & Meta-Infos (Icons statt Badges)
+##### Status- & Meta-Infos (Taiga Icons statt Badges)
+Accepted / Encrypted sowie Upload-Datum und Typ werden jetzt im `meta` Block unterhalb des Thumbnails in einer `status-line` angezeigt. Die vorherigen Badges + Unicode-Zeichen wurden durch offizielle Taiga Icons ersetzt:
+
+| Zustand      | Icon Token    | Darstellung / Semantik            |
+|--------------|---------------|-----------------------------------|
+| accepted     | `@tui.check`  | Erfolg (grün, `--tui-success-fill`)|
+| encrypted    | `@tui.lock`   | Neutral/Gesperrt (gedämpfter Text) |
+
+Implementation-Auszug:
+```html
+<div class="status-line">
+  @if (document.accepted) { <tui-icon class="icon-status accepted" icon="@tui.check" title="Accepted" aria-label="Accepted" /> }
+  @if (document.encrypted) { <tui-icon class="icon-status encrypted" icon="@tui.lock" title="Verschlüsselt" aria-label="Verschlüsselt" /> }
+  @if (document.uploadedAt) { <span class="uploaded">{{ document.uploadedAt | date:'short' }}</span> }
+  @if (document.type) { <span class="type">{{ document.type }}</span> }
+</div>
+```
+
+Vorteile:
+- Konsistenz mit restlichem Design System
+- Bessere Pixel-Rendering-Qualität als Unicode-Symbole
+- Leichte Austauschbarkeit / Erweiterbarkeit (Tooltips, andere States)
+
+Zukünftig denkbar: Tooltip-Hinweise, weitere Icons (z.B. Processing, Shared), konditionale Gruppierung bei wenig Platz.
+
+ Icons und Meta-Zeile sind außerhalb des Overlays → bessere Lesbarkeit & Fokus auf Thumbnail.
 - Hintergrund halbtransparenter Light/Dark Gradient (nicht rein weiß → Kontrast zu weißen Dokumentseiten)
 - Regulär: 3 Zeilen Clamp, Compact: 2, Mini: ausgeblendet
 - Farbmodus reagiert auf Dark Mode Tokens (`tui-text-02`)

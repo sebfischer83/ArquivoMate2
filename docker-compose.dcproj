@@ -11,7 +11,9 @@
     <DockerServiceUrl>localhost:5000/scalar</DockerServiceUrl>
   </PropertyGroup>
   <ItemGroup>
+    <None Include=".github\workflows\publish-docker.yml" />
     <None Include="api.env" />
+    <None Include="Directory.Build.props" />
     <None Include="docker-compose.override.yml">
       <DependentUpon>docker-compose.yml</DependentUpon>
     </None>
@@ -20,6 +22,7 @@
     <None Include="docs\Grouping.md" />
     <None Include="docs\ProjectOverview.md" />
     <None Include="README.md" />
+    <None Include="scripts\docker-build-multiarch.sh" />
     <None Include="tests\ArquivoMate2.Application.Tests\ArquivoMate2.Application.Tests.csproj" />
     <None Include="tests\ArquivoMate2.Application.Tests\SampleApplicationTests.cs" />
     <None Include="tests\ArquivoMate2.Domain.Tests\ArquivoMate2.Domain.Tests.csproj" />

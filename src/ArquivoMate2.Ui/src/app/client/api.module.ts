@@ -6,7 +6,9 @@ import { NgModule, ModuleWithProviders, SkipSelf, Optional } from '@angular/core
 import { HttpClient } from '@angular/common/http';
 import { ApiConfiguration, ApiConfigurationParams } from './api-configuration';
 
+import { CollectionsService } from './services/collections.service';
 import { DeliveryService } from './services/delivery.service';
+import { DocumentGroupingService } from './services/document-grouping.service';
 import { DocumentNotesService } from './services/document-notes.service';
 import { DocumentsService } from './services/documents.service';
 import { DocumentSharesService } from './services/document-shares.service';
@@ -26,7 +28,9 @@ import { UsersService } from './services/users.service';
   exports: [],
   declarations: [],
   providers: [
+    CollectionsService,
     DeliveryService,
+    DocumentGroupingService,
     DocumentNotesService,
     DocumentsService,
     DocumentSharesService,

@@ -13,7 +13,7 @@ using Marten;
 namespace ArquivoMate2.Infrastructure.Services.Grouping;
 
 /// <summary>
-/// Infrastructure implementation of hierarchical document grouping.
+/// Infrastructure implementation of hierarchical document grouping including owned + shared documents.
 /// </summary>
 public sealed class DocumentGroupingService : IDocumentGroupingService
 {
@@ -21,45 +21,69 @@ public sealed class DocumentGroupingService : IDocumentGroupingService
     { "Collection","Year","Month","Type","Language" };
     private const string NoneKey = "(none)";
     private const string UnknownKey = "(unknown)";
+    private const string SharedKey = "(shared)";
 
     private readonly IQuerySession _query;
-
     public DocumentGroupingService(IQuerySession query) => _query = query;
 
-    public async Task<IReadOnlyList<DocumentGroupingNode>> GroupAsync(string ownerUserId, DocumentGroupingRequest request, CancellationToken ct)
+    public async Task<IReadOnlyList<DocumentGroupingNode>> GroupAsync(string userId, DocumentGroupingRequest request, CancellationToken ct)
     {
         Validate(request);
 
-        var docs = await _query.Query<DocumentView>()
-            .Where(d => d.UserId == ownerUserId && !d.Deleted)
+        var owned = await _query.Query<DocumentView>()
+            .Where(d => d.UserId == userId && !d.Deleted)
             .Select(d => new MinDoc
             {
                 Id = d.Id,
                 Date = d.Date,
                 UploadedAt = d.UploadedAt,
                 Type = d.Type,
-                Language = d.Language
+                Language = d.Language,
+                IsShared = false
             })
-            .ToListAsync(ct); // List<MinDoc>
-        if (docs.Count == 0) return Array.Empty<DocumentGroupingNode>();
+            .ToListAsync(ct);
+
+        var sharedIds = await _query.Query<DocumentAccessView>()
+            .Where(a => a.EffectiveUserIds.Contains(userId) && a.OwnerUserId != userId)
+            .Select(a => a.Id)
+            .ToListAsync(ct);
+
+        var shared = sharedIds.Count == 0
+            ? new List<MinDoc>()
+            : await _query.Query<DocumentView>()
+                .Where(d => sharedIds.Contains(d.Id) && !d.Deleted && d.Processed)
+                .Select(d => new MinDoc
+                {
+                    Id = d.Id,
+                    Date = d.Date,
+                    UploadedAt = d.UploadedAt,
+                    Type = d.Type,
+                    Language = d.Language,
+                    IsShared = true
+                })
+                .ToListAsync(ct);
+
+        if (owned.Count == 0 && shared.Count == 0)
+            return Array.Empty<DocumentGroupingNode>();
+
+        var map = new Dictionary<Guid, MinDoc>(owned.Count + shared.Count);
+        foreach (var d in owned) map[d.Id] = d;
+        foreach (var d in shared) map[d.Id] = d;
+        var docs = map.Values.ToList(); // concrete List<MinDoc>
 
         var memberships = await _query.Query<DocumentCollectionMembership>()
-            .Where(m => m.OwnerUserId == ownerUserId)
+            .Where(m => m.OwnerUserId == userId)
             .Select(m => new { m.CollectionId, m.DocumentId })
             .ToListAsync(ct);
         var collections = await _query.Query<DocumentCollection>()
-            .Where(c => c.OwnerUserId == ownerUserId)
+            .Where(c => c.OwnerUserId == userId)
             .Select(c => new { c.Id, c.Name })
             .ToListAsync(ct);
 
-        // Build dictionary manually to avoid generic inference issues
-        var collectionNameMap = new Dictionary<Guid, string>(collections.Count, EqualityComparer<Guid>.Default);
-        foreach (var c in collections)
-            collectionNameMap[c.Id] = c.Name;
-
-        var docToCollections = new Dictionary<Guid, List<Guid>>();
-        foreach (var group in memberships.GroupBy(m => m.DocumentId))
-            docToCollections[group.Key] = group.Select(x => x.CollectionId).ToList();
+        var collectionNameMap = collections.ToDictionary(c => c.Id, c => c.Name);
+        var docToCollections = memberships
+            .GroupBy(m => m.DocumentId)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.CollectionId).ToList());
 
         foreach (var d in docs)
         {
@@ -68,17 +92,23 @@ public sealed class DocumentGroupingService : IDocumentGroupingService
             d.Month = eff.Month;
         }
 
-        foreach (var seg in request.Path)
+        // Path filtering keeps docs as List<MinDoc>
+        if (request.Path.Count > 0)
         {
-            docs = FilterBySegment(docs, seg, docToCollections);
-            if (docs.Count == 0) return Array.Empty<DocumentGroupingNode>();
+            foreach (var seg in request.Path)
+            {
+                var filtered = FilterBySegment(docs, seg, docToCollections);
+                if (filtered.Count == 0) return Array.Empty<DocumentGroupingNode>();
+                docs.Clear();
+                docs.AddRange(filtered);
+            }
         }
 
         var level = request.Path.Count;
         if (level >= request.Groups.Count) return Array.Empty<DocumentGroupingNode>();
-        var nextDim = request.Groups[level];
+        var next = request.Groups[level].ToLowerInvariant();
 
-        return nextDim.ToLowerInvariant() switch
+        return next switch
         {
             "collection" => GroupByCollection(docs, docToCollections, collectionNameMap, level, request.Groups.Count),
             "year" => GroupByYear(docs, level, request.Groups.Count),
@@ -89,48 +119,43 @@ public sealed class DocumentGroupingService : IDocumentGroupingService
         };
     }
 
-    private static List<MinDoc> FilterBySegment(IReadOnlyList<MinDoc> docs, DocumentGroupingPathSegment seg, Dictionary<Guid, List<Guid>> docToCollections)
+    private static List<MinDoc> FilterBySegment(List<MinDoc> source, DocumentGroupingPathSegment seg, Dictionary<Guid, List<Guid>> docToCollections)
     {
-        IEnumerable<MinDoc> q = docs;
-        switch (seg.Dimension.ToLowerInvariant())
+        IEnumerable<MinDoc> result = seg.Dimension.ToLowerInvariant() switch
         {
-            case "collection":
-                if (seg.Key == NoneKey)
-                    q = q.Where(d => !docToCollections.ContainsKey(d.Id) || docToCollections[d.Id].Count == 0);
-                else if (Guid.TryParse(seg.Key, out var colId))
-                    q = q.Where(d => docToCollections.TryGetValue(d.Id, out var list) && list.Contains(colId));
-                else
-                    return new List<MinDoc>();
-                break;
-            case "year":
-                if (seg.Key == UnknownKey) q = q.Where(d => d.Year == 0); else if (int.TryParse(seg.Key, out var y)) q = q.Where(d => d.Year == y); else return new List<MinDoc>();
-                break;
-            case "month":
-                if (seg.Key == UnknownKey) q = q.Where(d => d.Month == 0); else if (int.TryParse(seg.Key, out var m)) q = q.Where(d => d.Month == m); else return new List<MinDoc>();
-                break;
-            case "type":
-                q = seg.Key == NoneKey ? q.Where(d => string.IsNullOrEmpty(d.Type)) : q.Where(d => string.Equals(d.Type, seg.Key, StringComparison.Ordinal));
-                break;
-            case "language":
-                q = seg.Key == NoneKey ? q.Where(d => string.IsNullOrEmpty(d.Language)) : q.Where(d => string.Equals(d.Language, seg.Key, StringComparison.Ordinal));
-                break;
-            default:
-                return new List<MinDoc>();
-        }
-        return q.ToList();
+            "collection" => FilterCollection(source, seg.Key, docToCollections),
+            "year" => seg.Key == UnknownKey ? source.Where(d => d.Year == 0) : (int.TryParse(seg.Key, out var y) ? source.Where(d => d.Year == y) : Enumerable.Empty<MinDoc>()),
+            "month" => seg.Key == UnknownKey ? source.Where(d => d.Month == 0) : (int.TryParse(seg.Key, out var m) ? source.Where(d => d.Month == m) : Enumerable.Empty<MinDoc>()),
+            "type" => seg.Key == NoneKey ? source.Where(d => string.IsNullOrEmpty(d.Type)) : source.Where(d => string.Equals(d.Type, seg.Key, StringComparison.Ordinal)),
+            "language" => seg.Key == NoneKey ? source.Where(d => string.IsNullOrEmpty(d.Language)) : source.Where(d => string.Equals(d.Language, seg.Key, StringComparison.Ordinal)),
+            _ => Enumerable.Empty<MinDoc>()
+        };
+        return result.ToList();
     }
 
-    private static IReadOnlyList<DocumentGroupingNode> GroupByCollection(IReadOnlyList<MinDoc> docs, Dictionary<Guid, List<Guid>> docToCollections, Dictionary<Guid, string> nameMap, int level, int totalLevels)
+    private static IEnumerable<MinDoc> FilterCollection(IEnumerable<MinDoc> docs, string key, Dictionary<Guid, List<Guid>> docToCollections) => key switch
+    {
+        NoneKey => docs.Where(d => !d.IsShared && (!docToCollections.ContainsKey(d.Id) || docToCollections[d.Id].Count == 0)),
+        SharedKey => docs.Where(d => d.IsShared),
+        _ => Guid.TryParse(key, out var cid) ? docs.Where(d => !d.IsShared && docToCollections.TryGetValue(d.Id, out var list) && list.Contains(cid)) : Enumerable.Empty<MinDoc>()
+    };
+
+    private static IReadOnlyList<DocumentGroupingNode> GroupByCollection(List<MinDoc> docs, Dictionary<Guid, List<Guid>> docToCollections, Dictionary<Guid, string> nameMap, int level, int totalLevels)
     {
         var buckets = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var d in docs)
         {
-            if (docToCollections.TryGetValue(d.Id, out var list) && list.Count > 0)
+            if (d.IsShared)
             {
-                foreach (var cid in list)
+                if (!buckets.TryAdd(SharedKey, 1)) buckets[SharedKey]++;
+                continue;
+            }
+            if (docToCollections.TryGetValue(d.Id, out var cols) && cols.Count > 0)
+            {
+                foreach (var c in cols)
                 {
-                    var k = cid.ToString();
-                    if (!buckets.TryAdd(k, 1)) buckets[k]++;
+                    var key = c.ToString();
+                    if (!buckets.TryAdd(key, 1)) buckets[key]++;
                 }
             }
             else if (!buckets.TryAdd(NoneKey, 1)) buckets[NoneKey]++;
@@ -140,16 +165,21 @@ public sealed class DocumentGroupingService : IDocumentGroupingService
         {
             Dimension = "Collection",
             Key = b.Key,
-            Label = b.Key == NoneKey ? "(None)" : (Guid.TryParse(b.Key, out var gid) && nameMap.TryGetValue(gid, out var nm) ? nm : b.Key),
+            Label = b.Key switch
+            {
+                NoneKey => "(None)",
+                SharedKey => "(Shared)",
+                _ => (Guid.TryParse(b.Key, out var gid) && nameMap.TryGetValue(gid, out var nm) ? nm : b.Key)
+            },
             Count = b.Value,
             HasChildren = hasChildren
         })
-        .OrderBy(n => n.Key == NoneKey ? 0 : 1)
+        .OrderBy(n => n.Key == NoneKey ? 0 : n.Key == SharedKey ? 1 : 2)
         .ThenBy(n => n.Label, StringComparer.CurrentCultureIgnoreCase)
         .ToList();
     }
 
-    private static IReadOnlyList<DocumentGroupingNode> GroupByYear(IReadOnlyList<MinDoc> docs, int level, int totalLevels)
+    private static IReadOnlyList<DocumentGroupingNode> GroupByYear(List<MinDoc> docs, int level, int totalLevels)
     {
         var buckets = docs.GroupBy(d => d.Year).ToDictionary(g => g.Key, g => g.Count());
         var hasChildren = level + 1 < totalLevels;
@@ -165,7 +195,7 @@ public sealed class DocumentGroupingService : IDocumentGroupingService
         .ToList();
     }
 
-    private static IReadOnlyList<DocumentGroupingNode> GroupByMonth(IReadOnlyList<MinDoc> docs, int level, int totalLevels)
+    private static IReadOnlyList<DocumentGroupingNode> GroupByMonth(List<MinDoc> docs, int level, int totalLevels)
     {
         var buckets = docs.GroupBy(d => d.Month).ToDictionary(g => g.Key, g => g.Count());
         var hasChildren = level + 1 < totalLevels;
@@ -181,13 +211,13 @@ public sealed class DocumentGroupingService : IDocumentGroupingService
         .ToList();
     }
 
-    private static IReadOnlyList<DocumentGroupingNode> GroupByString(IReadOnlyList<MinDoc> docs, int level, int totalLevels, Func<MinDoc, string?> selector, string dimension)
+    private static IReadOnlyList<DocumentGroupingNode> GroupByString(List<MinDoc> docs, int level, int totalLevels, Func<MinDoc, string?> selector, string dimension)
     {
         var buckets = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var d in docs)
         {
-            var raw = selector(d) ?? string.Empty;
-            var key = string.IsNullOrEmpty(raw) ? NoneKey : raw;
+            var value = selector(d) ?? string.Empty;
+            var key = string.IsNullOrEmpty(value) ? NoneKey : value;
             if (!buckets.TryAdd(key, 1)) buckets[key]++;
         }
         var hasChildren = level + 1 < totalLevels;
@@ -229,5 +259,6 @@ public sealed class DocumentGroupingService : IDocumentGroupingService
         public string Language { get; set; } = string.Empty;
         public int Year { get; set; }
         public int Month { get; set; }
+        public bool IsShared { get; set; }
     }
 }

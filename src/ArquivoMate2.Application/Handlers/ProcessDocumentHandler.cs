@@ -1,4 +1,10 @@
-﻿using ArquivoMate2.Application.Commands;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using ArquivoMate2.Application.Commands;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Models;
 using ArquivoMate2.Domain.Document;
@@ -39,7 +45,7 @@ namespace ArquivoMate2.Application.Handlers
         private readonly ILanguageDetectionService _languageDetection;
         private readonly IEncryptionService _encryptionService;
 
-        private static readonly byte[] PdfMagicNumber = [0x25, 0x50, 0x44, 0x46]; // %PDF
+        private static readonly byte[] PdfMagicNumber = new byte[] { 0x25, 0x50, 0x44, 0x46 }; // %PDF
         private static readonly HashSet<string> SupportedImageExtensions = new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp" };
 
         public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger, IDocumentProcessor documentTextExtractor, IFileMetadataService fileMetadataService, IPathService pathService,
@@ -130,12 +136,14 @@ namespace ArquivoMate2.Application.Handlers
                     if (result.iso == null || result.tess == null)
                     {
                         detectStream.Position = 0;
-                        result = await _languageDetection.DetectFromImageOrPdfAsync(detectStream, metadata.Languages, ct);
+                        // Pass a non-null array even if metadata.Languages is null
+                        result = await _languageDetection.DetectFromImageOrPdfAsync(detectStream, metadata.Languages ?? Array.Empty<string>(), ct);
                     }
                 }
                 else if (IsSingleImage(metadata))
                 {
-                    result = await _languageDetection.DetectFromImageOrPdfAsync(detectStream, metadata.Languages, ct);
+                    // Pass a non-null array even if metadata.Languages is null
+                    result = await _languageDetection.DetectFromImageOrPdfAsync(detectStream, metadata.Languages ?? Array.Empty<string>(), ct);
                 }
 
                 if (result.iso != null && result.tess != null)
@@ -143,7 +151,8 @@ namespace ArquivoMate2.Application.Handlers
                     if (!string.Equals(doc.Language, result.iso, StringComparison.OrdinalIgnoreCase))
                         Append(ctx.Document.Id, new DocumentLanguageDetected(ctx.Document.Id, result.iso, DateTime.UtcNow));
 
-                    if (metadata.Languages.Length != 1 || !string.Equals(metadata.Languages[0], result.tess, StringComparison.OrdinalIgnoreCase))
+                    // Use null-safe checks when accessing metadata.Languages
+                    if ((metadata.Languages?.Length ?? 0) != 1 || !string.Equals(metadata.Languages != null ? metadata.Languages[0] : null, result.tess, StringComparison.OrdinalIgnoreCase))
                     {
                         effective = metadata with { Languages = new[] { result.tess } };
                         await fileMetadataService.WriteMetadataAsync(effective, ct);

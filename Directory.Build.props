@@ -1,0 +1,19 @@
+<Project>
+  <PropertyGroup>
+    <!-- Use VERSION environment variable if provided, otherwise fallback -->
+    <Version Condition="'$(VERSION)' != ''">$(VERSION)</Version>
+    <Version Condition="'$(Version)' == ''">0.0.0</Version>
+
+    <!-- Keep an informational version that may contain suffixes for local builds -->
+    <InformationalVersion Condition="'$(VERSION)' != ''">$(VERSION)</InformationalVersion>
+    <InformationalVersion Condition="'$(InformationalVersion)' == ''">0.0.0-local</InformationalVersion>
+
+    <!-- Use numeric Version for assembly/file/package version attributes -->
+    <AssemblyVersion>$(Version)</AssemblyVersion>
+    <FileVersion>$(Version)</FileVersion>
+    <PackageVersion>$(Version)</PackageVersion>
+
+    <!-- Avoid deterministic build embedding local paths in dev flow -->
+    <Deterministic>false</Deterministic>
+  </PropertyGroup>
+</Project>

@@ -2,26 +2,21 @@
   <div class="thumb" [class.placeholder]="!document.thumbnailPath">
     <div class="thumb-head">
       <div class="title" [title]="document.title || document.id">{{ document.title || document.id }}</div>
-      <div class="flags">
-  @if (document.accepted) { <tui-badge size="s" appearance="success" value="OK"></tui-badge> }
-  @if (document.encrypted) { <tui-badge size="s" appearance="neutral" value="LOCK"></tui-badge> }
-      </div>
     </div>
     @if (document.thumbnailPath) { <img [ngSrc]="document.thumbnailPath!" width="160" height="200" alt="" /> }
     @else { <span class="ph">Kein Vorschaubild</span> }
-    @if (document.uploadedAt || document.type) {
-      <div class="thumb-foot">
-        <div class="details">
-          @if (document.uploadedAt) { <span class="uploaded">{{ document.uploadedAt | date:'short' }}</span> }
-          @if (document.type) { <span class="type">{{ document.type }}</span> }
-        </div>
-      </div>
-    }
     @if (document.summary) {
       <div class="thumb-summary">
         <div class="summary-text">{{ document.summary }}</div>
       </div>
     }
   </div>
-  <!-- meta container intentionally left out; all info now in overlays -->
+  <div class="meta">
+    <div class="status-line">
+      @if (document.accepted) { <tui-icon class="icon-status accepted" icon="@tui.check" title="Accepted" aria-label="Accepted" /> }
+      @if (document.encrypted) { <tui-icon class="icon-status encrypted" icon="@tui.lock" title="Verschlüsselt" aria-label="Verschlüsselt" /> }
+      @if (document.uploadedAt) { <span class="uploaded" aria-label="Upload Datum">{{ document.uploadedAt | date:'short' }}</span> }
+      @if (document.type) { <span class="type" aria-label="Dokumenttyp">{{ document.type }}</span> }
+    </div>
+  </div>
 </div>

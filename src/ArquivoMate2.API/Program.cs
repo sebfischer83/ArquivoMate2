@@ -39,8 +39,8 @@ namespace ArquivoMate2.API
         {
             var builder = WebApplication.CreateBuilder(args);
             builder.Configuration.AddEnvironmentVariables("AMate__");
-            string connectionString = builder.Configuration.GetConnectionString("Default");
-            string hangfireConnectionString = builder.Configuration.GetConnectionString("Hangfire");
+            string connectionString = builder.Configuration.GetConnectionString("Default")!;
+            string hangfireConnectionString = builder.Configuration.GetConnectionString("Hangfire")!;
 
             var seqUrl = builder.Configuration["Seq:ServerUrl"]; 
             var seqApiKey = builder.Configuration["Seq:ApiKey"]; 

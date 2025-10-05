@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { NgOptimizedImage, DatePipe } from '@angular/common';
-import { TuiBadge } from '@taiga-ui/kit';
+import { TuiIcon } from '@taiga-ui/core';
 import { DocumentListItemDto } from '../../client/models';
 
 /**
@@ -11,7 +11,7 @@ import { DocumentListItemDto } from '../../client/models';
 @Component({
   selector: 'am-document-card',
   standalone: true,
-  imports: [NgOptimizedImage, DatePipe, TuiBadge],
+  imports: [NgOptimizedImage, DatePipe, TuiIcon],
   templateUrl: './document-card.component.html',
   styleUrls: ['./document-card.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

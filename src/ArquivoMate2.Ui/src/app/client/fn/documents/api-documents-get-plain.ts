@@ -23,6 +23,10 @@ export interface ApiDocumentsGet$Plain$Params {
   InvoiceNumber?: string;
   Keywords?: Array<string>;
   KeywordMatchAll?: boolean;
+  CollectionIds?: Array<string>;
+  Year?: number;
+  Month?: number;
+  Language?: string;
   Search?: string;
   SortBy?: string;
   SortDirection?: string;
@@ -43,6 +47,10 @@ export function apiDocumentsGet$Plain(http: HttpClient, rootUrl: string, params?
     rb.query('InvoiceNumber', params.InvoiceNumber, {});
     rb.query('Keywords', params.Keywords, {});
     rb.query('KeywordMatchAll', params.KeywordMatchAll, {});
+    rb.query('CollectionIds', params.CollectionIds, {});
+    rb.query('Year', params.Year, {});
+    rb.query('Month', params.Month, {});
+    rb.query('Language', params.Language, {});
     rb.query('Search', params.Search, {});
     rb.query('SortBy', params.SortBy, {});
     rb.query('SortDirection', params.SortDirection, {});

@@ -72,7 +72,7 @@ namespace ArquivoMate2.Application.Handlers
                 {
                     Append(request.DocumentId, new DocumentEncryptionKeysAdded(request.DocumentId, artifacts.EncryptionKeys, DateTime.UtcNow));
                 }
-                await RunChatBotAsync(request.DocumentId, artifacts.Content, cancellationToken);
+                await RunChatBotAsync(request.DocumentId, request.UserId, artifacts.Content, cancellationToken);
 
                 Append(request.ImportProcessId, new MarkSucceededDocumentImport(request.ImportProcessId, request.DocumentId, DateTime.UtcNow));
                 Append(request.DocumentId, new DocumentProcessed(request.DocumentId, DateTime.UtcNow));
@@ -247,13 +247,13 @@ namespace ArquivoMate2.Application.Handlers
         #endregion
 
         #region ChatBot
-        private async Task RunChatBotAsync(Guid documentId, string content, CancellationToken ct)
+        private async Task RunChatBotAsync(Guid documentId, string userId, string content, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(content)) return;
             try
             {
                 var result = await _chatBot.AnalyzeDocumentContent(content, ct);
-                await ProcessChatbotResultAsync(documentId, result);
+                await ProcessChatbotResultAsync(documentId, userId, result);
             }
             catch (Exception ex)
             {
@@ -261,11 +261,11 @@ namespace ArquivoMate2.Application.Handlers
             }
         }
 
-        private async Task ProcessChatbotResultAsync(Guid documentId, DocumentAnalysisResult chatbotResult)
+        private async Task ProcessChatbotResultAsync(Guid documentId, string userId, DocumentAnalysisResult chatbotResult)
         {
             if (chatbotResult == null) return;
-            Guid senderId = await ResolveOrCreatePartyAsync(chatbotResult.Sender);
-            Guid recipientId = await ResolveOrCreatePartyAsync(chatbotResult.Recipient);
+            Guid senderId = await ResolveOrCreatePartyAsync(chatbotResult.Sender, userId);
+            Guid recipientId = await ResolveOrCreatePartyAsync(chatbotResult.Recipient, userId);
 
             Append(documentId, new DocumentChatBotDataReceived(documentId, senderId, recipientId, null, DateTime.UtcNow,
                 chatbotResult.DocumentType, chatbotResult.CustomerNumber, chatbotResult.InvoiceNumber, chatbotResult.TotalPrice, chatbotResult.Keywords, chatbotResult.Summary, _chatBot.ModelName, _chatBot.GetType().Name));
@@ -273,11 +273,14 @@ namespace ArquivoMate2.Application.Handlers
                 Append(documentId, new DocumentTitleSuggested(documentId, chatbotResult.Title, DateTime.UtcNow));
         }
 
-        private async Task<Guid> ResolveOrCreatePartyAsync(PartyInfo? party)
+        private async Task<Guid> ResolveOrCreatePartyAsync(PartyInfo? party, string userId)
         {
             if (party == null) return Guid.Empty;
+            party.UserId = userId;
             var search = party.CompanyName + " " + party.FirstName + " " + party.LastName;
-            var matches = await _session.Query<PartyInfo>().Where(x => x.SearchText.NgramSearch(search)).ToListAsync();
+            var matches = await _session.Query<PartyInfo>()
+                .Where(x => x.UserId == userId && x.SearchText.NgramSearch(search))
+                .ToListAsync();
             if (matches.Count > 0) return matches.First().Id;
 
             using var newSession = _session.DocumentStore.LightweightSession();

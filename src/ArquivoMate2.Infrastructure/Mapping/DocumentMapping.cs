@@ -80,13 +80,13 @@ namespace ArquivoMate2.Infrastructure.Mapping
         }
 
         public PartyDto? Resolve(DocumentView source, DocumentDto destination, Guid? sourceMember, PartyDto? destMember, ResolutionContext context)
-            => ResolveInternal(sourceMember);
+            => ResolveInternal(sourceMember, source.UserId);
 
-        private PartyDto? ResolveInternal(Guid? sourceMember)
+        private PartyDto? ResolveInternal(Guid? sourceMember, string ownerUserId)
         {
             if (!sourceMember.HasValue) return null;
             // synchronous query to load party info
-            var party = _query.Query<PartyInfo>().FirstOrDefault(p => p.Id == sourceMember.Value);
+            var party = _query.Query<PartyInfo>().FirstOrDefault(p => p.Id == sourceMember.Value && p.UserId == ownerUserId);
             if (party == null) return null;
             return new PartyDto
             {
@@ -115,7 +115,7 @@ namespace ArquivoMate2.Infrastructure.Mapping
         public PartyListDto? Resolve(DocumentView source, DocumentListItemDto destination, Guid? sourceMember, PartyListDto? destMember, ResolutionContext context)
         {
             if (!sourceMember.HasValue) return null;
-            var party = _query.Query<PartyInfo>().FirstOrDefault(p => p.Id == sourceMember.Value);
+            var party = _query.Query<PartyInfo>().FirstOrDefault(p => p.Id == sourceMember.Value && p.UserId == source.UserId);
             if (party == null) return null;
             var display = string.IsNullOrWhiteSpace(party.CompanyName)
                 ? string.Join(' ', new[] { party.FirstName, party.LastName }.Where(s => !string.IsNullOrWhiteSpace(s))).Trim()

@@ -24,16 +24,7 @@ public class MeilisearchHealthCheck : IHealthCheck
         {
             var healthResponse = await _client.HealthAsync();
 
-            if (healthResponse is bool boolResult)
-            {
-                return boolResult
-                    ? HealthCheckResult.Healthy("Meilisearch is reachable.")
-                    : HealthCheckResult.Unhealthy("Meilisearch reported an unhealthy status.");
-            }
-
-            var statusProperty = healthResponse?.GetType().GetProperty("Status");
-            if (statusProperty?.GetValue(healthResponse) is string status &&
-                status.Equals("available", StringComparison.OrdinalIgnoreCase))
+            if (healthResponse.Status == "available")
             {
                 return HealthCheckResult.Healthy("Meilisearch is reachable.");
             }

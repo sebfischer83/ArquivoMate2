@@ -150,7 +150,7 @@ namespace ArquivoMate2.Infrastructure.Services
             [Language.Maori] = "mi",
             [Language.Marathi] = "mr",
             [Language.Mongolian] = "mn",
-            [Language.Norwegian] = "no",
+            [Language.Nynorsk] = "no",
             [Language.Persian] = "fa",
             [Language.Punjabi] = "pa",
             [Language.Romanian] = "ro",

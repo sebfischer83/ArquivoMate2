@@ -32,6 +32,13 @@ namespace ArquivoMate2.Infrastructure.Services
             _logger = logger;
         }
 
+        // Hilfsmethode zum Loggen des Speicherverbrauchs
+        private void LogMemoryUsage(string step, Guid documentId)
+        {
+            var usedMB = GC.GetTotalMemory(false) / (1024 * 1024);
+            _logger.LogInformation("Memory usage at {Step} for Document {DocumentId}: {UsedMB} MB", step, documentId, usedMB);
+        }
+
         /// <summary>
         /// Extracts text from a PDF document.
         /// If the document contains selectable text, it uses PdfPig for extraction.
@@ -45,6 +52,7 @@ namespace ArquivoMate2.Infrastructure.Services
         /// <exception cref="Exception">Thrown if Tesseract fails during OCR.</exception>
         public async Task<string> ExtractPdfTextAsync(Stream documentStream, DocumentMetadata documentMetadata, bool forceOcr, CancellationToken cancellationToken = default)
         {
+            LogMemoryUsage("Start ExtractPdfTextAsync", documentMetadata.DocumentId);
             documentStream.Position = 0;
             string text;
 
@@ -58,6 +66,7 @@ namespace ArquivoMate2.Infrastructure.Services
                 if (!string.IsNullOrWhiteSpace(text))
                 {
                     _logger.LogInformation("Extracted {Length} characters from PDF document with PdfPig for document {DocumentId}", text.Length, documentMetadata.DocumentId);
+                    LogMemoryUsage("End ExtractPdfTextAsync (PdfPig)", documentMetadata.DocumentId);
                     return text;
                 }
                 else
@@ -77,7 +86,6 @@ namespace ArquivoMate2.Infrastructure.Services
             var result = new StringBuilder();
             foreach (var img in images)
             {
-                // Temporary image file
                 var tmpImage = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.png");
                 img.Format = MagickFormat.Png;
                 img.Write(tmpImage);
@@ -103,12 +111,14 @@ namespace ArquivoMate2.Infrastructure.Services
                 result.AppendLine(ocrText);
                 File.Delete(tmpImage);
             }
+            LogMemoryUsage("End ExtractPdfTextAsync (OCR)", documentMetadata.DocumentId);
             return result.ToString();
         }
 
         // Single image OCR (jpg/png/tif/webp/bmp)
         public async Task<string> ExtractImageTextAsync(Stream documentStream, DocumentMetadata documentMetadata, CancellationToken cancellationToken = default)
         {
+            LogMemoryUsage("Start ExtractImageTextAsync", documentMetadata.DocumentId);
             try
             {
                 documentStream.Position = 0;
@@ -136,6 +146,7 @@ namespace ArquivoMate2.Infrastructure.Services
                     _logger.LogError("Tesseract failed for image: {Error}", err);
                     throw new Exception($"Tesseract failed: {err}");
                 }
+                LogMemoryUsage("End ExtractImageTextAsync", documentMetadata.DocumentId);
                 return ocrText;
             }
             finally
@@ -146,6 +157,7 @@ namespace ArquivoMate2.Infrastructure.Services
 
         public async Task<byte[]> GeneratePreviewPdf(Stream documentStream, DocumentMetadata documentMetadata, CancellationToken cancellationToken = default)
         {
+            LogMemoryUsage("Start GeneratePreviewPdf", documentMetadata.DocumentId);
             var tempInput = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".pdf");
             var tempOutputBase = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             var tempOutput = tempOutputBase + ".pdf";
@@ -206,6 +218,7 @@ namespace ArquivoMate2.Infrastructure.Services
                 }
 
                 byte[] result = await File.ReadAllBytesAsync(tempOutput, cancellationToken).ConfigureAwait(false);
+                LogMemoryUsage("End GeneratePreviewPdf", documentMetadata.DocumentId);
                 return result;
             }
             finally
@@ -217,6 +230,7 @@ namespace ArquivoMate2.Infrastructure.Services
 
         public async Task<byte[]> GenerateArchivePdf(Stream documentStream, DocumentMetadata documentMetadata, CancellationToken cancellationToken = default)
         {
+            LogMemoryUsage("Start GenerateArchivePdf", documentMetadata.DocumentId);
             var tempInput = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".pdf");
             var tempOutputBase = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             var tempOutput = tempOutputBase + ".pdf";
@@ -272,6 +286,7 @@ namespace ArquivoMate2.Infrastructure.Services
                         }
                     }
                 }
+                LogMemoryUsage("End GenerateArchivePdf", documentMetadata.DocumentId);
                 return await File.ReadAllBytesAsync(tempOutput, cancellationToken).ConfigureAwait(false);
             }
             finally

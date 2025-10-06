@@ -30,6 +30,9 @@ using Microsoft.OpenApi.Models; // added for OpenApiInfo
 using ArquivoMate2.Shared.Models.Sharing; // added for enum schema mapping
 using Microsoft.OpenApi.Any; // for OpenApiString
 using ArquivoMate2.API.Middleware;
+using System.Collections.Generic; // for KeyValuePair in OTel attributes
+using Microsoft.Extensions.Options; // added for options access
+using ArquivoMate2.Infrastructure.Services; // for LanguageDetectionService & options
 
 namespace ArquivoMate2.API
 {
@@ -54,22 +57,35 @@ namespace ArquivoMate2.API
                 }
                 config.Enrich.FromLogContext();
                 config.Enrich.WithProperty("Application", typeof(Program).Assembly.GetName().Name);
+                // Added: Environment enrichment for distinguishing Dev/Staging/Production in Seq
+                config.Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName);
             });
 
             builder.Services.AddOpenTelemetry()
-              .ConfigureResource(r => r.AddService("ArquivoMate2"))
+              .ConfigureResource(r => r
+                    // Extended: include service version, instance id & deployment environment
+                    .AddService(
+                        serviceName: "ArquivoMate2",
+                        serviceVersion: typeof(Program).Assembly.GetName().Version?.ToString(),
+                        serviceInstanceId: Environment.MachineName)
+                    .AddAttributes(new[]
+                    {
+                        new KeyValuePair<string, object>("deployment.environment", builder.Environment.EnvironmentName)
+                    })
+              )
               .WithTracing(tracing =>
               {
                   tracing.AddSource(typeof(Program).Assembly.GetName().Name!);
                   tracing.AddAspNetCoreInstrumentation();
                   tracing.AddHttpClientInstrumentation();
                   tracing.AddSource("Marten");
+                  //tracing.AddNpgsql();
 
                   if (!string.IsNullOrWhiteSpace(seqUrl))
                   {
                       tracing.AddOtlpExporter(opt =>
                       {
-                          opt.Endpoint = new Uri("http://seq:5341/ingest/otlp/v1/traces");
+                          opt.Endpoint = new Uri($"{seqUrl}ingest/otlp/v1/traces");
                           opt.Protocol = OtlpExportProtocol.HttpProtobuf;
                           opt.Headers = $"X-Seq-ApiKey={seqApiKey}";
                       });
@@ -128,6 +144,17 @@ namespace ArquivoMate2.API
             });
 
             builder.Services.AddHostedService<EmailDocumentBackgroundService>();
+
+            // Language detection options & service registration
+            // Expects configuration section "LanguageDetection" with e.g.:
+            // "LanguageDetection": { "SupportedLanguages": ["de", "en", "fr"] }
+            builder.Services.Configure<LanguageDetectionOptions>(builder.Configuration.GetSection("LanguageDetection"));
+            builder.Services.AddSingleton<ILanguageDetectionService>(sp =>
+            {
+                var logger = sp.GetRequiredService<ILogger<LanguageDetectionService>>();
+                var opts = sp.GetRequiredService<IOptions<LanguageDetectionOptions>>().Value;
+                return new LanguageDetectionService(logger, opts);
+            });
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
@@ -212,7 +239,16 @@ namespace ArquivoMate2.API
             });
 
             app.UseHangfireDashboard("/hangfire", new DashboardOptions { });
-            app.UseSerilogRequestLogging();
+            app.UseSerilogRequestLogging((options) =>
+            {
+                options.IncludeQueryInRequestPath = true;
+                options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+                options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+                {
+                    diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+                    diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
+                };
+            });
 
             app.MapControllers();
             // controllers are already configured with the ApiResponse wrapper filter

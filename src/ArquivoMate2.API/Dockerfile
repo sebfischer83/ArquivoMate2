@@ -30,8 +30,7 @@ RUN \
   && ./autogen.sh && ./configure && make && make install \
   && cd .. \
   && rm -rf jbig2
-
-
+RUN apt update && apt install -y procps
 
 RUN mkdir -p /var/arquivomate2
 RUN chown $APP_UID /var/arquivomate2

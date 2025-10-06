@@ -52,6 +52,14 @@ namespace ArquivoMate2.Application.Handlers
             IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot, IDocumentProcessingNotifier documentProcessingNotifier, ICurrentUserService currentUserService, ILanguageDetectionService languageDetection, IEncryptionService encryptionService)
             => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService, _chatBot, _documentProcessingNotifier, _languageDetection, _encryptionService) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService, chatBot, documentProcessingNotifier, languageDetection, encryptionService);
 
+        // Hilfsmethode zum Loggen des Speicherverbrauchs
+        private void LogMemoryUsage(string step, Guid documentId)
+        {
+            var usedMB = GC.GetTotalMemory(false) / (1024 * 1024);
+            var workingSetMB = Process.GetCurrentProcess().WorkingSet64 / (1024 * 1024);
+            _logger.LogInformation("Memory usage at {Step} for Document {DocumentId}: Managed={UsedMB} MB, WorkingSet={WorkingSetMB} MB", step, documentId, usedMB, workingSetMB);
+        }
+
         public async Task<(Document? Document, string? TempFilePath)> Handle(ProcessDocumentCommand request, CancellationToken cancellationToken)
         {
             var sw = Stopwatch.StartNew();
@@ -60,19 +68,27 @@ namespace ArquivoMate2.Application.Handlers
 
             try
             {
+                LogMemoryUsage("Start Handle", request.DocumentId);
                 await _documentProcessingNotifier.NotifyStatusChangedAsync(request.UserId,
                     new DocumentProcessingNotification(request.DocumentId.ToString(), DocumentProcessingStatus.InProgress, "Document processing started"));
 
+                LogMemoryUsage("Before LoadAsync", request.DocumentId);
                 var loaded = await LoadAsync(request, cancellationToken);
+                LogMemoryUsage("After LoadAsync", request.DocumentId);
+
                 var metaAfterLang = await DetectAndMaybeUpdateLanguageAsync(loaded, cancellationToken);
                 loaded = loaded with { Metadata = metaAfterLang };
+                LogMemoryUsage("After DetectAndMaybeUpdateLanguageAsync", request.DocumentId);
 
                 var artifacts = await ExtractAndGenerateAsync(request, loaded, cancellationToken);
+                LogMemoryUsage("After ExtractAndGenerateAsync", request.DocumentId);
+
                 if (_encryptionService.IsEnabled && artifacts.EncryptionKeys.Count > 0)
                 {
                     Append(request.DocumentId, new DocumentEncryptionKeysAdded(request.DocumentId, artifacts.EncryptionKeys, DateTime.UtcNow));
                 }
                 await RunChatBotAsync(request.DocumentId, request.UserId, artifacts.Content, cancellationToken);
+                LogMemoryUsage("After RunChatBotAsync", request.DocumentId);
 
                 Append(request.ImportProcessId, new MarkSucceededDocumentImport(request.ImportProcessId, request.DocumentId, DateTime.UtcNow));
                 Append(request.DocumentId, new DocumentProcessed(request.DocumentId, DateTime.UtcNow));
@@ -81,6 +97,7 @@ namespace ArquivoMate2.Application.Handlers
                 var finalDoc = await _session.Events.AggregateStreamAsync<Document>(request.DocumentId, token: cancellationToken);
                 sw.Stop();
                 _logger.LogInformation("Processed document {DocumentId} in {ElapsedMs}ms", request.DocumentId, sw.ElapsedMilliseconds);
+                LogMemoryUsage("End Handle", request.DocumentId);
                 return (finalDoc, loaded.PhysicalPath);
             }
             catch (Exception ex)

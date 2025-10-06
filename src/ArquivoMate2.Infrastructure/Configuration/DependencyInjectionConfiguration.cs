@@ -185,7 +185,15 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddScoped<IFileMetadataService, FileMetadataService>();
             services.AddScoped<IPathService, PathService>();
             services.AddScoped<IThumbnailService, ThumbnailService>();
-            services.AddScoped<MeilisearchClient>(sp => new MeilisearchClient(config["Meilisearch:Url"], "supersecret"));
+            var meilisearchUrl = config["Meilisearch:Url"]
+                ?? throw new InvalidOperationException("Meilisearch URL is not configured.");
+            var meilisearchApiKey = config["Meilisearch:ApiKey"]
+                ?? config["Meilisearch:MasterKey"]
+                ?? config["Meilisearch:Key"]
+                ?? config["MEILI_MASTER_KEY"]
+                ?? "supersecret";
+
+            services.AddScoped<MeilisearchClient>(_ => new MeilisearchClient(meilisearchUrl, meilisearchApiKey));
             services.AddScoped<ISearchClient, SearchClient>();
             services.AddScoped<IDocumentAccessService, DocumentAccessService>();
             services.AddScoped<IAutoShareService, AutoShareService>();

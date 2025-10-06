@@ -1,5 +1,6 @@
 using ArquivoMate2.API.Filters;
 using ArquivoMate2.API.Hubs;
+using ArquivoMate2.API.HealthChecks;
 using ArquivoMate2.API.Maintenance;
 using ArquivoMate2.Application.Handlers;
 using ArquivoMate2.Application.Interfaces;
@@ -12,10 +13,10 @@ using JasperFx.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
-using Npgsql;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -178,6 +179,10 @@ namespace ArquivoMate2.API
                 options.ResourcesPath = "Localization";
             });
 
+            builder.Services.AddHealthChecks()
+                .AddNpgSql(connectionString, name: "pgsql")
+                .AddCheck<MeilisearchHealthCheck>("meilisearch");
+
             var app = builder.Build();
 
             // Register middleware for producing ProblemDetails on unhandled exceptions
@@ -216,6 +221,8 @@ namespace ArquivoMate2.API
 
             app.MapControllers();
             // controllers are already configured with the ApiResponse wrapper filter
+
+            app.MapHealthChecks("/healthz");
 
             app.MapHangfireDashboard();
 

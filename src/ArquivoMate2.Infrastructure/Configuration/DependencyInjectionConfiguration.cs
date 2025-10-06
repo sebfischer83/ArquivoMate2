@@ -198,7 +198,8 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddScoped<IDocumentAccessService, DocumentAccessService>();
             services.AddScoped<IAutoShareService, AutoShareService>();
             services.AddHttpClient();
-            services.AddScoped<ILanguageDetectionService, LanguageDetectionService>(); // Detects document languages
+            // Language detection service is configured in Program.cs where options are bound.
+            // Avoid registering LanguageDetectionService here to prevent DI-validation issues when options are not yet configured.
             services.AddScoped<IDocumentOwnershipLookup, DocumentOwnershipLookup>(); // Provides ownership lookups for sharing
             services.AddScoped<IDocumentAccessUpdater, DocumentAccessUpdater>(); // Updates the read model for document access
             services.AddScoped<ArquivoMate2.Application.Interfaces.ImportHistory.IImportHistoryReadStore, ArquivoMate2.Infrastructure.Services.ImportHistory.ImportHistoryReadStore>();

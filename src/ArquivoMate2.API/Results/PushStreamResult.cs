@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 
 namespace ArquivoMate2.API.Results
 {
@@ -17,10 +18,14 @@ namespace ArquivoMate2.API.Results
             _writeToResponse = writeToResponse ?? throw new ArgumentNullException(nameof(writeToResponse));
         }
 
-        protected override Task WriteFileAsync(HttpContext context, Stream responseStream)
+        public override Task ExecuteResultAsync(ActionContext context)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
-            return _writeToResponse(responseStream, context.RequestAborted);
+
+            var response = context.HttpContext.Response;
+            response.ContentType = ContentType;
+
+            return _writeToResponse(response.Body, context.HttpContext.RequestAborted);
         }
     }
 }

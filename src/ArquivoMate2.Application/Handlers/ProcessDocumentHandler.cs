@@ -398,26 +398,6 @@ namespace ArquivoMate2.Application.Handlers
         }
 
         private FileStream OpenForSequentialRead(string path) => new(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan);
-
-        private async Task<string> ExtractTextAsync(FileStream stream, DocumentMetadata metadata, CancellationToken cancellationToken)
-        {
-            switch (metadata.Extension.ToLowerInvariant())
-            {
-                case ".pdf":
-                    return await _documentTextExtractor.ExtractPdfTextAsync(stream, metadata, false, cancellationToken);
-                case ".jpg":
-                case ".jpeg":
-                case ".png":
-                case ".tif":
-                case ".tiff":
-                case ".bmp":
-                case ".webp":
-                    return await _documentTextExtractor.ExtractImageTextAsync(stream, metadata, cancellationToken);
-                default:
-                    _logger.LogError("Unsupported file type: {Extension}", metadata.Extension);
-                    return string.Empty;
-            }
-        }
         #endregion
     }
 }

@@ -49,7 +49,7 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
             }
             else
             {
-                putObjectArgs = putObjectArgs.WithObjectSize(-1).WithPartSize(5 * 1024 * 1024);
+                putObjectArgs = putObjectArgs.WithObjectSize(-1);
             }
 
             await _storage.PutObjectAsync(putObjectArgs, ct).ConfigureAwait(false);

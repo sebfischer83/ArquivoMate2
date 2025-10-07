@@ -54,7 +54,7 @@ namespace ArquivoMate2.API
                 config.ReadFrom.Configuration(context.Configuration);
                 if (!string.IsNullOrWhiteSpace(seqUrl))
                 {
-                    config.WriteTo.Seq(seqUrl, apiKey: seqApiKey);
+                    config.WriteTo.Seq(seqUrl, apiKey: seqApiKey, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Verbose);
                 }
                 config.Enrich.FromLogContext();
                 config.Enrich.WithProperty("Application", typeof(Program).Assembly.GetName().Name);

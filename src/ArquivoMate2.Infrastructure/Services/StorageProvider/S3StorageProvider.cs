@@ -1,10 +1,13 @@
-﻿using ArquivoMate2.Application.Interfaces;
+using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Infrastructure.Configuration.StorageProvider;
+using EasyCaching.Core;
 using Microsoft.Extensions.Options;
 using MimeTypes;
-using EasyCaching.Core;
 using Minio;
 using Minio.DataModel.Args;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ArquivoMate2.Infrastructure.Services.StorageProvider
 {
@@ -20,16 +23,35 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
 
         public override async Task<string> SaveFile(string userId, Guid documentId, string filename, byte[] file, string artifact = "file")
         {
+            using var stream = new MemoryStream(file, writable: false);
+            return await SaveFileAsync(userId, documentId, filename, stream, artifact).ConfigureAwait(false);
+        }
+
+        public override async Task<string> SaveFileAsync(string userId, Guid documentId, string filename, Stream content, string artifact = "file", CancellationToken ct = default)
+        {
             var mimeType = MimeTypeMap.GetMimeType(filename);
-            using var stream = new MemoryStream(file);
+            if (content.CanSeek)
+            {
+                content.Position = 0;
+            }
+
             string fullPath = BuildObjectPath(userId, documentId, filename);
             var putObjectArgs = new PutObjectArgs()
                 .WithBucket(_settings.BucketName)
                 .WithObject(fullPath)
-                .WithStreamData(stream)
-                .WithObjectSize(stream.Length)
+                .WithStreamData(content)
                 .WithContentType(mimeType);
-            await _storage.PutObjectAsync(putObjectArgs);
+
+            if (content.CanSeek)
+            {
+                putObjectArgs = putObjectArgs.WithObjectSize(content.Length);
+            }
+            else
+            {
+                putObjectArgs = putObjectArgs.WithObjectSize(-1).WithPartSize(5 * 1024 * 1024);
+            }
+
+            await _storage.PutObjectAsync(putObjectArgs, ct).ConfigureAwait(false);
             return fullPath;
         }
 
@@ -40,7 +62,7 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
                 .WithBucket(_settings.BucketName)
                 .WithObject(fullPath)
                 .WithCallbackStream(stream => stream.CopyTo(ms));
-            await _storage.GetObjectAsync(args, ct);
+            await _storage.GetObjectAsync(args, ct).ConfigureAwait(false);
             return ms.ToArray();
         }
     }

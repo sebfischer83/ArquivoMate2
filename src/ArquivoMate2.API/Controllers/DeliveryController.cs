@@ -3,15 +3,16 @@ using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.ValueObjects;
 using ArquivoMate2.Infrastructure.Persistance;
+using ArquivoMate2.Shared.Models; // DocumentArtifact
 using EasyCaching.Core;
 using Marten;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using System;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using ArquivoMate2.Shared.Models; // DocumentArtifact
 
 namespace ArquivoMate2.API.Controllers
 {
@@ -114,12 +115,7 @@ namespace ArquivoMate2.API.Controllers
                     await _cache.SetAsync(cacheKey, encrypted, TimeSpan.FromMinutes(_settings.CacheTtlMinutes));
                 }
 
-                if (encrypted.Length < 1 + 12 + 16) return null;
-                if (encrypted[0] != 1) return null;
-
-                var nonce = encrypted.AsSpan(1, 12).ToArray();
-                var tag = encrypted.AsSpan(encrypted.Length - 16, 16).ToArray();
-                var cipher = encrypted.AsSpan(13, encrypted.Length - 13 - 16).ToArray();
+                if (encrypted.Length < 1) return null;
 
                 var entry = encryptionKeys.Artifacts.FirstOrDefault(a => a.Artifact == artifactWire);
                 if (entry == null || entry.WrappedDek.Length < 32 + 16) return null;
@@ -138,21 +134,78 @@ namespace ArquivoMate2.API.Controllers
                     return null;
                 }
 
-                var plain = new byte[cipher.Length];
-                try
+                byte version = encrypted[0];
+                if (version == 1)
                 {
-                    using var aes = new AesGcm(dek, 16);
-                    aes.Decrypt(nonce, cipher, tag, plain);
-                }
-                catch
-                {
-                    return null;
+                    if (encrypted.Length < 1 + 12 + 16) return null;
+
+                    var nonce = encrypted.AsSpan(1, 12).ToArray();
+                    var tag = encrypted.AsSpan(encrypted.Length - 16, 16).ToArray();
+                    var cipher = encrypted.AsSpan(13, encrypted.Length - 13 - 16).ToArray();
+
+                    try
+                    {
+                        using var aes = new AesGcm(dek, 16);
+                        var plain = new byte[cipher.Length];
+                        aes.Decrypt(nonce, cipher, tag, plain);
+                        return plain;
+                    }
+                    catch
+                    {
+                        return null;
+                    }
                 }
 
-                return plain;
+                if (version == 2)
+                {
+                    if (encrypted.Length < 1 + 16 + 32) return null;
+                    var iv = encrypted.AsSpan(1, 16).ToArray();
+                    var mac = encrypted.AsSpan(encrypted.Length - 32, 32).ToArray();
+                    var cipherLength = encrypted.Length - 1 - iv.Length - mac.Length;
+                    if (cipherLength < 0) return null;
+                    var cipher = encrypted.AsSpan(1 + iv.Length, cipherLength).ToArray();
+
+                    var (encKey, macKey) = DeriveSubKeys(dek);
+                    using (var hmac = new HMACSHA256(macKey))
+                    {
+                        hmac.TransformBlock(iv, 0, iv.Length, null, 0);
+                        hmac.TransformBlock(cipher, 0, cipher.Length, null, 0);
+                        hmac.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                        var computed = hmac.Hash;
+                        if (computed == null || !CryptographicOperations.FixedTimeEquals(computed, mac))
+                        {
+                            return null;
+                        }
+                    }
+
+                    try
+                    {
+                        using var aes = Aes.Create();
+                        aes.Key = encKey;
+                        aes.IV = iv;
+                        aes.Mode = CipherMode.CBC;
+                        aes.Padding = PaddingMode.PKCS7;
+                        using var decryptor = aes.CreateDecryptor();
+                        return decryptor.TransformFinalBlock(cipher, 0, cipher.Length);
+                    }
+                    catch
+                    {
+                        return null;
+                    }
+                }
+
+                return null;
             }
 
             return await _storage.GetFileAsync(fullPath, ct);
+        }
+
+        private static (byte[] EncKey, byte[] MacKey) DeriveSubKeys(byte[] dek)
+        {
+            using var hmac = new HMACSHA256(dek);
+            var encKey = hmac.ComputeHash(Encoding.UTF8.GetBytes("enc"));
+            var macKey = hmac.ComputeHash(Encoding.UTF8.GetBytes("mac"));
+            return (encKey, macKey);
         }
 
         private async Task<string> GetContentTypeAsync(DocumentView view, DocumentArtifact artifact, DocumentEncryptionKeysAdded? encryptionKeys, CancellationToken ct)

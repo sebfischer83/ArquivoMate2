@@ -128,8 +128,9 @@ namespace ArquivoMate2.Infrastructure.Services
             Buffer.BlockCopy(array, segment.Offset + cipherLength, tag, 0, 16);
 
             using var aes = new AesGcm(dek, 16);
-            aes.Decrypt(nonce, cipher, tag, cipher);
-            await destination.WriteAsync(cipher.AsMemory(0, cipher.Length), ct).ConfigureAwait(false);
+            var plaintext = new byte[cipher.Length];
+            aes.Decrypt(nonce, cipher, tag, plaintext);
+            await destination.WriteAsync(plaintext.AsMemory(0, plaintext.Length), ct).ConfigureAwait(false);
         }
 
         private static async Task StreamEncryptedVersion2Async(Stream encryptedStream, Stream destination, byte[] dek, CancellationToken ct)

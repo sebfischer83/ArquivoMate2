@@ -39,6 +39,7 @@ using MimeTypes;
 using Minio;
 using OpenAI.Batch;
 using OpenAI.Chat;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,6 +53,7 @@ using EmailCriteria = ArquivoMate2.Domain.Email.EmailCriteria;
 using JasperFx.Events.Projections;
 using ArquivoMate2.Application.Interfaces.Sharing;
 using ArquivoMate2.Infrastructure.Services.Encryption; // Encryption helpers
+using ArquivoMate2.Application.Interfaces; // ensure interface is visible
 
 namespace ArquivoMate2.Infrastructure.Configuration
 {
@@ -220,10 +222,10 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 else
                 {
                     services.AddScoped<IChatBot, OpenAIChatBot>(_ =>
-                    {
-                        ChatClient client = new(model: openAISettings.Model, apiKey: openAISettings.ApiKey);
-                        return new OpenAIChatBot(client);
-                    });
+                        {
+                            ChatClient client = new(model: openAISettings.Model, apiKey: openAISettings.ApiKey);
+                            return new OpenAIChatBot(client);
+                        });
                 }
             }
             else
@@ -251,8 +253,11 @@ namespace ArquivoMate2.Infrastructure.Configuration
             switch (settings)
             {
                 case S3StorageProviderSettings local:
-                    services.Configure<S3StorageProviderSettings>(config.GetSection("StorageProvider").GetSection("Args"));
+                    // Register the resolved settings instance (which already merged parent-level RootPath)
+                    services.AddSingleton<Microsoft.Extensions.Options.IOptions<S3StorageProviderSettings>>(Microsoft.Extensions.Options.Options.Create(local));
                     services.AddScoped<IStorageProvider, S3StorageProvider>();
+
+                    // Configure Minio client with resolved S3 settings
                     var endpoint = local.Endpoint;
                     services.AddMinio(configureClient => configureClient
                         .WithEndpoint(endpoint)
@@ -267,7 +272,12 @@ namespace ArquivoMate2.Infrastructure.Configuration
             switch (deliverySettings)
             {
                 case DeliveryProviderSettings noop when noop.Type == DeliveryProviderType.Noop:
+                    // Default noop returns the raw fullPath. If you want server-side delivery, register ServerDeliveryProvider in DI and change config.
                     services.AddScoped<IDeliveryProvider, NoopDeliveryProvider>();
+                    break;
+                case DeliveryProviderSettings server when server.Type == DeliveryProviderType.Server:
+                    // Route delivery through the API server. ServerDeliveryProvider builds a /api/delivery/... URL with a token.
+                    services.AddScoped<IDeliveryProvider, ServerDeliveryProvider>();
                     break;
                 case S3DeliveryProviderSettings s3:
                     services.Configure<S3DeliveryProviderSettings>(config.GetSection("DeliveryProvider").GetSection("Args"));
@@ -297,6 +307,13 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 r.DBConfig.AbortOnConnectFail = false;
             }).WithSystemTextJson("A"));
 
+            // Register a StackExchange.Redis ConnectionMultiplexer for direct Redis operations (admin tasks)
+            var redisConfig = config["Redis:Configuration"] ?? "cache:6379";
+            var redisOptions = ConfigurationOptions.Parse(redisConfig);
+            redisOptions.AbortOnConnectFail = false;
+            var mux = ConnectionMultiplexer.Connect(redisOptions);
+            services.AddSingleton<IConnectionMultiplexer>(mux);
+
             services.Configure<EncryptionSettings>(config.GetSection("Encryption"));
             services.AddSingleton(sp => sp.GetRequiredService<IOptions<EncryptionSettings>>().Value);
             services.AddTransient<IEncryptionService, EncryptionService>();
@@ -305,6 +322,8 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddSingleton(sp => sp.GetRequiredService<IOptions<AppSettings>>().Value);
             services.AddTransient<IExternalShareService, ExternalShareService>();
             services.AddTransient<IDocumentArtifactStreamer, DocumentArtifactStreamer>();
+            // Register Marten-backed document encryption keys provider
+            services.AddScoped<IDocumentEncryptionKeysProvider, MartenDocumentEncryptionKeysProvider>();
 
             return services;
         }

@@ -51,3 +51,40 @@ Bulk & admin tooling:
 - [ ] Bulk hide/unhide operations
 - [ ] Aggregated status summary endpoint
 - [ ] Administrative UI for job & projection health
+
+## Delivery Provider configuration
+
+ArquivoMate2 supports multiple delivery provider strategies via the `DeliveryProvider:Type` configuration. Available built-in types:
+
+- `Noop` — returns the storage `fullPath` unchanged (client is expected to fetch directly from storage/CDN).
+- `S3` — returns presigned S3/Minio URLs or direct public URLs when a bucket is public.
+- `Bunny` — builds BunnyCDN URLs; can optionally sign them using token authentication.
+- `Server` — routes delivery through the API server. The provider returns a URL of the form `/api/delivery/{documentId}/{artifact}?token={token}` and is useful when you want the server to remain in the control path (uniform access control, logging, on-the-fly decryption).
+
+Choosing a provider
+
+- Use `S3`/`Bunny` when you prefer client ↔ storage direct downloads (best for large files and CDN offload).
+- Use `Server` when the API must be the download entry-point (for decryption, additional auth, or to keep storage paths private).
+- Use `Noop` only when downstream clients already know how to resolve the `fullPath` values the app exposes.
+
+How to enable via `appsettings.json`
+
+Set the `DeliveryProvider:Type` to the desired provider name (case-insensitive). Example that enables server-side routing:
+
+```json
+{
+  "DeliveryProvider": {
+    "Type": "Server"
+  },
+  "App": { "PublicBaseUrl": "https://api.example.com" },
+  "Encryption": { "TokenTtlMinutes": 60 }
+}
+```
+
+Notes
+
+- When `Server` is selected the DI container registers `ServerDeliveryProvider` and `IDeliveryProvider.GetAccessUrl(fullPath)` will return a server URL with a short-lived token. If you prefer a programmatic swap instead of configuration you can replace the DI registration in the infrastructure DI file.
+- `App:PublicBaseUrl` is optional but recommended in reverse-proxy deployments to produce absolute URLs.
+- `Encryption:TokenTtlMinutes` controls token lifetime used for delivery URLs.
+
+For more details about streaming, decryption and controller usage see `docs/delivery.md`.

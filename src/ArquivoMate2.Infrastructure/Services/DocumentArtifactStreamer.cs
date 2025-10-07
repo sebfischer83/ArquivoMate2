@@ -20,12 +20,14 @@ namespace ArquivoMate2.Infrastructure.Services
         private readonly IQuerySession _query;
         private readonly IStorageProvider _storage;
         private readonly EncryptionSettings _enc;
+        private readonly IDocumentEncryptionKeysProvider _keysProvider;
 
-        public DocumentArtifactStreamer(IQuerySession query, IStorageProvider storage, EncryptionSettings enc)
+        public DocumentArtifactStreamer(IQuerySession query, IStorageProvider storage, IDocumentEncryptionKeysProvider keysProvider, EncryptionSettings enc)
         {
             _query = query;
             _storage = storage;
             _enc = enc;
+            _keysProvider = keysProvider;
         }
 
         private static readonly string[] Artifacts = ["file", "preview", "thumb", "metadata", "archive"];
@@ -50,8 +52,7 @@ namespace ArquivoMate2.Infrastructure.Services
 
             if (_enc.Enabled && view.Encrypted)
             {
-                var events = await _query.Events.FetchStreamAsync(documentId, token: ct).ConfigureAwait(false);
-                var keysEvent = events.Select(e => e.Data).OfType<DocumentEncryptionKeysAdded>().LastOrDefault();
+                var keysEvent = await _keysProvider.GetLatestAsync(documentId, ct).ConfigureAwait(false);
                 if (keysEvent == null) throw new FileNotFoundException();
 
                 var entry = keysEvent.Artifacts.FirstOrDefault(a => a.Artifact == artifact);

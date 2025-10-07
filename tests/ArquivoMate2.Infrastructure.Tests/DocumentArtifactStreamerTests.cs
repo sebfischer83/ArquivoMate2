@@ -12,7 +12,6 @@ using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Infrastructure.Persistance;
 using ArquivoMate2.Infrastructure.Services;
 using Marten;
-using Marten.Events;
 using Moq;
 using Xunit;
 
@@ -47,7 +46,9 @@ namespace ArquivoMate2.Infrastructure.Tests
                         await callback(source, token).ConfigureAwait(false);
                     }));
 
-            var streamer = new DocumentArtifactStreamer(query.Object, storage.Object, new EncryptionSettings { Enabled = false });
+            var keysProvider = new Mock<IDocumentEncryptionKeysProvider>();
+
+            var streamer = new DocumentArtifactStreamer(query.Object, storage.Object, keysProvider.Object, new EncryptionSettings { Enabled = false });
 
             var (writeAsync, contentType) = await streamer.GetAsync(documentId, artifact, CancellationToken.None);
 
@@ -84,9 +85,6 @@ namespace ArquivoMate2.Infrastructure.Tests
             query.Setup(q => q.LoadAsync<DocumentView>(documentId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(view);
 
-            var eventStore = new Mock<IEventStore>();
-            query.SetupGet(q => q.Events).Returns(eventStore.Object);
-
             var dek = Enumerable.Range(33, 32).Select(i => (byte)i).ToArray();
             var wrapNonce = Enumerable.Range(65, 12).Select(i => (byte)i).ToArray();
             var wrapped = new byte[dek.Length];
@@ -103,11 +101,9 @@ namespace ArquivoMate2.Infrastructure.Tests
                 new[] { new EncryptedArtifactKey(artifact, wrappedDek, wrapNonce, "AES-256-CBC-HMACSHA256", "2") },
                 DateTime.UtcNow);
 
-            var eventMock = new Mock<IEvent>();
-            eventMock.SetupGet(e => e.Data).Returns(keysEvent);
-
-            eventStore.Setup(e => e.FetchStreamAsync(documentId, 0, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<IEvent> { eventMock.Object });
+            var keysProvider = new Mock<IDocumentEncryptionKeysProvider>();
+            keysProvider.Setup(k => k.GetLatestAsync(documentId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(keysEvent);
 
             var plainBytes = Encoding.UTF8.GetBytes("super secret document");
             var (encKey, macKey) = DeriveSubKeys(dek);
@@ -147,7 +143,7 @@ namespace ArquivoMate2.Infrastructure.Tests
                         await callback(source, token).ConfigureAwait(false);
                     }));
 
-            var streamer = new DocumentArtifactStreamer(query.Object, storage.Object, encryptionSettings);
+            var streamer = new DocumentArtifactStreamer(query.Object, storage.Object, keysProvider.Object, encryptionSettings);
 
             var (writeAsync, contentType) = await streamer.GetAsync(documentId, artifact, CancellationToken.None);
 

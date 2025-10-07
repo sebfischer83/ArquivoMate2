@@ -12,7 +12,8 @@ namespace ArquivoMate2.Infrastructure.Configuration.DeliveryProvider
         Noop,
         S3,
         Bunny,
-        Cloudfront
+        Cloudfront,
+        Server // New: route delivery through the API server (/api/delivery/...)
     }
 
     public class DeliveryProviderSettings
@@ -72,6 +73,7 @@ namespace ArquivoMate2.Infrastructure.Configuration.DeliveryProvider
                 DeliveryProviderType.Noop => new DeliveryProviderSettings { Type = DeliveryProviderType.Noop },
                 DeliveryProviderType.S3 => BindAndMarkS3(section),
                 DeliveryProviderType.Bunny => BindAndMarkBunny(section),
+                DeliveryProviderType.Server => new DeliveryProviderSettings { Type = DeliveryProviderType.Server },
                 _ => throw new InvalidOperationException($"Unbekannter DeliveryProvider-Typ: {type}")
             };
         }

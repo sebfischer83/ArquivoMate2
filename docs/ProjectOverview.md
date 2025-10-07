@@ -104,6 +104,35 @@ Current Test Projects:
 
 ---
 
+## Streaming delivery (memory-efficient streaming)
+
+Overview
+- To support large artifacts and reduce memory pressure on the API host, delivery is implemented using a streaming pipeline.
+- The project exposes two essential components:
+  - `IDocumentArtifactStreamer` — resolves document artifact metadata and returns a `WriteToAsync` delegate plus a `ContentType`. The delegate writes bytes directly into a provided destination `Stream`.
+  - `IStorageProvider.StreamFileAsync(string fullPath, Func<Stream, CancellationToken, Task> streamConsumer, CancellationToken ct = default)` — a streaming contract the storage providers implement. The storage implementation should invoke `streamConsumer` with a stream that yields the object bytes and respect cancellation.
+
+How it is used (controller pattern)
+- Typical flow in `DeliveryController`:
+  1. Validate a short-lived signed access token (`IFileAccessTokenService`).
+  2. Resolve the document projection and verify permissions/state.
+  3. Call `IDocumentArtifactStreamer.GetAsync(documentId, artifact, ct)` which returns `(writeToAsync, contentType)`.
+  4. Set response headers (content-type, client caching) and stream using the returned delegate. In the API we use `PushStreamResult` which calls the delegate with `Response.Body` so the controller never buffers the full artifact.
+
+Current implementation notes
+- `DocumentArtifactStreamer` unwraps per-artifact DEKs (when encryption is enabled) via `IDocumentEncryptionKeysProvider` and performs on-the-fly decryption (supports version 1 and 2 formats) while streaming.
+- `S3StorageProvider.StreamFileAsync` currently buffers the object into a MemoryStream before invoking the consumer. This is functional and keeps compatibility with decryption logic that expects a seekable stream but reduces memory-efficiency for large objects.
+
+Recommendations
+- Preferred: Implement `StreamFileAsync` to invoke the consumer with a streaming read-only stream from the storage client (zero-copy), avoiding large MemoryStream buffers.
+- Ensure all consumers handle non-seekable streams and support cancellation propagation.
+- For HMAC/MAC verification that currently requires looking at trailing bytes, implement streaming MAC calculation rather than full buffering where possible.
+
+Further details and examples
+- A focused how-to with examples for controllers, storage providers and clients is available in `docs/delivery.md`.
+
+---
+
 ## Document Sharing & Permission Flags
 
 This section consolidates sharing-related documentation into the project overview.
@@ -208,4 +237,4 @@ Shared <-> API & Application (data contracts)
 
 ---
 
-*Last updated: 2025-10-05*
+*Last updated: 2025-10-07*

@@ -24,18 +24,31 @@ namespace ArquivoMate2.Infrastructure.Configuration.StorageProvider
 
             return type switch
             {
-                //FileProviderType.Local => section.Get<LocalFileProviderSettings>()
-                //                               ?? throw new InvalidOperationException("LocalFileProviderSettings fehlt."),
-                //FileProviderType.AzureBlob => section.Get<AzureBlobFileProviderSettings>()
-                //                               ?? throw new InvalidOperationException("AzureBlobFileProviderSettings fehlt."),
-                StorageProviderType.S3 => section.GetSection("Args").Get<S3StorageProviderSettings>()
-                                               ?? throw new InvalidOperationException("S3FileProviderSettings fehlt."),
-                //FileProviderType.NFS => section.Get<NfsFileProviderSettings>()
-                //                               ?? throw new InvalidOperationException("NfsFileProviderSettings fehlt."),
-                //FileProviderType.Bunny => section.Get<BunnyFileProviderSettings>()
-                //                               ?? throw new InvalidOperationException("BunnyFileProviderSettings fehlt."),
+                StorageProviderType.S3 => BuildS3Settings(section),
                 _ => throw new InvalidOperationException($"Unbekannter FileProvider-Typ: {type}")
             };
+        }
+
+        private S3StorageProviderSettings BuildS3Settings(IConfigurationSection section)
+        {
+            var argsSection = section.GetSection("Args");
+            // Bind S3 settings from Args (most settings live here)
+            var s3 = argsSection.Get<S3StorageProviderSettings>() ?? new S3StorageProviderSettings();
+
+            // Always take Type and RootPath from the parent StorageProvider section
+            var parentType = section.GetValue<StorageProviderType?>("Type");
+            if (parentType.HasValue)
+            {
+                s3.Type = parentType.Value;
+            }
+
+            var parentRoot = section.GetValue<string>("RootPath");
+            if (!string.IsNullOrWhiteSpace(parentRoot))
+            {
+                s3.RootPath = parentRoot;
+            }
+
+            return s3;
         }
     }
 }

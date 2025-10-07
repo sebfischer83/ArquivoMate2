@@ -13,16 +13,19 @@ using System;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using ArquivoMate2.API.Results;
+using ArquivoMate2.API.Utilities;
 
 namespace ArquivoMate2.API.Controllers
 {
     [ApiController]
     [AllowAnonymous] // Access controlled solely via signed token
-    [Route("api/delivery")]    
+    [Route("api/delivery")]
     public class DeliveryController : ControllerBase
     {
         private readonly IQuerySession _query;
         private readonly IStorageProvider _storage;
+        private readonly IDocumentArtifactStreamer _streamer;
         private readonly IFileAccessTokenService _tokenService;
         private readonly IEncryptionService _encryption;
         private readonly EncryptionSettings _settings;
@@ -31,6 +34,7 @@ namespace ArquivoMate2.API.Controllers
 
         public DeliveryController(IQuerySession query,
             IStorageProvider storage,
+            IDocumentArtifactStreamer streamer,
             IFileAccessTokenService tokenService,
             IEncryptionService encryption,
             IOptions<EncryptionSettings> settings,
@@ -38,6 +42,7 @@ namespace ArquivoMate2.API.Controllers
         {
             _query = query;
             _storage = storage;
+            _streamer = streamer;
             _tokenService = tokenService;
             _encryption = encryption;
             _settings = settings.Value;
@@ -47,6 +52,14 @@ namespace ArquivoMate2.API.Controllers
         /// <summary>
         /// Delivers an (optionally encrypted) artifact for a document when a valid access token is supplied.
         /// </summary>
+        /// <param name="documentId">Identifier of the document to deliver.</param>
+        /// <param name="artifact">Which artifact to return (file, preview, thumb, metadata, archive).</param>
+        /// <param name="token">Signed access token that authorizes delivery of the requested artifact.</param>
+        /// <param name="ct">Cancellation token for the request.</param>
+        /// <returns>
+        /// A streamed file result that writes the artifact directly into the HTTP response, or NotFound when validation fails
+        /// or the artifact cannot be retrieved / decrypted.
+        /// </returns>
         [HttpGet("{documentId:guid}/{artifact}")]
         public async Task<IActionResult> Get(Guid documentId, DocumentArtifact artifact, [FromQuery] string token, CancellationToken ct)
         {
@@ -60,7 +73,6 @@ namespace ArquivoMate2.API.Controllers
                 .Where(d => d.Id == documentId && !d.Deleted)
                 .FirstOrDefaultAsync(ct);
             if (view == null) return NotFound();
-            if (_settings.Enabled && !view.Encrypted) return NotFound();
 
             string? fullPath = artifact switch
             {
@@ -73,46 +85,83 @@ namespace ArquivoMate2.API.Controllers
             };
             if (fullPath == null) return NotFound();
 
+            // Pre-flight check for encryption keys when encryption is enabled AND the document is encrypted
             DocumentEncryptionKeysAdded? encryptionKeys = null;
-            if (_settings.Enabled)
+            if (_settings.Enabled && view.Encrypted)
             {
-                if (!view.Encrypted) return NotFound();
                 var events = await _query.Events.FetchStreamAsync(documentId, token: ct);
                 encryptionKeys = events.Select(e => e.Data).OfType<DocumentEncryptionKeysAdded>().LastOrDefault();
                 if (encryptionKeys == null) return NotFound();
             }
 
-            var contentBytes = await TryGetArtifactBytesAsync(view, artifact, fullPath, encryptionKeys, ct);
-            if (contentBytes == null) return NotFound();
+            try
+            {
+                // Use the streaming artifact streamer to obtain a write delegate and content type
+                var artifactWire = artifact.ToWireValue();
+                var (writeToAsync, contentType) = await _streamer.GetAsync(documentId, artifactWire, ct);
 
-            var contentType = await GetContentTypeAsync(view, artifact, encryptionKeys, ct);
+                ApplyClientCacheHeaders();
 
-            ApplyClientCacheHeaders();
-            return File(contentBytes, contentType);
+                // Return a PushStreamResult which will invoke the provided delegate and stream directly to response
+                return new PushStreamResult(contentType, writeToAsync);
+            }
+            catch (FileNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (OperationCanceledException)
+            {
+                return NotFound();
+            }
         }
 
+        /// <summary>
+        /// Adds cache headers to the HTTP response instructing clients and proxies to cache the response
+        /// for one year and treat it as immutable. Used for delivered artifacts (stable content).
+        /// </summary>
         private void ApplyClientCacheHeaders()
         {
             Response.Headers["Cache-Control"] = $"public, max-age={OneYearSeconds}, immutable";
             Response.Headers["Expires"] = DateTime.UtcNow.AddSeconds(OneYearSeconds).ToString("R");
         }
 
+        /// <summary>
+        /// Attempts to retrieve the raw bytes for the requested artifact. When encryption is enabled this method
+        /// will:
+        /// - fetch an encrypted blob from the configured storage (with caching),
+        /// - unwrap the DEK using the master key and the per-artifact wrap metadata,
+        /// - decrypt the blob using the appropriate algorithm/version and return the plaintext bytes.
+        ///
+        /// When encryption is disabled or when the document is not encrypted the method simply returns the remote bytes from storage.
+        /// </summary>
+        /// <param name="view">The document projection containing artifact paths and encryption flag.</param>
+        /// <param name="artifact">Requested artifact type.</param>
+        /// <param name="fullPath">Full storage path/object key for the artifact.</param>
+        /// <param name="encryptionKeys">Event payload that contains wrapped DEKs for artifacts or null.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>Plaintext bytes of the artifact, or null when retrieval or decryption fails.</returns>
         private async Task<byte[]?> TryGetArtifactBytesAsync(DocumentView view, DocumentArtifact artifact, string fullPath, DocumentEncryptionKeysAdded? encryptionKeys, CancellationToken ct)
         {
-            if (_settings.Enabled)
+            // Only attempt decryption when encryption feature is enabled AND the document actually has encryption keys
+            if (_settings.Enabled && encryptionKeys != null)
             {
-                if (encryptionKeys == null) return null;
-
                 byte[]? encrypted = null;
                 var artifactWire = artifact.ToWireValue();
-                var cacheKey = $"encfile:{view.Id}:{artifactWire}";
+                var (cacheKey, shouldCache) = CacheKeyHelper.CacheKeyFor(artifactWire, view.Id);
 
-                var cached = await _cache.GetAsync<byte[]>(cacheKey);
-                if (cached.HasValue) encrypted = cached.Value;
+                if (shouldCache)
+                {
+                    var cached = await _cache.GetAsync<byte[]>(cacheKey);
+                    if (cached.HasValue) encrypted = cached.Value;
+                }
+
                 if (encrypted == null)
                 {
                     encrypted = await _storage.GetFileAsync(fullPath, ct);
-                    await _cache.SetAsync(cacheKey, encrypted, TimeSpan.FromMinutes(_settings.CacheTtlMinutes));
+                    if (shouldCache && encrypted != null && encrypted.Length > 0)
+                    {
+                        await _cache.SetAsync(cacheKey, encrypted, TimeSpan.FromMinutes(_settings.CacheTtlMinutes));
+                    }
                 }
 
                 if (encrypted.Length < 1) return null;
@@ -197,9 +246,16 @@ namespace ArquivoMate2.API.Controllers
                 return null;
             }
 
+            // Fallback: return raw bytes from storage (no encryption/decryption required)
             return await _storage.GetFileAsync(fullPath, ct);
         }
 
+        /// <summary>
+        /// Derives separate encryption and MAC keys from the document encryption key (DEK).
+        /// Uses HMAC-SHA256 on the DEK with labels "enc" and "mac".
+        /// </summary>
+        /// <param name="dek">Document encryption key (32 bytes).</param>
+        /// <returns>Tuple with encryption key and MAC key.</returns>
         private static (byte[] EncKey, byte[] MacKey) DeriveSubKeys(byte[] dek)
         {
             using var hmac = new HMACSHA256(dek);
@@ -208,6 +264,15 @@ namespace ArquivoMate2.API.Controllers
             return (encKey, macKey);
         }
 
+        /// <summary>
+        /// Resolves the content type for the given artifact. For the main file artifact the method will try
+        /// to read MIME type from metadata (if present); otherwise falls back to an artifact-specific default.
+        /// </summary>
+        /// <param name="view">Document projection containing metadata path</param>
+        /// <param name="artifact">Requested artifact</param>
+        /// <param name="encryptionKeys">Encryption key event payload (may be required to decrypt metadata)</param>
+        /// <param name="ct">Cancellation token</param>
+        /// <returns>Content type (MIME) string to use for the HTTP response.</returns>
         private async Task<string> GetContentTypeAsync(DocumentView view, DocumentArtifact artifact, DocumentEncryptionKeysAdded? encryptionKeys, CancellationToken ct)
         {
             if (artifact == DocumentArtifact.File)
@@ -219,6 +284,14 @@ namespace ArquivoMate2.API.Controllers
             return GetDefaultContentType(artifact);
         }
 
+        /// <summary>
+        /// Attempts to read a JSON metadata artifact and extract the stored MimeType property.
+        /// If the metadata cannot be read, deserialized or does not contain a MimeType the method returns null.
+        /// </summary>
+        /// <param name="view">Document projection containing the MetadataPath.</param>
+        /// <param name="encryptionKeys">Encryption metadata required to decrypt the metadata artifact if encryption is enabled.</param>
+        /// <param name="ct">Cancellation token</param>
+        /// <returns>Mime type string from metadata or null when unavailable.</returns>
         private async Task<string?> TryGetMimeTypeFromMetadataAsync(DocumentView view, DocumentEncryptionKeysAdded? encryptionKeys, CancellationToken ct)
         {
             if (string.IsNullOrEmpty(view.MetadataPath)) return null;
@@ -241,6 +314,11 @@ namespace ArquivoMate2.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Returns a safe default content type for artifacts that do not provide explicit MIME information.
+        /// </summary>
+        /// <param name="artifact">Artifact type</param>
+        /// <returns>Default MIME type for the artifact</returns>
         private static string GetDefaultContentType(DocumentArtifact artifact) => artifact switch
         {
             DocumentArtifact.Thumb => "image/webp",

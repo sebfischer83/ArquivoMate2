@@ -71,31 +71,19 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
         {
             if (streamConsumer == null) throw new ArgumentNullException(nameof(streamConsumer));
 
-            Exception? callbackException = null;
+            using var ms = new MemoryStream();
             var args = new GetObjectArgs()
                 .WithBucket(_settings.BucketName)
                 .WithObject(fullPath)
                 .WithCallbackStream(stream =>
                 {
-                    try
-                    {
-                        streamConsumer(stream, ct).GetAwaiter().GetResult();
-                    }
-                    catch (Exception ex)
-                    {
-                        callbackException = ex;
-                        throw;
-                    }
+                    // Buffer the stream synchronously into the memory stream
+                    stream.CopyTo(ms);
                 });
 
-            try
-            {
-                await _storage.GetObjectAsync(args, ct).ConfigureAwait(false);
-            }
-            catch when (callbackException != null)
-            {
-                throw callbackException;
-            }
+            await _storage.GetObjectAsync(args, ct).ConfigureAwait(false);
+            ms.Position = 0;
+            await streamConsumer(ms, ct).ConfigureAwait(false);
         }
     }
 }

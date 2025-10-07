@@ -1,3 +1,4 @@
+using ArquivoMate2.API.Results;
 using ArquivoMate2.Application.Configuration;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Sharing;
@@ -42,8 +43,8 @@ namespace ArquivoMate2.API.Controllers
 
             try
             {
-                var (content, contentType) = await _streamer.GetAsync(share.DocumentId, share.Artifact, ct);
-                return File(content, contentType);
+                var (writeAsync, contentType) = await _streamer.GetAsync(share.DocumentId, share.Artifact, ct);
+                return new PushStreamResult(contentType, writeAsync);
             }
             catch
             {

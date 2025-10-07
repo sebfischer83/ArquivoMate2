@@ -1,6 +1,7 @@
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Infrastructure.Configuration.StorageProvider;
 using Microsoft.Extensions.Options;
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,5 +39,6 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
 
         public abstract Task<string> SaveFileAsync(string userId, Guid documentId, string filename, Stream content, string artifact = "file", CancellationToken ct = default);
         public abstract Task<byte[]> GetFileAsync(string fullPath, CancellationToken ct = default);
+        public abstract Task StreamFileAsync(string fullPath, Func<Stream, CancellationToken, Task> streamConsumer, CancellationToken ct = default);
     }
 }

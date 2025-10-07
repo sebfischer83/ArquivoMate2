@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using MimeTypes;
 using Minio;
 using Minio.DataModel.Args;
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -64,6 +65,25 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
                 .WithCallbackStream(stream => stream.CopyTo(ms));
             await _storage.GetObjectAsync(args, ct).ConfigureAwait(false);
             return ms.ToArray();
+        }
+
+        public override async Task StreamFileAsync(string fullPath, Func<Stream, CancellationToken, Task> streamConsumer, CancellationToken ct = default)
+        {
+            if (streamConsumer == null) throw new ArgumentNullException(nameof(streamConsumer));
+
+            using var ms = new MemoryStream();
+            var args = new GetObjectArgs()
+                .WithBucket(_settings.BucketName)
+                .WithObject(fullPath)
+                .WithCallbackStream(stream =>
+                {
+                    // Buffer the stream synchronously into the memory stream
+                    stream.CopyTo(ms);
+                });
+
+            await _storage.GetObjectAsync(args, ct).ConfigureAwait(false);
+            ms.Position = 0;
+            await streamConsumer(ms, ct).ConfigureAwait(false);
         }
     }
 }

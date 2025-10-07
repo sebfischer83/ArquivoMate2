@@ -223,28 +223,60 @@ namespace ArquivoMate2.Application.Handlers
         private async Task<ExtractionArtifacts> PersistAndGenerateDerivativesAsync(ProcessDocumentCommand request, LoadedContext ctx, FileStream openStream, CancellationToken ct)
         {
             var keys = new List<EncryptedArtifactKey>();
-            var originalBytes = File.ReadAllBytes(ctx.PhysicalPath);
-            var (filePath, k1) = await SaveMaybeEncryptedAsync(request.UserId, request.DocumentId, Path.GetFileName(ctx.PhysicalPath), originalBytes, "file", ct);
+
+            string filePath;
+            EncryptedArtifactKey? k1;
+            await using (var originalStream = new FileStream(ctx.PhysicalPath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, FileOptions.SequentialScan))
+            {
+                (filePath, k1) = await SaveMaybeEncryptedAsync(request.UserId, request.DocumentId, Path.GetFileName(ctx.PhysicalPath), originalStream, "file", ct);
+            }
             if (k1 != null) keys.Add(k1);
 
             var metaBytes = JsonSerializer.SerializeToUtf8Bytes(ctx.Metadata);
             var (metaPath, kMeta) = await SaveMaybeEncryptedAsync(request.UserId, request.DocumentId, Path.ChangeExtension(Path.GetFileName(ctx.PhysicalPath), "metadata"), metaBytes, "metadata", ct);
             if (kMeta != null) keys.Add(kMeta);
 
-            openStream.Position = 0;
+            if (openStream.CanSeek)
+            {
+                openStream.Position = 0;
+            }
             var thumbBytes = _thumbnailService.GenerateThumbnail(openStream);
             string baseName = Path.GetFileNameWithoutExtension(ctx.PhysicalPath);
             var (thumbPath, kThumb) = await SaveMaybeEncryptedAsync(request.UserId, request.DocumentId, $"{baseName}-thumb.webp", thumbBytes, "thumb", ct);
             if (kThumb != null) keys.Add(kThumb);
 
-            openStream.Position = 0;
-            var previewPdf = await _documentTextExtractor.GeneratePreviewPdf(openStream, ctx.Metadata, ct);
-            var (previewPath, kPrev) = await SaveMaybeEncryptedAsync(request.UserId, request.DocumentId, $"{baseName}-preview.pdf", previewPdf, "preview", ct);
+            string previewPath;
+            EncryptedArtifactKey? kPrev;
+            if (openStream.CanSeek)
+            {
+                openStream.Position = 0;
+            }
+            await using (var previewStream = CreateTempFileStream())
+            {
+                await _documentTextExtractor.GeneratePreviewPdf(openStream, ctx.Metadata, previewStream, ct);
+                if (previewStream.CanSeek)
+                {
+                    previewStream.Position = 0;
+                }
+                (previewPath, kPrev) = await SaveMaybeEncryptedAsync(request.UserId, request.DocumentId, $"{baseName}-preview.pdf", previewStream, "preview", ct);
+            }
             if (kPrev != null) keys.Add(kPrev);
 
-            openStream.Position = 0;
-            var archivePdf = await _documentTextExtractor.GenerateArchivePdf(openStream, ctx.Metadata, ct);
-            var (archivePath, kArch) = await SaveMaybeEncryptedAsync(request.UserId, request.DocumentId, $"{baseName}-archive.pdf", archivePdf, "archive", ct);
+            string archivePath;
+            EncryptedArtifactKey? kArch;
+            if (openStream.CanSeek)
+            {
+                openStream.Position = 0;
+            }
+            await using (var archiveStream = CreateTempFileStream())
+            {
+                await _documentTextExtractor.GenerateArchivePdf(openStream, ctx.Metadata, archiveStream, ct);
+                if (archiveStream.CanSeek)
+                {
+                    archiveStream.Position = 0;
+                }
+                (archivePath, kArch) = await SaveMaybeEncryptedAsync(request.UserId, request.DocumentId, $"{baseName}-archive.pdf", archiveStream, "archive", ct);
+            }
             if (kArch != null) keys.Add(kArch);
 
             Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, archivePath, DateTime.UtcNow));
@@ -254,12 +286,24 @@ namespace ArquivoMate2.Application.Handlers
 
         private async Task<(string path, EncryptedArtifactKey? key)> SaveMaybeEncryptedAsync(string userId, Guid docId, string filename, byte[] bytes, string artifact, CancellationToken ct)
         {
+            using var ms = new MemoryStream(bytes, writable: false);
+            return await SaveMaybeEncryptedAsync(userId, docId, filename, ms, artifact, ct).ConfigureAwait(false);
+        }
+
+        private async Task<(string path, EncryptedArtifactKey? key)> SaveMaybeEncryptedAsync(string userId, Guid docId, string filename, Stream content, string artifact, CancellationToken ct)
+        {
+            if (content.CanSeek)
+            {
+                content.Position = 0;
+            }
+
             if (_encryptionService.IsEnabled)
             {
-                return await _encryptionService.SaveAsync(userId, docId, filename, bytes, artifact, ct);
+                return await _encryptionService.SaveAsync(userId, docId, filename, content, artifact, ct).ConfigureAwait(false);
             }
-            var p = await _storage.SaveFile(userId, docId, filename, bytes, artifact);
-            return (p, null);
+
+            var path = await _storage.SaveFileAsync(userId, docId, filename, content, artifact, ct).ConfigureAwait(false);
+            return (path, null);
         }
         #endregion
 
@@ -309,6 +353,12 @@ namespace ArquivoMate2.Application.Handlers
         #endregion
 
         #region Helpers
+        private static FileStream CreateTempFileStream()
+        {
+            var tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            return new FileStream(tempPath, FileMode.Create, FileAccess.ReadWrite, FileShare.None, 81920, FileOptions.Asynchronous | FileOptions.DeleteOnClose);
+        }
+
         private void Append(Guid streamId, object @event) => _session.Events.Append(streamId, @event);
         private bool IsSingleImage(DocumentMetadata metadata) => SupportedImageExtensions.Contains(metadata.Extension);
 

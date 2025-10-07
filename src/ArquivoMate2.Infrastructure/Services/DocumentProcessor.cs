@@ -7,8 +7,10 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using UglyToad.PdfPig;
 
@@ -155,7 +157,7 @@ namespace ArquivoMate2.Infrastructure.Services
             }
         }
 
-        public async Task<byte[]> GeneratePreviewPdf(Stream documentStream, DocumentMetadata documentMetadata, CancellationToken cancellationToken = default)
+        public async Task GeneratePreviewPdf(Stream documentStream, DocumentMetadata documentMetadata, Stream output, CancellationToken cancellationToken = default)
         {
             LogMemoryUsage("Start GeneratePreviewPdf", documentMetadata.DocumentId);
             var tempInput = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".pdf");
@@ -164,7 +166,11 @@ namespace ArquivoMate2.Infrastructure.Services
 
             try
             {
-                documentStream.Position = 0;
+                if (documentStream.CanSeek)
+                {
+                    documentStream.Position = 0;
+                }
+
                 using (var fs = new FileStream(tempInput, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
                     await documentStream.CopyToAsync(fs, 81920, cancellationToken).ConfigureAwait(false);
@@ -185,8 +191,8 @@ namespace ArquivoMate2.Infrastructure.Services
                 using (var proc = new Process { StartInfo = psi })
                 {
                     proc.Start();
-                    string stdOut = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
-                    string stdErr = await proc.StandardError.ReadToEndAsync().ConfigureAwait(false);
+                    _ = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
+                    _ = await proc.StandardError.ReadToEndAsync().ConfigureAwait(false);
                     using (cancellationToken.Register(() => proc.Kill()))
                     {
                         await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
@@ -208,8 +214,8 @@ namespace ArquivoMate2.Infrastructure.Services
                     using (var proc = new Process { StartInfo = psi })
                     {
                         proc.Start();
-                        string stdOut = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
-                        string stdErr = await proc.StandardError.ReadToEndAsync().ConfigureAwait(false);
+                        _ = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
+                        _ = await proc.StandardError.ReadToEndAsync().ConfigureAwait(false);
                         using (cancellationToken.Register(() => proc.Kill()))
                         {
                             await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
@@ -217,9 +223,20 @@ namespace ArquivoMate2.Infrastructure.Services
                     }
                 }
 
-                byte[] result = await File.ReadAllBytesAsync(tempOutput, cancellationToken).ConfigureAwait(false);
+                await using (var fs = new FileStream(tempOutput, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, FileOptions.SequentialScan))
+                {
+                    fs.Position = 0;
+                    await fs.CopyToAsync(output, 81920, cancellationToken).ConfigureAwait(false);
+                }
+
+                if (output.CanSeek)
+                {
+                    output.Position = 0;
+                }
+
+                await output.FlushAsync(cancellationToken).ConfigureAwait(false);
+
                 LogMemoryUsage("End GeneratePreviewPdf", documentMetadata.DocumentId);
-                return result;
             }
             finally
             {
@@ -228,7 +245,7 @@ namespace ArquivoMate2.Infrastructure.Services
             }
         }
 
-        public async Task<byte[]> GenerateArchivePdf(Stream documentStream, DocumentMetadata documentMetadata, CancellationToken cancellationToken = default)
+        public async Task GenerateArchivePdf(Stream documentStream, DocumentMetadata documentMetadata, Stream output, CancellationToken cancellationToken = default)
         {
             LogMemoryUsage("Start GenerateArchivePdf", documentMetadata.DocumentId);
             var tempInput = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".pdf");
@@ -236,7 +253,10 @@ namespace ArquivoMate2.Infrastructure.Services
             var tempOutput = tempOutputBase + ".pdf";
             try
             {
-                documentStream.Position = 0;
+                if (documentStream.CanSeek)
+                {
+                    documentStream.Position = 0;
+                }
                 using (var fs = new FileStream(tempInput, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
                     await documentStream.CopyToAsync(fs, 81920, cancellationToken).ConfigureAwait(false);
@@ -255,8 +275,8 @@ namespace ArquivoMate2.Infrastructure.Services
                 using (var proc = new Process { StartInfo = psi })
                 {
                     proc.Start();
-                    string stdOut = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
-                    string stdErr = await proc.StandardError.ReadToEndAsync().ConfigureAwait(false);
+                    _ = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
+                    _ = await proc.StandardError.ReadToEndAsync().ConfigureAwait(false);
                     using (cancellationToken.Register(() => proc.Kill()))
                     {
                         await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
@@ -278,16 +298,29 @@ namespace ArquivoMate2.Infrastructure.Services
                     using (var proc = new Process { StartInfo = psi })
                     {
                         proc.Start();
-                        string stdOut = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
-                        string stdErr = await proc.StandardError.ReadToEndAsync().ConfigureAwait(false);
+                        _ = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
+                        _ = await proc.StandardError.ReadToEndAsync().ConfigureAwait(false);
                         using (cancellationToken.Register(() => proc.Kill()))
                         {
                             await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
                         }
                     }
                 }
+
+                await using (var fs = new FileStream(tempOutput, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, FileOptions.SequentialScan))
+                {
+                    fs.Position = 0;
+                    await fs.CopyToAsync(output, 81920, cancellationToken).ConfigureAwait(false);
+                }
+
+                if (output.CanSeek)
+                {
+                    output.Position = 0;
+                }
+
+                await output.FlushAsync(cancellationToken).ConfigureAwait(false);
+
                 LogMemoryUsage("End GenerateArchivePdf", documentMetadata.DocumentId);
-                return await File.ReadAllBytesAsync(tempOutput, cancellationToken).ConfigureAwait(false);
             }
             finally
             {

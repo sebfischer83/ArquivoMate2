@@ -3,6 +3,7 @@ using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Infrastructure.Persistance;
 using Marten;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -43,11 +44,7 @@ namespace ArquivoMate2.Infrastructure.Services
             if (_enc.Enabled && view.Encrypted)
             {
                 var bytes = await _storage.GetFileAsync(path, ct);
-                if (bytes.Length < 1 + 12 + 16) throw new FileNotFoundException();
-                if (bytes[0] != 1) throw new FileNotFoundException();
-                var nonce = bytes.AsSpan(1, 12).ToArray();
-                var tag = bytes.AsSpan(bytes.Length - 16, 16).ToArray();
-                var cipher = bytes.AsSpan(13, bytes.Length - 13 - 16).ToArray();
+                if (bytes.Length < 1) throw new FileNotFoundException();
 
                 var events = await _query.Events.FetchStreamAsync(documentId, token: ct);
                 var keysEvent = events.Select(e => e.Data).OfType<DocumentEncryptionKeysAdded>().LastOrDefault();
@@ -61,18 +58,57 @@ namespace ArquivoMate2.Infrastructure.Services
                 {
                     aesWrap.Decrypt(entry.WrapNonce, wrapped, wrapTag, dek, Encoding.UTF8.GetBytes("DEK:" + artifact));
                 }
-                var plain = new byte[cipher.Length];
-                using (var aes = new AesGcm(dek, 16))
+
+                byte version = bytes[0];
+                if (version == 1)
                 {
-                    aes.Decrypt(nonce, cipher, tag, plain);
+                    if (bytes.Length < 1 + 12 + 16) throw new FileNotFoundException();
+                    var nonce = bytes.AsSpan(1, 12).ToArray();
+                    var tag = bytes.AsSpan(bytes.Length - 16, 16).ToArray();
+                    var cipher = bytes.AsSpan(13, bytes.Length - 13 - 16).ToArray();
+
+                    var plain = new byte[cipher.Length];
+                    using (var aes = new AesGcm(dek, 16))
+                    {
+                        aes.Decrypt(nonce, cipher, tag, plain);
+                    }
+                    return (plain, MapContentType(artifact, path));
                 }
-                return (plain, MapContentType(artifact, path));
+
+                if (version == 2)
+                {
+                    if (bytes.Length < 1 + 16 + 32) throw new FileNotFoundException();
+                    var iv = bytes.AsSpan(1, 16).ToArray();
+                    var mac = bytes.AsSpan(bytes.Length - 32, 32).ToArray();
+                    var cipherLength = bytes.Length - 1 - iv.Length - mac.Length;
+                    if (cipherLength < 0) throw new FileNotFoundException();
+                    var cipher = bytes.AsSpan(1 + iv.Length, cipherLength).ToArray();
+
+                    var (encKey, macKey) = DeriveSubKeys(dek);
+                    using (var hmac = new HMACSHA256(macKey))
+                    {
+                        hmac.TransformBlock(iv, 0, iv.Length, null, 0);
+                        hmac.TransformBlock(cipher, 0, cipher.Length, null, 0);
+                        hmac.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                        var computed = hmac.Hash ?? Array.Empty<byte>();
+                        if (!CryptographicOperations.FixedTimeEquals(computed, mac)) throw new FileNotFoundException();
+                    }
+
+                    using var aes = Aes.Create();
+                    aes.Key = encKey;
+                    aes.IV = iv;
+                    aes.Mode = CipherMode.CBC;
+                    aes.Padding = PaddingMode.PKCS7;
+                    using var decryptor = aes.CreateDecryptor();
+                    var plain = decryptor.TransformFinalBlock(cipher, 0, cipher.Length);
+                    return (plain, MapContentType(artifact, path));
+                }
+
+                throw new FileNotFoundException();
             }
-            else
-            {
-                var plain = await _storage.GetFileAsync(path, ct);
-                return (plain, MapContentType(artifact, path));
-            }
+
+            var plainBytes = await _storage.GetFileAsync(path, ct);
+            return (plainBytes, MapContentType(artifact, path));
         }
 
         private static string MapContentType(string artifact, string path) => artifact switch
@@ -82,5 +118,13 @@ namespace ArquivoMate2.Infrastructure.Services
             "preview" or "archive" or "file" => "application/pdf",
             _ => "application/octet-stream"
         };
+
+        private static (byte[] EncKey, byte[] MacKey) DeriveSubKeys(byte[] dek)
+        {
+            using var hmac = new HMACSHA256(dek);
+            var encKey = hmac.ComputeHash(Encoding.UTF8.GetBytes("enc"));
+            var macKey = hmac.ComputeHash(Encoding.UTF8.GetBytes("mac"));
+            return (encKey, macKey);
+        }
     }
 }

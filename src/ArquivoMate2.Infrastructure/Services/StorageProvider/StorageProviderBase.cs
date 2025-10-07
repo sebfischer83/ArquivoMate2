@@ -1,6 +1,9 @@
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Infrastructure.Configuration.StorageProvider;
 using Microsoft.Extensions.Options;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ArquivoMate2.Infrastructure.Services.StorageProvider
 {
@@ -27,7 +30,13 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
             return root + "/" + string.Join('/', parts);
         }
 
-        public abstract Task<string> SaveFile(string userId, Guid documentId, string filename, byte[] file, string artifact = "file");
+        public virtual async Task<string> SaveFile(string userId, Guid documentId, string filename, byte[] file, string artifact = "file")
+        {
+            using var stream = new MemoryStream(file, writable: false);
+            return await SaveFileAsync(userId, documentId, filename, stream, artifact).ConfigureAwait(false);
+        }
+
+        public abstract Task<string> SaveFileAsync(string userId, Guid documentId, string filename, Stream content, string artifact = "file", CancellationToken ct = default);
         public abstract Task<byte[]> GetFileAsync(string fullPath, CancellationToken ct = default);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.Import;
+using ArquivoMate2.Domain.ReadModels;
 using Marten.Events.Aggregation;
 using System;
 using System.Collections.Generic;

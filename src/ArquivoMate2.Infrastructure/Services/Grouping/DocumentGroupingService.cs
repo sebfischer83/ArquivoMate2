@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ArquivoMate2.Application.Interfaces.Grouping;
 using ArquivoMate2.Domain.Collections;
-using ArquivoMate2.Infrastructure.Persistance;
+using ArquivoMate2.Domain.ReadModels;
 using ArquivoMate2.Shared.Models.Grouping;
 using Marten;
 

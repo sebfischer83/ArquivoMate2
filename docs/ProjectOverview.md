@@ -156,7 +156,7 @@ This section consolidates sharing-related documentation into the project overvie
 
 - New permission flags require updating the enum and, if needed, the projection logic to expose derived sets. Clients may send flag combinations directly; old clients can continue to use `CanEdit` until migrated.
 
-References: `src/ArquivoMate2.Domain/Sharing/DocumentShare.cs`, `src/ArquivoMate2.Shared/Models/Sharing/DocumentPermissions.cs`, `src/ArquivoMate2.Infrastructure/Persistance/DocumentAccessView.cs`, `src/ArquivoMate2.Infrastructure/Services/Sharing/DocumentAccessUpdater.cs`, `src/ArquivoMate2.Infrastructure/Services/Sharing/DocumentAccessService.cs`.
+References: `src/ArquivoMate2.Domain/Sharing/DocumentShare.cs`, `src/ArquivoMate2.Shared/Models/Sharing/DocumentPermissions.cs`, `src/ArquivoMate2.Domain/ReadModels/DocumentAccessView.cs`, `src/ArquivoMate2.Infrastructure/Services/Sharing/DocumentAccessUpdater.cs`, `src/ArquivoMate2.Infrastructure/Services/Sharing/DocumentAccessService.cs`.
 
 ---
 

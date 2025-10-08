@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using ArquivoMate2.Application.Interfaces.Sharing;
 using ArquivoMate2.Domain.Sharing; // ShareGroup
 using ArquivoMate2.Shared.Models.Sharing; // ShareTargetType enum
-using ArquivoMate2.Infrastructure.Persistance;
+using ArquivoMate2.Domain.ReadModels;
 using Marten;
 using ArquivoMate2.Application.Interfaces; // ISearchClient
 

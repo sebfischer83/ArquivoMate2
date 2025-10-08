@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using ArquivoMate2.Shared.Models.Sharing;
 
-namespace ArquivoMate2.Infrastructure.Persistance;
+namespace ArquivoMate2.Domain.ReadModels;
 
 public class DocumentAccessView
 {

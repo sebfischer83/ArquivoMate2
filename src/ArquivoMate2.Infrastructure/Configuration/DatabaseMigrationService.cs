@@ -1,4 +1,4 @@
-﻿using ArquivoMate2.Infrastructure.Persistance;
+﻿using ArquivoMate2.Domain.ReadModels;
 using Marten;
 using Meilisearch;
 using Microsoft.Extensions.DependencyInjection;

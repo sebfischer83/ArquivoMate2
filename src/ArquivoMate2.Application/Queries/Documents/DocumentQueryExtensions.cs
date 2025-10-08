@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ArquivoMate2.Infrastructure.Persistance;
+using ArquivoMate2.Domain.ReadModels;
 using ArquivoMate2.Shared.Models;
 
-namespace ArquivoMate2.API.Querying
+namespace ArquivoMate2.Application.Queries.Documents
 {
     public static class DocumentQueryExtensions
     {

@@ -1,6 +1,7 @@
-﻿using ArquivoMate2.Shared.Models;
+﻿using System;
+using System.Collections.Generic;
 
-namespace ArquivoMate2.Infrastructure.Persistance
+namespace ArquivoMate2.Domain.ReadModels
 {
     public class DocumentView
     {

@@ -1,6 +1,6 @@
 ﻿using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Document;
-using ArquivoMate2.Infrastructure.Persistance;
+using ArquivoMate2.Domain.ReadModels;
 using Meilisearch;
 using System;
 using System.Collections.Generic;

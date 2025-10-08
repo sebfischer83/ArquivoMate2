@@ -11,7 +11,7 @@ using ArquivoMate2.Infrastructure.Configuration.DeliveryProvider;
 using ArquivoMate2.Infrastructure.Configuration.Llm;
 using ArquivoMate2.Infrastructure.Configuration.StorageProvider;
 using ArquivoMate2.Infrastructure.Mapping;
-using ArquivoMate2.Infrastructure.Persistance;
+using ArquivoMate2.Domain.ReadModels;
 using ArquivoMate2.Infrastructure.Repositories;
 using ArquivoMate2.Infrastructure.Services;
 using ArquivoMate2.Infrastructure.Services.DeliveryProvider;

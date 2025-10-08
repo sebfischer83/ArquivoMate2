@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ArquivoMate2.Application.Interfaces;
-using ArquivoMate2.Infrastructure.Persistance;
+using ArquivoMate2.Domain.ReadModels;
 using ArquivoMate2.Shared.Models.Sharing;
 using Marten;
 

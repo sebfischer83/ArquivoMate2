@@ -2,7 +2,7 @@ using ArquivoMate2.Application.Configuration;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.ValueObjects;
-using ArquivoMate2.Infrastructure.Persistance;
+using ArquivoMate2.Domain.ReadModels;
 using ArquivoMate2.Shared.Models; // DocumentArtifact
 using EasyCaching.Core;
 using Marten;

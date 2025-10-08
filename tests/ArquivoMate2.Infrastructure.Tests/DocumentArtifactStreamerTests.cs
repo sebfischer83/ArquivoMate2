@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using ArquivoMate2.Application.Configuration;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Document;
-using ArquivoMate2.Infrastructure.Persistance;
+using ArquivoMate2.Domain.ReadModels;
 using ArquivoMate2.Infrastructure.Services;
 using Marten;
 using Moq;

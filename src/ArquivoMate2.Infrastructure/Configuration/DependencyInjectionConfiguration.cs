@@ -53,7 +53,8 @@ using EmailCriteria = ArquivoMate2.Domain.Email.EmailCriteria;
 using JasperFx.Events.Projections;
 using ArquivoMate2.Application.Interfaces.Sharing;
 using ArquivoMate2.Infrastructure.Services.Encryption; // Encryption helpers
-using ArquivoMate2.Application.Interfaces; // ensure interface is visible
+using ArquivoMate2.Application.Interfaces;
+using ArquivoMate2.Infrastructure.Persistance; // ensure interface is visible
 
 namespace ArquivoMate2.Infrastructure.Configuration
 {

@@ -34,6 +34,7 @@ using ArquivoMate2.API.Middleware;
 using System.Collections.Generic; // for KeyValuePair in OTel attributes
 using Microsoft.Extensions.Options; // added for options access
 using ArquivoMate2.Infrastructure.Services; // for LanguageDetectionService & options
+using ArquivoMate2.Application.Behaviors; // register pipeline behavior
 
 namespace ArquivoMate2.API
 {
@@ -80,6 +81,13 @@ namespace ArquivoMate2.API
                   tracing.AddAspNetCoreInstrumentation();
                   tracing.AddHttpClientInstrumentation();
                   tracing.AddSource("Marten");
+                  // Ensure custom controller activity source is captured
+                  tracing.AddSource("ArquivoMate2.DocumentsController");
+                  // Capture sub-operation activity sources from handlers and infrastructure
+                  tracing.AddSource("ArquivoMate2.GetDocumentListHandler");
+                  tracing.AddSource("ArquivoMate2.SearchClient");
+                  // Capture MediatR pipeline activities
+                  tracing.AddSource("ArquivoMate2.MediatRPipeline");
                   //tracing.AddNpgsql();
 
                   if (!string.IsNullOrWhiteSpace(seqUrl))
@@ -116,6 +124,8 @@ namespace ArquivoMate2.API
             builder.Services.AddScoped<IDocumentProcessingNotifier>(sp => sp.GetRequiredService<ArquivoMate2.API.Notifications.SignalRDocumentProcessingNotifier>());
 
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(UploadDocumentHandler).Assembly));
+            // Register tracing pipeline for MediatR
+            builder.Services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(TracingBehavior<,>));
             builder.Services.AddHangfire(config =>
             {
                 config.UseSerilogLogProvider();

@@ -1,5 +1,6 @@
 using ArquivoMate2.Application.Interfaces.ImportHistory;
 using ArquivoMate2.Domain.ReadModels;
+using ArquivoMate2.Infrastructure.Persistance;
 using ArquivoMate2.Shared.Models;
 using Marten;
 using Marten.Pagination;

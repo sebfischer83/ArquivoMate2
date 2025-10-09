@@ -1,4 +1,5 @@
 using ArquivoMate2.Domain.ReadModels;
+using ArquivoMate2.Infrastructure.Persistance;
 using ArquivoMate2.Shared.Models;
 using AutoMapper;
 

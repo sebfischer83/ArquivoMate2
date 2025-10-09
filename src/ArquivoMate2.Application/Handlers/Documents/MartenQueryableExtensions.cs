@@ -14,7 +14,9 @@ internal static class MartenQueryableExtensions
     {
         if (query is IMartenQueryable<T> martenQuery && IsMartenProvider(query))
         {
-            return await martenQuery.ToListAsync(cancellationToken);
+            // Marten's ToListAsync returns IReadOnlyList<T>, so we need to convert it to List<T>
+            var result = await martenQuery.ToListAsync(cancellationToken).ConfigureAwait(false);
+            return result is List<T> list ? list : result.ToList();
         }
 
         return await Task.FromResult(query.ToList());

@@ -19,6 +19,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using System.Linq;
 using System.Threading;
+using ArquivoMate2.Domain.ReadModels;
+using System.Diagnostics;
 
 namespace ArquivoMate2.API.Controllers
 {
@@ -39,6 +41,9 @@ namespace ArquivoMate2.API.Controllers
         private readonly IFileAccessTokenService _tokenService; // Issues signed delivery tokens
         private readonly EncryptionSettings _encryptionSettings; // Encryption feature configuration
         private readonly AppSettings _appSettings; // Global application configuration
+
+        // ActivitySource for tracing this controller. OpenTelemetry will pick up activities started from this source.
+        private static readonly ActivitySource s_activitySource = new("ArquivoMate2.DocumentsController", "1.0");
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DocumentsController"/> class with the dependencies required to orchestrate document operations.

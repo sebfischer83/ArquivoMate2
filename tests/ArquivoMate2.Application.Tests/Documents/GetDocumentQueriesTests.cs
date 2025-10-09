@@ -6,14 +6,15 @@ using System.Threading.Tasks;
 using ArquivoMate2.Application.Handlers.Documents;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Queries.Documents;
-using ArquivoMate2.Application.Tests.Support;
 using ArquivoMate2.Domain.Collections;
 using ArquivoMate2.Domain.ReadModels;
 using ArquivoMate2.Shared.Models;
 using AutoMapper;
 using Marten;
 using Marten.Events;
+using JasperFx.Events;
 using Moq;
+using ArquivoMate2.Application.Tests.Support;
 
 namespace ArquivoMate2.Application.Tests.Documents;
 
@@ -86,9 +87,9 @@ public class GetDocumentQueriesTests
         };
 
         var querySessionMock = new Mock<IQuerySession>();
-        querySessionMock.Setup(q => q.Query<DocumentView>()).Returns(new InMemoryMartenQueryable<DocumentView>(documents));
-        querySessionMock.Setup(q => q.Query<DocumentAccessView>()).Returns(new InMemoryMartenQueryable<DocumentAccessView>(accessViews));
-        querySessionMock.Setup(q => q.Query<DocumentCollectionMembership>()).Returns(new InMemoryMartenQueryable<DocumentCollectionMembership>(Array.Empty<DocumentCollectionMembership>()));
+        querySessionMock.Setup(q => q.Query<DocumentView>()).Returns(MartenQueryableMockFactory.Create(documents));
+        querySessionMock.Setup(q => q.Query<DocumentAccessView>()).Returns(MartenQueryableMockFactory.Create(accessViews));
+        querySessionMock.Setup(q => q.Query<DocumentCollectionMembership>()).Returns(MartenQueryableMockFactory.Create(Array.Empty<DocumentCollectionMembership>()));
 
         var searchClientMock = new Mock<ISearchClient>();
 
@@ -139,9 +140,9 @@ public class GetDocumentQueriesTests
         };
 
         var querySessionMock = new Mock<IQuerySession>();
-        querySessionMock.Setup(q => q.Query<DocumentView>()).Returns(new InMemoryMartenQueryable<DocumentView>(documents));
-        querySessionMock.Setup(q => q.Query<DocumentAccessView>()).Returns(new InMemoryMartenQueryable<DocumentAccessView>(Array.Empty<DocumentAccessView>()));
-        querySessionMock.Setup(q => q.Query<DocumentCollectionMembership>()).Returns(new InMemoryMartenQueryable<DocumentCollectionMembership>(Array.Empty<DocumentCollectionMembership>()));
+        querySessionMock.Setup(q => q.Query<DocumentView>()).Returns(MartenQueryableMockFactory.Create(documents));
+        querySessionMock.Setup(q => q.Query<DocumentAccessView>()).Returns(MartenQueryableMockFactory.Create(Array.Empty<DocumentAccessView>()));
+        querySessionMock.Setup(q => q.Query<DocumentCollectionMembership>()).Returns(MartenQueryableMockFactory.Create(Array.Empty<DocumentCollectionMembership>()));
 
         var searchClientMock = new Mock<ISearchClient>();
         searchClientMock.Setup(s => s.SearchDocumentIdsAsync(userId, "invoice", 1, 10, It.IsAny<CancellationToken>()))
@@ -195,8 +196,8 @@ public class GetDocumentQueriesTests
         };
 
         var querySessionMock = new Mock<IQuerySession>();
-        querySessionMock.Setup(q => q.Query<DocumentView>()).Returns(new InMemoryMartenQueryable<DocumentView>(documents));
-        querySessionMock.Setup(q => q.Query<DocumentAccessView>()).Returns(new InMemoryMartenQueryable<DocumentAccessView>(accessViews));
+        querySessionMock.Setup(q => q.Query<DocumentView>()).Returns(MartenQueryableMockFactory.Create(documents));
+        querySessionMock.Setup(q => q.Query<DocumentAccessView>()).Returns(MartenQueryableMockFactory.Create(accessViews));
 
         var facets = new Dictionary<string, int> { ["2024"] = 2 };
 
@@ -235,9 +236,9 @@ public class GetDocumentQueriesTests
         };
 
         var querySessionMock = new Mock<IQuerySession>();
-        querySessionMock.Setup(q => q.Query<DocumentView>()).Returns(new InMemoryMartenQueryable<DocumentView>(documents));
+        querySessionMock.Setup(q => q.Query<DocumentView>()).Returns(MartenQueryableMockFactory.Create(documents));
 
-        var eventStoreMock = new Mock<IEventStore>();
+        var eventStoreMock = new Mock<IQueryEventStore>();
         var eventData = new TestDocumentEvent
         {
             OccurredOn = new DateTime(2024, 3, 5, 10, 0, 0, DateTimeKind.Utc),
@@ -249,8 +250,8 @@ public class GetDocumentQueriesTests
         eventMock.SetupGet(e => e.Timestamp).Returns(new DateTimeOffset(new DateTime(2024, 3, 5, 10, 0, 0, DateTimeKind.Utc)));
         eventMock.SetupGet(e => e.Data).Returns(eventData);
 
-        eventStoreMock.Setup(es => es.FetchStreamAsync(documentId, It.IsAny<long?>(), It.IsAny<DateTimeOffset?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<IEvent> { eventMock.Object });
+        eventStoreMock.Setup(es => es.FetchStreamAsync(documentId, It.IsAny<long>(), It.IsAny<DateTimeOffset?>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyList<IEvent>)new List<IEvent> { eventMock.Object });
 
         querySessionMock.SetupGet(q => q.Events).Returns(eventStoreMock.Object);
 

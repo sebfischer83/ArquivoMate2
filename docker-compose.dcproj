@@ -11,6 +11,7 @@
     <DockerServiceUrl>localhost:5000/scalar</DockerServiceUrl>
   </PropertyGroup>
   <ItemGroup>
+    <None Include=".github\workflows\ci.yml" />
     <None Include=".github\workflows\publish-docker.yml" />
     <None Include="api.env" />
     <None Include="Directory.Build.props" />

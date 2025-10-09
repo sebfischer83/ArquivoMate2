@@ -164,7 +164,7 @@ namespace ArquivoMate2.API.Controllers
                     }
                 }
 
-                if (encrypted.Length < 1) return null;
+                if (encrypted == null || encrypted.Length < 1) return null;
 
                 var entry = encryptionKeys.Artifacts.FirstOrDefault(a => a.Artifact == artifactWire);
                 if (entry == null || entry.WrappedDek.Length < 32 + 16) return null;

@@ -260,7 +260,7 @@ namespace ArquivoMate2.API
                 options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
                 options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
                 {
-                    diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+                    diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value ?? string.Empty);
                     diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
                 };
             });
@@ -326,7 +326,7 @@ namespace ArquivoMate2.API
 
                                           if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/documents"))
                                           {
-                                              context.Token = accessToken;
+                                              context.Token = accessToken!;
                                           }
                                           return Task.CompletedTask;
                                       }

@@ -42,7 +42,7 @@ namespace ArquivoMate2.Infrastructure.Mapping
             var localizedString = _localizer[resourceKey];
             
             // If localization is not found, fall back to enum ToString()
-            return localizedString.ResourceNotFound ? enumValue.ToString() : localizedString.Value;
+            return localizedString.ResourceNotFound ? enumValue.ToString()! : localizedString.Value;
         }
 
         private TEnum? GetEnumValue(TSource source, string memberName)
@@ -101,7 +101,7 @@ namespace ArquivoMate2.Infrastructure.Mapping
             var localizedString = _localizer[resourceKey];
             
             // If localization is not found, fall back to enum ToString()
-            return localizedString.ResourceNotFound ? statusValue.ToString() : localizedString.Value;
+            return localizedString.ResourceNotFound ? statusValue.ToString()! : localizedString.Value;
         }
     }
 
@@ -135,7 +135,7 @@ namespace ArquivoMate2.Infrastructure.Mapping
             var localizedString = _localizer[resourceKey];
             
             // If localization is not found, fall back to enum ToString()
-            return localizedString.ResourceNotFound ? sourceValue.ToString() : localizedString.Value;
+            return localizedString.ResourceNotFound ? sourceValue.ToString()! : localizedString.Value;
         }
     }
 }

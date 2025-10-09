@@ -108,7 +108,7 @@ namespace ArquivoMate2.Application.Handlers
                         var json = JsonSerializer.Serialize(kvp.Value);
                         value = JsonSerializer.Deserialize(json, targetType);
                     }
-                    changes.Add(kvp.Key, value);
+                    changes.Add(kvp.Key, value!);
                 }
                 catch (Exception ex)
                 {

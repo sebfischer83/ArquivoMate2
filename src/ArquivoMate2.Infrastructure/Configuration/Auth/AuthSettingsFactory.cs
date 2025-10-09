@@ -44,7 +44,7 @@ namespace ArquivoMate2.Infrastructure.Configuration.Auth
         public string Audience { get; set; } = string.Empty;
 
         public string Authority { get; set; } = string.Empty;
-        public string Issuer { get; set; }
+        public required string Issuer { get; set; }
     }
 
     public enum AuthType

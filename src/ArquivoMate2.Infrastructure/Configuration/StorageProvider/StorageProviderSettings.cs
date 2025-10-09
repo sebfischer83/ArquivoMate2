@@ -4,6 +4,6 @@
     {
         public StorageProviderType Type { get; set; }
 
-        public string RootPath { get; set; }
+        public required string RootPath { get; set; }
     }
 }

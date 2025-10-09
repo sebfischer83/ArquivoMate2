@@ -32,20 +32,22 @@ namespace ArquivoMate2.Infrastructure.Configuration.StorageProvider
         private S3StorageProviderSettings BuildS3Settings(IConfigurationSection section)
         {
             var argsSection = section.GetSection("Args");
+            
+            // Get RootPath from parent (required)
+            var parentRoot = section.GetValue<string>("RootPath") 
+                ?? throw new InvalidOperationException("StorageProvider:RootPath ist nicht konfiguriert.");
+            
             // Bind S3 settings from Args (most settings live here)
-            var s3 = argsSection.Get<S3StorageProviderSettings>() ?? new S3StorageProviderSettings();
+            var s3 = argsSection.Get<S3StorageProviderSettings>() ?? new S3StorageProviderSettings { RootPath = parentRoot };
+            
+            // Always set RootPath from parent
+            s3.RootPath = parentRoot;
 
-            // Always take Type and RootPath from the parent StorageProvider section
+            // Always take Type from the parent StorageProvider section
             var parentType = section.GetValue<StorageProviderType?>("Type");
             if (parentType.HasValue)
             {
                 s3.Type = parentType.Value;
-            }
-
-            var parentRoot = section.GetValue<string>("RootPath");
-            if (!string.IsNullOrWhiteSpace(parentRoot))
-            {
-                s3.RootPath = parentRoot;
             }
 
             return s3;

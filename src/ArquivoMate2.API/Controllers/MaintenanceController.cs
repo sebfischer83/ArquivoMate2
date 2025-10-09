@@ -64,6 +64,7 @@ public class MaintenanceController : ControllerBase
     /// </summary>
     /// <param name="fromSequence">Optional lower sequence bound (inclusive).</param>
     /// <param name="toSequence">Optional upper sequence bound (inclusive).</param>
+    /// <param name="cancellationToken">Cancellation token propagated from the caller.</param>
     [HttpGet("document-encryption-keys")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/zip")]

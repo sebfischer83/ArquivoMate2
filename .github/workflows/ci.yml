@@ -38,15 +38,15 @@ jobs:
             nuget-packages-${{ runner.os }}-
 
       - name: Dotnet restore
-        run: dotnet restore
+        run: dotnet restore ArquivoMate2.sln
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build ArquivoMate2.sln --configuration Release --no-restore
 
       - name: Run tests with coverage (collect XPlat Code Coverage and TRX)
         run: |
           mkdir -p TestResults
-          dotnet test --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage" --results-directory TestResults
+          dotnet test ArquivoMate2.sln --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage" --results-directory TestResults
 
       - name: Install ReportGenerator
         run: dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.* || true

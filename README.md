@@ -1,4 +1,14 @@
-﻿## Overview
+﻿## Status
+
+[![CI](https://github.com/sebfischer83/ArquivoMate2/actions/workflows/ci.yml/badge.svg)](https://github.com/sebfischer83/ArquivoMate2/actions/workflows/ci.yml) [![Docker Hub](https://img.shields.io/docker/v/sebfischer83/arquivomate2?sort=semver&label=Docker%20Hub)](https://hub.docker.com/r/sebfischer83/arquivomate2) [![Coverage](https://img.shields.io/website?down_message=down&label=coverage&up_message=available&url=https%3A%2F%2Fsebfischer83.github.io%2FArquivoMate2%2F)](https://sebfischer83.github.io/ArquivoMate2/)
+
+- CI / tests: click the CI badge to open the latest workflow runs and test results. Individual run artifacts (TRX, coverage XML) are attached to each job run under "Artifacts".
+- Coverage report: published to GitHub Pages at: https://sebfischer83.github.io/ArquivoMate2/ (contains HTML coverage-report/index.html and Cobertura XML).
+- Docker image: tags and latest published version visible on Docker Hub (link above).
+
+---
+
+## Overview
 ArquivoMate2 is a lightweight, extensible .NET 9 document ingestion and processing platform. It tracks document processing lifecycle states (Pending, InProgress, Completed, Failed), provides history querying & counts, real-time status updates, background jobs, and localization.
 
 For detailed architecture, grouping and sharing documentation see `docs/ProjectOverview.md`.

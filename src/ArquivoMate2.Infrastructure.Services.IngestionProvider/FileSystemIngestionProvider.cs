@@ -151,19 +151,6 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
 
             var destination = EnsureUniquePath(Path.Combine(userDirectory, safeFileName));
 
-            // If upstream code provided a seekable stream that has been read, reset to start
-            if (content.CanSeek)
-            {
-                try
-                {
-                    content.Seek(0, SeekOrigin.Begin);
-                }
-                catch
-                {
-                    // If seeking fails for any reason, fall back to writing from current position
-                }
-            }
-
             await using (var fileStream = new FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None, bufferSize: 81920, useAsync: true))
             {
                 await content.CopyToAsync(fileStream, cancellationToken).ConfigureAwait(false);

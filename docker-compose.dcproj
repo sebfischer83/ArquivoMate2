@@ -22,8 +22,13 @@
     <None Include=".dockerignore" />
     <None Include="docs\delivery.md" />
     <None Include="docs\ProjectOverview.md" />
+    <None Include="LICENSE" />
     <None Include="README.md" />
     <None Include="scripts\docker-build-multiarch.sh" />
+    <None Include="src\ArquivoMate2.Infrastructure.Configuration.IngestionProvider\IngestionProviderSettings.cs" />
+    <None Include="src\ArquivoMate2.Infrastructure.Services.IngestionProvider\FileSystemIngestionProvider.cs" />
+    <None Include="src\ArquivoMate2.Infrastructure.Services.IngestionProvider\NullIngestionProvider.cs" />
+    <None Include="src\ArquivoMate2.Infrastructure.Services.IngestionProvider\S3IngestionProvider.cs" />
     <None Include="tests\ArquivoMate2.Application.Tests\ArquivoMate2.Application.Tests.csproj" />
     <None Include="tests\ArquivoMate2.Application.Tests\SampleApplicationTests.cs" />
     <None Include="tests\ArquivoMate2.Domain.Tests\ArquivoMate2.Domain.Tests.csproj" />

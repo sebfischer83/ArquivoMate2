@@ -306,11 +306,32 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
                 args = args.WithPrefix(rootPrefix + "/");
             }
 
-            // Directly call the Minio client's typed IAsyncEnumerable-based API
-            await foreach (var item in _minioClient.ListObjectsEnumAsync(args, cancellationToken).ConfigureAwait(false))
+            var observable = _minioClient.ListObjectsAsync(args);
+            var queue = new ConcurrentQueue<Item>();
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            using var registration = cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken));
+
+            using var subscription = observable.Subscribe(
+                item => queue.Enqueue(item),
+                ex => tcs.TrySetException(ex),
+                () => tcs.TrySetResult(true));
+
+            while (!queue.IsEmpty || !tcs.Task.IsCompleted)
             {
-                yield return item;
+                while (queue.TryDequeue(out var queuedItem))
+                {
+                    yield return queuedItem;
+                }
+
+                if (!tcs.Task.IsCompleted)
+                {
+                    await Task.WhenAny(tcs.Task, Task.Delay(50, cancellationToken)).ConfigureAwait(false);
+                }
             }
+
+            // Ensure completion or propagate exception/cancellation.
+            await tcs.Task.ConfigureAwait(false);
         }
 
         private string CombineSegments(string? prefix, string fileName)

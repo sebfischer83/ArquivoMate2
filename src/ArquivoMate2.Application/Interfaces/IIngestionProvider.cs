@@ -14,6 +14,12 @@ namespace ArquivoMate2.Application.Interfaces;
 public interface IIngestionProvider
 {
     /// <summary>
+    /// Optional email address used when creating an EmailDocument for ingestion sources.
+    /// If null, the source does not provide a sender address.
+    /// </summary>
+    string? IngestionEmailAddress { get; }
+
+    /// <summary>
     /// Retrieves and reserves files that are pending ingestion. Implementations
     /// should ensure that files returned from this call are not picked up by
     /// concurrent workers (e.g. by moving them into a processing area).

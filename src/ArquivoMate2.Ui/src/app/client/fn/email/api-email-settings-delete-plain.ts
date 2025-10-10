@@ -8,12 +8,12 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { ObjectApiResponse } from '../../models/object-api-response';
+import { ResponseMessageDtoApiResponse } from '../../models/response-message-dto-api-response';
 
 export interface ApiEmailSettingsDelete$Plain$Params {
 }
 
-export function apiEmailSettingsDelete$Plain(http: HttpClient, rootUrl: string, params?: ApiEmailSettingsDelete$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ObjectApiResponse>> {
+export function apiEmailSettingsDelete$Plain(http: HttpClient, rootUrl: string, params?: ApiEmailSettingsDelete$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ResponseMessageDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiEmailSettingsDelete$Plain.PATH, 'delete');
   if (params) {
   }
@@ -23,7 +23,7 @@ export function apiEmailSettingsDelete$Plain(http: HttpClient, rootUrl: string, 
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<ObjectApiResponse>;
+      return r as StrictHttpResponse<ResponseMessageDtoApiResponse>;
     })
   );
 }

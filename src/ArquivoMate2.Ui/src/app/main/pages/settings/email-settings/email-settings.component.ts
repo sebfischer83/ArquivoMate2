@@ -2,15 +2,16 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { TuiButton } from '@taiga-ui/core';
+import { TuiButton, TuiTextfield } from '@taiga-ui/core';
+import { TuiSwitch } from '@taiga-ui/kit';
 import { firstValueFrom } from 'rxjs';
 import { EmailService } from '../../../../client/services/email.service';
 import { EmailProviderType } from '../../../../client/models/email-provider-type';
 import { SaveEmailSettingsRequest } from '../../../../client/models/save-email-settings-request';
+import { EmailSettingsDto } from '../../../../client/models/email-settings-dto';
 import { ToastService } from '../../../../services/toast.service';
 import { SaveEmailCriteriaRequest } from '../../../../client/models/save-email-criteria-request';
 import { EmailCriteriaDto } from '../../../../client/models/email-criteria-dto';
-import { EmailCriteriaDtoApiResponse } from '../../../../client/models/email-criteria-dto-api-response';
 import { EmailSortBy } from '../../../../client/models/email-sort-by';
 import { Int32ApiResponse } from '../../../../client/models/int-32-api-response';
 
@@ -82,22 +83,16 @@ type CriteriaFormValue = {
   excludeFlags: string;
 };
 
-interface ParsedResponse<T> {
-  readonly data: T | null;
-  readonly message?: string;
-  readonly success?: boolean;
-}
 
-interface EmailSettingsPayload {
-  readonly providerType?: EmailProviderType | null;
-  readonly server?: string | null;
-  readonly port?: number | null;
-  readonly useSsl?: boolean | null;
-  readonly username?: string | null;
-  readonly displayName?: string | null;
-  readonly defaultFolder?: string | null;
-  readonly connectionTimeout?: number | null;
-  readonly autoReconnect?: boolean | null;
+
+// The API provides EmailSettingsDto for GET; SaveEmailSettingsRequest is used for POST.
+// A type-guard helps distinguish the request shape from the DTO so we can keep
+// strict typing in conversion helpers.
+function isSaveEmailSettingsRequest(value: EmailSettingsDto | SaveEmailSettingsRequest): value is SaveEmailSettingsRequest {
+  // SaveEmailSettingsRequest commonly has no readonly metadata fields like id/createdAt etc.
+  // We'll detect by presence of password or the lack of DTO-only fields. This is a pragmatic guard.
+  const v = value as Record<string, unknown>;
+  return typeof v['password'] !== 'undefined' || typeof v['server'] !== 'undefined';
 }
 
 type ConnectionStatus = { kind: 'success' | 'error'; message: string };
@@ -105,7 +100,7 @@ type ConnectionStatus = { kind: 'success' | 'error'; message: string };
 @Component({
   standalone: true,
   selector: 'app-email-settings',
-  imports: [CommonModule, ReactiveFormsModule, TuiButton],
+  imports: [CommonModule, ReactiveFormsModule, TuiButton, TuiTextfield, TuiSwitch],
   templateUrl: './email-settings.component.html',
   styleUrl: './email-settings.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -253,14 +248,14 @@ export class EmailSettingsComponent implements OnInit {
     this.loadingCount.set(true);
     try {
       const response = await firstValueFrom(this.emailService.apiEmailCountGet$Json());
-      const parsed = this.parseResponse<number>(response);
-      const value = this.extractCount(parsed.data);
+      // Generated client returns Int32ApiResponse
+      const value = this.extractCount(response.data ?? null);
       if (value !== null) {
         this.emailCount.set(value);
         this.lastCountRefresh.set(new Date());
       }
-      if (parsed.success === false && parsed.message) {
-        this.toast.error(parsed.message);
+      if (response.success === false && response.message) {
+        this.toast.error(response.message);
       }
     } catch (error) {
       this.toast.error(this.toErrorMessage(error, 'E-Mail-Zähler konnte nicht abgerufen werden.'));
@@ -273,9 +268,9 @@ export class EmailSettingsComponent implements OnInit {
     this.testingConnection.set(true);
     try {
       const response = await firstValueFrom(this.emailService.apiEmailTestConnectionPost$Json());
-      const parsed = this.parseResponse<{ success?: boolean; message?: string }>(response);
-      const success = this.extractSuccess(response);
-      const message = parsed.message ?? (success ? 'Verbindung erfolgreich getestet.' : 'Verbindung fehlgeschlagen.');
+      // ConnectionTestResultDtoApiResponse
+      const success = response.success === true;
+      const message = response.message ?? (success ? 'Verbindung erfolgreich getestet.' : 'Verbindung fehlgeschlagen.');
       this.connectionStatus.set({ kind: success ? 'success' : 'error', message });
       if (success) {
         this.toast.success(message);
@@ -315,12 +310,12 @@ export class EmailSettingsComponent implements OnInit {
 
     try {
       const response = await firstValueFrom(this.emailService.apiEmailSettingsPost$Json({ body: request }));
-      const parsed = this.parseResponse<unknown>(response);
-      if (parsed.success === false && parsed.message) {
-        this.toast.error(parsed.message);
+      // response is EmailSettingsDtoApiResponse
+      if (response.success === false && response.message) {
+        this.toast.error(response.message);
         return;
       }
-      const message = parsed.message ?? 'E-Mail-Einstellungen wurden gespeichert.';
+      const message = response.message ?? 'E-Mail-Einstellungen wurden gespeichert.';
       this.toast.success(message);
       const nextValue = this.toConnectionFormValue(request);
       this.hasExistingSettings.set(true);
@@ -349,8 +344,7 @@ export class EmailSettingsComponent implements OnInit {
     this.deletingSettings.set(true);
     try {
       const response = await firstValueFrom(this.emailService.apiEmailSettingsDelete$Json());
-      const parsed = this.parseResponse<unknown>(response);
-      const message = parsed.message ?? 'E-Mail-Einstellungen wurden entfernt.';
+      const message = response.message ?? 'E-Mail-Einstellungen wurden entfernt.';
       this.toast.success(message);
       this.hasExistingSettings.set(false);
       this.applyConnectionValue(this.defaultConnectionValue);
@@ -397,15 +391,14 @@ export class EmailSettingsComponent implements OnInit {
 
     try {
       const response = await firstValueFrom(this.emailService.apiEmailCriteriaPost$Json({ body: request }));
-      const parsed = this.parseCriteriaResponse(response);
-      if (parsed.success === false && parsed.message) {
-        this.toast.error(parsed.message);
+      if (response.success === false && response.message) {
+        this.toast.error(response.message);
         return;
       }
-      const dto = parsed.data ?? this.createCriteriaFromRequest(request);
+      const dto = response.data ?? this.createCriteriaFromRequest(request);
       this.applyCriteriaValue(this.toCriteriaFormValue(dto));
       this.hasCriteria.set(true);
-      const message = parsed.message ?? 'Abruf-Regeln gespeichert.';
+      const message = response.message ?? 'Abruf-Regeln gespeichert.';
       this.toast.success(message);
     } catch (error) {
       this.toast.error(this.toErrorMessage(error, 'Abruf-Regeln konnten nicht gespeichert werden.'));
@@ -450,12 +443,11 @@ export class EmailSettingsComponent implements OnInit {
     this.loadingSettings.set(true);
     try {
       const response = await firstValueFrom(this.emailService.apiEmailSettingsGet$Json());
-      const parsed = this.parseResponse<EmailSettingsPayload>(response);
-      if (parsed.success === false && parsed.message) {
-        this.toast.error(parsed.message);
+      if (response.success === false && response.message) {
+        this.toast.error(response.message);
       }
-      if (parsed.data) {
-        const view = this.toConnectionFormValue(parsed.data);
+      if (response.data) {
+        const view = this.toConnectionFormValue(response.data);
         this.applyConnectionValue(view);
         this.hasExistingSettings.set(true);
       } else {
@@ -478,12 +470,11 @@ export class EmailSettingsComponent implements OnInit {
     this.loadingCriteria.set(true);
     try {
       const response = await firstValueFrom(this.emailService.apiEmailCriteriaGet$Json());
-      const parsed = this.parseCriteriaResponse(response);
-      if (parsed.success === false && parsed.message) {
-        this.toast.error(parsed.message);
+      if (response.success === false && response.message) {
+        this.toast.error(response.message);
       }
-      if (parsed.data) {
-        this.applyCriteriaValue(this.toCriteriaFormValue(parsed.data));
+      if (response.data) {
+        this.applyCriteriaValue(this.toCriteriaFormValue(response.data));
         this.hasCriteria.set(true);
       } else {
         this.applyCriteriaValue(this.defaultCriteriaValue);
@@ -518,49 +509,38 @@ export class EmailSettingsComponent implements OnInit {
     this.lastLoadedCriteria = { ...sanitized };
   }
 
-  private parseResponse<T>(value: unknown): ParsedResponse<T> {
-    const envelope = this.unwrapEnvelope<T>(value);
-    if (envelope) {
-      return envelope;
-    }
-    return { data: (value ?? null) as T | null };
-  }
+  // parseCriteriaResponse removed — generated client returns EmailCriteriaDtoApiResponse
 
-  private parseCriteriaResponse(value: EmailCriteriaDtoApiResponse | EmailCriteriaDto): ParsedResponse<EmailCriteriaDto> {
-    const envelope = this.unwrapEnvelope<EmailCriteriaDto>(value);
-    if (envelope) {
-      return envelope;
+  private toConnectionFormValue(payload: EmailSettingsDto | SaveEmailSettingsRequest): ConnectionFormValue {
+    if (isSaveEmailSettingsRequest(payload)) {
+      const req = payload as SaveEmailSettingsRequest;
+      return {
+        providerType: req.providerType ?? EmailProviderType.Imap,
+        server: (req.server ?? '').trim(),
+        port: typeof req.port === 'number' ? req.port : 993,
+        useSsl: req.useSsl ?? true,
+        username: (req.username ?? '').trim(),
+        password: req.password ?? '',
+        displayName: (req.displayName ?? '').trim(),
+        defaultFolder: (req.defaultFolder ?? 'INBOX').trim(),
+        connectionTimeout: typeof req.connectionTimeout === 'number' ? req.connectionTimeout : 30000,
+        autoReconnect: req.autoReconnect ?? true,
+      };
     }
-    return { data: value as EmailCriteriaDto };
-  }
 
-  private unwrapEnvelope<T>(value: unknown): ParsedResponse<T> | null {
-    if (!value || typeof value !== 'object') {
-      return null;
-    }
-    const record = value as Record<string, unknown>;
-    const hasKnownKey = 'data' in record || 'message' in record || 'success' in record;
-    if (!hasKnownKey) {
-      return null;
-    }
-    const data = (record['data'] as T | null | undefined) ?? null;
-    const message = typeof record['message'] === 'string' ? record['message'] : undefined;
-    const success = typeof record['success'] === 'boolean' ? record['success'] : undefined;
-    return { data, message, success };
-  }
-
-  private toConnectionFormValue(payload: EmailSettingsPayload | SaveEmailSettingsRequest): ConnectionFormValue {
+    // Otherwise treat as DTO
+    const dto = payload as EmailSettingsDto;
     return {
-      providerType: (payload.providerType as EmailProviderType) ?? EmailProviderType.Imap,
-      server: (payload.server as string | null | undefined)?.trim() ?? '',
-      port: typeof payload.port === 'number' ? payload.port : 993,
-      useSsl: payload.useSsl ?? true,
-      username: (payload.username as string | null | undefined)?.trim() ?? '',
+      providerType: dto.providerType ?? EmailProviderType.Imap,
+      server: (dto.server ?? '').trim(),
+      port: typeof dto.port === 'number' ? dto.port : 993,
+      useSsl: dto.useSsl ?? true,
+      username: (dto.username ?? '').trim(),
       password: '',
-      displayName: (payload.displayName as string | null | undefined)?.trim() ?? '',
-      defaultFolder: (payload.defaultFolder as string | null | undefined)?.trim() || 'INBOX',
-      connectionTimeout: typeof payload.connectionTimeout === 'number' ? payload.connectionTimeout : 30000,
-      autoReconnect: payload.autoReconnect ?? true,
+      displayName: (dto.displayName ?? '').trim(),
+      defaultFolder: (dto.defaultFolder ?? 'INBOX').trim(),
+      connectionTimeout: typeof dto.connectionTimeout === 'number' ? dto.connectionTimeout : 30000,
+      autoReconnect: dto.autoReconnect ?? true,
     };
   }
 

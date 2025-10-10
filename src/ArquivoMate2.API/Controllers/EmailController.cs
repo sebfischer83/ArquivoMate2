@@ -47,15 +47,15 @@ namespace ArquivoMate2.API.Controllers
             {
                 var emailService = await _emailServiceFactory.CreateEmailServiceAsync(cancellationToken);
                 var count = await emailService.GetEmailCountAsync(cancellationToken);
-                return Ok(count);
+                return Ok(new ApiResponse<int>(count, true));
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse<ResponseMessageDto>(new ResponseMessageDto { Message = ex.Message }, false, ex.Message));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Failed to get email count", error = ex.Message });
+                return StatusCode(500, new ApiResponse<ResponseMessageDto>(new ResponseMessageDto { Message = "Failed to get email count" }, false, ex.Message));
             }
         }
 
@@ -63,18 +63,20 @@ namespace ArquivoMate2.API.Controllers
         /// Tests the email connection with current settings
         /// </summary>
         [HttpPost("test-connection")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<object>))]
-        public async Task<ActionResult<ApiResponse<object>>> TestConnection(CancellationToken cancellationToken = default)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<ConnectionTestResultDto>))]
+        public async Task<ActionResult<ApiResponse<ConnectionTestResultDto>>> TestConnection(CancellationToken cancellationToken = default)
         {
             try
             {
                 var emailService = await _emailServiceFactory.CreateEmailServiceAsync(cancellationToken);
                 var result = await emailService.TestConnectionAsync(cancellationToken);
-                return Ok(new { success = result, message = result ? "Connection successful" : "Connection failed" });
+                var payload = new ConnectionTestResultDto { Success = result, Message = result ? "Connection successful" : "Connection failed" };
+                return Ok(new ApiResponse<ConnectionTestResultDto>(payload, true));
             }
             catch (Exception ex)
             {
-                return Ok(new { success = false, message = ex.Message });
+                var payload = new ConnectionTestResultDto { Success = false, Message = ex.Message };
+                return Ok(new ApiResponse<ConnectionTestResultDto>(payload, false, ex.Message));
             }
         }
 
@@ -82,8 +84,8 @@ namespace ArquivoMate2.API.Controllers
         /// Gets the current user's email settings
         /// </summary>
         [HttpGet("settings")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<object>))]
-        public async Task<ActionResult<ApiResponse<object>>> GetEmailSettings(CancellationToken cancellationToken = default)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<EmailSettingsDto>))]
+        public async Task<ActionResult<ApiResponse<EmailSettingsDto>>> GetEmailSettings(CancellationToken cancellationToken = default)
         {
             var userId = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userId))
@@ -96,33 +98,15 @@ namespace ArquivoMate2.API.Controllers
                 var settings = await _emailSettingsRepository.GetEmailSettingsAsync(userId, cancellationToken);
                 if (settings == null)
                 {
-                    // Return an empty object instead of 404 so the ApiResponse wrapper will produce a consistent success envelope
-                    return Ok(new { });
+                    return Ok(new ApiResponse<EmailSettingsDto>(null, true));
                 }
 
-                var safeSettings = new
-                {
-                    settings.Id,
-                    settings.UserId,
-                    settings.ProviderType,
-                    settings.Server,
-                    settings.Port,
-                    settings.UseSsl,
-                    settings.Username,
-                    settings.DisplayName,
-                    settings.IsActive,
-                    settings.CreatedAt,
-                    settings.UpdatedAt,
-                    settings.ConnectionTimeout,
-                    settings.DefaultFolder,
-                    settings.AutoReconnect
-                };
-
-                return Ok(safeSettings);
+                var dto = _mapper.Map<EmailSettingsDto>(settings);
+                return Ok(new ApiResponse<EmailSettingsDto>(dto, true));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Failed to retrieve email settings", error = ex.Message });
+                return StatusCode(500, new ApiResponse<ResponseMessageDto>(new ResponseMessageDto { Message = "Failed to retrieve email settings" }, false, ex.Message));
             }
         }
 
@@ -130,8 +114,8 @@ namespace ArquivoMate2.API.Controllers
         /// Saves or updates email settings for the current user
         /// </summary>
         [HttpPost("settings")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<object>))]
-        public async Task<ActionResult<ApiResponse<object>>> SaveEmailSettings([FromBody] SaveEmailSettingsRequest request, CancellationToken cancellationToken = default)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<EmailSettingsDto>))]
+        public async Task<ActionResult<ApiResponse<EmailSettingsDto>>> SaveEmailSettings([FromBody] SaveEmailSettingsRequest request, CancellationToken cancellationToken = default)
         {
             var userId = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userId))
@@ -158,11 +142,12 @@ namespace ArquivoMate2.API.Controllers
                 };
 
                 await _emailSettingsRepository.SaveEmailSettingsAsync(emailSettings, cancellationToken);
-                return Ok(new { message = "Email settings saved successfully" });
+                var dto = _mapper.Map<EmailSettingsDto>(emailSettings);
+                return Ok(new ApiResponse<EmailSettingsDto>(dto, true));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Failed to save email settings", error = ex.Message });
+                return StatusCode(500, new ApiResponse<ResponseMessageDto>(new ResponseMessageDto { Message = "Failed to save email settings" }, false, ex.Message));
             }
         }
 
@@ -170,8 +155,8 @@ namespace ArquivoMate2.API.Controllers
         /// Deletes email settings for the current user
         /// </summary>
         [HttpDelete("settings")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<object>))]
-        public async Task<ActionResult<ApiResponse<object>>> DeleteEmailSettings(CancellationToken cancellationToken = default)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<ResponseMessageDto>))]
+        public async Task<ActionResult<ApiResponse<ResponseMessageDto>>> DeleteEmailSettings(CancellationToken cancellationToken = default)
         {
             var userId = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userId))
@@ -182,11 +167,11 @@ namespace ArquivoMate2.API.Controllers
             try
             {
                 await _emailSettingsRepository.DeleteEmailSettingsAsync(userId, cancellationToken);
-                return Ok(new { message = "Email settings deleted successfully" });
+                return Ok(new ApiResponse<ResponseMessageDto>(new ResponseMessageDto { Message = "Email settings deleted successfully" }, true));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Failed to delete email settings", error = ex.Message });
+                return StatusCode(500, new ApiResponse<ResponseMessageDto>(new ResponseMessageDto { Message = "Failed to delete email settings" }, false, ex.Message));
             }
         }
 
@@ -210,16 +195,15 @@ namespace ArquivoMate2.API.Controllers
                 var criteria = await _emailCriteriaRepository.GetEmailCriteriaAsync(userId, cancellationToken);
                 if (criteria == null)
                 {
-                    // Return an empty DTO instead of 404 so the ApiResponse wrapper produces a consistent envelope
-                    return Ok(new EmailCriteriaDto());
+                    return Ok(new ApiResponse<EmailCriteriaDto>(new EmailCriteriaDto(), true));
                 }
 
                 var criteriaDto = _mapper.Map<EmailCriteriaDto>(criteria);
-                return Ok(criteriaDto);
+                return Ok(new ApiResponse<EmailCriteriaDto>(criteriaDto, true));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Failed to retrieve email criteria", error = ex.Message });
+                return StatusCode(500, new ApiResponse<ResponseMessageDto>(new ResponseMessageDto { Message = "Failed to retrieve email criteria" }, false, ex.Message));
             }
         }
 
@@ -238,7 +222,7 @@ namespace ArquivoMate2.API.Controllers
 
             if (string.IsNullOrWhiteSpace(request.Name))
             {
-                return BadRequest(new { message = "Name is required" });
+                return BadRequest(new ApiResponse<ResponseMessageDto>(new ResponseMessageDto { Message = "Name is required" }, false, "Name is required"));
             }
 
             try
@@ -249,11 +233,11 @@ namespace ArquivoMate2.API.Controllers
                 var savedCriteria = await _emailCriteriaRepository.SaveEmailCriteriaAsync(criteria, cancellationToken);
                 var criteriaDto = _mapper.Map<EmailCriteriaDto>(savedCriteria);
 
-                return Ok(criteriaDto);
+                return Ok(new ApiResponse<EmailCriteriaDto>(criteriaDto, true));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Failed to save email criteria", error = ex.Message });
+                return StatusCode(500, new ApiResponse<ResponseMessageDto>(new ResponseMessageDto { Message = "Failed to save email criteria" }, false, ex.Message));
             }
         }
 
@@ -261,8 +245,8 @@ namespace ArquivoMate2.API.Controllers
         /// Deletes email criteria for the current user
         /// </summary>
         [HttpDelete("criteria")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<object>))]
-        public async Task<ActionResult<ApiResponse<object>>> DeleteEmailCriteria(CancellationToken cancellationToken = default)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<ResponseMessageDto>))]
+        public async Task<ActionResult<ApiResponse<ResponseMessageDto>>> DeleteEmailCriteria(CancellationToken cancellationToken = default)
         {
             var userId = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userId))
@@ -275,14 +259,14 @@ namespace ArquivoMate2.API.Controllers
                 var deleted = await _emailCriteriaRepository.DeleteEmailCriteriaAsync(userId, cancellationToken);
                 if (!deleted)
                 {
-                    return NotFound(new { message = "Email criteria not found" });
+                    return Ok(new ApiResponse<ResponseMessageDto>(new ResponseMessageDto { Message = "Email criteria not found" }, true));
                 }
 
-                return Ok(new { message = "Email criteria deleted successfully" });
+                return Ok(new ApiResponse<ResponseMessageDto>(new ResponseMessageDto { Message = "Email criteria deleted successfully" }, true));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Failed to delete email criteria", error = ex.Message });
+                return StatusCode(500, new ApiResponse<ResponseMessageDto>(new ResponseMessageDto { Message = "Failed to delete email criteria" }, false, ex.Message));
             }
         }
 

@@ -8,14 +8,14 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { ObjectApiResponse } from '../../models/object-api-response';
+import { EmailSettingsDtoApiResponse } from '../../models/email-settings-dto-api-response';
 import { SaveEmailSettingsRequest } from '../../models/save-email-settings-request';
 
 export interface ApiEmailSettingsPost$Plain$Params {
       body?: SaveEmailSettingsRequest
 }
 
-export function apiEmailSettingsPost$Plain(http: HttpClient, rootUrl: string, params?: ApiEmailSettingsPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ObjectApiResponse>> {
+export function apiEmailSettingsPost$Plain(http: HttpClient, rootUrl: string, params?: ApiEmailSettingsPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailSettingsDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiEmailSettingsPost$Plain.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/*+json');
@@ -26,7 +26,7 @@ export function apiEmailSettingsPost$Plain(http: HttpClient, rootUrl: string, pa
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<ObjectApiResponse>;
+      return r as StrictHttpResponse<EmailSettingsDtoApiResponse>;
     })
   );
 }

@@ -8,12 +8,12 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { ObjectApiResponse } from '../../models/object-api-response';
+import { ConnectionTestResultDtoApiResponse } from '../../models/connection-test-result-dto-api-response';
 
 export interface ApiEmailTestConnectionPost$Json$Params {
 }
 
-export function apiEmailTestConnectionPost$Json(http: HttpClient, rootUrl: string, params?: ApiEmailTestConnectionPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ObjectApiResponse>> {
+export function apiEmailTestConnectionPost$Json(http: HttpClient, rootUrl: string, params?: ApiEmailTestConnectionPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ConnectionTestResultDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiEmailTestConnectionPost$Json.PATH, 'post');
   if (params) {
   }
@@ -23,7 +23,7 @@ export function apiEmailTestConnectionPost$Json(http: HttpClient, rootUrl: strin
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<ObjectApiResponse>;
+      return r as StrictHttpResponse<ConnectionTestResultDtoApiResponse>;
     })
   );
 }

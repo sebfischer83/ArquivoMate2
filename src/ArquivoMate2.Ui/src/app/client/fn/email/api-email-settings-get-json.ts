@@ -8,12 +8,12 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { ObjectApiResponse } from '../../models/object-api-response';
+import { EmailSettingsDtoApiResponse } from '../../models/email-settings-dto-api-response';
 
 export interface ApiEmailSettingsGet$Json$Params {
 }
 
-export function apiEmailSettingsGet$Json(http: HttpClient, rootUrl: string, params?: ApiEmailSettingsGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ObjectApiResponse>> {
+export function apiEmailSettingsGet$Json(http: HttpClient, rootUrl: string, params?: ApiEmailSettingsGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<EmailSettingsDtoApiResponse>> {
   const rb = new RequestBuilder(rootUrl, apiEmailSettingsGet$Json.PATH, 'get');
   if (params) {
   }
@@ -23,7 +23,7 @@ export function apiEmailSettingsGet$Json(http: HttpClient, rootUrl: string, para
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<ObjectApiResponse>;
+      return r as StrictHttpResponse<EmailSettingsDtoApiResponse>;
     })
   );
 }

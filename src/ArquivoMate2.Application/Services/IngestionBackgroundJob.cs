@@ -76,7 +76,7 @@ namespace ArquivoMate2.Application.Services
                         descriptor.UserId,
                         new EmailDocument
                         {
-                            Email = "ingestion@arquivomate2.local",
+                            Email = _ingestionProvider.IngestionEmailAddress,
                             Subject = subject,
                             File = content,
                             FileName = descriptor.FileName

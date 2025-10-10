@@ -142,7 +142,7 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
 
             if (!string.IsNullOrWhiteSpace(reason))
             {
-                await WriteErrorInfoAsync(destinationKey + ".error.txt", reason!, cancellationToken).ConfigureAwait(false);
+                await WriteErrorInfoAsync(destinationKey + ".error.txt", reason, cancellationToken).ConfigureAwait(false);
             }
 
             _logger.LogWarning("Moved ingested file {File} to failed prefix {Destination}.", descriptor.FullPath, destinationKey);

@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TuiButton } from '@taiga-ui/core';
@@ -387,7 +387,7 @@ export class EmailSettingsComponent implements OnInit {
       isRead: this.fromTriState(value.isRead),
       hasAttachments: this.fromTriState(value.hasAttachments),
       maxResults: this.coerceNumber(value.maxResults) ?? undefined,
-      maxDaysBack: this.coerceNumber(value.maxDaysBack),
+  maxDaysBack: this.coerceNumber(value.maxDaysBack) ?? undefined,
       skip: this.coerceNumber(value.skip) ?? undefined,
       sortBy: value.sortBy as EmailSortBy,
       sortDescending: value.sortDescending,
@@ -660,7 +660,7 @@ export class EmailSettingsComponent implements OnInit {
     return items.length > 0 ? items : null;
   }
 
-  private toTriState(value: boolean | null | undefined): TriState {
+  private toTriState(value: boolean | TriState | null | undefined): TriState {
     if (value === true) {
       return 'true';
     }
@@ -691,8 +691,14 @@ export class EmailSettingsComponent implements OnInit {
     return date.toISOString().slice(0, 10);
   }
 
-  private joinFlags(flags: ReadonlyArray<string> | null | undefined): string {
-    return flags?.join(', ') ?? '';
+  private joinFlags(flags: string | ReadonlyArray<string> | null | undefined): string {
+    if (!flags) {
+      return '';
+    }
+    if (typeof flags === 'string') {
+      return flags;
+    }
+    return flags.join(', ');
   }
 
   private coerceNumber(value: number | null): number | null {

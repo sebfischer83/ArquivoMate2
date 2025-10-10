@@ -2,3 +2,5 @@
 - Pattern 002: Place reusable (nicht-Seiten) Components unter src/app/components/. Gilt seit Verschiebung DocumentHistoryComponent am 2025-09-25.
 - Pattern 003: Keine Transloco prefix/prefix: Syntax mehr nutzen; stattdessen Keys immer voll qualifizieren (z.B. t('Document.Download')). Eingeführt nach VS Code Plugin Limitation am 2025-09-28.
 - Pattern 004: In TypeScript keine Keys roh an Toast/Error weiterreichen; immer vorher via TranslocoService.translate('Namespace.Key') auflösen. Eingeführt nach i18n API Entscheidung am 2025-09-28.
+
+- Decision 010: Do NOT modify `src/app/main/main-area/main-area.page.ts` without explicit user permission. Recorded per user request on 2025-10-10. Any automated agent or collaborator must ask for confirmation before making edits to that file.

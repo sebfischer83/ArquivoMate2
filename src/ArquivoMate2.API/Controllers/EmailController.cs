@@ -96,7 +96,8 @@ namespace ArquivoMate2.API.Controllers
                 var settings = await _emailSettingsRepository.GetEmailSettingsAsync(userId, cancellationToken);
                 if (settings == null)
                 {
-                    return NotFound(new { message = "Email settings not found" });
+                    // Return an empty object instead of 404 so the ApiResponse wrapper will produce a consistent success envelope
+                    return Ok(new { });
                 }
 
                 var safeSettings = new
@@ -209,7 +210,8 @@ namespace ArquivoMate2.API.Controllers
                 var criteria = await _emailCriteriaRepository.GetEmailCriteriaAsync(userId, cancellationToken);
                 if (criteria == null)
                 {
-                    return NotFound(new { message = "Email criteria not found" });
+                    // Return an empty DTO instead of 404 so the ApiResponse wrapper produces a consistent envelope
+                    return Ok(new EmailCriteriaDto());
                 }
 
                 var criteriaDto = _mapper.Map<EmailCriteriaDto>(criteria);

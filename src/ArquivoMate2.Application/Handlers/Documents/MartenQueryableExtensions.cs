@@ -14,20 +14,15 @@ internal static class MartenQueryableExtensions
     {
         if (IsMartenProvider(query))
         {
-            // Try to call an async ToListAsync on the concrete query via reflection (supports test in-memory helpers)
-            var mi = query.GetType().GetMethod("ToListAsync", new[] { typeof(CancellationToken) });
-            if (mi != null)
+            // Use Marten's async extension directly when available
+            try
             {
-                var task = (System.Threading.Tasks.Task)mi.Invoke(query, new object[] { cancellationToken })!;
-                await task.ConfigureAwait(false);
-                // get Result property
-                var resultProp = task.GetType().GetProperty("Result");
-                if (resultProp != null)
-                {
-                    var res = resultProp.GetValue(task);
-                    if (res is System.Collections.IEnumerable enumerable)
-                        return enumerable.Cast<T>().ToList();
-                }
+                var res = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+                return res.ToList();
+            }
+            catch
+            {
+                // Fall through to synchronous fallback
             }
         }
 
@@ -38,13 +33,13 @@ internal static class MartenQueryableExtensions
     {
         if (IsMartenProvider(query))
         {
-            var mi = query.GetType().GetMethod("FirstOrDefaultAsync", new[] { typeof(CancellationToken) });
-            if (mi != null)
+            try
             {
-                var task = (System.Threading.Tasks.Task)mi.Invoke(query, new object[] { cancellationToken })!;
-                await task.ConfigureAwait(false);
-                var resultProp = task.GetType().GetProperty("Result");
-                if (resultProp != null) return (T?)resultProp.GetValue(task);
+                return await query.FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Fall through to synchronous fallback
             }
         }
 
@@ -55,18 +50,14 @@ internal static class MartenQueryableExtensions
     {
         if (IsMartenProvider(query))
         {
-            var mi = query.GetType().GetMethod("CountAsync", new[] { typeof(CancellationToken) });
-            if (mi != null)
+            try
             {
-                var task = (System.Threading.Tasks.Task)mi.Invoke(query, new object[] { cancellationToken })!;
-                await task.ConfigureAwait(false);
-                var resultProp = task.GetType().GetProperty("Result");
-                if (resultProp != null)
-                {
-                    var val = resultProp.GetValue(task);
-                    if (val is int i) return i;
-                    if (val is long l) return l;
-                }
+                var cnt = await query.CountAsync(cancellationToken).ConfigureAwait(false);
+                return cnt;
+            }
+            catch
+            {
+                // Fall through to synchronous fallback
             }
         }
 
@@ -77,13 +68,13 @@ internal static class MartenQueryableExtensions
     {
         if (IsMartenProvider(query))
         {
-            var mi = query.GetType().GetMethod("CountAsync", new[] { typeof(CancellationToken) });
-            if (mi != null)
+            try
             {
-                var task = (System.Threading.Tasks.Task)mi.Invoke(query, new object[] { cancellationToken })!;
-                await task.ConfigureAwait(false);
-                var resultProp = task.GetType().GetProperty("Result");
-                if (resultProp != null) return Convert.ToInt32(resultProp.GetValue(task));
+                return await query.CountAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Fall through to synchronous fallback
             }
         }
 
@@ -94,13 +85,13 @@ internal static class MartenQueryableExtensions
     {
         if (IsMartenProvider(query))
         {
-            var mi = query.GetType().GetMethod("SumAsync", new[] { selector.GetType(), typeof(CancellationToken) });
-            if (mi != null)
+            try
             {
-                var task = (System.Threading.Tasks.Task)mi.Invoke(query, new object[] { selector, cancellationToken })!;
-                await task.ConfigureAwait(false);
-                var resultProp = task.GetType().GetProperty("Result");
-                if (resultProp != null) return Convert.ToInt32(resultProp.GetValue(task));
+                return await query.SumAsync(selector, cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Fall through to synchronous fallback
             }
         }
 

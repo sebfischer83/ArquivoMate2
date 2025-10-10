@@ -2,6 +2,7 @@ using ArquivoMate2.Shared.ApiModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Net;
+using System.Reflection;
 
 namespace ArquivoMate2.API.Filters
 {
@@ -59,9 +60,10 @@ namespace ArquivoMate2.API.Filters
                     // Non-success ObjectResult -> convert value to ProblemDetails
                     if (!(objResult.Value is ProblemDetails))
                     {
+                        var message = ExtractMessage(objResult.Value);
                         var pd = new ProblemDetails
                         {
-                            Title = objResult.Value?.ToString() ?? "An error occurred",
+                            Title = message ?? (objResult.Value?.ToString() ?? "An error occurred"),
                             Status = status
                         };
                         executedContext.Result = new ObjectResult(pd) { StatusCode = status };
@@ -88,6 +90,36 @@ namespace ArquivoMate2.API.Filters
                 }
             }
             // other IActionResult implementations are left untouched
+        }
+
+        private static string? ExtractMessage(object? value)
+        {
+            if (value == null) return null;
+
+            // If it's a ProblemDetails already, use its Title
+            if (value is ProblemDetails pd) return pd.Title;
+
+            // If it's a string, return it
+            if (value is string s) return s;
+
+            // If it's IDictionary-like, try keys "message" or "Message"
+            if (value is System.Collections.IDictionary dict)
+            {
+                if (dict.Contains("message") && dict["message"] is string ms) return ms;
+                if (dict.Contains("Message") && dict["Message"] is string Ms) return Ms;
+            }
+
+            // Try to find a property named 'message' or 'Message'
+            var t = value.GetType();
+            var prop = t.GetProperty("message", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
+                       ?? t.GetProperty("Message", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            if (prop != null)
+            {
+                var v = prop.GetValue(value);
+                if (v is string vs) return vs;
+            }
+
+            return null;
         }
     }
 }

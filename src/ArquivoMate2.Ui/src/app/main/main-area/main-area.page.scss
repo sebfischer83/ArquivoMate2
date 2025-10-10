@@ -1,44 +1,9 @@
-:host {
-  display: block;
-  min-height: 100vh;
-  background: var(--tui-base-02);
-}
-
-.app-header {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 1.5rem;
-  height: 56px;
-  background: var(--tui-base-01);
-  border-bottom: 1px solid var(--tui-base-04);
-  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.app-brand {
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
+/* Cluster for dark mode + language switcher */
 .header-actions-cluster {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  margin-left: 0.5rem;
 }
 
 .header-actions-cluster app-language-switcher .lang-trigger {
@@ -53,58 +18,36 @@
 .lang-switch-inline {
   display: inline-flex;
 }
-
-.app-body-layout {
-  display: flex;
-  min-height: calc(100vh - 56px);
-  background: var(--tui-base-02);
-}
-
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  width: 260px;
-  border-right: 1px solid var(--tui-base-04);
-  background: var(--tui-base-01);
-}
-
-.sidebar-header {
-  padding: 0.75rem 0.75rem 0.25rem;
-  border-bottom: 1px solid var(--tui-base-04);
-}
-
-.sidebar button[tuiAsideItem] {
-  justify-content: flex-start;
-}
-
-.sidebar button[tuiAsideItem].active {
-  background: rgba(94, 135, 255, 0.12);
-  color: var(--tui-primary);
-}
-
-.main-content {
-  flex: 1;
-  padding: 2rem 2.5rem;
-  overflow: auto;
-  background: var(--tui-base-02);
-}
-
-@media (max-width: 960px) {
-  .main-content {
-    padding: 1.5rem;
+.import-history-item {
+  position: relative !important;
+  
+  .import-history-badge {
+    position: absolute !important;
+    z-index: 10 !important;
+    
+    // Ausgeklappte Sidebar - Badge rechts oben am Text
+    top: 8px !important;
+    right: 12px !important;
   }
 }
 
-@media (max-width: 768px) {
-  .app-header {
-    padding: 0 1rem;
-  }
-
-  .sidebar {
-    width: 220px;
-  }
-
-  .main-content {
-    padding: 1rem;
+// Eingeklappte Sidebar - Badge über dem Icon
+aside:not([tuiNavigationAside="true"]) .import-history-item {
+  .import-history-badge {
+    top: 4px !important;
+    right: 4px !important;
+    transform: scale(0.8) !important; // Etwas kleiner für bessere Optik
   }
 }
+
+// Zusätzliche Verbesserungen für bessere Sichtbarkeit
+.import-history-badge {
+  // Stärkerer Schatten für bessere Sichtbarkeit
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  
+  // Mindestbreite für einstellige Zahlen
+  min-width: 18px !important;
+  text-align: center !important;
+}
+
+/* Scroll-Isolation Block entfernt (User-Wunsch: altes Verhalten wiederherstellen) */

@@ -1,0 +1,279 @@
+<div class="email-settings">
+  <section class="settings-card">
+    <div class="card-header">
+      <div>
+        <h2>E-Mail-Verbindung</h2>
+        <p>Richte den Posteingang ein, aus dem Dokumente automatisch importiert werden.</p>
+      </div>
+      <span class="status-pill" [class.active]="hasExistingSettings()">
+        {{ hasExistingSettings() ? 'Konfiguration aktiv' : 'Noch nicht eingerichtet' }}
+      </span>
+    </div>
+
+    <div class="card-body" [class.loading]="loadingSettings()">
+      @if (loadingSettings()) {
+        <div class="loading-overlay">Lade aktuelle Einstellungen …</div>
+      }
+      <form [formGroup]="connectionForm" (ngSubmit)="saveSettings()">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="providerType">Provider</label>
+            <select id="providerType" formControlName="providerType">
+              @for (option of providerOptions; track option.value) {
+                <option [ngValue]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="server">Server</label>
+            <input id="server" type="text" formControlName="server" autocomplete="off" placeholder="imap.example.com" />
+            @if (shouldShowConnectionError('server')) {
+              <span class="error">Serveradresse wird benötigt.</span>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="port">Port</label>
+            <input id="port" type="number" min="1" max="65535" formControlName="port" />
+            @if (shouldShowConnectionError('port')) {
+              <span class="error">Bitte einen gültigen Port (1–65535) angeben.</span>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="username">Benutzername</label>
+            <input id="username" type="text" formControlName="username" autocomplete="username" />
+            @if (shouldShowConnectionError('username')) {
+              <span class="error">Benutzername wird benötigt.</span>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="password">Passwort</label>
+            <input id="password" type="password" formControlName="password" autocomplete="current-password" />
+            <small>Aus Sicherheitsgründen wird das Passwort nicht gespeichert angezeigt.</small>
+            @if (shouldShowConnectionError('password')) {
+              <span class="error">Bitte ein aktuelles Passwort hinterlegen.</span>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="displayName">Anzeigename</label>
+            <input id="displayName" type="text" formControlName="displayName" placeholder="Eingangsordner" />
+          </div>
+
+          <div class="form-field">
+            <label for="defaultFolder">Ordner</label>
+            <input id="defaultFolder" type="text" formControlName="defaultFolder" placeholder="INBOX" />
+          </div>
+
+          <div class="form-field">
+            <label for="connectionTimeout">Timeout (ms)</label>
+            <input id="connectionTimeout" type="number" min="1000" step="500" formControlName="connectionTimeout" />
+          </div>
+        </div>
+
+        <div class="form-checkboxes">
+          <label class="checkbox-field">
+            <input type="checkbox" formControlName="useSsl" />
+            <span>SSL/TLS verwenden</span>
+          </label>
+          <label class="checkbox-field">
+            <input type="checkbox" formControlName="autoReconnect" />
+            <span>Verbindung automatisch halten</span>
+          </label>
+        </div>
+
+        <div class="card-actions">
+          <button tuiButton appearance="primary" type="submit" [disabled]="savingSettings()">
+            @if (savingSettings()) { Speichere … } @else { Einstellungen speichern }
+          </button>
+          <button tuiButton appearance="secondary" type="button" (click)="resetConnectionForm()" [disabled]="loadingSettings() || savingSettings()">
+            Zurücksetzen
+          </button>
+          <button tuiButton appearance="secondary" type="button" class="danger" (click)="deleteSettings()" [disabled]="deletingSettings()">
+            @if (deletingSettings()) { Entferne … } @else { Verbindung entfernen }
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="settings-card">
+    <div class="card-header">
+      <div>
+        <h3>Status &amp; Monitoring</h3>
+        <p>Teste die Konnektivität und prüfe, ob neue Nachrichten vorliegen.</p>
+      </div>
+    </div>
+    <div class="card-body status-card">
+      <div class="status-item">
+        <span class="label">Nachrichten im Postfach</span>
+        <span class="value">
+          @if (loadingCount()) {
+            Lädt …
+          } @else if (emailCount() !== null) {
+            {{ emailCount() }}
+          } @else {
+            –
+          }
+        </span>
+        @if (lastCountRefresh()) {
+          <span class="meta">Stand: {{ lastCountRefresh() | date:'short' }}</span>
+        }
+      </div>
+
+      <div class="status-buttons">
+        <button tuiButton appearance="secondary" type="button" (click)="refreshEmailCount()" [disabled]="loadingCount()">
+          @if (loadingCount()) { Aktualisiere … } @else { Anzahl abrufen }
+        </button>
+        <button tuiButton appearance="secondary" type="button" (click)="testConnection()" [disabled]="testingConnection()">
+          @if (testingConnection()) { Test läuft … } @else { Verbindung testen }
+        </button>
+      </div>
+
+      @if (connectionStatus()) {
+        <div class="connection-feedback" [class.error]="connectionStatus()?.kind === 'error'" [class.success]="connectionStatus()?.kind === 'success'">
+          {{ connectionStatus()?.message }}
+        </div>
+      }
+    </div>
+  </section>
+
+  <section class="settings-card">
+    <div class="card-header">
+      <div>
+        <h3>Abruf-Regeln</h3>
+        <p>Definiere Filter, welche Nachrichten importiert werden sollen.</p>
+      </div>
+      <span class="status-pill" [class.active]="hasCriteria()">
+        {{ hasCriteria() ? 'Regeln aktiv' : 'Keine Regeln gespeichert' }}
+      </span>
+    </div>
+
+    <div class="card-body" [class.loading]="loadingCriteria()">
+      @if (loadingCriteria()) {
+        <div class="loading-overlay">Lade gespeicherte Regeln …</div>
+      }
+      <form [formGroup]="criteriaForm" (ngSubmit)="saveCriteria()">
+        <div class="form-grid two-columns">
+          <div class="form-field">
+            <label for="criteriaName">Name</label>
+            <input id="criteriaName" type="text" formControlName="name" placeholder="z. B. Rechnungen" />
+            @if (shouldShowCriteriaError('name')) {
+              <span class="error">Ein Name ist erforderlich.</span>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="criteriaDescription">Beschreibung</label>
+            <textarea id="criteriaDescription" rows="2" formControlName="description" placeholder="Kurze Erläuterung"></textarea>
+          </div>
+
+          <div class="form-field">
+            <label for="folderName">Ordner</label>
+            <input id="folderName" type="text" formControlName="folderName" placeholder="INBOX" />
+          </div>
+
+          <div class="form-field">
+            <label for="subjectContains">Betreff enthält</label>
+            <input id="subjectContains" type="text" formControlName="subjectContains" />
+          </div>
+
+          <div class="form-field">
+            <label for="fromContains">Von enthält</label>
+            <input id="fromContains" type="text" formControlName="fromContains" />
+          </div>
+
+          <div class="form-field">
+            <label for="toContains">An enthält</label>
+            <input id="toContains" type="text" formControlName="toContains" />
+          </div>
+
+          <div class="form-field">
+            <label for="dateFrom">Datum ab</label>
+            <input id="dateFrom" type="date" formControlName="dateFrom" />
+          </div>
+
+          <div class="form-field">
+            <label for="dateTo">Datum bis</label>
+            <input id="dateTo" type="date" formControlName="dateTo" />
+          </div>
+
+          <div class="form-field">
+            <label for="isRead">Gelesen?</label>
+            <select id="isRead" formControlName="isRead">
+              @for (option of triStateOptions; track option.value) {
+                <option [ngValue]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="hasAttachments">Anhänge?</label>
+            <select id="hasAttachments" formControlName="hasAttachments">
+              @for (option of triStateOptions; track option.value) {
+                <option [ngValue]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="maxResults">Max. Ergebnisse</label>
+            <input id="maxResults" type="number" min="1" formControlName="maxResults" />
+          </div>
+
+          <div class="form-field">
+            <label for="maxDaysBack">Zeitraum (Tage)</label>
+            <input id="maxDaysBack" type="number" min="1" formControlName="maxDaysBack" />
+          </div>
+
+          <div class="form-field">
+            <label for="skip">Überspringen</label>
+            <input id="skip" type="number" min="0" formControlName="skip" />
+          </div>
+
+          <div class="form-field">
+            <label for="sortBy">Sortierung</label>
+            <select id="sortBy" formControlName="sortBy">
+              @for (option of sortOptions; track option.value) {
+                <option [ngValue]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field checkbox-inline">
+            <label class="checkbox-field">
+              <input type="checkbox" formControlName="sortDescending" />
+              <span>Absteigend sortieren</span>
+            </label>
+          </div>
+
+          <div class="form-field">
+            <label for="includeFlags">Flags einschließen</label>
+            <input id="includeFlags" type="text" formControlName="includeFlags" placeholder="z. B. Seen,Flagged" />
+            <small>Kommagetrennte IMAP-Flags.</small>
+          </div>
+
+          <div class="form-field">
+            <label for="excludeFlags">Flags ausschließen</label>
+            <input id="excludeFlags" type="text" formControlName="excludeFlags" placeholder="z. B. Draft" />
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button tuiButton appearance="primary" type="submit" [disabled]="savingCriteria()">
+            @if (savingCriteria()) { Speichere … } @else { Regeln speichern }
+          </button>
+          <button tuiButton appearance="secondary" type="button" (click)="resetCriteriaForm()" [disabled]="loadingCriteria() || savingCriteria()">
+            Zurücksetzen
+          </button>
+          <button tuiButton appearance="secondary" class="danger" type="button" (click)="deleteCriteria()" [disabled]="deletingCriteria()">
+            @if (deletingCriteria()) { Entferne … } @else { Regeln entfernen }
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+</div>

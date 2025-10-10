@@ -1,0 +1,25 @@
+<div class="settings-page">
+  <header tuiHeader>
+    <h1 tuiTitle>⚙️ Einstellungen</h1>
+    <p class="subtitle">Verwalte Integrationen und Hintergrunddienste für dein Team.</p>
+  </header>
+
+  <nav class="settings-nav" aria-label="Einstellungsbereiche">
+    @for (section of sections; track section.link) {
+      <a
+        tuiButton
+        appearance="secondary"
+        size="m"
+        [routerLink]="section.link"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        {{ section.label }}
+      </a>
+    }
+  </nav>
+
+  <section class="settings-content">
+    <router-outlet />
+  </section>
+</div>

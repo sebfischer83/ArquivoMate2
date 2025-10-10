@@ -13,5 +13,10 @@ public enum ImportSource
     /// <summary>
     /// Import initiated from email attachment processing
     /// </summary>
-    Email = 1
+    Email = 1,
+
+    /// <summary>
+    /// Import initiated by the ingestion provider (e.g. filesystem drop folder).
+    /// </summary>
+    Ingestion = 2
 }

@@ -8,6 +8,7 @@ using ArquivoMate2.Domain.ValueObjects;
 using ArquivoMate2.Domain.Users;
 using ArquivoMate2.Domain.Sharing;
 using ArquivoMate2.Infrastructure.Configuration.DeliveryProvider;
+using ArquivoMate2.Infrastructure.Configuration.IngestionProvider;
 using ArquivoMate2.Infrastructure.Configuration.Llm;
 using ArquivoMate2.Infrastructure.Configuration.StorageProvider;
 using ArquivoMate2.Infrastructure.Mapping;
@@ -16,6 +17,7 @@ using ArquivoMate2.Infrastructure.Repositories;
 using ArquivoMate2.Infrastructure.Services;
 using ArquivoMate2.Infrastructure.Services.DeliveryProvider;
 using ArquivoMate2.Infrastructure.Services.EmailProvider;
+using ArquivoMate2.Infrastructure.Services.IngestionProvider;
 using ArquivoMate2.Infrastructure.Services.Llm;
 using ArquivoMate2.Infrastructure.Services.Search;
 using ArquivoMate2.Infrastructure.Services.Sharing;
@@ -244,6 +246,9 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddSingleton<DeliveryProviderSettingsFactory>();
             var deliverySettings = new DeliveryProviderSettingsFactory(config).GetDeliveryProviderSettings();
 
+            services.AddSingleton<IngestionProviderSettingsFactory>();
+            var ingestionSettings = new IngestionProviderSettingsFactory(config).GetIngestionProviderSettings();
+
             services.AddScoped<IEmailSettingsRepository, EmailSettingsRepository>();
             services.AddScoped<IProcessedEmailRepository, ProcessedEmailRepository>();
             services.AddScoped<IEmailCriteriaRepository, EmailCriteriaRepository>();
@@ -267,6 +272,27 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     break;
                 default:
                     throw new InvalidOperationException("Unsupported FileProviderSettings");
+            }
+
+            switch (ingestionSettings)
+            {
+                case FileSystemIngestionProviderSettings fileSystem:
+                    services.AddSingleton(fileSystem);
+                    services.AddSingleton<IngestionProviderSettings>(fileSystem);
+                    services.AddSingleton<Microsoft.Extensions.Options.IOptions<FileSystemIngestionProviderSettings>>(Microsoft.Extensions.Options.Options.Create(fileSystem));
+                    services.AddSingleton<IIngestionProvider, FileSystemIngestionProvider>();
+                    break;
+                case S3IngestionProviderSettings s3:
+                    services.AddSingleton(s3);
+                    services.AddSingleton<IngestionProviderSettings>(s3);
+                    services.AddSingleton<Microsoft.Extensions.Options.IOptions<S3IngestionProviderSettings>>(Microsoft.Extensions.Options.Options.Create(s3));
+                    services.AddSingleton<IIngestionProvider, S3IngestionProvider>();
+                    break;
+                default:
+                    services.AddSingleton(ingestionSettings);
+                    services.AddSingleton<IngestionProviderSettings>(ingestionSettings);
+                    services.AddSingleton<IIngestionProvider, NullIngestionProvider>();
+                    break;
             }
 
             switch (deliverySettings)

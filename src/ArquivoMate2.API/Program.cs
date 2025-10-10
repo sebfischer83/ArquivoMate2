@@ -6,6 +6,7 @@ using ArquivoMate2.Application.Handlers;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Services;
 using ArquivoMate2.Infrastructure.Configuration;
+using ArquivoMate2.Infrastructure.Configuration.IngestionProvider;
 using ArquivoMate2.Infrastructure.Configuration.Auth;
 using Hangfire;
 using Hangfire.PostgreSql;
@@ -287,7 +288,33 @@ namespace ArquivoMate2.API
                 job => job.ExecuteAsync(CancellationToken.None),
                 Cron.Daily);
 
+            using (var scope = app.Services.CreateScope())
+            {
+                var ingestionSettings = scope.ServiceProvider.GetService<IngestionProviderSettings>();
+
+                switch (ingestionSettings)
+                {
+                    case FileSystemIngestionProviderSettings fileSystem when fileSystem.Type == IngestionProviderType.FileSystem:
+                        ScheduleIngestionJob("filesystem-ingestion", fileSystem.PollingInterval);
+                        break;
+                    case S3IngestionProviderSettings s3 when s3.Type == IngestionProviderType.S3:
+                        ScheduleIngestionJob("s3-ingestion", s3.PollingInterval);
+                        break;
+                }
+            }
+
             app.Run();
+        }
+
+        private static void ScheduleIngestionJob(string jobId, TimeSpan pollingInterval)
+        {
+            var minutes = Math.Max(1, (int)Math.Ceiling(pollingInterval.TotalMinutes));
+            var cronExpression = Cron.MinuteInterval(minutes);
+
+            RecurringJob.AddOrUpdate<IngestionBackgroundJob>(
+                jobId,
+                job => job.ExecuteAsync(CancellationToken.None),
+                cronExpression);
         }
 
         private static void AddAuth(WebApplicationBuilder builder, ConfigurationManager configuration)

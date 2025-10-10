@@ -25,6 +25,12 @@ namespace ArquivoMate2.Application.Services
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ILogger<IngestionBackgroundJob> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="IngestionBackgroundJob"/> with the required dependencies.
+        /// </summary>
+        /// <param name="ingestionProvider">Provider used to list, read, mark processed, and mark failed ingestion files.</param>
+        /// <param name="serviceScopeFactory">Factory to create a scoped service provider for per-file scoped services (e.g., mediator, document session).</param>
+        /// <param name="logger">Logger used to record informational and error messages for the job.</param>
         public IngestionBackgroundJob(IIngestionProvider ingestionProvider, IServiceScopeFactory serviceScopeFactory, ILogger<IngestionBackgroundJob> logger)
         {
             _ingestionProvider = ingestionProvider;
@@ -32,6 +38,10 @@ namespace ArquivoMate2.Application.Services
             _logger = logger;
         }
 
+        /// <summary>
+        /// Checks the configured ingestion provider for pending files and processes each pending file sequentially.
+        /// </summary>
+        /// <param name="cancellationToken">Token to observe for cancellation; if canceled, processing stops before starting the next file.</param>
         [DisableConcurrentExecution(timeoutInSeconds: 600)]
         public async Task ExecuteAsync(CancellationToken cancellationToken)
         {
@@ -53,6 +63,11 @@ namespace ArquivoMate2.Application.Services
             }
         }
 
+        /// <summary>
+        /// Processes a single ingestion file: reads its content, uploads it as a mail document, initializes the import workflow and event stream, enqueues document processing, and marks the ingestion item as processed or failed.
+        /// </summary>
+        /// <param name="descriptor">Descriptor identifying the ingestion file to process (file name, user, and paths).</param>
+        /// <param name="cancellationToken">Token to observe for cancellation of the operation.</param>
         private async Task ProcessSingleFileAsync(IngestionFileDescriptor descriptor, CancellationToken cancellationToken)
         {
             using var scope = _serviceScopeFactory.CreateScope();

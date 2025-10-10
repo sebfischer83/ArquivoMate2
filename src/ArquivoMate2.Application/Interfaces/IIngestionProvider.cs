@@ -19,18 +19,30 @@ public interface IIngestionProvider
     /// concurrent workers (e.g. by moving them into a processing area).
     /// </summary>
     /// <param name="cancellationToken">Cancellation token propagated from the caller.</param>
-    /// <returns>A read-only collection of descriptors that describe the reserved files.</returns>
+    /// <summary>
+/// Retrieves and reserves files that are pending ingestion so they are not concurrently processed by other workers.
+/// </summary>
+/// <returns>A read-only collection of IngestionFileDescriptor describing the reserved files.</returns>
     Task<IReadOnlyList<IngestionFileDescriptor>> ListPendingFilesAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Marks a descriptor as successfully processed and moves it to the processed area.
-    /// </summary>
+    /// <summary>
+/// Marks the specified reserved ingestion file as successfully processed and moves it to the provider's processed area.
+/// </summary>
+/// <param name="descriptor">Descriptor of the reserved ingestion file to mark as processed.</param>
+/// <param name="cancellationToken">Token to cancel the operation.</param>
     Task MarkProcessedAsync(IngestionFileDescriptor descriptor, CancellationToken cancellationToken);
 
     /// <summary>
     /// Marks a descriptor as failed and moves it to the failure area. The optional
     /// reason can be persisted by the provider for debugging purposes.
-    /// </summary>
+    /// <summary>
+/// Marks the specified ingestion file as failed and moves it to the provider's failure area.
+/// </summary>
+/// <param name="descriptor">Descriptor of the reserved ingestion file to mark as failed.</param>
+/// <param name="reason">Optional short explanation for the failure that the provider may persist for debugging.</param>
+/// <param name="cancellationToken">Token to cancel the operation.</param>
     Task MarkFailedAsync(IngestionFileDescriptor descriptor, string? reason, CancellationToken cancellationToken);
 
     /// <summary>
@@ -38,7 +50,12 @@ public interface IIngestionProvider
     /// </summary>
     /// <param name="descriptor">Descriptor that should be read.</param>
     /// <param name="cancellationToken">Cancellation token propagated from the caller.</param>
-    /// <returns>The raw binary content of the descriptor.</returns>
+    /// <summary>
+/// Reads the binary content of the specified ingestion file descriptor.
+/// </summary>
+/// <param name="descriptor">Descriptor identifying the reserved ingestion file to read.</param>
+/// <param name="cancellationToken">Token to observe while waiting for the operation to complete.</param>
+/// <returns>A byte array containing the file's binary content.</returns>
     Task<byte[]> ReadFileAsync(IngestionFileDescriptor descriptor, CancellationToken cancellationToken);
 
     /// <summary>
@@ -48,7 +65,14 @@ public interface IIngestionProvider
     /// <param name="fileName">Original file name supplied by the caller.</param>
     /// <param name="content">File content stream.</param>
     /// <param name="cancellationToken">Cancellation token propagated from the caller.</param>
-    /// <returns>The absolute path of the stored file.</returns>
+    /// <summary>
+/// Stores an uploaded file in the ingestion source for the specified user and reserves it for ingestion.
+/// </summary>
+/// <param name="userId">Identifier of the user who owns the uploaded file.</param>
+/// <param name="fileName">Original name of the uploaded file.</param>
+/// <param name="content">Stream containing the file data to store.</param>
+/// <param name="cancellationToken">Token to observe while waiting for the operation to complete.</param>
+/// <returns>The absolute path of the stored file.</returns>
     Task<string> SaveIncomingFileAsync(string userId, string fileName, Stream content, CancellationToken cancellationToken);
 }
 

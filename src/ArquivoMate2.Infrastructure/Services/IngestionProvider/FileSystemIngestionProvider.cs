@@ -22,6 +22,9 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
         private readonly FileSystemIngestionProviderSettings _settings;
         private readonly ILogger<FileSystemIngestionProvider> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="FileSystemIngestionProvider"/> using the provided settings and logger.
+        /// </summary>
         public FileSystemIngestionProvider(
             IOptions<FileSystemIngestionProviderSettings> options,
             ILogger<FileSystemIngestionProvider> logger)
@@ -30,6 +33,14 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
             _logger = logger;
         }
 
+        /// <summary>
+        /// Discovers and reserves pending ingestion files across user directories by moving fresh files into each user's processing subfolder.
+        /// </summary>
+        /// <remarks>
+        /// If the configured root path is missing, it is created. Files already present in a user's processing subfolder are returned as requeued items; top-level files in a user's directory are moved into the processing subfolder to reserve them. Failed file moves are logged and do not stop processing of other files.
+        /// </remarks>
+        /// <returns>An IReadOnlyList of IngestionFileDescriptor entries representing files reserved for processing or requeued from processing; returns an empty list if the root path is not configured or no files are found.</returns>
+        /// <exception cref="OperationCanceledException">If cancellation is requested via the provided <see cref="CancellationToken"/>.</exception>
         public Task<IReadOnlyList<IngestionFileDescriptor>> ListPendingFilesAsync(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -93,6 +104,11 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
             return Task.FromResult<IReadOnlyList<IngestionFileDescriptor>>(result);
         }
 
+        /// <summary>
+        /// Move the file represented by <paramref name="descriptor"/> into the provider's processed subfolder for its user, ensuring the destination path is unique.
+        /// </summary>
+        /// <param name="descriptor">Descriptor identifying the file to mark as processed (provides the file's current path and name).</param>
+        /// <param name="cancellationToken">Token to observe for cancellation.</param>
         public Task MarkProcessedAsync(IngestionFileDescriptor descriptor, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -106,6 +122,12 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Moves the file identified by <paramref name="descriptor"/> into the configured failed subfolder and records an optional failure reason.
+        /// </summary>
+        /// <param name="descriptor">The ingestion file descriptor whose file will be moved to the failed folder.</param>
+        /// <param name="reason">Optional human-readable failure reason; when non-empty, it is written to a sibling `.error.txt` file next to the moved file.</param>
+        /// <param name="cancellationToken">A token to observe for cancellation.</param>
         public Task MarkFailedAsync(IngestionFileDescriptor descriptor, string? reason, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -126,6 +148,17 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Saves an incoming file stream into the configured user's directory and returns the stored file path.
+        /// </summary>
+        /// <param name="userId">The identifier of the user who owns the file; must not be null or empty.</param>
+        /// <param name="fileName">The desired file name; if null or empty a GUID-based name is generated. Path components are stripped.</param>
+        /// <param name="content">The stream containing the file contents to be written.</param>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        /// <returns>The full path to the stored file.</returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="userId"/> is null, empty, or whitespace.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the provider's root path is not configured.</exception>
+        /// <exception cref="OperationCanceledException">Thrown if the operation is canceled via <paramref name="cancellationToken"/>.</exception>
         public async Task<string> SaveIncomingFileAsync(string userId, string fileName, Stream content, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -155,6 +188,13 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
             return destination;
         }
 
+        /// <summary>
+        /// Read the contents of the file referenced by the given ingestion descriptor.
+        /// </summary>
+        /// <param name="descriptor">Descriptor whose FullPath points to the file to read.</param>
+        /// <param name="cancellationToken">Token to cancel the read operation.</param>
+        /// <returns>The file contents as a byte array.</returns>
+        /// <exception cref="OperationCanceledException">If <paramref name="cancellationToken"/> is canceled before or during the read.</exception>
         public Task<byte[]> ReadFileAsync(IngestionFileDescriptor descriptor, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -162,12 +202,24 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
             return File.ReadAllBytesAsync(descriptor.FullPath, cancellationToken);
         }
 
+        /// <summary>
+        /// Ensures a directory exists at the specified path, creating it if necessary.
+        /// </summary>
+        /// <param name="path">The directory path to ensure exists.</param>
+        /// <returns>The same directory path passed in <paramref name="path"/>.</returns>
         private string EnsureDirectory(string path)
         {
             Directory.CreateDirectory(path);
             return path;
         }
 
+        /// <summary>
+        /// Determines the full path to a named subfolder under the user directory for the given ingestion file descriptor.
+        /// </summary>
+        /// <param name="descriptor">The ingestion file descriptor whose location is used to resolve the user directory.</param>
+        /// <param name="subfolderName">The name of the target subfolder (for example, "processing", "processed", or "failed").</param>
+        /// <returns>The full path to the specified subfolder within the descriptor's user directory.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if the descriptor's directory or its parent user directory cannot be determined.</exception>
         private string GetTargetDirectory(IngestionFileDescriptor descriptor, string subfolderName)
         {
             var processingDirectory = Path.GetDirectoryName(descriptor.FullPath);
@@ -185,6 +237,13 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
             return Path.Combine(userDirectory, subfolderName);
         }
 
+        /// <summary>
+        /// Finds a non-conflicting file path based on the provided desired path.
+        /// </summary>
+        /// <param name="desiredPath">The initial desired file path (including directory, name, and extension).</param>
+        /// <returns>
+        /// The original path if no file exists at that location; otherwise a variant with an appended `_1`, `_2`, etc. suffix before the extension that does not exist.
+        /// </returns>
         private static string EnsureUniquePath(string desiredPath)
         {
             if (!File.Exists(desiredPath))

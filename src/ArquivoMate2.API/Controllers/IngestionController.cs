@@ -18,6 +18,9 @@ namespace ArquivoMate2.API.Controllers
         private readonly IIngestionProvider _ingestionProvider;
         private readonly ILogger<IngestionController> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="IngestionController"/> with the required dependencies.
+        /// </summary>
         public IngestionController(IIngestionProvider ingestionProvider, ILogger<IngestionController> logger)
         {
             _ingestionProvider = ingestionProvider;
@@ -26,7 +29,12 @@ namespace ArquivoMate2.API.Controllers
 
         /// <summary>
         /// Allows API key authenticated clients to drop files into the ingestion directory.
+        /// <summary>
+        /// Accepts an uploaded form file and queues it for ingestion for the authenticated user.
         /// </summary>
+        /// <param name="file">The uploaded form file to be saved for ingestion.</param>
+        /// <param name="cancellationToken">Token to cancel the upload operation.</param>
+        /// <returns>An ApiResponse whose value is the stored path of the persisted file and whose message indicates the file was accepted for ingestion.</returns>
         [HttpPost("files")]
         [ProducesResponseType(StatusCodes.Status202Accepted, Type = typeof(ApiResponse<string>))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

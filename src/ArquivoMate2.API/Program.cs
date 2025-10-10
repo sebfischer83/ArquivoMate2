@@ -41,6 +41,12 @@ namespace ArquivoMate2.API
 {
     public class Program
     {
+        /// <summary>
+        /// Configure services, middleware, background jobs, and routes for the ArquivoMate2 web application, then start the application host.
+        /// </summary>
+        /// <remarks>
+        /// Sets up logging and OpenTelemetry, registers application services (infrastructure, MediatR, SignalR, Hangfire, localization, health checks, Swagger, CORS, caching, and hosted/background jobs), configures authentication and authorization, mounts middleware and endpoints (controllers, hubs, Hangfire dashboard, health checks, Swagger in development), schedules recurring maintenance and ingestion jobs based on resolved ingestion provider settings, and runs the web host.
+        /// </remarks>
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
@@ -306,6 +312,11 @@ namespace ArquivoMate2.API
             app.Run();
         }
 
+        /// <summary>
+        /// Schedules a recurring ingestion background job that runs at the specified polling interval.
+        /// </summary>
+        /// <param name="jobId">Unique identifier used to register the recurring job.</param>
+        /// <param name="pollingInterval">Desired interval between job runs; intervals less than one minute are treated as one minute.</param>
         private static void ScheduleIngestionJob(string jobId, TimeSpan pollingInterval)
         {
             var minutes = Math.Max(1, (int)Math.Ceiling(pollingInterval.TotalMinutes));
@@ -317,6 +328,14 @@ namespace ArquivoMate2.API
                 cronExpression);
         }
 
+        /// <summary>
+        /// Configures authentication and authorization services according to the application's authentication settings.
+        /// </summary>
+        /// <remarks>
+        /// When OpenID Connect (OIDC) is configured, registers JWT bearer authentication using the resolved OIDC settings and enables retrieving an access token from the query string for requests to the SignalR documents hub.
+        /// </remarks>
+        /// <param name="builder">The web application builder used to register services and middleware.</param>
+        /// <param name="configuration">The configuration manager used to resolve authentication settings.</param>
         private static void AddAuth(WebApplicationBuilder builder, ConfigurationManager configuration)
         {
             var config = new AuthSettingsFactory(configuration).GetAuthSettings();

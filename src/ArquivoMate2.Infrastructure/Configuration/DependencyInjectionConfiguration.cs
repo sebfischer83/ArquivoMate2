@@ -1,4 +1,4 @@
-﻿using ArquivoMate2.Application.Configuration;
+using ArquivoMate2.Application.Configuration;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Models;
 using ArquivoMate2.Domain.Document;
@@ -69,6 +69,11 @@ namespace ArquivoMate2.Infrastructure.Configuration
         /// </summary>
         /// <param name="services">Service collection to configure.</param>
         /// <param name="config">Application configuration source.</param>
+        /// <summary>
+        /// Registers persistence, providers, integrations, and related infrastructure services into the provided service collection using the given application configuration.
+        /// </summary>
+        /// <param name="services">The service collection to configure.</param>
+        /// <param name="config">The application configuration used to configure persistence, providers, and external integrations.</param>
         /// <returns>The updated service collection.</returns>
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
         {

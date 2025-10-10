@@ -11,8 +11,20 @@ import { RequestBuilder } from '../../request-builder';
 import { DocumentArtifact } from '../../models/document-artifact';
 
 export interface ApiDeliveryDocumentIdArtifactGet$Params {
+
+/**
+ * Identifier of the document to deliver.
+ */
   documentId: string;
+
+/**
+ * Which artifact to return (file, preview, thumb, metadata, archive).
+ */
   artifact: DocumentArtifact;
+
+/**
+ * Signed access token that authorizes delivery of the requested artifact.
+ */
   token?: string;
 }
 

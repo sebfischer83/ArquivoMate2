@@ -11,8 +11,14 @@ import { BaseService } from '../base-service';
 import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
+import { apiMaintenanceCacheKeyCountsGet } from '../fn/maintenance/api-maintenance-cache-key-counts-get';
+import { ApiMaintenanceCacheKeyCountsGet$Params } from '../fn/maintenance/api-maintenance-cache-key-counts-get';
+import { apiMaintenanceDbStatsGet } from '../fn/maintenance/api-maintenance-db-stats-get';
+import { ApiMaintenanceDbStatsGet$Params } from '../fn/maintenance/api-maintenance-db-stats-get';
 import { apiMaintenanceDocumentEncryptionKeysGet } from '../fn/maintenance/api-maintenance-document-encryption-keys-get';
 import { ApiMaintenanceDocumentEncryptionKeysGet$Params } from '../fn/maintenance/api-maintenance-document-encryption-keys-get';
+import { apiMaintenanceInfraStatsGet } from '../fn/maintenance/api-maintenance-infra-stats-get';
+import { ApiMaintenanceInfraStatsGet$Params } from '../fn/maintenance/api-maintenance-infra-stats-get';
 
 @Injectable({ providedIn: 'root' })
 export class MaintenanceService extends BaseService {
@@ -51,6 +57,99 @@ export class MaintenanceService extends BaseService {
    */
   apiMaintenanceDocumentEncryptionKeysGet(params?: ApiMaintenanceDocumentEncryptionKeysGet$Params, context?: HttpContext): Observable<void> {
     return this.apiMaintenanceDocumentEncryptionKeysGet$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `apiMaintenanceCacheKeyCountsGet()` */
+  static readonly ApiMaintenanceCacheKeyCountsGetPath = '/api/maintenance/cache/key-counts';
+
+  /**
+   * Returns a count of keys grouped by prefix (text before the first ':') across all configured Redis servers.
+   * Intended for maintenance / monitoring use. This may be an expensive operation on large keyspaces.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiMaintenanceCacheKeyCountsGet()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiMaintenanceCacheKeyCountsGet$Response(params?: ApiMaintenanceCacheKeyCountsGet$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return apiMaintenanceCacheKeyCountsGet(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Returns a count of keys grouped by prefix (text before the first ':') across all configured Redis servers.
+   * Intended for maintenance / monitoring use. This may be an expensive operation on large keyspaces.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiMaintenanceCacheKeyCountsGet$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiMaintenanceCacheKeyCountsGet(params?: ApiMaintenanceCacheKeyCountsGet$Params, context?: HttpContext): Observable<void> {
+    return this.apiMaintenanceCacheKeyCountsGet$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `apiMaintenanceInfraStatsGet()` */
+  static readonly ApiMaintenanceInfraStatsGetPath = '/api/maintenance/infra-stats';
+
+  /**
+   * Returns combined infra stats: Redis INFO, key counts per prefix and Meilisearch health + index stats.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiMaintenanceInfraStatsGet()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiMaintenanceInfraStatsGet$Response(params?: ApiMaintenanceInfraStatsGet$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return apiMaintenanceInfraStatsGet(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Returns combined infra stats: Redis INFO, key counts per prefix and Meilisearch health + index stats.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiMaintenanceInfraStatsGet$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiMaintenanceInfraStatsGet(params?: ApiMaintenanceInfraStatsGet$Params, context?: HttpContext): Observable<void> {
+    return this.apiMaintenanceInfraStatsGet$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `apiMaintenanceDbStatsGet()` */
+  static readonly ApiMaintenanceDbStatsGetPath = '/api/maintenance/db-stats';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiMaintenanceDbStatsGet()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiMaintenanceDbStatsGet$Response(params?: ApiMaintenanceDbStatsGet$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return apiMaintenanceDbStatsGet(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiMaintenanceDbStatsGet$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiMaintenanceDbStatsGet(params?: ApiMaintenanceDbStatsGet$Params, context?: HttpContext): Observable<void> {
+    return this.apiMaintenanceDbStatsGet$Response(params, context).pipe(
       map((r: StrictHttpResponse<void>): void => r.body)
     );
   }

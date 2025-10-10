@@ -13,6 +13,7 @@
   <ItemGroup>
     <None Include=".github\workflows\ci.yml" />
     <None Include=".github\workflows\publish-docker.yml" />
+    <None Include=".github\workflows\ui-ci.yml" />
     <None Include="api.env" />
     <None Include="Directory.Build.props" />
     <None Include="docker-compose.override.yml">

@@ -1,0 +1,58 @@
+name: UI CI
+
+on:
+  push:
+    paths:
+      - 'src/ArquivoMate2.Ui/**'
+  pull_request:
+    paths:
+      - 'src/ArquivoMate2.Ui/**'
+
+concurrency:
+  group: ui-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-ui:
+    name: Build Angular UI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        working-directory: src/ArquivoMate2.Ui
+        run: npm ci
+
+      - name: Run lint
+        working-directory: src/ArquivoMate2.Ui
+        run: |
+          if [ -f package.json ] && grep -q "\"lint\"" package.json; then
+            npm run lint --if-present || true
+          else
+            echo "No lint script defined, skipping"
+          fi
+
+      - name: Build UI (production)
+        working-directory: src/ArquivoMate2.Ui
+        env:
+          CI: true
+        run: |
+          # Use npm script if provided, otherwise attempt angular-cli build
+          if npm run -s | grep -q "build"; then
+            npm run build --if-present -- --configuration production
+          else
+            npx ng build --configuration production
+          fi

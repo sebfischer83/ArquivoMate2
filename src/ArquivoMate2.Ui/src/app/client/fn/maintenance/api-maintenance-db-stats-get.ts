@@ -8,16 +8,13 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { DocumentProcessingStatus } from '../../models/document-processing-status';
 
-export interface ApiHistoryHideByStatusPost$Params {
-  documentProcessingStatus?: DocumentProcessingStatus;
+export interface ApiMaintenanceDbStatsGet$Params {
 }
 
-export function apiHistoryHideByStatusPost(http: HttpClient, rootUrl: string, params?: ApiHistoryHideByStatusPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, apiHistoryHideByStatusPost.PATH, 'post');
+export function apiMaintenanceDbStatsGet(http: HttpClient, rootUrl: string, params?: ApiMaintenanceDbStatsGet$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  const rb = new RequestBuilder(rootUrl, apiMaintenanceDbStatsGet.PATH, 'get');
   if (params) {
-    rb.query('documentProcessingStatus', params.documentProcessingStatus, {});
   }
 
   return http.request(
@@ -30,4 +27,4 @@ export function apiHistoryHideByStatusPost(http: HttpClient, rootUrl: string, pa
   );
 }
 
-apiHistoryHideByStatusPost.PATH = '/api/history/hideByStatus';
+apiMaintenanceDbStatsGet.PATH = '/api/maintenance/db-stats';

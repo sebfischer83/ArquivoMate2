@@ -14,6 +14,7 @@ import { DocumentsService } from './services/documents.service';
 import { DocumentSharesService } from './services/document-shares.service';
 import { EmailService } from './services/email.service';
 import { ImportHistoryService } from './services/import-history.service';
+import { IngestionService } from './services/ingestion.service';
 import { MaintenanceService } from './services/maintenance.service';
 import { PartiesService } from './services/parties.service';
 import { PublicShareService } from './services/public-share.service';
@@ -37,6 +38,7 @@ import { UsersService } from './services/users.service';
     DocumentSharesService,
     EmailService,
     ImportHistoryService,
+    IngestionService,
     MaintenanceService,
     PartiesService,
     PublicShareService,

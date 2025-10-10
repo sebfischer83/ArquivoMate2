@@ -2,6 +2,7 @@ using ArquivoMate2.API.Filters;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Users;
 using ArquivoMate2.Shared.ApiModels;
+using ArquivoMate2.Shared.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -28,11 +29,14 @@ namespace ArquivoMate2.API.Controllers
         /// Allows API key authenticated clients to drop files into the ingestion directory.
         /// </summary>
         [HttpPost("files")]
+        [Consumes("multipart/form-data")]
         [ProducesResponseType(StatusCodes.Status202Accepted, Type = typeof(ApiResponse<string>))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<ApiResponse<string>>> UploadAsync([FromForm] IFormFile file, CancellationToken cancellationToken)
+        public async Task<ActionResult<ApiResponse<string>>> UploadAsync([FromForm] UploadDocumentRequest request, CancellationToken cancellationToken)
         {
+            var file = request?.File;
+
             if (file == null || file.Length == 0)
             {
                 return BadRequest(new ApiResponse<string>(default, success: false, message: "File payload is empty."));

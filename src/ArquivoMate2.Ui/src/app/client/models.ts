@@ -64,6 +64,7 @@ export type { ShareGroupDto } from './models/share-group-dto';
 export type { ShareGroupDtoApiResponse } from './models/share-group-dto-api-response';
 export type { ShareGroupDtoIEnumerableApiResponse } from './models/share-group-dto-i-enumerable-api-response';
 export type { ShareTarget } from './models/share-target';
+export type { StringApiResponse } from './models/string-api-response';
 export type { UpdateCollectionRequest } from './models/update-collection-request';
 export type { UpdateDocumentFieldsDto } from './models/update-document-fields-dto';
 export type { UpdatePartyRequest } from './models/update-party-request';

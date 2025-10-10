@@ -34,5 +34,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
         // Helper properties for UI display
         public bool IsFromUser => Source == ImportSource.User;
         public bool IsFromEmail => Source == ImportSource.Email;
+
+        public bool IsFromIngestion => Source == ImportSource.Ingestion;
     }
 }

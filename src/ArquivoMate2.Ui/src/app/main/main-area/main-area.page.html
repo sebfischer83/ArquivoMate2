@@ -1,266 +1,100 @@
-
-<!-- Ignore this part, it is only here to position drawer inside the example block -->
-	<div class="custom-portal"><ng-container #viewContainer /></div>
-	<tui-drawer *tuiPopup="openDrawer()" style="width: 320px; padding: 0.25rem;">
-      <header>
-        <h2 tuiHeader>
-            <div tuiTitle>
-                <span tuiCaption>Caption・caption</span>
-               
-            </div>
- 
-        </h2>
-    </header>
-        <app-tasks></app-tasks>
-    <footer>
-      
-    </footer>
+<div class="custom-portal"><ng-container #viewContainer /></div>
+<tui-drawer *tuiPopup="openDrawer()" style="width: 320px; padding: 0.25rem;">
+  <header>
+    <h2 tuiHeader>
+      <div tuiTitle>
+        <span tuiCaption>Team-Aufgaben</span>
+      </div>
+    </h2>
+  </header>
+  <app-tasks></app-tasks>
 </tui-drawer>
+
 <header tuiNavigationHeader class="app-header">
-    <span tuiNavigationSegments>
-        <button
-            appearance="secondary-grayscale"
-            tuiButton
-            type="button"
-        >
-            Link 1
-        </button>
-        <button
-            appearance="secondary-grayscale"
-            tuiButton
-            type="button"
-        >
-            Link 2
-        </button>
-        <button
-            appearance="secondary-grayscale"
-            tuiButton
-            tuiChevron
-            tuiDropdownOpen
-            type="button"
-            [tuiDropdown]="products"
-        >
-            <span
-                [style.overflow]="'hidden'"
-                [style.text-overflow]="'ellipsis'"
-            >
-                A very very long project
-            </span>
-            <ng-template #products>
-                <tui-data-list size="s">
-                    <button
-                        tuiOption
-                        type="button"
-                    >
-                        A very very long project
-                        <tui-icon
-                            icon="@tui.check"
-                            [style.font-size.em]="1"
-                            [style.margin-left.rem]="0.5"
-                        />
-                    </button>
-                    <button
-                        tuiOption
-                        type="button"
-                    >
-                        Something else
-                    </button>
-                </tui-data-list>
-            </ng-template>
-        </button>
-    </span>
-    <hr />
+  <div class="header-left">
     <button
-        appearance="secondary-grayscale"
-        iconStart="@tui.plus"
-        tuiButton
-        type="button"
-    >
-        Create
-    </button>
-    <button
-        iconStart="@tui.bell"
-        tuiIconButton
-        type="button"
-    >
-        Notifications
-        <tui-badge-notification />
+      tuiIconButton
+      appearance="secondary-grayscale"
+      iconStart="@tui.menu"
+      type="button"
+      aria-label="Seitenleiste umschalten"
+      (click)="handleToggle()"
+    ></button>
+    <span class="app-brand">ArquivoMate</span>
+  </div>
+
+  <div class="header-actions">
+    <button iconStart="@tui.bell" tuiIconButton type="button" aria-label="Benachrichtigungen">
+      <tui-badge-notification />
     </button>
     <div class="header-actions-cluster">
       <button
-          iconStart="@tui.sun"
-          tuiIconButton
-          type="button"
-          (click)="toggleDarkmode()"
-          aria-label="Toggle dark mode"
+        iconStart="@tui.sun"
+        tuiIconButton
+        type="button"
+        aria-label="Darkmode umschalten"
+        (click)="toggleDarkmode()"
       ></button>
       <app-language-switcher class="lang-switch-inline"></app-language-switcher>
+      <button tuiButton type="button" appearance="secondary" (click)="openDrawer.set(!openDrawer())">
+        Aufgaben
+      </button>
     </div>
+  </div>
+</header>
+
+<div class="app-body-layout">
+  <aside class="sidebar" [tuiNavigationAside]="expanded()">
+    <header class="sidebar-header">
+      <button
+        tuiAsideItem
+        iconStart="@tui.home"
+        routerLink="/app/dashboard"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        type="button"
+      >
+        Dashboard
+      </button>
+    </header>
+
     <button
-    tuiButton
-    type="button"
-    (click)="openDrawer.set(!openDrawer())"
-    >Toggle
-</button>
- </header>
-<div class="app-body-layout app-content">
-<div [style.display]="'flex'">
-    <aside
-        style="height: calc(100vh - 48px);"
-        [tuiNavigationAside]="expanded()"
+      tuiAsideItem
+      iconStart="@tui.history"
+      routerLink="/app/import-history"
+      routerLinkActive="active"
+      type="button"
     >
-        <header>
-            <button
-                iconStart="@tui.home"
-                tuiAsideItem
-                routerLink="/app/dashboard"
-                type="button"
-            >
-                Dashboard
-            </button>
+      Import-Historie
+    </button>
 
-        </header>
-        <button
-            iconStart="@tui.sun"
+    <tui-aside-group>
+      <button
+        tuiAsideItem
+        iconStart="@tui.settings"
+        tuiChevron
+        routerLink="/app/settings"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: false }"
+        type="button"
+      >
+        Einstellungen
+        <ng-template>
+          <button
             tuiAsideItem
             type="button"
-        >
-            Search
+            routerLink="/app/settings/email"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+          >
+            E-Mail
+          </button>
+        </ng-template>
+      </button>
+    </tui-aside-group>
+  </aside>
 
-        </button>
-        <tui-aside-group>
-            <button
-                automation-id="setting"
-                iconStart="@tui.settings"
-                tuiAsideItem
-                tuiChevron
-                type="button"
-            >
-                Settings
-                <ng-template>
-                    <button
-                        tuiAsideItem
-                        type="button"
-                    >
-                        Account
-                    </button>
-                    <button
-                        tuiAsideItem
-                        type="button"
-                    >
-                        Notifications
-                    </button>
-                    <button
-                        tuiAsideItem
-                        type="button"
-                    >
-                        Privacy
-                    </button>
-                </ng-template>
-            </button>
-        </tui-aside-group>
-        <button
-            automation-id="hint"
-            iconStart="@tui.heart"
-            tuiAsideItem
-            type="button"
-        >
-            <span tuiFade>By default ellipsis is used but you can use fade too</span>
-        </button>
-        <button
-            iconEnd="@tui.chevron-right"
-            iconStart="@tui.ellipsis"
-            tuiAsideItem
-            tuiDropdownHover
-            tuiDropdownOpen
-            type="button"
-            [tuiDropdown]="more"
-        >
-            More
-            <ng-template
-                #more
-                let-close
-            >
-                <tui-data-list tuiDataListDropdownManager>
-                    <button
-                        iconStart="@tui.pencil"
-                        tuiAsideItem
-                        type="button"
-                    >
-                        Write
-                    </button>
-                    <button
-                        iconStart="@tui.pie-chart"
-                        tuiAsideItem
-                        type="button"
-                        [tuiDropdown]="submenu"
-                    >
-                        Categories
-                        <ng-template #submenu>
-                            <tui-data-list>
-                                <button
-                                    tuiAsideItem
-                                    type="button"
-                                    (click)="close()"
-                                >
-                                    Fiction (will close menu)
-                                </button>
-                                <button
-                                    tuiAsideItem
-                                    type="button"
-                                >
-                                    Non-Fiction
-                                </button>
-                                <button
-                                    tuiAsideItem
-                                    type="button"
-                                >
-                                    Children
-                                </button>
-                            </tui-data-list>
-                        </ng-template>
-                    </button>
-                </tui-data-list>
-            </ng-template>
-        </button>
-        <hr />
-        <button
-            iconStart="@tui.sun"
-            tuiAsideItem
-            type="button"
-        >
-            Add
-        </button>
-     
-        <footer>
-               <button
-            iconStart="@tui.clock"
-            tuiAsideItem
-            routerLink="/app/import-history"
-            type="button"
-            class="import-history-item"
-        >
-            Import History
-            @if (stateService.documentsInProgressCound() > 0) {
-                <tui-badge-notification
-                    size="s"
-                    class="import-history-badge"
-                >
-                    {{ stateService.documentsInProgressCound() }}
-                </tui-badge-notification>
-            }
-        </button>
-            <button
-                tuiAsideItem
-                type="button"
-                [iconStart]="expanded() ? '@tui.chevron-left' : '@tui.chevron-right'"
-                (click)="handleToggle()"
-            >
-                {{ expanded() ? 'Collapse' : 'Expand' }}
-            </button>
-        </footer>
-    </aside>
-    <main tuiNavigationMain>
-        <router-outlet />
-    </main>
- </div>
+  <main class="main-content">
+    <router-outlet />
+  </main>
+</div>

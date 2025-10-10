@@ -28,6 +28,23 @@ export const routes: Routes = [
             }
             ,
             {
+                path: 'settings',
+                loadComponent: () =>
+                    import('./main/pages/settings/settings.component').then(m => m.SettingsComponent),
+                children: [
+                    {
+                        path: '',
+                        redirectTo: 'email',
+                        pathMatch: 'full'
+                    },
+                    {
+                        path: 'email',
+                        loadComponent: () =>
+                            import('./main/pages/settings/email-settings/email-settings.component').then(m => m.EmailSettingsComponent)
+                    }
+                ]
+            },
+            {
                 path: 'document/:id',
                 loadComponent: () =>
                     import('./main/pages/document/document.component').then(m => m.DocumentComponent),

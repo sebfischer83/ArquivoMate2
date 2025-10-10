@@ -1,0 +1,223 @@
+:host {
+  display: block;
+}
+
+.email-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.settings-card {
+  background: var(--tui-base-01);
+  border: 1px solid var(--tui-base-04);
+  border-radius: 1rem;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--tui-base-04);
+}
+
+.card-header h2,
+.card-header h3 {
+  margin: 0;
+  font-weight: 600;
+}
+
+.card-header p {
+  margin: 0.35rem 0 0;
+  color: var(--tui-text-02);
+}
+
+.card-body {
+  position: relative;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.card-body.loading {
+  pointer-events: none;
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.45);
+  color: var(--tui-base-01);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(2px);
+  z-index: 2;
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.form-grid.two-columns {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-field label {
+  font-weight: 600;
+  color: var(--tui-text-01);
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  border-radius: 0.75rem;
+  border: 1px solid var(--tui-base-04);
+  background: var(--tui-base-02);
+  padding: 0.65rem 0.9rem;
+  font: inherit;
+  color: inherit;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: var(--tui-primary);
+  box-shadow: 0 0 0 3px rgba(94, 135, 255, 0.25);
+}
+
+.form-field textarea {
+  resize: vertical;
+  min-height: 5rem;
+}
+
+.form-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+}
+
+.checkbox-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.checkbox-field input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.card-actions .danger {
+  color: var(--tui-error-fill);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  background: var(--tui-base-03);
+  color: var(--tui-text-02);
+}
+
+.status-pill.active {
+  background: rgba(66, 184, 131, 0.18);
+  color: var(--tui-success-fill);
+}
+
+.status-card {
+  gap: 1.5rem;
+}
+
+.status-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.status-item .label {
+  font-weight: 600;
+  color: var(--tui-text-02);
+}
+
+.status-item .value {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.status-item .meta {
+  color: var(--tui-text-03);
+  font-size: 0.8rem;
+}
+
+.status-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.connection-feedback {
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  background: rgba(66, 184, 131, 0.12);
+  color: var(--tui-success-fill);
+}
+
+.connection-feedback.error {
+  background: rgba(239, 83, 80, 0.12);
+  color: var(--tui-error-fill);
+}
+
+.error {
+  color: var(--tui-error-fill);
+  font-size: 0.8rem;
+}
+
+small {
+  font-size: 0.78rem;
+  color: var(--tui-text-03);
+}
+
+@media (max-width: 720px) {
+  .card-header {
+    flex-direction: column;
+  }
+
+  .status-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form-checkboxes {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

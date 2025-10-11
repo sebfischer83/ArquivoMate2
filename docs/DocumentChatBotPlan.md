@@ -19,7 +19,7 @@ Ein Benutzer soll im Web-Client ein Dokument öffnen und anschließend freie Fra
 - **Auth & Rate Limiting:** Wiederverwende bestehende AuthZ-Mechanismen (z. B. `[Authorize]`). Füge Rate-Limiting/Metering ein, um Missbrauch zu verhindern.
 
 ### 3. Infrastruktur
-- **OpenAI-Implementierung:** Erweitere `OpenAIChatBot` so, dass die neue Methode Chat-Completion mit System-/User-Messages und JSONl oder Textantwort unterstützt. Nutze die Function-Calling-Tools (`load_document_chunk`), damit das Modell gezielt Dokumentsegmente anfordern kann, bevor es antwortet. Verwende das Streaming-SDK, falls du SSE im Backend anbietest.
+- **OpenAI-Implementierung:** Erweitere `OpenAIChatBot` so, dass die neue Methode Chat-Completion mit System-/User-Messages und JSONl oder Textantwort unterstützt. Nutze die Function-Calling-Tools (`load_document_chunk`), damit das Modell gezielt Dokumentsegmente anfordern kann, bevor es antwortet. Übergebe in der System-/User-Message nur Chunk-IDs plus Positionsbereiche – der eigentliche Text wird ausschließlich über das Tool nachgeladen. Verwende das Streaming-SDK, falls du SSE im Backend anbietest.
 - **Konfiguration:** Ergänze `ChatBotSettings` (z. B. Max Tokens, Temperatur, Embedding-Modell). Aktualisiere `appsettings` und die `ChatBotSettingsFactory`, damit das neue Verhalten konfigurierbar bleibt.
 - **Vektorsuche (Optional):** Falls Q/A qualitativ nicht reicht, integriere einen Embedding-Service (OpenAI Embeddings oder Azure AI Search). Die erzeugten Vektoren können im bestehenden Meilisearch oder einem dedizierten Vektorstore abgelegt werden.
 

@@ -248,7 +248,10 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
                 var slice = content.Substring(position, length);
                 var id = $"chunk_{++index}";
 
-                chunks[id] = new DocumentChunk(id, slice, index);
+                var start = position;
+                var end = position + length;
+
+                chunks[id] = new DocumentChunk(id, slice, index, start, end);
                 position += length;
             }
 
@@ -287,21 +290,16 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             }
 
             builder.AppendLine();
-            builder.AppendLine("Available document chunks (request any chunk via load_document_chunk):");
             var orderedChunks = chunks.OrderBy(c => c.Index).ToList();
-            foreach (var chunk in orderedChunks.Take(20))
+            builder.AppendLine($"Available document chunks ({orderedChunks.Count} total). Use load_document_chunk to fetch their contents:");
+            foreach (var chunk in orderedChunks)
             {
-                builder.AppendLine($"- {chunk.Id}: {TrimSnippet(chunk.Content)}");
-            }
-
-            if (orderedChunks.Count > 20)
-            {
-                builder.AppendLine("- ... (additional chunks available via tool calls)");
+                builder.AppendLine($"- {chunk.Id}: characters {chunk.StartPosition + 1}-{chunk.EndPosition}");
             }
 
             return builder.ToString();
         }
 
-        private sealed record DocumentChunk(string Id, string Content, int Index);
+        private sealed record DocumentChunk(string Id, string Content, int Index, int StartPosition, int EndPosition);
     }
 }

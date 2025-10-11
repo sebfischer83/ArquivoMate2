@@ -11,6 +11,8 @@ namespace ArquivoMate2.Application.Interfaces
     {
         string ModelName { get; }
 
-        public Task<DocumentAnalysisResult> AnalyzeDocumentContent(string content, CancellationToken cancellationToken);
+        Task<DocumentAnalysisResult> AnalyzeDocumentContent(string content, CancellationToken cancellationToken);
+
+        Task<DocumentAnswerResult> AnswerQuestion(DocumentQuestionContext context, string question, CancellationToken cancellationToken);
     }
 }

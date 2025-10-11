@@ -240,6 +240,31 @@ namespace ArquivoMate2.API.Controllers
         }
 
         /// <summary>
+        /// Sends a user's natural language question to the configured chatbot and returns the generated answer.
+        /// </summary>
+        [HttpPost("{id:guid}/chat")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<DocumentAnswerDto>))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<DocumentAnswerDto>>> AskQuestion(Guid id, [FromBody] DocumentQuestionRequestDto request, CancellationToken cancellationToken)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Question))
+            {
+                return BadRequest(_localizer.GetString("A question is required to query the chatbot.").Value);
+            }
+
+            var userId = _currentUserService.UserId;
+            var answer = await _mediator.Send(new AskDocumentQuestionQuery(userId, id, request), cancellationToken);
+
+            if (answer is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(answer);
+        }
+
+        /// <summary>
         /// Applies signed delivery URLs to encrypted document artifacts so they can be fetched securely.
         /// </summary>
         private void ApplyDeliveryTokens(DocumentDto dto)

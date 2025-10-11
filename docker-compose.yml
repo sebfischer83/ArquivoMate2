@@ -16,6 +16,7 @@ services:
       USER_SECRETS_ID: bb5e46f1-5f35-4a18-b8ac-a5d3eef93c99
       ConnectionStrings__Default: "Host=db;Port=5432;Database=arquivomate;Username=postgres;Password=yourpassword"
       ConnectionStrings__Hangfire: "Host=db;Port=5432;Database=hangfire;Username=postgres;Password=yourpassword"
+      ConnectionStrings__VectorStore: "Host=db;Port=5432;Database=arquivomate_vectors;Username=postgres;Password=yourpassword"
     deploy:
         resources:
             limits:
@@ -81,7 +82,18 @@ services:
             echo 'Creating hangfire database...'
             psql -h db -U postgres -d postgres -c 'CREATE DATABASE hangfire;'
             fi
-      
+
+            DB_EXISTS=\$$(psql -h db -U postgres -d postgres -tAc \"SELECT 1 FROM pg_database WHERE datname='arquivomate_vectors'\")
+            if [ \"\$$DB_EXISTS\" != \"1\" ]; then
+            echo 'Creating arquivomate_vectors database...'
+            psql -h db -U postgres -d postgres -c 'CREATE DATABASE arquivomate_vectors;'
+            fi
+
+            echo 'Enabling pgvector extension...'
+            psql -h db -U postgres -d arquivomate -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+            psql -h db -U postgres -d hangfire -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+            psql -h db -U postgres -d arquivomate_vectors -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+
             echo 'Database initialization completed'
         "
     restart: "no"

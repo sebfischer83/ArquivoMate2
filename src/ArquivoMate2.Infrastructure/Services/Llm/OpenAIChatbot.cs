@@ -58,59 +58,250 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var userPromptBuilder = new StringBuilder();
-            userPromptBuilder.AppendLine("You will receive a document context and a question. Use only the provided content to answer.");
-            userPromptBuilder.AppendLine();
-            userPromptBuilder.AppendLine("[Document Metadata]");
+            var chunkMap = SplitIntoChunks(context.Content);
+            var metadata = BuildMetadataSection(context, chunkMap.Values);
+
+            var messages = new List<ChatMessage>
+            {
+                new SystemChatMessage("You are a helpful assistant answering questions about the provided document. Use the available tool to fetch any chunk you need before answering. Answer truthfully using only fetched chunks; if the answer is unknown, say so. Return the final response as compact JSON with fields 'answer' and 'citations' (an array of objects with 'chunk_id' and optional 'quote')."),
+                new UserChatMessage(metadata + "\nQuestion: " + question.Trim())
+            };
+
+            var chunkTool = ChatTool.CreateFunctionTool(
+                functionName: "load_document_chunk",
+                functionDescription: "Loads the full text for one of the document chunks listed in the metadata.",
+                parameters: BinaryData.FromString(@"{
+  \"type\": \"object\",
+  \"properties\": {
+    \"chunk_id\": {
+      \"type\": \"string\",
+      \"description\": \"Identifier of the chunk to load, e.g. chunk_1\"
+    }
+  },
+  \"required\": [\"chunk_id\"]
+}"));
+
+            var options = new ChatCompletionOptions
+            {
+                ToolChoice = ChatToolChoice.CreateAutoChoice()
+            };
+            options.Tools.Add(chunkTool);
+
+            ChatCompletion response = await _client.CompleteChatAsync(messages, options, cancellationToken);
+
+            var iterations = 0;
+            const int maxIterations = 5;
+
+            while (response.ToolCalls.Count > 0 && iterations < maxIterations)
+            {
+                iterations++;
+
+                foreach (var toolCall in response.ToolCalls.OfType<ChatFunctionToolCall>())
+                {
+                    var chunkId = TryGetChunkId(toolCall);
+                    var chunkContent = chunkId != null && chunkMap.TryGetValue(chunkId, out var chunk)
+                        ? chunk.Content
+                        : "";
+
+                    var toolPayload = JsonSerializer.Serialize(new
+                    {
+                        chunk_id = chunkId,
+                        content = chunkContent
+                    });
+
+                    messages.Add(new ToolChatMessage(toolCall.Id, toolPayload));
+                }
+
+                response = await _client.CompleteChatAsync(messages, options, cancellationToken);
+            }
+
+            var answerText = response.Content.FirstOrDefault()?.Text?.Trim() ?? string.Empty;
+
+            return ParseFinalAnswer(answerText, chunkMap, ModelName);
+        }
+
+        private static string TryGetChunkId(ChatFunctionToolCall toolCall)
+        {
+            if (toolCall?.Arguments is null)
+            {
+                return null;
+            }
+
+            try
+            {
+                using var document = JsonDocument.Parse(toolCall.Arguments.ToString());
+                if (document.RootElement.TryGetProperty("chunk_id", out var chunkIdProp))
+                {
+                    return chunkIdProp.GetString();
+                }
+            }
+            catch
+            {
+                // Ignore malformed payloads and fall back to null.
+            }
+
+            return null;
+        }
+
+        private static DocumentAnswerResult ParseFinalAnswer(string answerPayload, IReadOnlyDictionary<string, DocumentChunk> chunkMap, string modelName)
+        {
+            if (string.IsNullOrWhiteSpace(answerPayload))
+            {
+                return new DocumentAnswerResult
+                {
+                    Answer = string.Empty,
+                    Model = modelName,
+                    Citations = Array.Empty<DocumentAnswerCitation>()
+                };
+            }
+
+            try
+            {
+                using var document = JsonDocument.Parse(answerPayload);
+                var root = document.RootElement;
+                var answer = root.TryGetProperty("answer", out var answerProp)
+                    ? answerProp.GetString() ?? string.Empty
+                    : answerPayload;
+
+                var citations = new List<DocumentAnswerCitation>();
+                if (root.TryGetProperty("citations", out var citationsProp) && citationsProp.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var citation in citationsProp.EnumerateArray())
+                    {
+                        var chunkId = citation.TryGetProperty("chunk_id", out var chunkIdProp)
+                            ? chunkIdProp.GetString()
+                            : null;
+                        var quote = citation.TryGetProperty("quote", out var quoteProp)
+                            ? quoteProp.GetString()
+                            : null;
+
+                        var chunkKey = chunkId ?? string.Empty;
+                        if (!string.IsNullOrWhiteSpace(chunkKey) && chunkMap.TryGetValue(chunkKey, out var chunk))
+                        {
+                            citations.Add(new DocumentAnswerCitation
+                            {
+                                Source = chunkKey,
+                                Snippet = string.IsNullOrWhiteSpace(quote)
+                                    ? TrimSnippet(chunk.Content)
+                                    : quote ?? string.Empty
+                            });
+                        }
+                        else if (!string.IsNullOrWhiteSpace(quote))
+                        {
+                            citations.Add(new DocumentAnswerCitation
+                            {
+                                Source = chunkId,
+                                Snippet = quote ?? string.Empty
+                            });
+                        }
+                    }
+                }
+
+                return new DocumentAnswerResult
+                {
+                    Answer = answer,
+                    Model = modelName,
+                    Citations = citations
+                };
+            }
+            catch (JsonException)
+            {
+                // Fallback to plain text if parsing fails.
+                return new DocumentAnswerResult
+                {
+                    Answer = answerPayload,
+                    Model = modelName,
+                    Citations = Array.Empty<DocumentAnswerCitation>()
+                };
+            }
+        }
+
+        private static string TrimSnippet(string content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return string.Empty;
+            }
+
+            const int maxLength = 400;
+            return content.Length <= maxLength
+                ? content
+                : content.Substring(0, maxLength) + "…";
+        }
+
+        private static Dictionary<string, DocumentChunk> SplitIntoChunks(string content)
+        {
+            var chunks = new Dictionary<string, DocumentChunk>();
+
+            if (string.IsNullOrEmpty(content))
+            {
+                return chunks;
+            }
+
+            const int chunkSize = 1200;
+            var index = 0;
+            var position = 0;
+
+            while (position < content.Length)
+            {
+                var length = Math.Min(chunkSize, content.Length - position);
+                var slice = content.Substring(position, length);
+                var id = $"chunk_{++index}";
+
+                chunks[id] = new DocumentChunk(id, slice, index);
+                position += length;
+            }
+
+            return chunks;
+        }
+
+        private static string BuildMetadataSection(DocumentQuestionContext context, IEnumerable<DocumentChunk> chunks)
+        {
+            var builder = new StringBuilder();
+
+            builder.AppendLine("Document metadata:");
             if (!string.IsNullOrWhiteSpace(context.Title))
             {
-                userPromptBuilder.AppendLine($"Title: {context.Title}");
+                builder.AppendLine($"- Title: {context.Title}");
             }
             if (!string.IsNullOrWhiteSpace(context.Summary))
             {
-                userPromptBuilder.AppendLine($"Summary: {context.Summary}");
+                builder.AppendLine($"- Summary: {context.Summary}");
             }
             if (context.Keywords?.Count > 0)
             {
-                userPromptBuilder.AppendLine($"Keywords: {string.Join(", ", context.Keywords)}");
+                builder.AppendLine($"- Keywords: {string.Join(", ", context.Keywords)}");
             }
             if (!string.IsNullOrWhiteSpace(context.Language))
             {
-                userPromptBuilder.AppendLine($"Language: {context.Language}");
+                builder.AppendLine($"- Language: {context.Language}");
             }
 
             if (context.History?.Count > 0)
             {
-                userPromptBuilder.AppendLine();
-                userPromptBuilder.AppendLine("[Recent History]");
+                builder.AppendLine("- Recent history:");
                 foreach (var entry in context.History.Take(5))
                 {
-                    userPromptBuilder.AppendLine(entry);
+                    builder.AppendLine($"  * {entry}");
                 }
             }
 
-            userPromptBuilder.AppendLine();
-            userPromptBuilder.AppendLine("[Document Content]");
-            userPromptBuilder.AppendLine(context.Content);
-            userPromptBuilder.AppendLine();
-            userPromptBuilder.AppendLine("[User Question]");
-            userPromptBuilder.AppendLine(question.Trim());
-
-            var messages = new List<ChatMessage>
+            builder.AppendLine();
+            builder.AppendLine("Available document chunks (request any chunk via load_document_chunk):");
+            var orderedChunks = chunks.OrderBy(c => c.Index).ToList();
+            foreach (var chunk in orderedChunks.Take(20))
             {
-                new SystemChatMessage("You are a helpful assistant answering questions about the provided document. Answer truthfully using only the supplied context. If the answer cannot be derived, respond that the information is not available. Prefer replying in the user's language when possible."),
-                new UserChatMessage(userPromptBuilder.ToString())
-            };
+                builder.AppendLine($"- {chunk.Id}: {TrimSnippet(chunk.Content)}");
+            }
 
-            ChatCompletion response = await _client.CompleteChatAsync(messages, cancellationToken: cancellationToken);
-            var answerText = response.Content.FirstOrDefault()?.Text?.Trim() ?? string.Empty;
-
-            return new DocumentAnswerResult
+            if (orderedChunks.Count > 20)
             {
-                Answer = answerText,
-                Model = ModelName,
-                Citations = Array.Empty<DocumentAnswerCitation>()
-            };
+                builder.AppendLine("- ... (additional chunks available via tool calls)");
+            }
+
+            return builder.ToString();
         }
+
+        private sealed record DocumentChunk(string Id, string Content, int Index);
     }
 }

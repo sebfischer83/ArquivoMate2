@@ -2,14 +2,12 @@ using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Models;
 using ArquivoMate2.Application.Queries.Documents;
 using ArquivoMate2.Application.Services.Documents;
-using ArquivoMate2.Domain.Chat;
 using ArquivoMate2.Domain.ReadModels;
 using ArquivoMate2.Shared.Models;
 using Marten;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,18 +21,15 @@ namespace ArquivoMate2.Application.Handlers.Documents
         private readonly ISearchClient _searchClient;
         private readonly IFileMetadataService _fileMetadataService;
         private readonly ILogger<AskCatalogDocumentQuestionQueryHandler> _logger;
-        private readonly IDocumentSession _documentSession;
 
         public AskCatalogDocumentQuestionQueryHandler(
             IQuerySession querySession,
-            IDocumentSession documentSession,
             IChatBot chatBot,
             ISearchClient searchClient,
             IFileMetadataService fileMetadataService,
             ILogger<AskCatalogDocumentQuestionQueryHandler> logger)
         {
             _querySession = querySession;
-            _documentSession = documentSession;
             _chatBot = chatBot;
             _searchClient = searchClient;
             _fileMetadataService = fileMetadataService;
@@ -52,10 +47,6 @@ namespace ArquivoMate2.Application.Handlers.Documents
                 .Where(d => d.UserId == request.UserId && !d.Deleted)
                 .CountAsync(cancellationToken);
 
-            var historyEntries = request.Request.IncludeHistory
-                ? await LoadHistoryAsync(request.UserId, cancellationToken)
-                : Array.Empty<string>();
-
             var context = new DocumentQuestionContext
             {
                 DocumentId = Guid.Empty,
@@ -66,16 +57,12 @@ namespace ArquivoMate2.Application.Handlers.Documents
                 Keywords = Array.Empty<string>(),
                 Content = string.Empty,
                 Language = null,
-                History = historyEntries,
-                Chunks = Array.Empty<DocumentChunk>(),
-                SuggestedChunkIds = Array.Empty<string>()
+                History = Array.Empty<string>()
             };
 
             var tooling = new DocumentQuestionTooling(request.UserId, null, _querySession, _searchClient, _fileMetadataService, _logger);
 
             var answer = await _chatBot.AnswerQuestion(context, request.Request.Question, tooling, cancellationToken);
-
-            await StoreChatTurnAsync(request.UserId, request.Request.Question, answer, cancellationToken);
 
             return new DocumentAnswerDto
             {
@@ -97,63 +84,6 @@ namespace ArquivoMate2.Application.Handlers.Documents
                 }).ToList(),
                 DocumentCount = answer.DocumentCount
             };
-        }
-
-        private async Task<IReadOnlyList<string>> LoadHistoryAsync(string userId, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var streamId = ChatStreamIdFactory.ForCatalog(userId);
-                var events = await _querySession.Events.FetchStreamAsync(streamId, token: cancellationToken);
-                return events
-                    .Select(e => e.Data)
-                    .OfType<CatalogChatTurnRecorded>()
-                    .OrderByDescending(e => e.OccurredAt)
-                    .Take(5)
-                    .SelectMany(FormatHistoryEntry)
-                    .Reverse()
-                    .ToList();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to load catalog chat history for user {UserId}", userId);
-                return Array.Empty<string>();
-            }
-        }
-
-        private async Task StoreChatTurnAsync(string userId, string question, DocumentAnswerResult answer, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var streamId = ChatStreamIdFactory.ForCatalog(userId);
-                var citations = answer.Citations.Select(c => new DocumentChatCitation(c.Source, c.Snippet)).ToList();
-                var documents = answer.Documents.Select(d => new DocumentChatReference(d.DocumentId, d.Title, d.Summary, d.Date, d.Score, d.FileSizeBytes)).ToList();
-
-                _documentSession.Events.Append(streamId, new CatalogChatTurnRecorded(
-                    userId,
-                    question,
-                    answer.Answer,
-                    string.IsNullOrWhiteSpace(answer.Model) ? _chatBot.ModelName : answer.Model,
-                    citations,
-                    documents,
-                    answer.DocumentCount,
-                    DateTimeOffset.UtcNow));
-
-                await _documentSession.SaveChangesAsync(cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to persist catalog chat turn for user {UserId}", userId);
-            }
-        }
-
-        private static IEnumerable<string> FormatHistoryEntry(CatalogChatTurnRecorded turn)
-        {
-            yield return $"User: {turn.Question}";
-            if (!string.IsNullOrWhiteSpace(turn.Answer))
-            {
-                yield return $"Assistant: {turn.Answer}";
-            }
         }
     }
 }

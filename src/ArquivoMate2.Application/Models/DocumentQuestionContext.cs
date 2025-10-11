@@ -43,16 +43,5 @@ namespace ArquivoMate2.Application.Models
         /// Optional recent history entries describing important events for the document.
         /// </summary>
         public IReadOnlyList<string> History { get; init; } = Array.Empty<string>();
-
-        /// <summary>
-        /// Deterministic chunks that make up the document. When empty the caller
-        /// should fall back to splitting <see cref="Content"/> on demand.
-        /// </summary>
-        public IReadOnlyList<DocumentChunk> Chunks { get; init; } = Array.Empty<DocumentChunk>();
-
-        /// <summary>
-        /// Chunk identifiers ranked by semantic similarity to the current question.
-        /// </summary>
-        public IReadOnlyList<string> SuggestedChunkIds { get; init; } = Array.Empty<string>();
     }
 }

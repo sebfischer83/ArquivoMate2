@@ -1,6 +1,5 @@
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Models;
-using ArquivoMate2.Application.Services.Documents;
 using OpenAI.Chat;
 using System;
 using System.Collections.Generic;
@@ -74,11 +73,8 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var chunkList = (context.Chunks?.Count ?? 0) > 0
-                ? context.Chunks
-                : DocumentChunking.Split(context.Content);
-            var chunkMap = chunkList.ToDictionary(c => c.Id, c => c, StringComparer.Ordinal);
-            var metadata = BuildMetadataSection(context, chunkList);
+            var chunkMap = SplitIntoChunks(context.Content);
+            var metadata = BuildMetadataSection(context, chunkMap.Values);
 
             const string systemPrompt = "You are a helpful assistant answering questions about the user's documents. Use the available tools to gather facts before replying. Always call load_document_chunk before citing text from the active document. When the user asks about other documents, statistics, or filters, you MUST call query_documents to retrieve real data. Never invent document identifiers. Return the final response as compact JSON with fields: 'answer' (string), 'citations' (array of objects with 'chunk_id' and optional 'quote'), optional 'documents' (array of objects with 'id', 'title', 'summary', optional 'date', 'file_size_bytes', 'score'), and optional 'document_count' (number).";
 
@@ -642,17 +638,12 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
                 }
             }
 
-            if (context.SuggestedChunkIds?.Count > 0)
-            {
-                builder.AppendLine("- Suggested chunk order: " + string.Join(", ", context.SuggestedChunkIds));
-            }
-
             builder.AppendLine();
             var orderedChunks = chunks.OrderBy(c => c.Index).ToList();
             builder.AppendLine($"Available document chunks ({orderedChunks.Count} total). Use load_document_chunk to fetch their contents:");
             foreach (var chunk in orderedChunks)
             {
-                builder.AppendLine($"- {chunk.Id}: characters {chunk.Start + 1}-{chunk.End}");
+                builder.AppendLine($"- {chunk.Id}: characters {chunk.StartPosition + 1}-{chunk.EndPosition}");
             }
 
             builder.AppendLine();
@@ -660,5 +651,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
 
             return builder.ToString();
         }
+
+        private sealed record DocumentChunk(string Id, string Content, int Index, int StartPosition, int EndPosition);
     }
 }

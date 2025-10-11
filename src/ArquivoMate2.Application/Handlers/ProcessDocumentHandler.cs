@@ -44,13 +44,14 @@ namespace ArquivoMate2.Application.Handlers
         private readonly IDocumentProcessingNotifier _documentProcessingNotifier;
         private readonly ILanguageDetectionService _languageDetection;
         private readonly IEncryptionService _encryptionService;
+        private readonly IDocumentVectorizationService _vectorizationService;
 
         private static readonly byte[] PdfMagicNumber = new byte[] { 0x25, 0x50, 0x44, 0x46 }; // %PDF
         private static readonly HashSet<string> SupportedImageExtensions = new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp" };
 
         public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger, IDocumentProcessor documentTextExtractor, IFileMetadataService fileMetadataService, IPathService pathService,
-            IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot, IDocumentProcessingNotifier documentProcessingNotifier, ICurrentUserService currentUserService, ILanguageDetectionService languageDetection, IEncryptionService encryptionService)
-            => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService, _chatBot, _documentProcessingNotifier, _languageDetection, _encryptionService) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService, chatBot, documentProcessingNotifier, languageDetection, encryptionService);
+            IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot, IDocumentProcessingNotifier documentProcessingNotifier, ICurrentUserService currentUserService, ILanguageDetectionService languageDetection, IEncryptionService encryptionService, IDocumentVectorizationService vectorizationService)
+            => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService, _chatBot, _documentProcessingNotifier, _languageDetection, _encryptionService, _vectorizationService) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService, chatBot, documentProcessingNotifier, languageDetection, encryptionService, vectorizationService);
 
         // Hilfsmethode zum Loggen des Speicherverbrauchs
         private void LogMemoryUsage(string step, Guid documentId)
@@ -88,6 +89,7 @@ namespace ArquivoMate2.Application.Handlers
                     Append(request.DocumentId, new DocumentEncryptionKeysAdded(request.DocumentId, artifacts.EncryptionKeys, DateTime.UtcNow));
                 }
                 await RunChatBotAsync(request.DocumentId, request.UserId, artifacts.Content, cancellationToken);
+                await VectorizeDocumentAsync(request.DocumentId, request.UserId, artifacts.Content, cancellationToken);
                 LogMemoryUsage("After RunChatBotAsync", request.DocumentId);
 
                 Append(request.ImportProcessId, new MarkSucceededDocumentImport(request.ImportProcessId, request.DocumentId, DateTime.UtcNow));
@@ -105,6 +107,7 @@ namespace ArquivoMate2.Application.Handlers
                 _logger.LogError(ex, "Error processing document {DocumentId}", request.DocumentId);
                 Append(request.ImportProcessId, new MarkFailedDocumentImport(request.ImportProcessId, ex.Message, DateTime.UtcNow));
                 Append(request.DocumentId, new DocumentDeleted(request.DocumentId, DateTime.UtcNow));
+                await TryDeleteVectorsAsync(request.DocumentId, request.UserId, cancellationToken);
                 await _session.SaveChangesAsync(cancellationToken);
                 return (null, null);
             }
@@ -319,6 +322,36 @@ namespace ArquivoMate2.Application.Handlers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Chatbot analysis failed for {DocumentId}. Continuing without chatbot data.", documentId);
+            }
+        }
+
+        private async Task VectorizeDocumentAsync(Guid documentId, string userId, string content, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                await TryDeleteVectorsAsync(documentId, userId, ct);
+                return;
+            }
+
+            try
+            {
+                await _vectorizationService.StoreDocumentAsync(documentId, userId, content, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Vectorization failed for document {DocumentId}", documentId);
+            }
+        }
+
+        private async Task TryDeleteVectorsAsync(Guid documentId, string userId, CancellationToken ct)
+        {
+            try
+            {
+                await _vectorizationService.DeleteDocumentAsync(documentId, userId, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Failed to delete vectors for document {DocumentId}", documentId);
             }
         }
 

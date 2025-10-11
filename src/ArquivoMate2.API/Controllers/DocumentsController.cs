@@ -265,6 +265,25 @@ namespace ArquivoMate2.API.Controllers
         }
 
         /// <summary>
+        /// Sends a question about the user's entire document catalogue to the chatbot.
+        /// </summary>
+        [HttpPost("chat")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<DocumentAnswerDto>))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ApiResponse<DocumentAnswerDto>>> AskCatalogQuestion([FromBody] DocumentQuestionRequestDto request, CancellationToken cancellationToken)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Question))
+            {
+                return BadRequest(_localizer.GetString("A question is required to query the chatbot.").Value);
+            }
+
+            var userId = _currentUserService.UserId;
+            var answer = await _mediator.Send(new AskCatalogDocumentQuestionQuery(userId, request), cancellationToken);
+
+            return Ok(answer);
+        }
+
+        /// <summary>
         /// Applies signed delivery URLs to encrypted document artifacts so they can be fetched securely.
         /// </summary>
         private void ApplyDeliveryTokens(DocumentDto dto)

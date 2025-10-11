@@ -22,6 +22,16 @@ namespace ArquivoMate2.Application.Models
         /// Optional list of citations/snippets that were referenced.
         /// </summary>
         public IReadOnlyList<DocumentAnswerCitation> Citations { get; init; } = Array.Empty<DocumentAnswerCitation>();
+
+        /// <summary>
+        /// Optional list of document references returned alongside the answer.
+        /// </summary>
+        public IReadOnlyList<DocumentAnswerReference> Documents { get; init; } = Array.Empty<DocumentAnswerReference>();
+
+        /// <summary>
+        /// Optional aggregate count of documents that match a query.
+        /// </summary>
+        public long? DocumentCount { get; init; }
     }
 
     /// <summary>
@@ -38,5 +48,23 @@ namespace ArquivoMate2.Application.Models
         /// The snippet text itself.
         /// </summary>
         public string Snippet { get; init; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Represents a document that the chatbot suggests as part of its answer.
+    /// </summary>
+    public sealed class DocumentAnswerReference
+    {
+        public Guid DocumentId { get; init; }
+
+        public string? Title { get; init; }
+
+        public string? Summary { get; init; }
+
+        public DateTime? Date { get; init; }
+
+        public double? Score { get; init; }
+
+        public long? FileSizeBytes { get; init; }
     }
 }

@@ -1,6 +1,7 @@
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Models;
 using ArquivoMate2.Application.Queries.Documents;
+using ArquivoMate2.Application.Services.Documents;
 using ArquivoMate2.Domain.ReadModels;
 using ArquivoMate2.Shared.Models;
 using Marten;
@@ -22,17 +23,23 @@ public class AskDocumentQuestionQueryHandler : IRequestHandler<AskDocumentQuesti
     private readonly IDocumentAccessService _documentAccessService;
     private readonly IChatBot _chatBot;
     private readonly ILogger<AskDocumentQuestionQueryHandler> _logger;
+    private readonly ISearchClient _searchClient;
+    private readonly IFileMetadataService _fileMetadataService;
 
     public AskDocumentQuestionQueryHandler(
         IQuerySession querySession,
         IDocumentAccessService documentAccessService,
         IChatBot chatBot,
-        ILogger<AskDocumentQuestionQueryHandler> logger)
+        ILogger<AskDocumentQuestionQueryHandler> logger,
+        ISearchClient searchClient,
+        IFileMetadataService fileMetadataService)
     {
         _querySession = querySession;
         _documentAccessService = documentAccessService;
         _chatBot = chatBot;
         _logger = logger;
+        _searchClient = searchClient;
+        _fileMetadataService = fileMetadataService;
     }
 
     public async Task<DocumentAnswerDto?> Handle(AskDocumentQuestionQuery request, CancellationToken cancellationToken)
@@ -73,7 +80,9 @@ public class AskDocumentQuestionQueryHandler : IRequestHandler<AskDocumentQuesti
             History = historyEntries
         };
 
-        var answer = await _chatBot.AnswerQuestion(context, request.Request.Question, cancellationToken);
+        var tooling = new DocumentQuestionTooling(request.UserId, request.DocumentId, _querySession, _searchClient, _fileMetadataService, _logger);
+
+        var answer = await _chatBot.AnswerQuestion(context, request.Request.Question, tooling, cancellationToken);
 
         return new DocumentAnswerDto
         {
@@ -83,7 +92,17 @@ public class AskDocumentQuestionQueryHandler : IRequestHandler<AskDocumentQuesti
             {
                 Source = c.Source,
                 Snippet = c.Snippet
-            }).ToList()
+            }).ToList(),
+            Documents = answer.Documents.Select(d => new DocumentAnswerReferenceDto
+            {
+                DocumentId = d.DocumentId,
+                Title = d.Title,
+                Summary = d.Summary,
+                Date = d.Date,
+                Score = d.Score,
+                FileSizeBytes = d.FileSizeBytes
+            }).ToList(),
+            DocumentCount = answer.DocumentCount
         };
     }
 

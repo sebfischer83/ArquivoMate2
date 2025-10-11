@@ -23,7 +23,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             throw new NotImplementedException();
         }
 
-        public Task<DocumentAnswerResult> AnswerQuestion(DocumentQuestionContext context, string question, CancellationToken cancellationToken)
+        public Task<DocumentAnswerResult> AnswerQuestion(DocumentQuestionContext context, string question, IDocumentQuestionTooling tooling, CancellationToken cancellationToken)
         {
             throw new NotSupportedException("Document question answering is not supported in batch mode.");
         }

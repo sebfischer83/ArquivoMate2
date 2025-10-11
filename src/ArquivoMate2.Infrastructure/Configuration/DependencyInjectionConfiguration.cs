@@ -20,6 +20,7 @@ using ArquivoMate2.Infrastructure.Services.EmailProvider;
 using ArquivoMate2.Infrastructure.Services.IngestionProvider;
 using ArquivoMate2.Infrastructure.Services.Llm;
 using ArquivoMate2.Infrastructure.Services.Search;
+using ArquivoMate2.Infrastructure.Services.Vectorization;
 using ArquivoMate2.Infrastructure.Services.Sharing;
 using ArquivoMate2.Infrastructure.Services.StorageProvider;
 using ArquivoMate2.Shared.Models;
@@ -36,6 +37,7 @@ using Marten.Schema;
 using Meilisearch;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeTypes;
 using Minio;
@@ -228,6 +230,20 @@ namespace ArquivoMate2.Infrastructure.Configuration
                             ChatClient client = new(model: openAISettings.Model, apiKey: openAISettings.ApiKey);
                             return new OpenAIChatBot(client);
                         });
+                }
+
+                var vectorStoreConnection = config.GetConnectionString("VectorStore");
+                if (!string.IsNullOrWhiteSpace(vectorStoreConnection))
+                {
+                    services.AddSingleton<IDocumentVectorizationService>(sp =>
+                        new DocumentVectorizationService(
+                            vectorStoreConnection!,
+                            openAISettings,
+                            sp.GetRequiredService<ILogger<DocumentVectorizationService>>()));
+                }
+                else
+                {
+                    services.AddSingleton<IDocumentVectorizationService, NullDocumentVectorizationService>();
                 }
             }
             else

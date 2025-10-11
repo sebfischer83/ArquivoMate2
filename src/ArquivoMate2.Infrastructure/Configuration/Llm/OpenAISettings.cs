@@ -12,5 +12,9 @@ namespace ArquivoMate2.Infrastructure.Configuration.Llm
         public string Model { get; set; } = "gpt-4";
 
         public bool UseBatch { get; set; } = false;
+
+        public string EmbeddingModel { get; set; } = "text-embedding-3-small";
+
+        public int EmbeddingDimensions { get; set; } = 1536;
     }
 }

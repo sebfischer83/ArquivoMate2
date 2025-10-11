@@ -189,7 +189,7 @@ namespace ArquivoMate2.Application.Services
                         var guid = await mediatr.Send(new UploadDocumentByMailCommand(provider.UserId, new Models.EmailDocument() { Email = email.From, Subject = email.Subject, File = attachment.Content, FileName = attachment.FileName }), 
                             cancellationToken);
 
-                        var historyEvent = new InitDocumentImport(
+                        var historyEvent = new Domain.Import.InitDocumentImport(
                            Guid.NewGuid(),
                            provider.UserId,
                            attachment.FileName,

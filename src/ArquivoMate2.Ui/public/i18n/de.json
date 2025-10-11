@@ -43,4 +43,102 @@
     "PdfLoadError": "PDF konnte nicht geladen werden"
     ,"KeywordTooLong": "Keyword zu lang (max 30)"
   }
+
+  ,"Common": {
+    "Reset": "Zurücksetzen",
+    "SavingEllipsis": "Speichert…",
+    "RemovingEllipsis": "Entferne…"
+  },
+  "Settings": {
+    "Email": {
+      "ConnectionTitle": "E-Mail-Verbindung",
+      "ConnectionDescription": "Richte den Posteingang ein, aus dem Dokumente automatisch importiert werden.",
+      "ConnectionActive": "Konfiguration aktiv",
+      "ConnectionMissing": "Noch nicht eingerichtet",
+      "Provider": {
+        "Label": "Provider",
+        "Imap": "IMAP",
+        "Pop3": "POP3",
+        "Exchange": "Exchange"
+      },
+      "Server": "Server",
+      "Port": "Port",
+      "Username": "Benutzername",
+      "Password": "Passwort",
+      "PasswordMaskedNotice": "Passwort ist gesetzt (*****). Bearbeite das Feld, um es zu ändern.",
+      "DisplayName": "Anzeigename",
+      "DefaultFolder": "Ordner",
+      "TimeoutMs": "Timeout (ms)",
+      "UseSsl": "SSL/TLS verwenden",
+      "AutoReconnect": "Verbindung automatisch halten",
+      "SaveSettings": "Einstellungen speichern",
+      "DeleteConnection": "Verbindung entfernen",
+      "Saved": "E-Mail-Einstellungen wurden gespeichert.",
+      "SaveError": "E-Mail-Einstellungen konnten nicht gespeichert werden.",
+      "LoadError": "E-Mail-Einstellungen konnten nicht geladen werden.",
+      "CountLoadError": "E-Mail-Zähler konnte nicht abgerufen werden.",
+      "TestConnection": "Verbindung testen",
+      "TestConnectionSuccess": "Verbindung erfolgreich getestet.",
+      "TestConnectionFailed": "Verbindungstest fehlgeschlagen.",
+      "CriteriaTitle": "Abruf-Regeln",
+      "CriteriaDescription": "Definiere Filter, welche Nachrichten importiert werden sollen.",
+      "CriteriaActive": "Regeln aktiv",
+      "CriteriaMissing": "Keine Regeln gespeichert",
+      "LoadingRules": "Lade gespeicherte Regeln …",
+      "CriteriaSaved": "Abruf-Regeln gespeichert.",
+      "CriteriaSaveError": "Abruf-Regeln konnten nicht gespeichert werden.",
+      "CriteriaDeleted": "Abruf-Regeln wurden entfernt.",
+      "CriteriaDeleteError": "Abruf-Regeln konnten nicht entfernt werden.",
+      "CriteriaLoadError": "Abruf-Regeln konnten nicht geladen werden.",
+      "CriteriaValidationError": "Bitte prüfe die Angaben für die Abruf-Regeln.",
+      "Criteria": {
+        "Name": "Name",
+        "Description": "Beschreibung",
+        "Folder": "Ordner",
+        "SubjectContains": "Betreff enthält",
+        "FromContains": "Von enthält",
+        "ToContains": "An enthält",
+        "DateFrom": "Datum ab",
+        "DateTo": "Datum bis",
+        "IsRead": "Gelesen?",
+        "HasAttachments": "Anhänge?",
+        "MaxResults": "Max. Ergebnisse",
+        "MaxDaysBack": "Zeitraum (Tage)",
+        "Skip": "Überspringen",
+        "SortBy": "Sortierung",
+        "SortDescending": "Absteigend sortieren",
+        "IncludeFlags": "Flags einschließen",
+        "ExcludeFlags": "Flags ausschließen",
+        "FlagsNote": "Kommagetrennte IMAP-Flags."
+      },
+      "Sort": {
+        "Date": "Datum",
+        "Subject": "Betreff",
+        "Sender": "Absender",
+        "Size": "Größe"
+      }
+      ,
+      "Placeholders": {
+        "Server": "imap.example.com",
+        "DisplayName": "Eingangsordner",
+        "DefaultFolder": "INBOX",
+        "CriteriaName": "z. B. Rechnungen",
+        "CriteriaDescription": "Kurze Erläuterung",
+        "IncludeFlags": "z. B. Seen,Flagged",
+        "ExcludeFlags": "z. B. Draft"
+      }
+      ,
+      "RefreshCount": "Anzahl aktualisieren",
+      "RefreshingEllipsis": "Aktualisiere…",
+      "TestingEllipsis": "Teste…",
+      "Testing": "Teste Verbindung"
+      ,
+      "Status": {
+        "MessagesInMailbox": "Nachrichten im Postfach",
+        "AsOf": "Stand"
+      },
+      "LoadingCount": "Lädt …"
+    }
+  }
 }
+

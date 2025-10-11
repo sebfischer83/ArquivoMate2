@@ -15,6 +15,11 @@ namespace ArquivoMate2.Application.Models
         public Guid DocumentId { get; init; }
 
         /// <summary>
+        /// Identifier of the requesting user.
+        /// </summary>
+        public string? UserId { get; init; }
+
+        /// <summary>
         /// Title of the document if available.
         /// </summary>
         public string Title { get; init; } = string.Empty;

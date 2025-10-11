@@ -84,7 +84,7 @@ namespace ArquivoMate2.Application.Services.Documents
             var requiresSizeFilter = filters.MinFileSizeMb.HasValue || filters.MaxFileSizeMb.HasValue;
             var needsCount = query.Projection is DocumentQueryProjection.Count or DocumentQueryProjection.Both;
 
-            List<DocumentView> candidates;
+            IReadOnlyList<DocumentView> candidates;
             long? totalCount = null;
 
             if (!string.IsNullOrWhiteSpace(query.Search))

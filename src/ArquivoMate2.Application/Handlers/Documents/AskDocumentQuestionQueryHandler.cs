@@ -4,6 +4,7 @@ using ArquivoMate2.Application.Queries.Documents;
 using ArquivoMate2.Application.Services.Documents;
 using ArquivoMate2.Domain.ReadModels;
 using ArquivoMate2.Shared.Models;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using MediatR;

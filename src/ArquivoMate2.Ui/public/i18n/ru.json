@@ -1,5 +1,10 @@
 {
   "LandingPage": {"Welcome": "Добро пожаловать"},
+  "Common": {
+    "Reset": "Сброс",
+    "SavingEllipsis": "Сохранение…",
+    "RemovingEllipsis": "Удаление…"
+  },
   "Document": {
     "Download": "Загрузка",
     "DownloadOriginal": "Оригинал",
@@ -43,4 +48,97 @@
     "PdfLoadError": "PDF не удалось загрузить"
     ,"KeywordTooLong": "Ключевое слово слишком длинное (макс. 30)"
   }
+
+  ,"Settings": {
+    "Email": {
+      "ConnectionTitle": "E-mail подключение",
+      "ConnectionDescription": "Настройте почтовый ящик, из которого импортируются документы.",
+      "ConnectionActive": "Конфигурация активна",
+      "ConnectionMissing": "Еще не настроено",
+      "Provider": {
+        "Label": "Провайдер",
+        "Imap": "IMAP",
+        "Pop3": "POP3",
+        "Exchange": "Exchange"
+      },
+      "Server": "Сервер",
+      "Port": "Порт",
+      "Username": "Имя пользователя",
+      "Password": "Пароль",
+      "PasswordMaskedNotice": "Пароль установлен (*****). Измените поле, чтобы его обновить.",
+      "DisplayName": "Отображаемое имя",
+      "DefaultFolder": "Папка",
+      "TimeoutMs": "Таймаут (мс)",
+      "UseSsl": "Использовать SSL/TLS",
+      "AutoReconnect": "Автоматически поддерживать подключение",
+      "SaveSettings": "Сохранить настройки",
+      "DeleteConnection": "Удалить подключение",
+      "Saved": "Настройки электронной почты сохранены.",
+      "SaveError": "Не удалось сохранить настройки электронной почты.",
+      "LoadError": "Не удалось загрузить настройки электронной почты.",
+      "CountLoadError": "Не удалось получить количество писем.",
+      "TestConnection": "Проверить подключение",
+      "TestConnectionSuccess": "Подключение успешно протестировано.",
+      "TestConnectionFailed": "Проверка подключения не удалась.",
+      "CriteriaTitle": "Правила выборки",
+      "CriteriaDescription": "Определите фильтры для импортируемых сообщений.",
+      "CriteriaActive": "Правила активны",
+      "CriteriaMissing": "Правила не сохранены",
+      "LoadingRules": "Загрузка сохраненных правил…",
+      "CriteriaSaved": "Правила выборки сохранены.",
+      "CriteriaSaveError": "Не удалось сохранить правила выборки.",
+      "CriteriaDeleted": "Правила выборки удалены.",
+      "CriteriaDeleteError": "Не удалось удалить правила выборки.",
+      "CriteriaLoadError": "Не удалось загрузить правила выборки.",
+      "CriteriaValidationError": "Пожалуйста, проверьте параметры правил выборки.",
+      "Criteria": {
+        "Name": "Название",
+        "Description": "Описание",
+        "Folder": "Папка",
+        "SubjectContains": "Тема содержит",
+        "FromContains": "От содержит",
+        "ToContains": "Кому содержит",
+        "DateFrom": "Дата от",
+        "DateTo": "Дата до",
+        "IsRead": "Прочитано?",
+        "HasAttachments": "Есть вложения?",
+        "MaxResults": "Макс. результатов",
+        "MaxDaysBack": "Период (дни)",
+        "Skip": "Пропустить",
+        "SortBy": "Сортировка",
+        "SortDescending": "Сортировать по убыванию",
+        "IncludeFlags": "Включить флаги",
+        "ExcludeFlags": "Исключить флаги",
+        "FlagsNote": "Флаги IMAP, разделённые запятыми."
+      },
+      "Sort": {
+        "Date": "Дата",
+        "Subject": "Тема",
+        "Sender": "Отправитель",
+        "Size": "Размер"
+      }
+      ,
+      "Placeholders": {
+        "Server": "imap.example.com",
+        "DisplayName": "Входящая",
+        "DefaultFolder": "INBOX",
+        "CriteriaName": "например: счета",
+        "CriteriaDescription": "Краткое описание",
+        "IncludeFlags": "например: Seen,Flagged",
+        "ExcludeFlags": "например: Draft"
+      }
+      ,
+      "RefreshCount": "Обновить количество",
+      "RefreshingEllipsis": "Обновление…",
+      "TestingEllipsis": "Проверка…",
+      "Testing": "Проверить подключение"
+      ,
+      "Status": {
+        "MessagesInMailbox": "Сообщения в почтовом ящике",
+        "AsOf": "По состоянию на"
+      },
+      "LoadingCount": "Загрузка…"
+    }
+  }
 }
+

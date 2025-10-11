@@ -3,7 +3,6 @@ using ArquivoMate2.Application.Services.Documents;
 using ArquivoMate2.Infrastructure.Configuration.Llm;
 using Microsoft.Extensions.Logging;
 using Npgsql;
-using OpenAI.Embeddings;
 using Pgvector;
 using System;
 using System.Collections.Generic;
@@ -16,7 +15,7 @@ namespace ArquivoMate2.Infrastructure.Services.Vectorization
     public sealed class DocumentVectorizationService : IDocumentVectorizationService
     {
         private readonly string _connectionString;
-        private readonly EmbeddingsClient _embeddingsClient;
+        private readonly IEmbeddingsClient _embeddingsClient;
         private readonly ILogger<DocumentVectorizationService> _logger;
         private readonly int _embeddingDimensions;
 
@@ -24,7 +23,7 @@ namespace ArquivoMate2.Infrastructure.Services.Vectorization
         private static bool _schemaInitialized;
         private static readonly SemaphoreSlim _schemaLock = new(1, 1);
 
-        public DocumentVectorizationService(string connectionString, OpenAISettings settings, ILogger<DocumentVectorizationService> logger)
+        public DocumentVectorizationService(string connectionString, OpenAISettings settings, IEmbeddingsClient embeddingsClient, ILogger<DocumentVectorizationService> logger)
         {
             if (string.IsNullOrWhiteSpace(connectionString))
             {
@@ -34,7 +33,7 @@ namespace ArquivoMate2.Infrastructure.Services.Vectorization
             _connectionString = connectionString;
             _logger = logger;
             _embeddingDimensions = settings.EmbeddingDimensions > 0 ? settings.EmbeddingDimensions : 1536;
-            _embeddingsClient = new EmbeddingsClient(settings.EmbeddingModel, settings.ApiKey);
+            _embeddingsClient = embeddingsClient ?? throw new ArgumentNullException(nameof(embeddingsClient));
 
             ConfigureTypeMapper();
         }
@@ -50,6 +49,41 @@ namespace ArquivoMate2.Infrastructure.Services.Vectorization
 
             var texts = chunks.Select(c => c.Content).ToList();
             var embeddings = await GenerateEmbeddingsAsync(texts, cancellationToken);
+
+            // Validate embeddings count and dimensions
+            if (embeddings == null || embeddings.Count != chunks.Count)
+            {
+                _logger.LogError("Embeddings count mismatch for document {DocumentId}: expected {ExpectedCount} but got {ActualCount}. Aborting vector storage.", documentId, chunks.Count, embeddings?.Count ?? 0);
+                try
+                {
+                    await DeleteDocumentAsync(documentId, userId, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to delete existing vectors after embeddings count mismatch for document {DocumentId}", documentId);
+                }
+
+                return;
+            }
+
+            for (var i = 0; i < embeddings.Count; i++)
+            {
+                var emb = embeddings[i];
+                if (emb == null || emb.Length != _embeddingDimensions)
+                {
+                    _logger.LogError("Embeddings dimension mismatch for document {DocumentId} at chunk index {Index}: expected {ExpectedDim} but got {ActualDim}. Aborting vector storage.", documentId, i, _embeddingDimensions, emb?.Length ?? 0);
+                    try
+                    {
+                        await DeleteDocumentAsync(documentId, userId, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to delete existing vectors after embeddings dimension mismatch for document {DocumentId}", documentId);
+                    }
+
+                    return;
+                }
+            }
 
             await using var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync(cancellationToken);
@@ -109,6 +143,13 @@ namespace ArquivoMate2.Infrastructure.Services.Vectorization
             }
 
             var embedding = await GenerateEmbeddingAsync(question, cancellationToken);
+
+            // Validate embedding dimension before querying DB
+            if (embedding == null || embedding.Length != _embeddingDimensions)
+            {
+                _logger.LogWarning("Query embedding dimension mismatch for document {DocumentId}: expected {ExpectedDim} but got {ActualDim}. Returning empty results.", documentId, _embeddingDimensions, embedding?.Length ?? 0);
+                return Array.Empty<string>();
+            }
 
             await using var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync(cancellationToken);
@@ -182,14 +223,12 @@ CREATE INDEX IF NOT EXISTS idx_document_vectors_embedding ON document_vectors US
 
         private async Task<IReadOnlyList<float[]>> GenerateEmbeddingsAsync(IReadOnlyList<string> inputs, CancellationToken cancellationToken)
         {
-            var embeddings = await _embeddingsClient.GenerateEmbeddingsAsync(inputs, cancellationToken);
-            return embeddings.Select(e => e.Vector.ToArray()).ToList();
+            return await _embeddingsClient.GenerateEmbeddingsAsync(inputs, cancellationToken);
         }
 
         private async Task<float[]> GenerateEmbeddingAsync(string input, CancellationToken cancellationToken)
         {
-            var embedding = await _embeddingsClient.GenerateEmbeddingAsync(input, cancellationToken);
-            return embedding.Vector.ToArray();
+            return await _embeddingsClient.GenerateEmbeddingAsync(input, cancellationToken);
         }
 
         private static void ConfigureTypeMapper()

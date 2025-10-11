@@ -215,6 +215,26 @@ namespace ArquivoMate2.Infrastructure.Configuration
             if (chatbotSettings is OpenAISettings openAISettings)
             {
                 services.AddSingleton(openAISettings);
+
+                // Register an embeddings client implementation using OpenAI settings
+                services.AddSingleton<IEmbeddingsClient>(sp =>
+                    new OpenAiEmbeddingsClient(openAISettings.EmbeddingModel, openAISettings.ApiKey));
+
+                var vectorStoreConnection = config.GetConnectionString("VectorStore");
+                if (!string.IsNullOrWhiteSpace(vectorStoreConnection))
+                {
+                    services.AddSingleton<IDocumentVectorizationService>(sp =>
+                        new DocumentVectorizationService(
+                            vectorStoreConnection!,
+                            openAISettings,
+                            sp.GetRequiredService<IEmbeddingsClient>(),
+                            sp.GetRequiredService<ILogger<DocumentVectorizationService>>()));
+                }
+                else
+                {
+                    services.AddSingleton<IDocumentVectorizationService, NullDocumentVectorizationService>();
+                }
+
                 if (openAISettings.UseBatch)
                 {
                     services.AddScoped<IChatBot, OpenAIBatchChatBot>(_ =>
@@ -225,25 +245,11 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 }
                 else
                 {
-                    services.AddScoped<IChatBot, OpenAIChatBot>(_ =>
-                        {
-                            ChatClient client = new(model: openAISettings.Model, apiKey: openAISettings.ApiKey);
-                            return new OpenAIChatBot(client);
-                        });
-                }
-
-                var vectorStoreConnection = config.GetConnectionString("VectorStore");
-                if (!string.IsNullOrWhiteSpace(vectorStoreConnection))
-                {
-                    services.AddSingleton<IDocumentVectorizationService>(sp =>
-                        new DocumentVectorizationService(
-                            vectorStoreConnection!,
-                            openAISettings,
-                            sp.GetRequiredService<ILogger<DocumentVectorizationService>>()));
-                }
-                else
-                {
-                    services.AddSingleton<IDocumentVectorizationService, NullDocumentVectorizationService>();
+                    services.AddScoped<IChatBot, OpenAIChatBot>(sp =>
+                    {
+                        ChatClient client = new(model: openAISettings.Model, apiKey: openAISettings.ApiKey);
+                        return new OpenAIChatBot(client, sp.GetRequiredService<IDocumentVectorizationService>(), sp.GetRequiredService<ILogger<OpenAIChatBot>>());
+                    });
                 }
             }
             else

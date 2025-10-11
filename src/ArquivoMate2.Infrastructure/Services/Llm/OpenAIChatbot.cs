@@ -5,17 +5,21 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace ArquivoMate2.Infrastructure.Services.Llm
 {
     public class OpenAIChatBot : IChatBot
     {
         private readonly ChatClient _client;
+        private readonly IDocumentVectorizationService _vectorizationService;
+        private readonly ILogger<OpenAIChatBot> _logger;
 
         private const string LoadChunkToolName = "load_document_chunk";
         private const string QueryDocumentsToolName = "query_documents";
@@ -25,9 +29,11 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
-        public OpenAIChatBot(ChatClient client)
+        public OpenAIChatBot(ChatClient client, IDocumentVectorizationService vectorizationService, ILogger<OpenAIChatBot> logger)
         {
             _client = client;
+            _vectorizationService = vectorizationService;
+            _logger = logger;
         }
 
         public string ModelName => _client.Model;
@@ -73,8 +79,39 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
 
             cancellationToken.ThrowIfCancellationRequested();
 
+            // Build full chunk map from document content
             var chunkMap = SplitIntoChunks(context.Content);
-            var metadata = BuildMetadataSection(context, chunkMap.Values);
+
+            // Try to fetch relevant chunk ids from the vector store. If none available, fall back to full chunk list.
+            IReadOnlyList<string> relevantIds = Array.Empty<string>();
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(context.UserId))
+                {
+                    relevantIds = await _vectorizationService.FindRelevantChunkIdsAsync(context.DocumentId, context.UserId, question, 5, cancellationToken);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Vector search failed - falling back to full chunk list for document {DocumentId}", context.DocumentId);
+                relevantIds = Array.Empty<string>();
+            }
+
+            IEnumerable<DocumentChunk> chunksToDescribe;
+            if (relevantIds != null && relevantIds.Count > 0)
+            {
+                // Preserve original ordering by index
+                chunksToDescribe = relevantIds
+                    .Where(id => chunkMap.ContainsKey(id))
+                    .Select(id => chunkMap[id])
+                    .OrderBy(c => c.Index);
+            }
+            else
+            {
+                chunksToDescribe = chunkMap.Values.OrderBy(c => c.Index);
+            }
+
+            var metadata = BuildMetadataSection(context, chunksToDescribe);
 
             const string systemPrompt = "You are a helpful assistant answering questions about the user's documents. Use the available tools to gather facts before replying. Always call load_document_chunk before citing text from the active document. When the user asks about other documents, statistics, or filters, you MUST call query_documents to retrieve real data. Never invent document identifiers. Return the final response as compact JSON with fields: 'answer' (string), 'citations' (array of objects with 'chunk_id' and optional 'quote'), optional 'documents' (array of objects with 'id', 'title', 'summary', optional 'date', 'file_size_bytes', 'score'), and optional 'document_count' (number).";
 
@@ -100,9 +137,10 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             {
                 iterations++;
 
-                foreach (var toolCall in response.ToolCalls.OfType<ChatFunctionToolCall>())
+                foreach (var toolCall in response.ToolCalls)
                 {
-                    if (string.Equals(toolCall.Name, LoadChunkToolName, StringComparison.Ordinal))
+                    var name = GetPropertyValue<string>(toolCall, "Name");
+                    if (string.Equals(name, LoadChunkToolName, StringComparison.Ordinal))
                     {
                         var chunkId = TryGetChunkId(toolCall);
                         var chunkContent = chunkId != null && chunkMap.TryGetValue(chunkId, out var chunk)
@@ -115,9 +153,10 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
                             content = chunkContent
                         }, s_toolSerializerOptions);
 
-                        messages.Add(new ToolChatMessage(toolCall.Id, toolPayload));
+                        var id = GetPropertyValue<string>(toolCall, "Id") ?? string.Empty;
+                        messages.Add(new ToolChatMessage(id, toolPayload));
                     }
-                    else if (string.Equals(toolCall.Name, QueryDocumentsToolName, StringComparison.Ordinal))
+                    else if (string.Equals(name, QueryDocumentsToolName, StringComparison.Ordinal))
                     {
                         var query = TryParseDocumentQuery(toolCall);
                         try
@@ -127,7 +166,8 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
                                 : new DocumentQueryResult();
 
                             var toolPayload = SerializeDocumentQueryResult(result);
-                            messages.Add(new ToolChatMessage(toolCall.Id, toolPayload));
+                            var id = GetPropertyValue<string>(toolCall, "Id") ?? string.Empty;
+                            messages.Add(new ToolChatMessage(id, toolPayload));
                         }
                         catch (Exception ex)
                         {
@@ -136,7 +176,8 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
                                 error = "query_failed",
                                 message = ex.Message
                             }, s_toolSerializerOptions);
-                            messages.Add(new ToolChatMessage(toolCall.Id, errorPayload));
+                            var id = GetPropertyValue<string>(toolCall, "Id") ?? string.Empty;
+                            messages.Add(new ToolChatMessage(id, errorPayload));
                         }
                     }
                 }
@@ -149,16 +190,25 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             return ParseFinalAnswer(answerText, chunkMap, ModelName);
         }
 
-        private static string TryGetChunkId(ChatFunctionToolCall toolCall)
+        private static T? GetPropertyValue<T>(object? obj, string propName)
         {
-            if (toolCall?.Arguments is null)
+            if (obj == null) return default;
+            var prop = obj.GetType().GetProperty(propName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            if (prop == null) return default;
+            return (T?)prop.GetValue(obj);
+        }
+
+        private static string? TryGetChunkId(object toolCall)
+        {
+            var argsObj = GetPropertyValue<object>(toolCall, "Arguments");
+            if (argsObj is null)
             {
                 return null;
             }
 
             try
             {
-                using var document = JsonDocument.Parse(toolCall.Arguments.ToString());
+                using var document = JsonDocument.Parse(argsObj.ToString() ?? string.Empty);
                 if (document.RootElement.TryGetProperty("chunk_id", out var chunkIdProp))
                 {
                     return chunkIdProp.GetString();
@@ -170,6 +220,62 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             }
 
             return null;
+        }
+
+        private static DocumentQuery? TryParseDocumentQuery(object toolCall)
+        {
+            var argsObj = GetPropertyValue<object>(toolCall, "Arguments");
+            if (argsObj is null)
+            {
+                return null;
+            }
+
+            try
+            {
+                using var document = JsonDocument.Parse(argsObj.ToString() ?? string.Empty);
+                var root = document.RootElement;
+
+                var limit = 10;
+                if (root.TryGetProperty("limit", out var limitProp))
+                {
+                    limit = ParseInt(limitProp, 10);
+                }
+
+                var projection = DocumentQueryProjection.Documents;
+                if (root.TryGetProperty("projection", out var projectionProp))
+                {
+                    var projectionValue = projectionProp.GetString();
+                    if (!string.IsNullOrWhiteSpace(projectionValue))
+                    {
+                        projection = projectionValue.Trim().ToLowerInvariant() switch
+                        {
+                            "count" => DocumentQueryProjection.Count,
+                            "both" => DocumentQueryProjection.Both,
+                            _ => DocumentQueryProjection.Documents
+                        };
+                    }
+                }
+
+                var filters = new DocumentQueryFilters();
+                if (root.TryGetProperty("filters", out var filtersProp) && filtersProp.ValueKind == JsonValueKind.Object)
+                {
+                    filters = ParseFilters(filtersProp);
+                }
+
+                var search = root.TryGetProperty("search", out var searchProp) ? searchProp.GetString() : null;
+
+                return new DocumentQuery
+                {
+                    Search = string.IsNullOrWhiteSpace(search) ? null : search,
+                    Filters = filters,
+                    Projection = projection,
+                    Limit = Math.Clamp(limit, 1, 20)
+                };
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private static DocumentAnswerResult ParseFinalAnswer(string answerPayload, IReadOnlyDictionary<string, DocumentChunk> chunkMap, string modelName)
@@ -348,73 +454,77 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
         private static ChatTool CreateChunkTool()
         {
             return ChatTool.CreateFunctionTool(
-                functionName: LoadChunkToolName,
-                functionDescription: "Loads the full text for one of the document chunks listed in the metadata.",
-                parameters: BinaryData.FromString(@"{
-  \"type\": \"object\",
-  \"properties\": {
-    \"chunk_id\": {
-      \"type\": \"string\",
-      \"description\": \"Identifier of the chunk to load, e.g. chunk_1\"
+                LoadChunkToolName,
+                "Loads the full text for one of the document chunks listed in the metadata.",
+                BinaryData.FromString("""
+{
+  "type": "object",
+  "properties": {
+    "chunk_id": {
+      "type": "string",
+      "description": "Identifier of the chunk to load, e.g. chunk_1"
     }
   },
-  \"required\": [\"chunk_id\"]
-}"));
+  "required": ["chunk_id"]
+}
+"""));
         }
 
         private static ChatTool CreateDocumentQueryTool()
         {
             return ChatTool.CreateFunctionTool(
-                functionName: QueryDocumentsToolName,
-                functionDescription: "Searches or filters the user's document catalogue and returns identifiers, metadata, or counts.",
-                parameters: BinaryData.FromString(@"{
-  \"type\": \"object\",
-  \"properties\": {
-    \"search\": {
-      \"type\": \"string\",
-      \"description\": \"Optional full-text search query or keywords. Leave empty when only filters are used.\"
+                QueryDocumentsToolName,
+                "Searches or filters the user's document catalogue and returns identifiers, metadata, or counts.",
+                BinaryData.FromString("""
+{
+  "type": "object",
+  "properties": {
+    "search": {
+      "type": "string",
+      "description": "Optional full-text search query or keywords. Leave empty when only filters are used."
     },
-    \"limit\": {
-      \"type\": \"integer\",
-      \"minimum\": 1,
-      \"maximum\": 20,
-      \"description\": \"Maximum number of document hits to return.\"
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20,
+      "description": "Maximum number of document hits to return."
     },
-    \"projection\": {
-      \"type\": \"string\",
-      \"enum\": [\"documents\", \"count\", \"both\"],
-      \"description\": \"Whether the model needs document hits, an aggregate count, or both.\"
+    "projection": {
+      "type": "string",
+      "enum": ["documents", "count", "both"],
+      "description": "Whether the model needs document hits, an aggregate count, or both."
     },
-    \"filters\": {
-      \"type\": \"object\",
-      \"properties\": {
-        \"document_ids\": {
-          \"type\": \"array\",
-          \"items\": {
-            \"type\": \"string\",
-            \"description\": \"Document GUID to retrieve details for.\"
+    "filters": {
+      "type": "object",
+      "properties": {
+        "document_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Document GUID to retrieve details for."
           }
         },
-        \"year\": {
-          \"type\": \"integer\",
-          \"description\": \"Calendar year based on the document's logical date.\"
+        "year": {
+          "type": "integer",
+          "description": "Calendar year based on the document's logical date."
         },
-        \"min_file_size_mb\": {
-          \"type\": \"number\",
-          \"description\": \"Minimum original file size in megabytes.\"
+        "min_file_size_mb": {
+          "type": "number",
+          "description": "Minimum original file size in megabytes."
         },
-        \"max_file_size_mb\": {
-          \"type\": \"number\",
-          \"description\": \"Maximum original file size in megabytes.\"
+        "max_file_size_mb": {
+          "type": "number",
+          "description": "Maximum original file size in megabytes."
         },
-        \"type\": {
-          \"type\": \"string\",
-          \"description\": \"Optional document type label.\"
+        "type": {
+          "type": "string",
+          "description": "Optional document type label."
         }
       }
     }
   }
-}"));
+}
+"""));
         }
 
         private static string SerializeDocumentQueryResult(DocumentQueryResult? result)
@@ -436,61 +546,6 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             };
 
             return JsonSerializer.Serialize(payload, s_toolSerializerOptions);
-        }
-
-        private static DocumentQuery? TryParseDocumentQuery(ChatFunctionToolCall toolCall)
-        {
-            if (toolCall?.Arguments is null)
-            {
-                return null;
-            }
-
-            try
-            {
-                using var document = JsonDocument.Parse(toolCall.Arguments.ToString());
-                var root = document.RootElement;
-
-                var limit = 10;
-                if (root.TryGetProperty("limit", out var limitProp))
-                {
-                    limit = ParseInt(limitProp, 10);
-                }
-
-                var projection = DocumentQueryProjection.Documents;
-                if (root.TryGetProperty("projection", out var projectionProp))
-                {
-                    var projectionValue = projectionProp.GetString();
-                    if (!string.IsNullOrWhiteSpace(projectionValue))
-                    {
-                        projection = projectionValue.Trim().ToLowerInvariant() switch
-                        {
-                            "count" => DocumentQueryProjection.Count,
-                            "both" => DocumentQueryProjection.Both,
-                            _ => DocumentQueryProjection.Documents
-                        };
-                    }
-                }
-
-                var filters = new DocumentQueryFilters();
-                if (root.TryGetProperty("filters", out var filtersProp) && filtersProp.ValueKind == JsonValueKind.Object)
-                {
-                    filters = ParseFilters(filtersProp);
-                }
-
-                var search = root.TryGetProperty("search", out var searchProp) ? searchProp.GetString() : null;
-
-                return new DocumentQuery
-                {
-                    Search = string.IsNullOrWhiteSpace(search) ? null : search,
-                    Filters = filters,
-                    Projection = projection,
-                    Limit = Math.Clamp(limit, 1, 20)
-                };
-            }
-            catch
-            {
-                return null;
-            }
         }
 
         private static DocumentQueryFilters ParseFilters(JsonElement filtersProp)

@@ -12,6 +12,70 @@
   gap: 1rem;
 }
 
+.settings-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1rem;
+}
+
+.email-settings.compact .settings-layout {
+  gap: 0.75rem;
+}
+
+/* Collapsible rules panel styles */
+.rules-details {
+  border: none;
+}
+
+.rules-details > summary.card-header {
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.5rem 0;
+}
+
+.rules-details > summary.card-header::-webkit-details-marker {
+  display: none;
+}
+
+.rules-details > summary.card-header h3 {
+  margin: 0;
+}
+
+.rules-details[open] > summary.card-header h3::after {
+  content: ' ▾';
+  font-size: 0.9em;
+  margin-left: 0.25rem;
+}
+
+.rules-details:not([open]) > summary.card-header h3::after {
+  content: ' ▸';
+  font-size: 0.9em;
+  margin-left: 0.25rem;
+}
+
+/* Taiga expand header styling */
+.rules-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.5rem 0;
+}
+
+.rules-header h3::after {
+  content: ' ▸';
+  font-size: 0.9em;
+  margin-left: 0.25rem;
+}
+
+.rules-header[aria-expanded='true'] h3::after,
+.rules-header.open h3::after {
+  content: ' ▾';
+}
+
 .settings-card {
   background: var(--tui-base-01);
   border: 1px solid var(--tui-base-04);
@@ -152,6 +216,15 @@
   gap: 0.5rem 1rem;
 }
 
+/* Give more breathing room between checkbox group and action buttons */
+.settings-card .form-checkboxes + .card-actions {
+  margin-top: 1.25rem;
+}
+
+.email-settings.compact .settings-card .form-checkboxes + .card-actions {
+  margin-top: 0.85rem;
+}
+
 .checkbox-field {
   display: inline-flex;
   align-items: center;
@@ -282,5 +355,8 @@ small {
   .form-checkboxes {
     flex-direction: column;
     align-items: flex-start;
+  }
+  .settings-layout {
+    grid-template-columns: 1fr;
   }
 }

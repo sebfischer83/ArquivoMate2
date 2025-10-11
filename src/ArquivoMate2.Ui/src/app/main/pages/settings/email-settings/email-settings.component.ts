@@ -1,9 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { TuiButton, TuiTextfield } from '@taiga-ui/core';
-import { TuiSwitch } from '@taiga-ui/kit';
+import { TuiExpand } from '@taiga-ui/core/components/expand';
+import { TranslocoService, TranslocoModule } from '@jsverse/transloco';
+// TuiSwitch removed: using native checkboxes for these boolean controls
 import { firstValueFrom } from 'rxjs';
 import { EmailService } from '../../../../client/services/email.service';
 import { EmailProviderType } from '../../../../client/models/email-provider-type';
@@ -100,7 +102,7 @@ type ConnectionStatus = { kind: 'success' | 'error'; message: string };
 @Component({
   standalone: true,
   selector: 'app-email-settings',
-  imports: [CommonModule, ReactiveFormsModule, TuiButton, TuiTextfield, TuiSwitch],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, TuiButton, TuiTextfield, TuiExpand, TranslocoModule],
   templateUrl: './email-settings.component.html',
   styleUrl: './email-settings.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -108,25 +110,34 @@ type ConnectionStatus = { kind: 'success' | 'error'; message: string };
 export class EmailSettingsComponent implements OnInit {
   private readonly emailService = inject(EmailService);
   private readonly toast = inject(ToastService);
+  // Transloco service for runtime translation in TS
+  private readonly transloco = inject(TranslocoService);
 
-  protected readonly providerOptions: ReadonlyArray<{ label: string; value: EmailProviderType }> = [
-    { label: 'IMAP', value: EmailProviderType.Imap },
-    { label: 'POP3', value: EmailProviderType.Pop3 },
-    { label: 'Exchange', value: EmailProviderType.Exchange },
-  ];
+  // Provide translated labels from Transloco so TS can use the localized strings as well.
+  protected get providerOptions(): ReadonlyArray<{ label: string; value: EmailProviderType }> {
+    return [
+      { label: this.transloco.translate('Settings.Email.Provider.Imap'), value: EmailProviderType.Imap },
+      { label: this.transloco.translate('Settings.Email.Provider.Pop3'), value: EmailProviderType.Pop3 },
+      { label: this.transloco.translate('Settings.Email.Provider.Exchange'), value: EmailProviderType.Exchange },
+    ];
+  }
 
-  protected readonly triStateOptions: ReadonlyArray<{ label: string; value: TriState }> = [
-    { label: 'Alle', value: 'any' },
-    { label: 'Ja', value: 'true' },
-    { label: 'Nein', value: 'false' },
-  ];
+  protected get triStateOptions(): ReadonlyArray<{ label: string; value: TriState }> {
+    return [
+      { label: this.transloco.translate('Common.All'), value: 'any' },
+      { label: this.transloco.translate('Common.Yes'), value: 'true' },
+      { label: this.transloco.translate('Common.No'), value: 'false' },
+    ];
+  }
 
-  protected readonly sortOptions: ReadonlyArray<{ label: string; value: number }> = [
-    { label: 'Datum', value: EmailSortBy.$0 },
-    { label: 'Betreff', value: EmailSortBy.$1 },
-    { label: 'Absender', value: EmailSortBy.$2 },
-    { label: 'Größe', value: EmailSortBy.$3 },
-  ];
+  protected get sortOptions(): ReadonlyArray<{ label: string; value: number }> {
+    return [
+      { label: this.transloco.translate('Settings.Email.Sort.Date'), value: EmailSortBy.$0 },
+      { label: this.transloco.translate('Settings.Email.Sort.Subject'), value: EmailSortBy.$1 },
+      { label: this.transloco.translate('Settings.Email.Sort.Sender'), value: EmailSortBy.$2 },
+      { label: this.transloco.translate('Settings.Email.Sort.Size'), value: EmailSortBy.$3 },
+    ];
+  }
 
   protected readonly connectionForm = new FormGroup<ConnectionFormControls>({
     providerType: new FormControl<EmailProviderType>(EmailProviderType.Imap, {
@@ -157,6 +168,13 @@ export class EmailSettingsComponent implements OnInit {
     }),
     autoReconnect: new FormControl<boolean>(true, { nonNullable: true }),
   });
+
+  // Controls whether the rules (criteria) panel is expanded. Start collapsed by default.
+  protected readonly rulesExpanded = signal<boolean>(false);
+
+  protected toggleRules(): void {
+    this.rulesExpanded.set(!this.rulesExpanded());
+  }
 
   protected readonly criteriaForm = new FormGroup<CriteriaFormControls>({
     name: new FormControl<string>('', {
@@ -234,13 +252,29 @@ export class EmailSettingsComponent implements OnInit {
 
   protected readonly connectionStatus = signal<ConnectionStatus | null>(null);
   protected readonly hasExistingSettings = signal(false);
+  // When settings are loaded and a password exists on the server we show a mask
+  // in the password field instead of the real secret. This flag tracks that state.
+  protected readonly passwordMasked = signal(false);
+
+  private static readonly PASSWORD_MASK = '*****';
 
   protected readonly loadingCriteria = signal(false);
   protected readonly savingCriteria = signal(false);
   protected readonly deletingCriteria = signal(false);
   protected readonly hasCriteria = signal(false);
+  private lastLoadedCriteriaId: string | null = null;
 
   async ngOnInit(): Promise<void> {
+    // Subscribe to password field changes to detect when user replaces the masked value.
+    this.connectionForm.controls.password.valueChanges.subscribe(v => {
+      // If the control contains the mask, keep masked state; otherwise clear it.
+      if (v === EmailSettingsComponent.PASSWORD_MASK) {
+        this.passwordMasked.set(true);
+      } else {
+        this.passwordMasked.set(false);
+      }
+    });
+
     await Promise.all([this.loadSettings(), this.loadCriteria()]);
   }
 
@@ -258,7 +292,7 @@ export class EmailSettingsComponent implements OnInit {
         this.toast.error(response.message);
       }
     } catch (error) {
-      this.toast.error(this.toErrorMessage(error, 'E-Mail-Zähler konnte nicht abgerufen werden.'));
+      this.toast.error(this.toErrorMessage(error, this.transloco.translate('Settings.Email.CountLoadError')));
     } finally {
       this.loadingCount.set(false);
     }
@@ -270,17 +304,18 @@ export class EmailSettingsComponent implements OnInit {
       const response = await firstValueFrom(this.emailService.apiEmailTestConnectionPost$Json());
       // ConnectionTestResultDtoApiResponse
       const success = response.success === true;
-      const message = response.message ?? (success ? 'Verbindung erfolgreich getestet.' : 'Verbindung fehlgeschlagen.');
-      this.connectionStatus.set({ kind: success ? 'success' : 'error', message });
+      const defaultMsg = success ? this.transloco.translate('Settings.Email.TestConnectionSuccess') : this.transloco.translate('Settings.Email.TestConnectionFailed');
+      const displayMessage: string = typeof response.message === 'string' && response.message.length > 0 ? response.message : defaultMsg;
+      this.connectionStatus.set({ kind: success ? 'success' : 'error', message: displayMessage });
       if (success) {
-        this.toast.success(message);
+        this.toast.success(displayMessage);
       } else {
-        this.toast.error(message);
+        this.toast.error(displayMessage);
       }
     } catch (error) {
-      const message = this.toErrorMessage(error, 'Verbindungstest fehlgeschlagen.');
-      this.connectionStatus.set({ kind: 'error', message });
-      this.toast.error(message);
+      const messageText: string = this.toErrorMessage(error, this.transloco.translate('Settings.Email.TestConnectionFailed'));
+      this.connectionStatus.set({ kind: 'error', message: messageText });
+      this.toast.error(messageText);
     } finally {
       this.testingConnection.set(false);
     }
@@ -289,24 +324,30 @@ export class EmailSettingsComponent implements OnInit {
   protected async saveSettings(): Promise<void> {
     this.connectionForm.markAllAsTouched();
     if (this.connectionForm.invalid) {
-      this.toast.error('Bitte prüfe die Eingaben für die Mail-Verbindung.');
+      this.toast.error(this.transloco.translate('Settings.Email.ConnectionValidationError'));
       return;
     }
 
     this.savingSettings.set(true);
     const value = this.connectionForm.getRawValue();
-    const request: SaveEmailSettingsRequest = {
+    // Build the request as a Partial so we can omit the password when it's only the mask.
+    const reqPartial: Partial<SaveEmailSettingsRequest> = {
       providerType: value.providerType,
       server: value.server.trim(),
       port: value.port,
       useSsl: value.useSsl,
       username: value.username.trim(),
-      password: value.password,
       displayName: this.trimToNull(value.displayName) ?? value.username.trim(),
       defaultFolder: this.trimToNull(value.defaultFolder) ?? undefined,
       connectionTimeout: value.connectionTimeout ?? undefined,
       autoReconnect: value.autoReconnect,
     };
+
+    // Only include password when user actually entered one (not the mask)
+    if (!(this.passwordMasked() && value.password === EmailSettingsComponent.PASSWORD_MASK) && value.password && value.password.length > 0) {
+      reqPartial.password = value.password;
+    }
+    const request = reqPartial as SaveEmailSettingsRequest;
 
     try {
       const response = await firstValueFrom(this.emailService.apiEmailSettingsPost$Json({ body: request }));
@@ -315,24 +356,98 @@ export class EmailSettingsComponent implements OnInit {
         this.toast.error(response.message);
         return;
       }
-      const message = response.message ?? 'E-Mail-Einstellungen wurden gespeichert.';
-      this.toast.success(message);
-      const nextValue = this.toConnectionFormValue(request);
-      this.hasExistingSettings.set(true);
-      this.applyConnectionValue(nextValue);
+  const defaultMsg = this.transloco.translate('Settings.Email.Saved');
+  const displayMessage: string = typeof response.message === 'string' && response.message.length > 0 ? response.message : defaultMsg;
+  this.toast.success(displayMessage);
+  // reflect saved values in the form. If the password was omitted in the request
+  // but settings exist on the server, we keep showing the mask.
+  const nextValue = this.toConnectionFormValue(request);
+  this.hasExistingSettings.set(true);
+  this.applyConnectionValue(nextValue, true);
     } catch (error) {
-      this.toast.error(this.toErrorMessage(error, 'E-Mail-Einstellungen konnten nicht gespeichert werden.'));
+      this.toast.error(this.toErrorMessage(error, this.transloco.translate('Settings.Email.SaveError')));
     } finally {
       this.savingSettings.set(false);
     }
   }
 
   protected resetConnectionForm(): void {
+    // Patch non-sensitive fields so booleans are restored. If settings exist on
+    // the server, restore the visual mask as well; otherwise clear the password.
+    const source = this.hasExistingSettings() ? this.lastLoadedConnection : this.defaultConnectionValue;
+    const patch = {
+      providerType: source.providerType,
+      server: source.server,
+      port: source.port,
+      useSsl: source.useSsl,
+      username: source.username,
+      displayName: source.displayName,
+      defaultFolder: source.defaultFolder,
+      connectionTimeout: source.connectionTimeout,
+      autoReconnect: source.autoReconnect,
+    } as Partial<ConnectionFormValue>;
+
+    this.connectionForm.patchValue(patch);
     if (this.hasExistingSettings()) {
-      this.applyConnectionValue(this.lastLoadedConnection);
+      // restore the mask to indicate a server-side password exists
+      this.connectionForm.controls.password.setValue(EmailSettingsComponent.PASSWORD_MASK, { emitEvent: false });
+      this.passwordMasked.set(true);
     } else {
-      this.applyConnectionValue(this.defaultConnectionValue);
+      this.connectionForm.controls.password.setValue('', { emitEvent: false });
+      this.passwordMasked.set(false);
     }
+    this.connectionForm.markAsPristine();
+    Object.values(this.connectionForm.controls).forEach(control => control.markAsUntouched());
+  }
+
+  // Returns true when the current connection form differs from the last loaded values
+  protected hasConnectionChanges(): boolean {
+    const current = this.connectionForm.getRawValue();
+    const last = this.lastLoadedConnection;
+    // Compare relevant fields; ignore password because we store it masked/empty.
+    const baseChanged = (
+      current.providerType !== last.providerType ||
+      (current.server ?? '').trim() !== (last.server ?? '').trim() ||
+      current.port !== last.port ||
+      current.useSsl !== last.useSsl ||
+      (current.username ?? '').trim() !== (last.username ?? '').trim() ||
+      (current.displayName ?? '').trim() !== (last.displayName ?? '').trim() ||
+      (current.defaultFolder ?? '').trim() !== (last.defaultFolder ?? '').trim() ||
+      (current.connectionTimeout ?? null) !== (last.connectionTimeout ?? null) ||
+      current.autoReconnect !== last.autoReconnect
+    );
+
+    // Also consider password changes: if the control contains a non-empty value
+    // that is not the mask, treat it as a change.
+    const pw = this.connectionForm.controls.password.value ?? '';
+    const passwordChanged = typeof pw === 'string' && pw.length > 0 && pw !== EmailSettingsComponent.PASSWORD_MASK;
+
+    return baseChanged || passwordChanged;
+  }
+
+  // Returns true when criteria form differs from last loaded criteria
+  protected hasCriteriaChanges(): boolean {
+    const cur = this.criteriaForm.getRawValue();
+    const last = this.lastLoadedCriteria;
+    return (
+      (cur.name ?? '').trim() !== (last.name ?? '').trim() ||
+      (cur.description ?? '').trim() !== (last.description ?? '').trim() ||
+      (cur.folderName ?? '').trim() !== (last.folderName ?? '').trim() ||
+      (cur.subjectContains ?? '').trim() !== (last.subjectContains ?? '').trim() ||
+      (cur.fromContains ?? '').trim() !== (last.fromContains ?? '').trim() ||
+      (cur.toContains ?? '').trim() !== (last.toContains ?? '').trim() ||
+      (cur.dateFrom ?? '') !== (last.dateFrom ?? '') ||
+      (cur.dateTo ?? '') !== (last.dateTo ?? '') ||
+      cur.isRead !== last.isRead ||
+      cur.hasAttachments !== last.hasAttachments ||
+      (this.coerceNumber(cur.maxResults) ?? null) !== (this.coerceNumber(last.maxResults) ?? null) ||
+      (this.coerceNumber(cur.maxDaysBack) ?? null) !== (this.coerceNumber(last.maxDaysBack) ?? null) ||
+      (this.coerceNumber(cur.skip) ?? null) !== (this.coerceNumber(last.skip) ?? null) ||
+      cur.sortBy !== last.sortBy ||
+      cur.sortDescending !== last.sortDescending ||
+      (cur.includeFlags ?? '').trim() !== (last.includeFlags ?? '').trim() ||
+      (cur.excludeFlags ?? '').trim() !== (last.excludeFlags ?? '').trim()
+    );
   }
 
   protected async deleteSettings(): Promise<void> {
@@ -363,7 +478,7 @@ export class EmailSettingsComponent implements OnInit {
   protected async saveCriteria(): Promise<void> {
     this.criteriaForm.markAllAsTouched();
     if (this.criteriaForm.invalid) {
-      this.toast.error('Bitte prüfe die Angaben für die Abruf-Regeln.');
+  this.toast.error(this.transloco.translate('Settings.Email.CriteriaValidationError'));
       return;
     }
 
@@ -397,11 +512,17 @@ export class EmailSettingsComponent implements OnInit {
       }
       const dto = response.data ?? this.createCriteriaFromRequest(request);
       this.applyCriteriaValue(this.toCriteriaFormValue(dto));
-      this.hasCriteria.set(true);
-      const message = response.message ?? 'Abruf-Regeln gespeichert.';
-      this.toast.success(message);
+      const id = (dto as any).id ?? null;
+      this.lastLoadedCriteriaId = typeof id === 'string' && id.length > 0 ? id : null;
+      const has = this.isNonZeroGuid(this.lastLoadedCriteriaId);
+      this.hasCriteria.set(has);
+      // Keep rules panel open after save if criteria exist
+      this.rulesExpanded.set(has);
+  const defaultCriteriaSaved = this.transloco.translate('Settings.Email.CriteriaSaved');
+  const criteriaDisplayMessage: string = typeof response.message === 'string' && response.message.length > 0 ? response.message : defaultCriteriaSaved;
+  this.toast.success(criteriaDisplayMessage);
     } catch (error) {
-      this.toast.error(this.toErrorMessage(error, 'Abruf-Regeln konnten nicht gespeichert werden.'));
+  this.toast.error(this.toErrorMessage(error, this.transloco.translate('Settings.Email.CriteriaSaveError')));
     } finally {
       this.savingCriteria.set(false);
     }
@@ -429,11 +550,13 @@ export class EmailSettingsComponent implements OnInit {
     this.deletingCriteria.set(true);
     try {
       await firstValueFrom(this.emailService.apiEmailCriteriaDelete$Json());
-      this.toast.success('Abruf-Regeln wurden entfernt.');
+  this.toast.success(this.transloco.translate('Settings.Email.CriteriaDeleted'));
       this.hasCriteria.set(false);
       this.applyCriteriaValue(this.defaultCriteriaValue);
+      // Close the rules panel after deletion
+      this.rulesExpanded.set(false);
     } catch (error) {
-      this.toast.error(this.toErrorMessage(error, 'Abruf-Regeln konnten nicht entfernt werden.'));
+  this.toast.error(this.toErrorMessage(error, this.transloco.translate('Settings.Email.CriteriaDeleteError')));
     } finally {
       this.deletingCriteria.set(false);
     }
@@ -448,7 +571,9 @@ export class EmailSettingsComponent implements OnInit {
       }
       if (response.data) {
         const view = this.toConnectionFormValue(response.data);
-        this.applyConnectionValue(view);
+        // server DTO contained credentials (we don't populate the real password),
+        // but indicate that a password exists so the UI shows a mask.
+        this.applyConnectionValue(view, true);
         this.hasExistingSettings.set(true);
       } else {
         this.applyConnectionValue(this.defaultConnectionValue);
@@ -459,7 +584,7 @@ export class EmailSettingsComponent implements OnInit {
         this.applyConnectionValue(this.defaultConnectionValue);
         this.hasExistingSettings.set(false);
       } else {
-        this.toast.error(this.toErrorMessage(error, 'E-Mail-Einstellungen konnten nicht geladen werden.'));
+    this.toast.error(this.toErrorMessage(error, this.transloco.translate('Settings.Email.LoadError')));
       }
     } finally {
       this.loadingSettings.set(false);
@@ -471,34 +596,50 @@ export class EmailSettingsComponent implements OnInit {
     try {
       const response = await firstValueFrom(this.emailService.apiEmailCriteriaGet$Json());
       if (response.success === false && response.message) {
-        this.toast.error(response.message);
+  this.toast.error(response.message);
       }
       if (response.data) {
         this.applyCriteriaValue(this.toCriteriaFormValue(response.data));
-        this.hasCriteria.set(true);
+        const id = (response.data as any).id ?? null;
+        this.lastLoadedCriteriaId = typeof id === 'string' && id.length > 0 ? id : null;
+        const has = this.isNonZeroGuid(this.lastLoadedCriteriaId);
+        this.hasCriteria.set(has);
+        // Auto-open rules panel when criteria exist
+        this.rulesExpanded.set(has);
       } else {
         this.applyCriteriaValue(this.defaultCriteriaValue);
+        this.lastLoadedCriteriaId = null;
         this.hasCriteria.set(false);
+        // Close rules panel when no criteria
+        this.rulesExpanded.set(false);
       }
     } catch (error) {
       if (error instanceof HttpErrorResponse && error.status === 404) {
         this.applyCriteriaValue(this.defaultCriteriaValue);
         this.hasCriteria.set(false);
       } else {
-        this.toast.error(this.toErrorMessage(error, 'Abruf-Regeln konnten nicht geladen werden.'));
+    this.toast.error(this.toErrorMessage(error, this.transloco.translate('Settings.Email.CriteriaLoadError')));
       }
     } finally {
       this.loadingCriteria.set(false);
     }
   }
 
-  private applyConnectionValue(value: ConnectionFormValue): void {
+  private applyConnectionValue(value: ConnectionFormValue, keepPasswordMask = false): void {
+    // If the caller wants to keep the mask (e.g., after save where we didn't send a new password),
+    // show the mask in the password input. Internally we store lastLoadedConnection with an
+    // empty password to avoid leaking secrets.
+  // If keepPasswordMask is requested (typically when settings exist on server),
+  // show the mask to indicate a password is set. We don't rely on the DTO
+  // containing the actual password field.
+  const displayPassword = keepPasswordMask ? EmailSettingsComponent.PASSWORD_MASK : '';
     const sanitized: ConnectionFormValue = { ...value, password: '' };
-    this.connectionForm.reset(sanitized);
-    this.connectionForm.controls.password.setValue('', { emitEvent: false });
+    this.connectionForm.reset({ ...sanitized, password: displayPassword });
+    this.connectionForm.controls.password.setValue(displayPassword, { emitEvent: false });
     this.connectionForm.markAsPristine();
     Object.values(this.connectionForm.controls).forEach(control => control.markAsUntouched());
     this.lastLoadedConnection = { ...sanitized };
+    this.passwordMasked.set(displayPassword === EmailSettingsComponent.PASSWORD_MASK);
   }
 
   private applyCriteriaValue(value: CriteriaFormValue): void {
@@ -686,6 +827,12 @@ export class EmailSettingsComponent implements OnInit {
       return null;
     }
     return value;
+  }
+
+  private isNonZeroGuid(id: string | null): boolean {
+    if (!id) return false;
+    const zeroGuid = '00000000-0000-0000-0000-000000000000';
+    return id !== zeroGuid;
   }
 
   private toErrorMessage(error: unknown, fallback: string): string {

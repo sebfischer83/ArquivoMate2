@@ -2,6 +2,11 @@
   "LandingPage": {
     "Welcome": "Welcome"
   },
+  "Common": {
+    "Reset": "Reset",
+    "SavingEllipsis": "Saving…",
+    "RemovingEllipsis": "Removing…"
+  },
   "Document": {
     "Download": "Download",
     "DownloadOriginal": "Original",
@@ -45,4 +50,97 @@
     "PdfLoadError": "PDF could not be loaded"
     ,"KeywordTooLong": "Keyword too long (max 30)"
   }
+
+  ,"Settings": {
+    "Email": {
+      "ConnectionTitle": "E-mail connection",
+      "ConnectionDescription": "Configure the inbox from which documents are imported.",
+      "ConnectionActive": "Configuration active",
+      "ConnectionMissing": "Not configured yet",
+      "Provider": {
+        "Label": "Provider",
+        "Imap": "IMAP",
+        "Pop3": "POP3",
+        "Exchange": "Exchange"
+      },
+      "Server": "Server",
+      "Port": "Port",
+      "Username": "Username",
+      "Password": "Password",
+      "PasswordMaskedNotice": "Password is set (*****). Edit the field to change it.",
+      "DisplayName": "Display name",
+      "DefaultFolder": "Folder",
+      "TimeoutMs": "Timeout (ms)",
+      "UseSsl": "Use SSL/TLS",
+      "AutoReconnect": "Keep connection alive",
+      "SaveSettings": "Save settings",
+      "DeleteConnection": "Delete connection",
+      "Saved": "E-mail settings saved.",
+      "SaveError": "E-mail settings could not be saved.",
+      "LoadError": "E-mail settings could not be loaded.",
+      "CountLoadError": "E-mail count could not be retrieved.",
+      "TestConnection": "Test connection",
+      "TestConnectionSuccess": "Connection tested successfully.",
+      "TestConnectionFailed": "Connection test failed.",
+      "CriteriaTitle": "Fetch rules",
+      "CriteriaDescription": "Define filters for which messages should be imported.",
+      "CriteriaActive": "Rules active",
+      "CriteriaMissing": "No rules saved",
+      "LoadingRules": "Loading saved rules…",
+      "CriteriaSaved": "Fetch rules saved.",
+      "CriteriaSaveError": "Fetch rules could not be saved.",
+      "CriteriaDeleted": "Fetch rules removed.",
+      "CriteriaDeleteError": "Fetch rules could not be removed.",
+      "CriteriaLoadError": "Fetch rules could not be loaded.",
+      "CriteriaValidationError": "Please check the fetch rules inputs.",
+      "Criteria": {
+        "Name": "Name",
+        "Description": "Description",
+        "Folder": "Folder",
+        "SubjectContains": "Subject contains",
+        "FromContains": "From contains",
+        "ToContains": "To contains",
+        "DateFrom": "Date from",
+        "DateTo": "Date to",
+        "IsRead": "Read?",
+        "HasAttachments": "Has attachments?",
+        "MaxResults": "Max results",
+        "MaxDaysBack": "Time range (days)",
+        "Skip": "Skip",
+        "SortBy": "Sort by",
+        "SortDescending": "Sort descending",
+        "IncludeFlags": "Include flags",
+        "ExcludeFlags": "Exclude flags",
+        "FlagsNote": "Comma-separated IMAP flags."
+      },
+      "Sort": {
+        "Date": "Date",
+        "Subject": "Subject",
+        "Sender": "Sender",
+        "Size": "Size"
+      }
+      ,
+      "Placeholders": {
+        "Server": "imap.example.com",
+        "DisplayName": "Inbox",
+        "DefaultFolder": "INBOX",
+        "CriteriaName": "e.g. Invoices",
+        "CriteriaDescription": "Short description",
+        "IncludeFlags": "e.g. Seen,Flagged",
+        "ExcludeFlags": "e.g. Draft"
+      }
+      ,
+      "RefreshCount": "Refresh count",
+      "RefreshingEllipsis": "Refreshing…",
+      "TestingEllipsis": "Testing…",
+      "Testing": "Test connection"
+      ,
+      "Status": {
+        "MessagesInMailbox": "Messages in mailbox",
+        "AsOf": "As of"
+      },
+      "LoadingCount": "Loading…"
+    }
+  }
 }
+

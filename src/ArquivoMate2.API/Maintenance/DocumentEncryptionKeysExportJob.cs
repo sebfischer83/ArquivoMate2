@@ -3,6 +3,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Text;
 using System.Text.Json;
 using ArquivoMate2.Domain.Document;

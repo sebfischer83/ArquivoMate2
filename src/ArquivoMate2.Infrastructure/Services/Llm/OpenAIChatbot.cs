@@ -15,7 +15,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
 {
     public class OpenAIChatBot : IChatBot
     {
-        private readonly ChatClient _client;
+        private readonly ChatClient? _client;
 
         private const string LoadChunkToolName = "load_document_chunk";
         private const string QueryDocumentsToolName = "query_documents";
@@ -25,12 +25,17 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
-        public OpenAIChatBot(ChatClient client)
+        protected OpenAIChatBot()
         {
-            _client = client;
+            _client = null;
         }
 
-        public string ModelName => _client.Model;
+        public OpenAIChatBot(ChatClient client)
+        {
+            _client = client ?? throw new ArgumentNullException(nameof(client));
+        }
+
+        public virtual string ModelName => _client?.Model ?? string.Empty;
 
         public async Task<DocumentAnalysisResult> AnalyzeDocumentContent(string content, CancellationToken cancellationToken)
         {
@@ -49,9 +54,9 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             };
 
             cancellationToken.ThrowIfCancellationRequested();
-            ChatCompletion response = await _client.CompleteChatAsync(messages, options);
+            var response = await CompleteChatAsync(messages, options, cancellationToken).ConfigureAwait(false);
 
-            string jsonText = response.Content[0].Text;
+            string jsonText = response.RawMessageText ?? string.Empty;
 
             return JsonSerializer.Deserialize<DocumentAnalysisResult>(jsonText, new JsonSerializerOptions
             {
@@ -91,7 +96,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             options.Tools.Add(CreateChunkTool());
             options.Tools.Add(CreateDocumentQueryTool());
 
-            ChatCompletion response = await _client.CompleteChatAsync(messages, options, cancellationToken);
+            var response = await CompleteChatAsync(messages, options, cancellationToken).ConfigureAwait(false);
 
             var iterations = 0;
             const int maxIterations = 8;
@@ -100,7 +105,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             {
                 iterations++;
 
-                foreach (var toolCall in response.ToolCalls.OfType<ChatFunctionToolCall>())
+                foreach (var toolCall in response.ToolCalls)
                 {
                     if (string.Equals(toolCall.Name, LoadChunkToolName, StringComparison.Ordinal))
                     {
@@ -141,15 +146,15 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
                     }
                 }
 
-                response = await _client.CompleteChatAsync(messages, options, cancellationToken);
+                response = await CompleteChatAsync(messages, options, cancellationToken).ConfigureAwait(false);
             }
 
-            var answerText = response.Content.FirstOrDefault()?.Text?.Trim() ?? string.Empty;
+            var answerText = response.MessageText ?? string.Empty;
 
             return ParseFinalAnswer(answerText, chunkMap, ModelName);
         }
 
-        private static string TryGetChunkId(ChatFunctionToolCall toolCall)
+        private static string TryGetChunkId(FunctionToolCall toolCall)
         {
             if (toolCall?.Arguments is null)
             {
@@ -158,7 +163,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
 
             try
             {
-                using var document = JsonDocument.Parse(toolCall.Arguments.ToString());
+                using var document = JsonDocument.Parse(toolCall.Arguments);
                 if (document.RootElement.TryGetProperty("chunk_id", out var chunkIdProp))
                 {
                     return chunkIdProp.GetString();
@@ -438,7 +443,32 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             return JsonSerializer.Serialize(payload, s_toolSerializerOptions);
         }
 
-        private static DocumentQuery? TryParseDocumentQuery(ChatFunctionToolCall toolCall)
+        protected virtual async Task<ChatCompletionResult> CompleteChatAsync(
+            IReadOnlyList<ChatMessage> messages,
+            ChatCompletionOptions options,
+            CancellationToken cancellationToken)
+        {
+            if (_client is null)
+            {
+                throw new InvalidOperationException("No chat client configured.");
+            }
+
+            ChatCompletion completion = await _client
+                .CompleteChatAsync(messages, options, cancellationToken)
+                .ConfigureAwait(false);
+
+            var toolCalls = completion.ToolCalls?
+                .OfType<ChatFunctionToolCall>()
+                .Select(call => new FunctionToolCall(call.Id, call.Name, call.Arguments?.ToString()))
+                .ToArray()
+                ?? Array.Empty<FunctionToolCall>();
+
+            var messageText = completion.Content?.FirstOrDefault()?.Text;
+
+            return new ChatCompletionResult(toolCalls, messageText);
+        }
+
+        private static DocumentQuery? TryParseDocumentQuery(FunctionToolCall toolCall)
         {
             if (toolCall?.Arguments is null)
             {
@@ -447,7 +477,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
 
             try
             {
-                using var document = JsonDocument.Parse(toolCall.Arguments.ToString());
+                using var document = JsonDocument.Parse(toolCall.Arguments);
                 var root = document.RootElement;
 
                 var limit = 10;
@@ -653,5 +683,12 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
         }
 
         private sealed record DocumentChunk(string Id, string Content, int Index, int StartPosition, int EndPosition);
+
+        protected internal sealed record FunctionToolCall(string Id, string Name, string? Arguments);
+
+        protected internal sealed record ChatCompletionResult(IReadOnlyList<FunctionToolCall> ToolCalls, string? RawMessageText)
+        {
+            public string? MessageText => RawMessageText?.Trim();
+        }
     }
 }

@@ -5,7 +5,10 @@
   "Common": {
     "Reset": "Reset",
     "SavingEllipsis": "Saving…",
-    "RemovingEllipsis": "Removing…"
+    "RemovingEllipsis": "Removing…",
+    "All": "All",
+    "Yes": "Yes",
+    "No": "No"
   },
   "Document": {
     "Download": "Download",
@@ -79,6 +82,8 @@
       "SaveError": "E-mail settings could not be saved.",
       "LoadError": "E-mail settings could not be loaded.",
       "CountLoadError": "E-mail count could not be retrieved.",
+  "StatusTitle": "Status",
+  "StatusDescription": "Show connection and mailbox status.",
       "TestConnection": "Test connection",
       "TestConnectionSuccess": "Connection tested successfully.",
       "TestConnectionFailed": "Connection test failed.",
@@ -90,6 +95,7 @@
       "CriteriaSaved": "Fetch rules saved.",
       "CriteriaSaveError": "Fetch rules could not be saved.",
       "CriteriaDeleted": "Fetch rules removed.",
+  "CriteriaDelete": "Remove fetch rules",
       "CriteriaDeleteError": "Fetch rules could not be removed.",
       "CriteriaLoadError": "Fetch rules could not be loaded.",
       "CriteriaValidationError": "Please check the fetch rules inputs.",

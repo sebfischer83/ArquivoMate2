@@ -3,7 +3,10 @@
   "Common": {
     "Reset": "Сброс",
     "SavingEllipsis": "Сохранение…",
-    "RemovingEllipsis": "Удаление…"
+    "RemovingEllipsis": "Удаление…",
+    "All": "Все",
+    "Yes": "Да",
+    "No": "Нет"
   },
   "Document": {
     "Download": "Загрузка",
@@ -77,6 +80,8 @@
       "SaveError": "Не удалось сохранить настройки электронной почты.",
       "LoadError": "Не удалось загрузить настройки электронной почты.",
       "CountLoadError": "Не удалось получить количество писем.",
+  "StatusTitle": "Статус",
+  "StatusDescription": "Показать состояние подключения и почтового ящика.",
       "TestConnection": "Проверить подключение",
       "TestConnectionSuccess": "Подключение успешно протестировано.",
       "TestConnectionFailed": "Проверка подключения не удалась.",
@@ -88,6 +93,7 @@
       "CriteriaSaved": "Правила выборки сохранены.",
       "CriteriaSaveError": "Не удалось сохранить правила выборки.",
       "CriteriaDeleted": "Правила выборки удалены.",
+  "CriteriaDelete": "Удалить правила выборки",
       "CriteriaDeleteError": "Не удалось удалить правила выборки.",
       "CriteriaLoadError": "Не удалось загрузить правила выборки.",
       "CriteriaValidationError": "Пожалуйста, проверьте параметры правил выборки.",

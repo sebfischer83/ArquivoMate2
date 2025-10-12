@@ -12,6 +12,7 @@ import { provideZonelessChangeDetection, isDevMode } from '@angular/core';
 import { AuthGuard } from "./guards/auth.guard";
 import { ApiConfiguration } from './client/api-configuration';
 import { authInterceptor } from './interceptors/auth.interceptor';
+import { localeInterceptor } from './interceptors/locale.interceptor';
 import { errorInterceptor } from './interceptors/error.interceptor';
 import { HttpClient } from '@angular/common/http';
 import { TranslocoHttpLoader } from './transloco-loader';
@@ -76,7 +77,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideAnimations(),
     provideZonelessChangeDetection(),
-  provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
+  provideHttpClient(withInterceptors([authInterceptor, localeInterceptor, errorInterceptor])),
     provideOAuthClient(),
     provideRouter(routes),
     provideAppInitializer(intializeAppFn),

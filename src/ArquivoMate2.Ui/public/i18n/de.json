@@ -47,7 +47,10 @@
   ,"Common": {
     "Reset": "Zurücksetzen",
     "SavingEllipsis": "Speichert…",
-    "RemovingEllipsis": "Entferne…"
+    "RemovingEllipsis": "Entferne…",
+    "All": "Alle",
+    "Yes": "Ja",
+    "No": "Nein"
   },
   "Settings": {
     "Email": {
@@ -77,6 +80,8 @@
       "SaveError": "E-Mail-Einstellungen konnten nicht gespeichert werden.",
       "LoadError": "E-Mail-Einstellungen konnten nicht geladen werden.",
       "CountLoadError": "E-Mail-Zähler konnte nicht abgerufen werden.",
+  "StatusTitle": "Status",
+  "StatusDescription": "Verbindung und Postfachstatus anzeigen.",
       "TestConnection": "Verbindung testen",
       "TestConnectionSuccess": "Verbindung erfolgreich getestet.",
       "TestConnectionFailed": "Verbindungstest fehlgeschlagen.",
@@ -88,6 +93,7 @@
       "CriteriaSaved": "Abruf-Regeln gespeichert.",
       "CriteriaSaveError": "Abruf-Regeln konnten nicht gespeichert werden.",
       "CriteriaDeleted": "Abruf-Regeln wurden entfernt.",
+  "CriteriaDelete": "Abruf-Regeln entfernen",
       "CriteriaDeleteError": "Abruf-Regeln konnten nicht entfernt werden.",
       "CriteriaLoadError": "Abruf-Regeln konnten nicht geladen werden.",
       "CriteriaValidationError": "Bitte prüfe die Angaben für die Abruf-Regeln.",

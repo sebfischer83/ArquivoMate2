@@ -20,7 +20,7 @@
           <form [formGroup]="connectionForm" (ngSubmit)="saveSettings()">
             <div class="form-grid">
               <div class="form-field">
-                <label for="providerType">{{ t('Settings.Email.Provider.Label') }}</label>
+                <label for="providerType" [tuiHint]="t('Settings.Email.Hints.Provider')">{{ t('Settings.Email.Provider.Label') }}</label>
                 <tui-textfield tuiSelect>
                   <select id="providerType" formControlName="providerType">
                     @for (option of providerOptions; track option.value) {
@@ -31,7 +31,7 @@
               </div>
 
               <div class="form-field">
-                <label for="server">{{ t('Settings.Email.Server') }}</label>
+                <label for="server" [tuiHint]="t('Settings.Email.Hints.Server')">{{ t('Settings.Email.Server') }}</label>
                 <tui-textfield>
                   <input tuiTextfield id="server" type="text" formControlName="server" autocomplete="off" placeholder="{{ t('Settings.Email.Placeholders.Server') }}" />
                 </tui-textfield>
@@ -41,7 +41,7 @@
               </div>
 
               <div class="form-field">
-                <label for="port">{{ t('Settings.Email.Port') }}</label>
+                <label for="port" [tuiHint]="t('Settings.Email.Hints.Port')">{{ t('Settings.Email.Port') }}</label>
                 <tui-textfield>
                   <input tuiTextfield id="port" type="number" min="1" max="65535" formControlName="port" />
                 </tui-textfield>
@@ -51,7 +51,7 @@
               </div>
 
               <div class="form-field">
-                <label for="username">{{ t('Settings.Email.Username') }}</label>
+                <label for="username" [tuiHint]="t('Settings.Email.Hints.Username')">{{ t('Settings.Email.Username') }}</label>
                 <tui-textfield>
                   <input tuiTextfield id="username" type="text" formControlName="username" autocomplete="username" />
                 </tui-textfield>
@@ -61,7 +61,7 @@
               </div>
 
               <div class="form-field">
-                <label for="password">{{ t('Settings.Email.Password') }}</label>
+                <label for="password" [tuiHint]="t('Settings.Email.Hints.Password')">{{ t('Settings.Email.Password') }}</label>
                 <tui-textfield>
                   <input tuiTextfield id="password" [type]="passwordMasked() ? 'text' : 'password'" formControlName="password" autocomplete="current-password" />
                 </tui-textfield>
@@ -73,21 +73,21 @@
               </div>
 
               <div class="form-field">
-                <label for="displayName">{{ t('Settings.Email.DisplayName') }}</label>
+                <label for="displayName" [tuiHint]="t('Settings.Email.Hints.DisplayName')">{{ t('Settings.Email.DisplayName') }}</label>
                 <tui-textfield>
                   <input tuiTextfield id="displayName" type="text" formControlName="displayName" placeholder="{{ t('Settings.Email.Placeholders.DisplayName') }}" />
                 </tui-textfield>
               </div>
 
               <div class="form-field">
-                <label for="defaultFolder">{{ t('Settings.Email.DefaultFolder') }}</label>
+                <label for="defaultFolder" [tuiHint]="t('Settings.Email.Hints.DefaultFolder')">{{ t('Settings.Email.DefaultFolder') }}</label>
                 <tui-textfield>
                   <input tuiTextfield id="defaultFolder" type="text" formControlName="defaultFolder" placeholder="{{ t('Settings.Email.Placeholders.DefaultFolder') }}" />
                 </tui-textfield>
               </div>
 
               <div class="form-field">
-                <label for="connectionTimeout">{{ t('Settings.Email.TimeoutMs') }}</label>
+                <label for="connectionTimeout" [tuiHint]="t('Settings.Email.Hints.TimeoutMs')">{{ t('Settings.Email.TimeoutMs') }}</label>
                 <tui-textfield>
                   <input tuiTextfield id="connectionTimeout" type="number" min="1000" step="500" formControlName="connectionTimeout" />
                 </tui-textfield>
@@ -95,11 +95,11 @@
             </div>
 
             <div class="form-checkboxes">
-              <label class="checkbox-field">
+              <label class="checkbox-field" [tuiHint]="t('Settings.Email.Hints.UseSsl')">
                 <input type="checkbox" formControlName="useSsl" />
                 <span>{{ t('Settings.Email.UseSsl') }}</span>
               </label>
-              <label class="checkbox-field">
+              <label class="checkbox-field" [tuiHint]="t('Settings.Email.Hints.AutoReconnect')">
                 <input type="checkbox" formControlName="autoReconnect" />
                 <span>{{ t('Settings.Email.AutoReconnect') }}</span>
               </label>
@@ -137,7 +137,7 @@
           <form [formGroup]="criteriaForm" (ngSubmit)="saveCriteria()">
             <div class="form-grid two-columns">
               <div class="form-field">
-                <label for="criteriaName">{{ t('Settings.Email.Criteria.Name') }}</label>
+                <label for="criteriaName" [tuiHint]="t('Settings.Email.Hints.Criteria.Name')">{{ t('Settings.Email.Criteria.Name') }}</label>
                 <input id="criteriaName" type="text" formControlName="name" placeholder="{{ t('Settings.Email.Placeholders.CriteriaName') }}" />
                 @if (shouldShowCriteriaError('name')) {
                   <span class="error">{{ t('Settings.Email.Errors.CriteriaNameRequired') }}</span>
@@ -145,56 +145,56 @@
               </div>
 
               <div class="form-field">
-                <label for="criteriaDescription">{{ t('Settings.Email.Criteria.Description') }}</label>
+                <label for="criteriaDescription" [tuiHint]="t('Settings.Email.Hints.Criteria.Description')">{{ t('Settings.Email.Criteria.Description') }}</label>
                 <tui-textfield>
                   <textarea tuiTextfield id="criteriaDescription" rows="2" formControlName="description" placeholder="{{ t('Settings.Email.Placeholders.CriteriaDescription') }}"></textarea>
                 </tui-textfield>
               </div>
 
               <div class="form-field">
-                <label for="folderName">{{ t('Settings.Email.Criteria.Folder') }}</label>
+                <label for="folderName" [tuiHint]="t('Settings.Email.Hints.Criteria.Folder')">{{ t('Settings.Email.Criteria.Folder') }}</label>
                 <tui-textfield>
                   <input tuiTextfield id="folderName" type="text" formControlName="folderName" placeholder="{{ t('Settings.Email.Placeholders.DefaultFolder') }}" />
                 </tui-textfield>
               </div>
 
               <div class="form-field">
-                <label for="subjectContains">{{ t('Settings.Email.Criteria.SubjectContains') }}</label>
+                <label for="subjectContains" [tuiHint]="t('Settings.Email.Hints.Criteria.SubjectContains')">{{ t('Settings.Email.Criteria.SubjectContains') }}</label>
                 <tui-textfield>
                   <input tuiTextfield id="subjectContains" type="text" formControlName="subjectContains" />
                 </tui-textfield>
               </div>
 
               <div class="form-field">
-                <label for="fromContains">{{ t('Settings.Email.Criteria.FromContains') }}</label>
+                <label for="fromContains" [tuiHint]="t('Settings.Email.Hints.Criteria.FromContains')">{{ t('Settings.Email.Criteria.FromContains') }}</label>
                 <tui-textfield>
                   <input tuiTextfield id="fromContains" type="text" formControlName="fromContains" />
                 </tui-textfield>
               </div>
 
               <div class="form-field">
-                <label for="toContains">{{ t('Settings.Email.Criteria.ToContains') }}</label>
+                <label for="toContains" [tuiHint]="t('Settings.Email.Hints.Criteria.ToContains')">{{ t('Settings.Email.Criteria.ToContains') }}</label>
                 <tui-textfield>
                   <input tuiTextfield id="toContains" type="text" formControlName="toContains" />
                 </tui-textfield>
               </div>
 
               <div class="form-field">
-                <label for="dateFrom">{{ t('Settings.Email.Criteria.DateFrom') }}</label>
+                <label for="dateFrom" [tuiHint]="t('Settings.Email.Hints.Criteria.DateFrom')">{{ t('Settings.Email.Criteria.DateFrom') }}</label>
                 <tui-textfield>
                   <input tuiTextfield id="dateFrom" type="date" formControlName="dateFrom" />
                 </tui-textfield>
               </div>
 
               <div class="form-field">
-                <label for="dateTo">{{ t('Settings.Email.Criteria.DateTo') }}</label>
+                <label for="dateTo" [tuiHint]="t('Settings.Email.Hints.Criteria.DateTo')">{{ t('Settings.Email.Criteria.DateTo') }}</label>
                 <tui-textfield>
                   <input tuiTextfield id="dateTo" type="date" formControlName="dateTo" />
                 </tui-textfield>
               </div>
 
               <div class="form-field">
-                <label for="isRead">{{ t('Settings.Email.Criteria.IsRead') }}</label>
+                <label for="isRead" [tuiHint]="t('Settings.Email.Hints.Criteria.IsRead')">{{ t('Settings.Email.Criteria.IsRead') }}</label>
                 <tui-textfield tuiSelect>
                   <select id="isRead" formControlName="isRead">
                     @for (option of triStateOptions; track option.value) {
@@ -205,7 +205,7 @@
               </div>
 
               <div class="form-field">
-                <label for="hasAttachments">{{ t('Settings.Email.Criteria.HasAttachments') }}</label>
+                <label for="hasAttachments" [tuiHint]="t('Settings.Email.Hints.Criteria.HasAttachments')">{{ t('Settings.Email.Criteria.HasAttachments') }}</label>
                 <tui-textfield tuiSelect>
                   <select id="hasAttachments" formControlName="hasAttachments">
                     @for (option of triStateOptions; track option.value) {
@@ -216,28 +216,28 @@
               </div>
 
               <div class="form-field">
-                <label for="maxResults">{{ t('Settings.Email.Criteria.MaxResults') }}</label>
+                <label for="maxResults" [tuiHint]="t('Settings.Email.Hints.Criteria.MaxResults')">{{ t('Settings.Email.Criteria.MaxResults') }}</label>
                 <tui-textfield>
                   <input tuiTextfield id="maxResults" type="number" min="1" formControlName="maxResults" />
                 </tui-textfield>
               </div>
 
               <div class="form-field">
-                <label for="maxDaysBack">{{ t('Settings.Email.Criteria.MaxDaysBack') }}</label>
+                <label for="maxDaysBack" [tuiHint]="t('Settings.Email.Hints.Criteria.MaxDaysBack')">{{ t('Settings.Email.Criteria.MaxDaysBack') }}</label>
                 <tui-textfield>
                   <input tuiTextfield id="maxDaysBack" type="number" min="1" formControlName="maxDaysBack" />
                 </tui-textfield>
               </div>
 
               <div class="form-field">
-                <label for="skip">{{ t('Settings.Email.Criteria.Skip') }}</label>
+                <label for="skip" [tuiHint]="t('Settings.Email.Hints.Criteria.Skip')">{{ t('Settings.Email.Criteria.Skip') }}</label>
                 <tui-textfield>
                   <input tuiTextfield id="skip" type="number" min="0" formControlName="skip" />
                 </tui-textfield>
               </div>
 
               <div class="form-field">
-                <label for="sortBy">{{ t('Settings.Email.Criteria.SortBy') }}</label>
+                <label for="sortBy" [tuiHint]="t('Settings.Email.Hints.Criteria.SortBy')">{{ t('Settings.Email.Criteria.SortBy') }}</label>
                 <tui-textfield tuiSelect>
                   <select id="sortBy" formControlName="sortBy">
                     @for (option of sortOptions; track option.value) {
@@ -255,7 +255,7 @@
               </div>
 
               <div class="form-field">
-                <label for="includeFlags">{{ t('Settings.Email.Criteria.IncludeFlags') }}</label>
+                <label for="includeFlags">{{ t('Settings.Email.Criteria.IncludeFlags') }} <span class="hint-trigger" tabindex="0" [tuiHint]="t('Settings.Email.Hints.Criteria.IncludeFlags')">?</span></label>
                 <tui-textfield>
                   <input tuiTextfield id="includeFlags" type="text" formControlName="includeFlags" placeholder="{{ t('Settings.Email.Placeholders.IncludeFlags') }}" />
                 </tui-textfield>
@@ -263,7 +263,7 @@
               </div>
 
               <div class="form-field">
-                <label for="excludeFlags">{{ t('Settings.Email.Criteria.ExcludeFlags') }}</label>
+                <label for="excludeFlags">{{ t('Settings.Email.Criteria.ExcludeFlags') }} <span class="hint-trigger" tabindex="0" [tuiHint]="t('Settings.Email.Hints.Criteria.ExcludeFlags')">?</span></label>
                 <tui-textfield>
                   <input tuiTextfield id="excludeFlags" type="text" formControlName="excludeFlags" placeholder="{{ t('Settings.Email.Placeholders.ExcludeFlags') }}" />
                 </tui-textfield>
@@ -321,8 +321,8 @@
               </button>
             </div>
 
-            @if (connectionStatus()) {
-              <div class="connection-feedback" [class.error]="connectionStatus()?.kind === 'error'" [class.success]="connectionStatus()?.kind === 'success'">
+            @if (connectionStatus()?.kind === 'error') {
+              <div class="connection-feedback error">
                 {{ connectionStatus()?.message }}
               </div>
             }

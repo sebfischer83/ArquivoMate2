@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
-import { TuiButton, TuiTextfield } from '@taiga-ui/core';
+import { TuiButton, TuiTextfield, TuiHint } from '@taiga-ui/core';
 import { TuiExpand } from '@taiga-ui/core/components/expand';
 import { TranslocoService, TranslocoModule } from '@jsverse/transloco';
 // TuiSwitch removed: using native checkboxes for these boolean controls
@@ -102,7 +102,7 @@ type ConnectionStatus = { kind: 'success' | 'error'; message: string };
 @Component({
   standalone: true,
   selector: 'app-email-settings',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, TuiButton, TuiTextfield, TuiExpand, TranslocoModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, TuiButton, TuiTextfield, TuiHint, TuiExpand, TranslocoModule],
   templateUrl: './email-settings.component.html',
   styleUrl: './email-settings.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -306,10 +306,12 @@ export class EmailSettingsComponent implements OnInit {
       const success = response.success === true;
       const defaultMsg = success ? this.transloco.translate('Settings.Email.TestConnectionSuccess') : this.transloco.translate('Settings.Email.TestConnectionFailed');
       const displayMessage: string = typeof response.message === 'string' && response.message.length > 0 ? response.message : defaultMsg;
-      this.connectionStatus.set({ kind: success ? 'success' : 'error', message: displayMessage });
+      // For success use toast only; clear inline connectionStatus. For failures set inline error and a toast.
       if (success) {
+        this.connectionStatus.set(null);
         this.toast.success(displayMessage);
       } else {
+        this.connectionStatus.set({ kind: 'error', message: displayMessage });
         this.toast.error(displayMessage);
       }
     } catch (error) {

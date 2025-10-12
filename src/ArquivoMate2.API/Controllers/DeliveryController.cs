@@ -89,13 +89,33 @@ namespace ArquivoMate2.API.Controllers
             };
             if (fullPath == null) return NotFound();
 
-            // Pre-flight check for encryption keys when encryption is enabled AND the document is encrypted
+            // Load encryption keys when necessary (before attempting small artifact shortcut)
             DocumentEncryptionKeysAdded? encryptionKeys = null;
             if (_settings.Enabled && view.Encrypted)
             {
                 var events = await _query.Events.FetchStreamAsync(documentId, token: ct);
                 encryptionKeys = events.Select(e => e.Data).OfType<DocumentEncryptionKeysAdded>().LastOrDefault();
                 if (encryptionKeys == null) return NotFound();
+            }
+
+            // Small artifact fast-path (preview/thumb) – uses TryGetArtifactBytesAsync which already caches encrypted bytes
+            if (artifact == DocumentArtifact.Preview || artifact == DocumentArtifact.Thumb)
+            {
+                try
+                {
+                    var plain = await TryGetArtifactBytesAsync(view, artifact, fullPath, encryptionKeys, ct);
+                    if (plain != null && plain.Length > 0)
+                    {
+                        ApplyClientCacheHeaders();
+                        var mime = artifact == DocumentArtifact.Thumb ? "image/webp" : "application/pdf"; // preview is pdf
+                        return File(plain, mime);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Preview/Thumb fast-path failed for document {DocumentId} artifact {Artifact}", documentId, artifact);
+                    // fall back to streaming below
+                }
             }
 
             try

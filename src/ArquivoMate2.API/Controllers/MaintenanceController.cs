@@ -320,7 +320,7 @@ public class MaintenanceController : ControllerBase
         // Top tables
         var topTables = new List<TableSizeInfo>();
         var topTablesSql = @"
-SELECT nspname || '.' || relname AS table_name,
+SELECT nspname || '.' || c.relname AS table_name,
        pg_size_pretty(pg_total_relation_size(c.oid)) AS total_size,
        pg_total_relation_size(c.oid) AS total_size_bytes,
        pg_size_pretty(pg_relation_size(c.oid)) AS table_size,
@@ -354,7 +354,7 @@ LIMIT 20;";
         // Marten tables
         var martenTables = new List<TableSizeInfo>();
         var martenSql = @"
-SELECT nspname || '.' || relname AS table_name,
+SELECT nspname || '.' || c.relname AS table_name,
        pg_size_pretty(pg_total_relation_size(c.oid)) AS total_size,
        pg_total_relation_size(c.oid) AS total_size_bytes,
        pg_size_pretty(pg_relation_size(c.oid)) AS table_size,
@@ -364,7 +364,7 @@ FROM pg_class c
 JOIN pg_namespace n ON n.oid = c.relnamespace
 LEFT JOIN pg_stat_user_tables s ON s.relid = c.oid
 WHERE c.relkind = 'r'
-  AND (relname LIKE 'mt_%' OR relname = 'mt_events' OR relname = 'mt_streams')
+  AND (c.relname LIKE 'mt_%' OR c.relname = 'mt_events' OR c.relname = 'mt_streams')
 ORDER BY pg_total_relation_size(c.oid) DESC;";
 
         await using (var cmd = new NpgsqlCommand(martenSql, conn))
@@ -391,7 +391,7 @@ ORDER BY pg_total_relation_size(c.oid) DESC;";
         {
             var asm = typeof(IDocumentStore).Assembly;
             martenVersion = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
-                            ?? asm.GetName().Version?.ToString() ?? string.Empty;
+                            ?? asm.GetName(). Version?.ToString() ?? string.Empty;
         }
         catch { }
 

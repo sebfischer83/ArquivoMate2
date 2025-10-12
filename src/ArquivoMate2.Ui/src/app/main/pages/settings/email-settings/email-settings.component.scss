@@ -165,6 +165,8 @@
   color: var(--tui-text-01);
 }
 
+/* Small hint trigger next to labels to provide a visible hover/focus target */
+
 .email-settings.compact .form-field label {
   font-size: 0.95rem;
 }
@@ -222,6 +224,15 @@
 }
 
 .email-settings.compact .settings-card .form-checkboxes + .card-actions {
+  margin-top: 0.85rem;
+}
+
+/* Also add the same spacing when a form-grid precedes the actions (used in the criteria card) */
+.settings-card .form-grid + .card-actions {
+  margin-top: 1.25rem;
+}
+
+.email-settings.compact .settings-card .form-grid + .card-actions {
   margin-top: 0.85rem;
 }
 
@@ -311,8 +322,6 @@
   padding: 0.85rem 1rem;
   border-radius: 0.75rem;
   font-weight: 500;
-  background: rgba(66, 184, 131, 0.12);
-  color: var(--tui-success-fill);
 }
 
 .email-settings.compact .connection-feedback {

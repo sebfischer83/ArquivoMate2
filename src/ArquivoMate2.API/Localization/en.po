@@ -25,3 +25,7 @@ msgstr "Invalid fields provided for update."
 msgctxt "ArquivoMate2.API.Controllers.DocumentsController"
 msgid "An unexpected error occurred."
 msgstr "An unexpected error occurred."
+
+msgctxt "ArquivoMate2.API.Controllers.DocumentsController"
+msgid "A question is required to query the chatbot."
+msgstr "A question is required to query the chatbot."

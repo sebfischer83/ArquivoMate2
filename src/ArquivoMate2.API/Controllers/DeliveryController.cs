@@ -15,6 +15,7 @@ using System.Text;
 using System.Text.Json;
 using ArquivoMate2.API.Results;
 using ArquivoMate2.API.Utilities;
+using Microsoft.Extensions.Logging; // added
 
 namespace ArquivoMate2.API.Controllers
 {
@@ -30,6 +31,7 @@ namespace ArquivoMate2.API.Controllers
         private readonly IEncryptionService _encryption;
         private readonly EncryptionSettings _settings;
         private readonly IEasyCachingProvider _cache;
+        private readonly ILogger<DeliveryController> _logger; // added
         private const int OneYearSeconds = 31536000; // 365 * 24 * 60 * 60
 
         public DeliveryController(IQuerySession query,
@@ -38,7 +40,8 @@ namespace ArquivoMate2.API.Controllers
             IFileAccessTokenService tokenService,
             IEncryptionService encryption,
             IOptions<EncryptionSettings> settings,
-            IEasyCachingProviderFactory cacheFactory)
+            IEasyCachingProviderFactory cacheFactory,
+            ILogger<DeliveryController> logger) // added
         {
             _query = query;
             _storage = storage;
@@ -47,6 +50,7 @@ namespace ArquivoMate2.API.Controllers
             _encryption = encryption;
             _settings = settings.Value;
             _cache = cacheFactory.GetCachingProvider(EasyCachingConstValue.DefaultRedisName);
+            _logger = logger; // added
         }
 
         /// <summary>
@@ -103,7 +107,22 @@ namespace ArquivoMate2.API.Controllers
                 ApplyClientCacheHeaders();
 
                 // Return a PushStreamResult which will invoke the provided delegate and stream directly to response
-                return new PushStreamResult(contentType, writeToAsync);
+                return new PushStreamResult(contentType, async (stream, token) =>
+                {
+                    try
+                    {
+                        await writeToAsync(stream, token);
+                    }
+                    catch (CryptographicException cex)
+                    {
+                        _logger.LogWarning(cex, "Decrypt failed for document {DocumentId} artifact {Artifact}", documentId, artifactWire);
+                        // swallow to avoid aborting server; client gets truncated/not found style
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Streaming failed for document {DocumentId} artifact {Artifact}", documentId, artifactWire);
+                    }
+                });
             }
             catch (FileNotFoundException)
             {
@@ -111,6 +130,16 @@ namespace ArquivoMate2.API.Controllers
             }
             catch (OperationCanceledException)
             {
+                return NotFound();
+            }
+            catch (CryptographicException cex)
+            {
+                _logger.LogWarning(cex, "Decrypt failed (pre-stream) for document {DocumentId} artifact {Artifact}", documentId, artifact);
+                return NotFound();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Delivery failed for document {DocumentId} artifact {Artifact}", documentId, artifact);
                 return NotFound();
             }
         }
@@ -178,8 +207,9 @@ namespace ArquivoMate2.API.Controllers
                     using var aesWrap = new AesGcm(Convert.FromBase64String(_settings.MasterKeyBase64), 16);
                     aesWrap.Decrypt(entry.WrapNonce, wrapped, wrapTag, dek, Encoding.UTF8.GetBytes("DEK:" + artifactWire));
                 }
-                catch
+                catch (Exception ex)
                 {
+                    _logger.LogWarning(ex, "Failed to unwrap DEK for document {DocumentId} artifact {Artifact}", view.Id, artifactWire);
                     return null;
                 }
 
@@ -199,8 +229,9 @@ namespace ArquivoMate2.API.Controllers
                         aes.Decrypt(nonce, cipher, tag, plain);
                         return plain;
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        _logger.LogWarning(ex, "AES-GCM decrypt failed for document {DocumentId} artifact {Artifact} (v1)", view.Id, artifactWire);
                         return null;
                     }
                 }
@@ -223,6 +254,7 @@ namespace ArquivoMate2.API.Controllers
                         var computed = hmac.Hash;
                         if (computed == null || !CryptographicOperations.FixedTimeEquals(computed, mac))
                         {
+                            _logger.LogWarning("MAC mismatch for document {DocumentId} artifact {Artifact}", view.Id, artifactWire);
                             return null;
                         }
                     }
@@ -237,8 +269,9 @@ namespace ArquivoMate2.API.Controllers
                         using var decryptor = aes.CreateDecryptor();
                         return decryptor.TransformFinalBlock(cipher, 0, cipher.Length);
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        _logger.LogWarning(ex, "AES-CBC decrypt failed for document {DocumentId} artifact {Artifact} (v2)", view.Id, artifactWire);
                         return null;
                     }
                 }
@@ -247,7 +280,15 @@ namespace ArquivoMate2.API.Controllers
             }
 
             // Fallback: return raw bytes from storage (no encryption/decryption required)
-            return await _storage.GetFileAsync(fullPath, ct);
+            try
+            {
+                return await _storage.GetFileAsync(fullPath, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to fetch raw artifact {Artifact} for document {DocumentId}", artifact, view.Id);
+                return null;
+            }
         }
 
         /// <summary>
@@ -308,8 +349,9 @@ namespace ArquivoMate2.API.Controllers
 
                 return string.IsNullOrWhiteSpace(metadata?.MimeType) ? null : metadata.MimeType;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogDebug(ex, "Failed to parse metadata for document {DocumentId}", view.Id);
                 return null;
             }
         }

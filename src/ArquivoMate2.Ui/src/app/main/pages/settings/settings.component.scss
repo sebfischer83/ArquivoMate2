@@ -1,11 +1,18 @@
 :host {
   display: block;
+  /* Fill the parent (main) so the inner content can scroll while header/nav stay visible */
+  height: 100%;
+  /* Prevent the host itself from scrolling; delegate scrolling to .settings-content */
+  overflow: hidden;
 }
 
 .settings-page {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  /* Allow the content area to shrink properly inside the host (important for overflow to work) */
+  height: 100%;
+  min-height: 0;
 }
 
 .subtitle {
@@ -17,6 +24,12 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+}
+
+/* Keep header and nav out of the scrolling area */
+.settings-page > header,
+.settings-page > .settings-nav {
+  flex: 0 0 auto;
 }
 
 .settings-nav a {
@@ -34,4 +47,8 @@
   border-radius: 1rem;
   padding: 1.5rem;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+  /* Make the section take remaining space and become the scroll container */
+  flex: 1 1 auto;
+  min-height: 0; /* allow proper flexbox overflow behavior */
+  overflow: auto;
 }

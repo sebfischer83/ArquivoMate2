@@ -51,3 +51,72 @@ aside:not([tuiNavigationAside="true"]) .import-history-item {
 }
 
 /* Scroll-Isolation Block entfernt (User-Wunsch: altes Verhalten wiederherstellen) */
+
+/* Layout: make main-area fill the viewport and provide remaining space to its children */
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* ensure this page component fills the viewport */
+  min-height: 0;
+  overflow: hidden; /* prevent the host itself from scrolling; children manage scrolling */
+}
+
+/* Header stays at the top, non-flexing */
+header[tuiNavigationHeader],
+.app-header {
+  flex: 0 0 auto;
+}
+
+/* The body layout should take the remaining space below the header */
+.app-body-layout {
+  display: block;
+  flex: 1 1 auto;
+  min-height: 0; /* important for proper flex overflow handling */
+  height: 100%; /* ensure the body layout fills the host's remaining height */
+}
+
+/* The direct content wrapper is the horizontal split (aside + main) — make it stretch */
+.app-body-layout > div {
+  display: flex; /* should already be flex via inline style, but ensure it */
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  align-items: stretch; /* make aside and main the same height */
+}
+
+/* Ensure main (router outlet host) fills remaining space and can scroll internally */
+main[tuiNavigationMain] {
+  flex: 1 1 auto;
+  min-height: 0; /* allow children with overflow to behave correctly */
+  overflow: auto; /* main is the scroll container for page content */
+  /* Reserve a tiny area for scrollbar to avoid main shifting under aside when scrollbar appears */
+  padding-right: 6px;
+}
+
+/* Debug helpers (dev-only) - toggle by adding class `debug-layout` to the <body> */
+body.debug-layout {
+  main[tuiNavigationMain] {
+    outline: 1px dashed rgba(255,0,0,0.35);
+  }
+  aside[tuiNavigationAside] {
+    outline: 1px dashed rgba(0,255,0,0.35);
+  }
+}
+
+/* Ensure aside stays fixed in the column below the header and does not scroll with content */
+aside[tuiNavigationAside] {
+  height: auto !important;
+  flex: 0 0 auto; /* aside stays its natural width, height handled by parent */
+  // position: relative; /* keep it in flow under the header */
+  height: 100% !important; /* force aside to match wrapper height */
+  box-sizing: border-box; /* include padding/border in height calculations */
+  display: flex;
+  flex-direction: column; /* stack header, groups and footer vertically */
+  overflow: hidden; /* allow aside to scroll internally if its content exceeds height */
+
+  /* Keep header/footer from stretching; main aside content can grow/scroll */
+  & > header,
+  & > footer {
+    // flex: 0 0 auto;
+  }
+}

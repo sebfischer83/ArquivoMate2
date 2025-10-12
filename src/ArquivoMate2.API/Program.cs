@@ -131,7 +131,11 @@ namespace ArquivoMate2.API
             {
                 config.UseSerilogLogProvider();
                 config.UseRecommendedSerializerSettings();
-                config.UsePostgreSqlStorage(opt => opt.UseNpgsqlConnection(hangfireConnectionString));
+                // Increase distributed lock timeout to tolerate lingering DB sessions or transient contention on startup
+                config.UsePostgreSqlStorage(hangfireConnectionString, new PostgreSqlStorageOptions
+                {
+                    DistributedLockTimeout = TimeSpan.FromSeconds(30)
+                });
             });
 
             // Grouping service registration (Infrastructure implementation)
@@ -283,10 +287,11 @@ namespace ArquivoMate2.API
 
             app.UseRequestLocalization(localizationOptions);
 
-            RecurringJob.AddOrUpdate<MaintenanceExportCleanupJob>(
+            // Use retry wrapper for recurring job registration to tolerate transient distributed lock issues
+            TryAddOrUpdateRecurringJob(() => RecurringJob.AddOrUpdate<MaintenanceExportCleanupJob>(
                 "maintenance-export-cleanup",
                 job => job.ExecuteAsync(CancellationToken.None),
-                Cron.Daily);
+                Cron.Daily));
 
             using (var scope = app.Services.CreateScope())
             {
@@ -311,10 +316,37 @@ namespace ArquivoMate2.API
             var minutes = Math.Max(1, (int)Math.Ceiling(pollingInterval.TotalMinutes));
             var cronExpression = Cron.MinuteInterval(minutes);
 
-            RecurringJob.AddOrUpdate<IngestionBackgroundJob>(
+            TryAddOrUpdateRecurringJob(() => RecurringJob.AddOrUpdate<IngestionBackgroundJob>(
                 jobId,
                 job => job.ExecuteAsync(CancellationToken.None),
-                cronExpression);
+                cronExpression));
+        }
+
+        // Helper to retry recurring job registration when Postgres advisory lock is temporarily unavailable
+        private static void TryAddOrUpdateRecurringJob(Action addOrUpdateAction)
+        {
+            const int maxAttempts = 3;
+            var delay = TimeSpan.FromSeconds(5);
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    addOrUpdateAction();
+                    return;
+                }
+                catch (PostgreSqlDistributedLockException ex)
+                {
+                    // Last attempt -> rethrow so the application startup fails visibly
+                    if (attempt == maxAttempts)
+                    {
+                        throw;
+                    }
+
+                    // brief backoff
+                    Thread.Sleep(delay);
+                }
+            }
         }
 
         private static void AddAuth(WebApplicationBuilder builder, ConfigurationManager configuration)

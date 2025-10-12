@@ -11,6 +11,10 @@
     <DockerServiceUrl>localhost:5000/scalar</DockerServiceUrl>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="tests\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".agents\memory.instruction.md" />
     <None Include=".github\workflows\ci.yml" />
     <None Include=".github\workflows\publish-docker.yml" />
     <None Include=".github\workflows\ui-ci.yml" />
@@ -26,18 +30,9 @@
     <None Include="LICENSE" />
     <None Include="README.md" />
     <None Include="scripts\docker-build-multiarch.sh" />
-    <None Include="src\ArquivoMate2.Application.Services\Documents\DocumentQuestionTooling.cs" />
-    <None Include="src\ArquivoMate2.Infrastructure.Configuration.IngestionProvider\IngestionProviderSettings.cs" />
-    <None Include="src\ArquivoMate2.Infrastructure.Services.Llm\EmbeddingsClientStub.cs" />
-    <None Include="src\ArquivoMate2.Infrastructure.Services\Llm\EmbeddingsClientStub.cs" />
-    <None Include="tests\ArquivoMate2.Application.Tests\ArquivoMate2.Application.Tests.csproj" />
-    <None Include="tests\ArquivoMate2.Application.Tests\SampleApplicationTests.cs" />
-    <None Include="tests\ArquivoMate2.Domain.Tests\ArquivoMate2.Domain.Tests.csproj" />
-    <None Include="tests\ArquivoMate2.Domain.Tests\ImportProcessTests.cs" />
-    <None Include="tests\ArquivoMate2.Infrastructure.Tests\ArquivoMate2.Infrastructure.Tests.csproj" />
-    <None Include="tests\ArquivoMate2.Infrastructure.Tests\PathServiceTests.cs" />
+    <None Include="src\ArquivoMate2.Infrastructure.Services\StorageProvider\S3StorageProvider.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="src\ArquivoMate2.Infrastructure.Services.IngestionProvider\" />
+    <Folder Include="src\ArquivoMate2.Infrastructure.Services\Search\" />
   </ItemGroup>
 </Project>

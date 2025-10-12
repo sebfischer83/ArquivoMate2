@@ -40,5 +40,6 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
         public abstract Task<string> SaveFileAsync(string userId, Guid documentId, string filename, Stream content, string artifact = "file", CancellationToken ct = default);
         public abstract Task<byte[]> GetFileAsync(string fullPath, CancellationToken ct = default);
         public abstract Task StreamFileAsync(string fullPath, Func<Stream, CancellationToken, Task> streamConsumer, CancellationToken ct = default);
+        public abstract Task DeleteFileAsync(string fullPath, CancellationToken ct = default);
     }
 }

@@ -57,7 +57,8 @@ using EmailCriteria = ArquivoMate2.Domain.Email.EmailCriteria;
 using JasperFx.Events.Projections;
 using ArquivoMate2.Application.Interfaces.Sharing;
 using ArquivoMate2.Infrastructure.Services.Encryption; // Encryption helpers
-using ArquivoMate2.Infrastructure.Persistance; // ensure interface is visible
+using ArquivoMate2.Infrastructure.Persistance;
+using Minio.Handlers; // ensure interface is visible
 
 namespace ArquivoMate2.Infrastructure.Configuration
 {
@@ -286,11 +287,15 @@ namespace ArquivoMate2.Infrastructure.Configuration
 
                     // Configure Minio client with resolved S3 settings
                     var endpoint = local.Endpoint;
-                    services.AddMinio(configureClient => configureClient
-                        .WithEndpoint(endpoint)
-                        .WithCredentials(local.AccessKey, local.SecretKey)
-                        .WithSSL(true)
-                        .Build());
+                    services.AddMinio(configureClient =>
+                    {
+                        // Basic configuration
+                        var builder = configureClient.WithEndpoint(endpoint)
+                                                     .WithCredentials(local.AccessKey, local.SecretKey)
+                                                     .WithSSL(true);
+
+                        builder.Build();
+                    });
                     break;
                 default:
                     throw new InvalidOperationException("Unsupported FileProviderSettings");

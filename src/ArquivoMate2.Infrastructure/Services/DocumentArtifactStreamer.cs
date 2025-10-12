@@ -134,6 +134,7 @@ namespace ArquivoMate2.Infrastructure.Services
             await destination.WriteAsync(plaintext.AsMemory(0, plaintext.Length), ct).ConfigureAwait(false);
         }
 
+        // Version2 decryption reworked to avoid synchronous I/O on HttpResponseStream (FlushFinalBlock)
         private static async Task StreamEncryptedVersion2Async(Stream encryptedStream, Stream destination, byte[] dek, CancellationToken ct)
         {
             var iv = await ReadExactlyAsync(encryptedStream, 16, ct).ConfigureAwait(false);
@@ -142,18 +143,11 @@ namespace ArquivoMate2.Infrastructure.Services
             using var hmac = new HMACSHA256(macKey);
             hmac.TransformBlock(iv, 0, iv.Length, null, 0);
 
-            using var aes = Aes.Create();
-            aes.Key = encKey;
-            aes.IV = iv;
-            aes.Mode = CipherMode.CBC;
-            aes.Padding = PaddingMode.PKCS7;
-
-            await using var cryptoStream = new CryptoStream(destination, aes.CreateDecryptor(), CryptoStreamMode.Write, leaveOpen: true);
-
+            // Buffer cipher (excluding MAC) into temp file to avoid large memory usage.
+            await using var tempCipher = CreateTempFileStream();
             var buffer = ArrayPool<byte>.Shared.Rent(81920 + 32);
             var buffered = 0;
             int read;
-
             try
             {
                 while ((read = await encryptedStream.ReadAsync(buffer.AsMemory(buffered, buffer.Length - buffered), ct).ConfigureAwait(false)) > 0)
@@ -161,12 +155,12 @@ namespace ArquivoMate2.Infrastructure.Services
                     buffered += read;
                     if (buffered <= 32)
                     {
-                        continue;
+                        continue; // Need at least MAC length before we can separate cipher bytes
                     }
 
-                    var cipherCount = buffered - 32;
+                    var cipherCount = buffered - 32; // keep trailing potential MAC bytes in buffer
                     hmac.TransformBlock(buffer, 0, cipherCount, null, 0);
-                    await cryptoStream.WriteAsync(buffer.AsMemory(0, cipherCount), ct).ConfigureAwait(false);
+                    await tempCipher.WriteAsync(buffer.AsMemory(0, cipherCount), ct).ConfigureAwait(false);
 
                     Buffer.BlockCopy(buffer, cipherCount, buffer, 0, 32);
                     buffered = 32;
@@ -179,7 +173,6 @@ namespace ArquivoMate2.Infrastructure.Services
 
                 var mac = new byte[32];
                 Buffer.BlockCopy(buffer, 0, mac, 0, 32);
-
                 hmac.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
                 var computed = hmac.Hash ?? Array.Empty<byte>();
                 if (!CryptographicOperations.FixedTimeEquals(computed, mac))
@@ -187,12 +180,38 @@ namespace ArquivoMate2.Infrastructure.Services
                     throw new FileNotFoundException();
                 }
 
-                cryptoStream.FlushFinalBlock();
+                // Decrypt in-memory (temp file) and stream out asynchronously
+                tempCipher.Position = 0;
+                await using var plainMs = CreateTempFileStream();
+                using (var aes = Aes.Create())
+                {
+                    aes.Key = encKey;
+                    aes.IV = iv;
+                    aes.Mode = CipherMode.CBC;
+                    aes.Padding = PaddingMode.PKCS7;
+                    using var decryptor = aes.CreateDecryptor();
+                    // Use crypto stream writing into plainMs (memory/file) not HttpResponse to avoid sync flush restrictions
+                    await using (var crypto = new CryptoStream(plainMs, decryptor, CryptoStreamMode.Write, leaveOpen: true))
+                    {
+                        tempCipher.Position = 0;
+                        await tempCipher.CopyToAsync(crypto, 81920, ct).ConfigureAwait(false);
+                        crypto.FlushFinalBlock(); // flushes to temp plain stream only
+                    }
+                }
+
+                plainMs.Position = 0;
+                await plainMs.CopyToAsync(destination, 81920, ct).ConfigureAwait(false);
             }
             finally
             {
                 ArrayPool<byte>.Shared.Return(buffer);
             }
+        }
+
+        private static FileStream CreateTempFileStream()
+        {
+            var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            return new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.None, 81920, FileOptions.Asynchronous | FileOptions.DeleteOnClose);
         }
 
         private static async Task<int> ReadByteAsync(Stream stream, CancellationToken ct)

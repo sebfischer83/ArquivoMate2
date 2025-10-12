@@ -9,6 +9,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten;
 using System.Diagnostics;
+using Polly;
+using Polly.Contrib.WaitAndRetry;
+using System.Net.Http;
 
 namespace ArquivoMate2.Infrastructure.Services.Search
 {
@@ -18,10 +21,19 @@ namespace ArquivoMate2.Infrastructure.Services.Search
         private readonly IQuerySession _querySession;
         private static readonly ActivitySource s_activity = new("ArquivoMate2.SearchClient", "1.0");
 
+        // Retry policy for Meilisearch operations
+        private readonly AsyncPolicy _meiliRetryPolicy;
+
         public SearchClient(MeilisearchClient meilisearchClient, IQuerySession querySession)
         {
             _meilisearchClient = meilisearchClient;
             _querySession = querySession;
+
+            // Initialize Polly retry policy: handle transient exceptions and retry with exponential backoff (5 attempts)
+            _meiliRetryPolicy = Policy
+                .Handle<Exception>()
+                .Or<HttpRequestException>()
+                .WaitAndRetryAsync(Backoff.ExponentialBackoff(TimeSpan.FromMilliseconds(200), 5));
         }
 
         private async Task<IReadOnlyCollection<string>> LoadAllowedUserIdsAsync(Guid documentId, string ownerUserId, CancellationToken ct)
@@ -47,11 +59,18 @@ namespace ArquivoMate2.Infrastructure.Services.Search
             var allowed = await LoadAllowedUserIdsAsync(document.Id, document.UserId, CancellationToken.None);
             a?.SetTag("document.id", document.Id);
             a?.SetTag("document.allowedCount", allowed.Count);
-            var task = await index.AddDocumentsAsync(new[] { SearchDocument.FromDocument(document, allowed) }, "id");
-            a?.SetTag("meili.taskUid", task.TaskUid);
-            var res = await _meilisearchClient.WaitForTaskAsync(task.TaskUid);
-            a?.SetTag("meili.status", res.Status.ToString());
-            return res.Status == TaskInfoStatus.Succeeded;
+
+            // MINILI_RETRY: wrapped
+            var succeeded = await _meiliRetryPolicy.ExecuteAsync(async () =>
+            {
+                var task = await index.AddDocumentsAsync(new[] { SearchDocument.FromDocument(document, allowed) }, "id");
+                a?.SetTag("meili.taskUid", task.TaskUid);
+                var res = await _meilisearchClient.WaitForTaskAsync(task.TaskUid);
+                a?.SetTag("meili.status", res.Status.ToString());
+                return res.Status == TaskInfoStatus.Succeeded;
+            }).ConfigureAwait(false);
+
+            return succeeded;
         }
 
         public async Task<Dictionary<string, int>> GetFacetsAsync(string userId, CancellationToken cancellationToken)

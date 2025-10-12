@@ -25,8 +25,7 @@
 }
 
 /* the border radius of the file item */
-.filepond--item-panel {
-}
+/* (empty ruleset removed to satisfy linter; no visual change) */
 
 /* the background color of the file and file panel (used when dropping an image) */
 .filepond--item-panel {
@@ -70,11 +69,25 @@
 }
 
 /* bordered drop area */
-.filepond--panel-root {
-
-}
+/* (empty ruleset removed to satisfy linter; visual rules are defined above) */
 
 .filepond--list-scroller {
     background-color: var(--tui-background-base-alt) !important;
     color: var(--tui-text-secondary) !important;
 }
+
+.tui-root > tui-scroll-controls {
+  display: none;
+}
+
+/* Hide Taiga root scroll controls (explicit target for the element shown in DOM) */
+tui-scroll-controls.t-root-scrollbar,
+tui-scroll-controls.t-scrollbars,
+/* fallback: any tui-scroll-controls instances */
+tui-scroll-controls {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* When Settings page is active, prevent body/document scrolling and rely on internal scroll containers */
+/* Body-level workaround removed: page-level flex layout and component scroll containers handle scrolling now. */

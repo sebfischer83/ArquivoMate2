@@ -25,4 +25,6 @@ export class SettingsComponent {
       link: 'email',
     },
   ];
+
+  // No body scroll workaround anymore — layout is handled by main-area flex rules
 }

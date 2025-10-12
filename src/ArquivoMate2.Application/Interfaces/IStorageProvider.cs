@@ -11,5 +11,6 @@ namespace ArquivoMate2.Application.Interfaces
         Task<string> SaveFileAsync(string userId, Guid documentId, string filename, Stream content, string artifact = "file", CancellationToken ct = default);
         Task<byte[]> GetFileAsync(string fullPath, CancellationToken ct = default); // NEW
         Task StreamFileAsync(string fullPath, Func<Stream, CancellationToken, Task> streamConsumer, CancellationToken ct = default);
+        Task DeleteFileAsync(string fullPath, CancellationToken ct = default); // NEW: delete stored object by its full path/key
     }
 }

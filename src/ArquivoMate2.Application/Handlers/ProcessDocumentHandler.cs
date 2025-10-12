@@ -67,6 +67,8 @@ namespace ArquivoMate2.Application.Handlers
             Append(request.ImportProcessId, new StartDocumentImport(request.ImportProcessId, DateTime.UtcNow));
             await _session.SaveChangesAsync(cancellationToken);
 
+            ExtractionArtifacts? artifacts = null; // capture for cleanup
+
             try
             {
                 LogMemoryUsage("Start Handle", request.DocumentId);
@@ -81,7 +83,7 @@ namespace ArquivoMate2.Application.Handlers
                 loaded = loaded with { Metadata = metaAfterLang };
                 LogMemoryUsage("After DetectAndMaybeUpdateLanguageAsync", request.DocumentId);
 
-                var artifacts = await ExtractAndGenerateAsync(request, loaded, cancellationToken);
+                artifacts = await ExtractAndGenerateAsync(request, loaded, cancellationToken);
                 LogMemoryUsage("After ExtractAndGenerateAsync", request.DocumentId);
 
                 if (_encryptionService.IsEnabled && artifacts.EncryptionKeys.Count > 0)
@@ -105,11 +107,43 @@ namespace ArquivoMate2.Application.Handlers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing document {DocumentId}", request.DocumentId);
-                Append(request.ImportProcessId, new MarkFailedDocumentImport(request.ImportProcessId, ex.Message, DateTime.UtcNow));
-                Append(request.DocumentId, new DocumentDeleted(request.DocumentId, DateTime.UtcNow));
+                try
+                {
+                    Append(request.ImportProcessId, new MarkFailedDocumentImport(request.ImportProcessId, ex.Message, DateTime.UtcNow));
+                    Append(request.DocumentId, new DocumentDeleted(request.DocumentId, DateTime.UtcNow));
+                }
+                catch (Exception appendEx)
+                {
+                    _logger.LogWarning(appendEx, "Failed appending failure events for {DocumentId}", request.DocumentId);
+                }
+
                 await TryDeleteVectorsAsync(request.DocumentId, request.UserId, cancellationToken);
+
+                // attempt to remove already stored artifacts
+                if (artifacts != null)
+                {
+                    await CleanupArtifactsAsync(artifacts, cancellationToken);
+                }
+
+                // also try to remove any metadata file written earlier separately
                 await _session.SaveChangesAsync(cancellationToken);
                 return (null, null);
+            }
+        }
+
+        private async Task CleanupArtifactsAsync(ExtractionArtifacts artifacts, CancellationToken ct)
+        {
+            var paths = new[] { artifacts.OriginalFilePath, artifacts.MetadataFilePath, artifacts.ThumbnailPath, artifacts.PreviewPdfPath, artifacts.ArchivePdfPath };
+            foreach (var p in paths.Where(x => !string.IsNullOrWhiteSpace(x)))
+            {
+                try
+                {
+                    await _storage.DeleteFileAsync(p, ct);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Failed deleting artifact {Path} during cleanup", p);
+                }
             }
         }
 

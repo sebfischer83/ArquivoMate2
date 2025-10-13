@@ -27,7 +27,7 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
         /// <summary>
         /// Indicates whether Server-Side Encryption with Customer-Provided Keys (SSE-C) is enabled.
         /// </summary>
-        public bool IsSseCEnabled => _ssec != null;
+        public override bool IsSseCEnabled => _ssec != null;
 
         public S3StorageProvider(IOptions<S3StorageProviderSettings> opts, IMinioClientFactory minioClientFactory, IPathService pathService)
             : base(opts, pathService)

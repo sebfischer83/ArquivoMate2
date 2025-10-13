@@ -170,7 +170,8 @@ namespace ArquivoMate2.API.Controllers
             {
                 if (item.Encrypted && !string.IsNullOrEmpty(item.ThumbnailPath))
                 {
-                    item.ThumbnailPath = BuildDeliveryUrl(item.Id, "thumb");
+                    // Use UploadedAt from list item as the stable anchor for token expiry
+                    item.ThumbnailPath = BuildDeliveryUrl(item.Id, "thumb", item.UploadedAt);
                 }
                 return item;
             }).ToList();
@@ -288,24 +289,64 @@ namespace ArquivoMate2.API.Controllers
         /// </summary>
         private void ApplyDeliveryTokens(DocumentDto dto)
         {
-            dto.FilePath = string.IsNullOrEmpty(dto.FilePath) ? dto.FilePath : BuildDeliveryUrl(dto.Id, "file");
-            dto.PreviewPath = string.IsNullOrEmpty(dto.PreviewPath) ? dto.PreviewPath : BuildDeliveryUrl(dto.Id, "preview");
-            dto.ThumbnailPath = string.IsNullOrEmpty(dto.ThumbnailPath) ? dto.ThumbnailPath : BuildDeliveryUrl(dto.Id, "thumb");
-            dto.MetadataPath = string.IsNullOrEmpty(dto.MetadataPath) ? dto.MetadataPath : BuildDeliveryUrl(dto.Id, "metadata");
-            dto.ArchivePath = string.IsNullOrEmpty(dto.ArchivePath) ? dto.ArchivePath : BuildDeliveryUrl(dto.Id, "archive");
+            // Compute a stable base timestamp for the token so the generated token remains identical
+            // across multiple calls until the token expiry. Use ProcessedAt when available, otherwise UploadedAt.
+            var baseTimestamp = dto.ProcessedAt ?? dto.UploadedAt;
+
+            dto.FilePath = string.IsNullOrEmpty(dto.FilePath) ? dto.FilePath : BuildDeliveryUrl(dto, "file", baseTimestamp);
+            dto.PreviewPath = string.IsNullOrEmpty(dto.PreviewPath) ? dto.PreviewPath : BuildDeliveryUrl(dto, "preview", baseTimestamp);
+            dto.ThumbnailPath = string.IsNullOrEmpty(dto.ThumbnailPath) ? dto.ThumbnailPath : BuildDeliveryUrl(dto, "thumb", baseTimestamp);
+            dto.MetadataPath = string.IsNullOrEmpty(dto.MetadataPath) ? dto.MetadataPath : BuildDeliveryUrl(dto, "metadata", baseTimestamp);
+            dto.ArchivePath = string.IsNullOrEmpty(dto.ArchivePath) ? dto.ArchivePath : BuildDeliveryUrl(dto, "archive", baseTimestamp);
         }
 
         /// <summary>
         /// Builds a signed delivery URL for a specific document artifact.
         /// </summary>
-        private string BuildDeliveryUrl(Guid documentId, string artifact)
+        private string BuildDeliveryUrl(DocumentDto dto, string artifact, DateTime baseTimestamp)
         {
-            var expires = DateTimeOffset.UtcNow.AddMinutes(_encryptionSettings.TokenTtlMinutes);
+            // Deterministic expiry: anchor expiry to the document's processed/uploaded timestamp.
+            // If the anchored expiry is already in the past, move to the next TTL window so the token stays valid
+            // while remaining deterministic for the current window.
+            var expires = ComputeWindowedExpiry(baseTimestamp);
+            var token = _tokenService.Create(dto.Id, artifact, expires);
+            var baseUrl = !string.IsNullOrWhiteSpace(_appSettings.PublicBaseUrl)
+                ? _appSettings.PublicBaseUrl!.TrimEnd('/')
+                : ($"{Request.Scheme}://{Request.Host}");
+            return $"{baseUrl}/api/delivery/{dto.Id}/{artifact}?token={Uri.EscapeDataString(token)}";
+        }
+
+        // Overload for list mapping when only an Id and a base timestamp (UploadedAt) is available
+        private string BuildDeliveryUrl(Guid documentId, string artifact, DateTime baseTimestamp)
+        {
+            var expires = ComputeWindowedExpiry(baseTimestamp);
             var token = _tokenService.Create(documentId, artifact, expires);
             var baseUrl = !string.IsNullOrWhiteSpace(_appSettings.PublicBaseUrl)
                 ? _appSettings.PublicBaseUrl!.TrimEnd('/')
                 : ($"{Request.Scheme}://{Request.Host}");
             return $"{baseUrl}/api/delivery/{documentId}/{artifact}?token={Uri.EscapeDataString(token)}";
+        }
+
+        // Compute an expiry anchored to baseTimestamp but ensure it is in the future by advancing
+        // to the next token TTL window when necessary. This keeps tokens deterministic per window.
+        private DateTimeOffset ComputeWindowedExpiry(DateTime baseTimestamp)
+        {
+            var anchor = DateTime.SpecifyKind(baseTimestamp, DateTimeKind.Utc);
+            var windowSeconds = Math.Max(1, _encryptionSettings.TokenTtlMinutes) * 60L;
+            var anchorUnix = new DateTimeOffset(anchor).ToUnixTimeSeconds();
+            var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+            // initial candidate expiry = anchor + one window
+            var expiresUnix = anchorUnix + windowSeconds;
+
+            if (expiresUnix <= nowUnix)
+            {
+                // advance to the next window that lies in the future
+                var windowsElapsed = (nowUnix - anchorUnix) / windowSeconds;
+                expiresUnix = anchorUnix + (windowsElapsed + 1) * windowSeconds;
+            }
+
+            return DateTimeOffset.FromUnixTimeSeconds(expiresUnix);
         }
 
         /// <summary>

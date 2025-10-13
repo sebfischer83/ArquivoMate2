@@ -69,12 +69,38 @@ namespace ArquivoMate2.Infrastructure.Services.Caching
             using var activity = ActivitySource.StartActivity("cache.get");
             activity?.SetTag("cache.key", fullKey);
 
-            var cached = await _cache.TryGetAsync<T>(fullKey, token: ct).ConfigureAwait(false);
+            var resolved = _ttlResolver.Resolve(key);
+            var duration = resolved.Ttl;
+            var useSliding = resolved.Sliding;
+
+            var cached = await _cache.TryGetAsync<T>(fullKey).ConfigureAwait(false);
             var hasValue = cached.HasValue;
             activity?.SetTag("cache.hit", hasValue);
+            activity?.SetTag("cache.ttl.ms", duration.TotalMilliseconds);
+            activity?.SetTag("cache.slidingRequested", useSliding);
+            // We support sliding semantics by refreshing the TTL on access (re-setting the entry)
+            activity?.SetTag("cache.slidingSupported", true);
 
             if (hasValue)
             {
+                if (useSliding)
+                {
+                    try
+                    {
+                        var estimatedSize = EstimateSize(fullKey, cached.Value);
+                        var options = new FusionCacheEntryOptions { Duration = duration, Size = estimatedSize };
+                        // Refresh TTL by re-writing the entry (best-effort)
+                        await _cache.SetAsync(fullKey, cached.Value, options).ConfigureAwait(false);
+                        activity?.SetTag("cache.refreshed", true);
+                    }
+                    catch (Exception ex)
+                    {
+                        // don't fail on refresh; just log
+                        _logger.LogDebug(ex, "Failed to refresh sliding TTL for cache key {CacheKey}", fullKey);
+                        activity?.SetTag("cache.refreshed", false);
+                    }
+                }
+
                 return cached.Value;
             }
 
@@ -92,7 +118,9 @@ namespace ArquivoMate2.Infrastructure.Services.Caching
             using var activity = ActivitySource.StartActivity("cache.set");
             activity?.SetTag("cache.key", fullKey);
             activity?.SetTag("cache.ttl.ms", duration.TotalMilliseconds);
-            activity?.SetTag("cache.sliding", useSliding);
+            activity?.SetTag("cache.slidingRequested", useSliding);
+            // Sliding is implemented via TTL refresh on access
+            activity?.SetTag("cache.slidingSupported", true);
             activity?.SetTag("cache.size.bytes", estimatedSize);
 
             var options = new FusionCacheEntryOptions
@@ -101,12 +129,7 @@ namespace ArquivoMate2.Infrastructure.Services.Caching
                 Size = estimatedSize
             };
 
-            if (useSliding)
-            {
-                options.SetSlidingExpiration(duration);
-            }
-
-            await _cache.SetAsync(fullKey, value, options, ct).ConfigureAwait(false);
+            await _cache.SetAsync(fullKey, value, options).ConfigureAwait(false);
         }
 
         public async Task<T> GetOrSetAsync<T>(string key, Func<CancellationToken, Task<T>> factory, TimeSpan? ttl = null, bool? sliding = null, CancellationToken ct = default)
@@ -119,36 +142,50 @@ namespace ArquivoMate2.Infrastructure.Services.Caching
             using var activity = ActivitySource.StartActivity("cache.getorset");
             activity?.SetTag("cache.key", fullKey);
             activity?.SetTag("cache.ttl.ms", duration.TotalMilliseconds);
-            activity?.SetTag("cache.sliding", useSliding);
+            activity?.SetTag("cache.slidingRequested", useSliding);
+            activity?.SetTag("cache.slidingSupported", true);
 
-            var existing = await _cache.TryGetAsync<T>(fullKey, token: ct).ConfigureAwait(false);
+            var existing = await _cache.TryGetAsync<T>(fullKey).ConfigureAwait(false);
             if (existing.HasValue)
             {
                 activity?.SetTag("cache.hit", true);
+
+                if (useSliding)
+                {
+                    try
+                    {
+                        var estimatedSize = EstimateSize(fullKey, existing.Value);
+                        var options = new FusionCacheEntryOptions { Duration = duration, Size = estimatedSize };
+                        await _cache.SetAsync(fullKey, existing.Value, options).ConfigureAwait(false);
+                        activity?.SetTag("cache.refreshed", true);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogDebug(ex, "Failed to refresh sliding TTL for cache key {CacheKey}", fullKey);
+                        activity?.SetTag("cache.refreshed", false);
+                    }
+                }
+
                 return existing.Value;
             }
 
             activity?.SetTag("cache.hit", false);
 
-            return await _cache.GetOrSetAsync(
-                fullKey,
-                async (ctx, token) =>
-                {
-                    var value = await factory(token).ConfigureAwait(false);
-                    var estimatedSize = EstimateSize(fullKey, value);
-                    ctx.Options.Size = estimatedSize;
-                    activity?.SetTag("cache.size.bytes", estimatedSize);
-                    return value;
-                },
-                options =>
-                {
-                    options.Duration = duration;
-                    if (useSliding)
-                    {
-                        options.SetSlidingExpiration(duration);
-                    }
-                },
-                ct).ConfigureAwait(false);
+            // Fall back to manual population to avoid problematic generic overload resolution on IFusionCache.GetOrSetAsync
+            var value = await factory(ct).ConfigureAwait(false);
+            var estimatedSizeNew = EstimateSize(fullKey, value);
+
+            var optionsNew = new FusionCacheEntryOptions
+            {
+                Duration = duration,
+                Size = estimatedSizeNew
+            };
+
+            activity?.SetTag("cache.size.bytes", estimatedSizeNew);
+
+            await _cache.SetAsync(fullKey, value, optionsNew).ConfigureAwait(false);
+
+            return value;
         }
 
         public async Task RemoveAsync(string key, CancellationToken ct = default)
@@ -156,13 +193,13 @@ namespace ArquivoMate2.Infrastructure.Services.Caching
             var fullKey = PrefixKey(key);
             using var activity = ActivitySource.StartActivity("cache.remove");
             activity?.SetTag("cache.key", fullKey);
-            await _cache.RemoveAsync(fullKey, ct).ConfigureAwait(false);
+            await _cache.RemoveAsync(fullKey).ConfigureAwait(false);
         }
 
         public async Task<bool> ExistsAsync(string key, CancellationToken ct = default)
         {
             var fullKey = PrefixKey(key);
-            var cached = await _cache.TryGetAsync<object>(fullKey, token: ct).ConfigureAwait(false);
+            var cached = await _cache.TryGetAsync<object>(fullKey).ConfigureAwait(false);
             return cached.HasValue;
         }
     }

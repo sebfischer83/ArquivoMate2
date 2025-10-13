@@ -97,6 +97,25 @@ namespace ArquivoMate2.API.Controllers
                 if (encryptionKeys == null) return NotFound();
             }
 
+            // Prepare ETag / Last-Modified based on document timestamps (deterministic)
+            DateTime baseTimestamp = (view.ProcessedAt ?? view.UploadedAt).ToUniversalTime();
+            var etag = ComputeDeterministicEtag(view.Id, artifact.ToWireValue(), baseTimestamp);
+            Response.Headers["ETag"] = etag;
+            Response.Headers["Last-Modified"] = baseTimestamp.ToString("R");
+
+            // Conditional request handling: If client already has the current representation, return 304
+            if (Request.Headers.TryGetValue("If-None-Match", out var inm) && !string.IsNullOrEmpty(inm))
+            {
+                if (inm.ToString().Split(',').Select(s => s.Trim()).Any(s => s == etag || s == "*") )
+                {
+                    return StatusCode(StatusCodes.Status304NotModified);
+                }
+            }
+            else if (Request.Headers.TryGetValue("If-Modified-Since", out var imsHeader) && DateTimeOffset.TryParse(imsHeader.ToString(), out var ims))
+            {
+                if (baseTimestamp <= ims.UtcDateTime) return StatusCode(StatusCodes.Status304NotModified);
+            }
+
             // Small artifact fast-path (preview/thumb)  uses TryGetArtifactBytesAsync which already caches encrypted bytes
             if (artifact == DocumentArtifact.Preview || artifact == DocumentArtifact.Thumb)
             {
@@ -105,8 +124,10 @@ namespace ArquivoMate2.API.Controllers
                     var plain = await TryGetArtifactBytesAsync(view, artifact, fullPath, encryptionKeys, ct);
                     if (plain != null && plain.Length > 0)
                     {
+                        // Set content-related headers and return
                         ApplyClientCacheHeaders();
                         var mime = artifact == DocumentArtifact.Thumb ? "image/webp" : "application/pdf"; // preview is pdf
+                        // Include ETag/Last-Modified on successful response (already set above)
                         return File(plain, mime);
                     }
                 }
@@ -171,6 +192,23 @@ namespace ArquivoMate2.API.Controllers
         {
             Response.Headers["Cache-Control"] = $"public, max-age={OneYearSeconds}, immutable";
             Response.Headers["Expires"] = DateTime.UtcNow.AddSeconds(OneYearSeconds).ToString("R");
+
+            // Help browsers/CDNs accept cross-origin embedding/fetching of delivered artifacts.
+            // If an Origin header is present, echo it explicitly; otherwise allow all origins.
+            var origin = Request.Headers.ContainsKey("Origin") ? Request.Headers["Origin"].ToString() : "*";
+            // When echoing origin, also set Vary to Origin so caches key correctly
+            if (origin != "*")
+            {
+                Response.Headers["Access-Control-Allow-Origin"] = origin;
+                Response.Headers.Append("Vary", "Origin");
+            }
+            else
+            {
+                Response.Headers["Access-Control-Allow-Origin"] = "*";
+            }
+
+            // Cross-Origin-Resource-Policy to allow embedding/fetching from other origins (CDNs)
+            Response.Headers["Cross-Origin-Resource-Policy"] = "cross-origin";
         }
 
         /// <summary>
@@ -387,5 +425,17 @@ namespace ArquivoMate2.API.Controllers
             DocumentArtifact.Preview or DocumentArtifact.Archive or DocumentArtifact.File => "application/pdf",
             _ => "application/octet-stream"
         };
+
+        /******* Helper methods for ETag generation and conditional handling *******/
+        private static string ComputeDeterministicEtag(Guid documentId, string artifactWire, DateTime baseTimestamp)
+        {
+            // Use SHA256 over a deterministic string; return quoted value suitable for ETag header
+            var src = string.Concat(documentId.ToString("N"), "|", artifactWire, "|", baseTimestamp.ToString("O"));
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(src));
+            var b64 = Convert.ToBase64String(hash).TrimEnd('=');
+            // Use W/ for weak ETag? We use strong ETag here
+            return '"' + b64 + '"';
+        }
     }
 }

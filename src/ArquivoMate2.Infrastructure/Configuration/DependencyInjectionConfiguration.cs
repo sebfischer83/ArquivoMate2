@@ -382,7 +382,10 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             };
 
-            services.AddFusionCache(options =>
+            // Use the builder-style API for FusionCache and configure options via IServiceCollection configuration
+            var fusionBuilder = services.AddFusionCache();
+
+            services.Configure<FusionCacheOptions>(options =>
             {
                 options.DefaultEntryOptions = new FusionCacheEntryOptions
                 {
@@ -392,10 +395,10 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     FactoryHardTimeout = TimeSpan.FromSeconds(10),
                     AllowBackgroundDistributedCacheOperations = true
                 };
-            })
-            .WithMemoryCache()
-            .WithDistributedCache()
-            .WithSerializer(new FusionCacheSystemTextJsonSerializer(serializerOptions));
+            });
+
+            fusionBuilder.TryWithAutoSetup()
+                         .WithSerializer(new FusionCacheSystemTextJsonSerializer(serializerOptions));
 
             services.AddSingleton<ITtlResolver, TtlResolver>();
             services.AddSingleton<IAppCache, EasyToFusionCacheAdapter>();

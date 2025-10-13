@@ -93,6 +93,7 @@ namespace ArquivoMate2.API
                   tracing.AddSource("ArquivoMate2.SearchClient");
                   // Capture MediatR pipeline activities
                   tracing.AddSource("ArquivoMate2.MediatRPipeline");
+                  tracing.AddFusionCacheInstrumentation();
                   //tracing.AddNpgsql();
 
                   if (!string.IsNullOrWhiteSpace(seqUrl))

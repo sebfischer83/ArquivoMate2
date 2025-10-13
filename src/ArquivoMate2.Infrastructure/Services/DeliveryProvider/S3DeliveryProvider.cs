@@ -1,6 +1,5 @@
-﻿using ArquivoMate2.Application.Interfaces;
+using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Infrastructure.Configuration.DeliveryProvider;
-using EasyCaching.Core;
 using Microsoft.Extensions.Options;
 using Minio.DataModel.Args;
 using Minio;
@@ -20,8 +19,8 @@ namespace ArquivoMate2.Infrastructure.Services.DeliveryProvider
     {
         private readonly S3DeliveryProviderSettings _settings;
         private readonly IMinioClient _storage;
-        private readonly IEasyCachingProvider _cache;
         private readonly SseCustomerKey? _customerEncryptionKey;
+        private readonly IAppCache _cache;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="S3DeliveryProvider"/> class.
@@ -32,7 +31,7 @@ namespace ArquivoMate2.Infrastructure.Services.DeliveryProvider
         public S3DeliveryProvider(
             IOptions<S3DeliveryProviderSettings> opts,
             IMinioClientFactory minioClientFactory,
-            IEasyCachingProviderFactory cachingProviderFactory)
+            IAppCache cache)
         {
             _settings = opts.Value;
             _storage = minioClientFactory.CreateClient();
@@ -54,9 +53,9 @@ namespace ArquivoMate2.Infrastructure.Services.DeliveryProvider
             var cacheKey = $"s3delivery:{fullPath}";
             var cachedUrl = await _cache.GetAsync<string>(cacheKey);
 
-            if (cachedUrl.HasValue)
+            if (!string.IsNullOrEmpty(cachedUrl))
             {
-                return cachedUrl.Value;
+                return cachedUrl;
             }
 
             if (_settings.IsPublic)

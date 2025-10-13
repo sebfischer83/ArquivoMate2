@@ -50,6 +50,9 @@ namespace ArquivoMate2.API
 
             var seqUrl = builder.Configuration["Seq:ServerUrl"]; 
             var seqApiKey = builder.Configuration["Seq:ApiKey"]; 
+            var cachingOtelSection = builder.Configuration.GetSection("Caching:Otel");
+            var cacheServiceName = cachingOtelSection?["ServiceName"];
+            var cacheOtlpEndpoint = cachingOtelSection?["Endpoint"];
 
             builder.Host.UseSerilog((context, config) =>
             {
@@ -68,7 +71,7 @@ namespace ArquivoMate2.API
               .ConfigureResource(r => r
                     // Extended: include service version, instance id & deployment environment
                     .AddService(
-                        serviceName: "ArquivoMate2",
+                        serviceName: cacheServiceName ?? "ArquivoMate2",
                         serviceVersion: typeof(Program).Assembly.GetName().Version?.ToString(),
                         serviceInstanceId: Environment.MachineName)
                     .AddAttributes(new[]
@@ -84,11 +87,13 @@ namespace ArquivoMate2.API
                   tracing.AddSource("Marten");
                   // Ensure custom controller activity source is captured
                   tracing.AddSource("ArquivoMate2.DocumentsController");
+                  tracing.AddSource("App.Caching");
                   // Capture sub-operation activity sources from handlers and infrastructure
                   tracing.AddSource("ArquivoMate2.GetDocumentListHandler");
                   tracing.AddSource("ArquivoMate2.SearchClient");
                   // Capture MediatR pipeline activities
                   tracing.AddSource("ArquivoMate2.MediatRPipeline");
+                  tracing.AddFusionCacheInstrumentation();
                   //tracing.AddNpgsql();
 
                   if (!string.IsNullOrWhiteSpace(seqUrl))
@@ -98,6 +103,14 @@ namespace ArquivoMate2.API
                           opt.Endpoint = new Uri($"{seqUrl}ingest/otlp/v1/traces");
                           opt.Protocol = OtlpExportProtocol.HttpProtobuf;
                           opt.Headers = $"X-Seq-ApiKey={seqApiKey}";
+                      });
+                  }
+
+                  if (!string.IsNullOrWhiteSpace(cacheOtlpEndpoint))
+                  {
+                      tracing.AddOtlpExporter(opt =>
+                      {
+                          opt.Endpoint = new Uri(cacheOtlpEndpoint);
                       });
                   }
               });
@@ -146,7 +159,6 @@ namespace ArquivoMate2.API
                 options.Queues = new[] { "documents", "maintenance" };
                 options.WorkerCount = 5;
             });
-            builder.Services.AddMemoryCache();
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAllOrigins", policy =>

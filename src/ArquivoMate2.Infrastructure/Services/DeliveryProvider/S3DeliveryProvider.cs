@@ -25,7 +25,7 @@ namespace ArquivoMate2.Infrastructure.Services.DeliveryProvider
         /// </summary>
         /// <param name="opts">Provider configuration options.</param>
         /// <param name="minioClientFactory">Factory for creating MinIO clients.</param>
-        /// <param name="cachingProviderFactory">Factory for resolving cache providers.</param>
+        /// <param name="cache">Caching provider for URL caching.</param>
         public S3DeliveryProvider(
             IOptions<S3DeliveryProviderSettings> opts,
             IMinioClientFactory minioClientFactory,
@@ -34,6 +34,9 @@ namespace ArquivoMate2.Infrastructure.Services.DeliveryProvider
             _settings = opts.Value;
             _storage = minioClientFactory.CreateClient();
             _cache = cache;
+
+            // Validate SSE-C configuration if enabled
+            _settings.SseC?.Validate();
         }
 
         /// <summary>
@@ -41,8 +44,20 @@ namespace ArquivoMate2.Infrastructure.Services.DeliveryProvider
         /// </summary>
         /// <param name="fullPath">Path to the object in storage.</param>
         /// <returns>A presigned or direct URL to the object.</returns>
+        /// <remarks>
+        /// SSE-C encrypted objects cannot use presigned URLs because the encryption key
+        /// must be provided in headers. When SSE-C is enabled, this returns a special marker
+        /// URL that should be handled by the server delivery endpoint.
+        /// </remarks>
         public async Task<string> GetAccessUrl(string fullPath)
         {
+            // SSE-C encrypted objects cannot use presigned URLs
+            // Return a marker that indicates server-side delivery is required
+            if (_settings.SseC?.Enabled == true)
+            {
+                return $"sse-c://{fullPath}";
+            }
+
             var cacheKey = $"s3delivery:{fullPath}";
             var cachedUrl = await _cache.GetAsync<string>(cacheKey);
 

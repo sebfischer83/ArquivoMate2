@@ -29,6 +29,12 @@ namespace ArquivoMate2.Infrastructure.Configuration.DeliveryProvider
         public string BucketName { get; set; } = string.Empty;
         public string Region { get; set; } = string.Empty;
         public bool IsPublic { get; set; } = false;
+
+        /// <summary>
+        /// Optional SSE-C (Server-Side Encryption with Customer-Provided Keys) configuration.
+        /// When enabled, presigned URLs cannot be used. Delivery must go through the server.
+        /// </summary>
+        public StorageProvider.SseCConfiguration? SseC { get; set; }
     }
 
     public class BunnyDeliveryProviderSettings : DeliveryProviderSettings

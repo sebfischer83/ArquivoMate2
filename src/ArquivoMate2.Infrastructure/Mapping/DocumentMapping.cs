@@ -32,6 +32,7 @@ namespace ArquivoMate2.Infrastructure.Mapping
             CreateMap<DocumentView, DocumentDto>()
                 .ForMember(d => d.Id, o => o.MapFrom(s => s.Id))
                 .ForMember(d => d.Encrypted, o => o.MapFrom(s => s.Encrypted))
+                .ForMember(d => d.EncryptionType, o => o.MapFrom(s => (DocumentEncryptionType)s.EncryptionType))
                     .ForMember(dest => dest.FilePath, opt => opt.MapFrom<PathResolver, string>(src => src.FilePath))
                     .ForMember(dest => dest.ThumbnailPath, opt => opt.MapFrom<PathResolver, string>(src => src.ThumbnailPath))
                     .ForMember(dest => dest.MetadataPath, opt => opt.MapFrom<PathResolver, string>(src => src.MetadataPath))

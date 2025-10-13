@@ -37,6 +37,21 @@ namespace ArquivoMate2.Infrastructure.Persistance
         }
 
         /// <summary>
+        /// Sets the encryption type for the document.
+        /// </summary>
+        /// <param name="e">Encryption type event.</param>
+        /// <param name="view">The read model to update.</param>
+        public void Apply(DocumentEncryptionTypeSet e, DocumentView view)
+        {
+            view.EncryptionType = e.EncryptionType;
+            if (e.EncryptionType != 0) // DocumentEncryptionType.None
+            {
+                view.Encrypted = true;
+            }
+            view.OccurredOn = e.OccurredOn;
+        }
+
+        /// <summary>
         /// Sets the initial title when the aggregate provides one.
         /// </summary>
         /// <param name="e">Title initialization event.</param>

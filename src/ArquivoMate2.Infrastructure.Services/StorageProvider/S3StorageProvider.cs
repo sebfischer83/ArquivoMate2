@@ -3,7 +3,9 @@ using ArquivoMate2.Infrastructure.Configuration.StorageProvider;
 using Microsoft.Extensions.Options;
 using MimeTypes;
 using Minio;
+using Minio.DataModel;
 using Minio.DataModel.Args;
+using Minio.DataModel.Encryption;
 using Minio.Exceptions;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
@@ -19,11 +21,22 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
     {
         private readonly IMinioClient _storage;
         private AsyncPolicy _minioRetryPolicy;
+        private readonly SSEC? _ssec;
 
         public S3StorageProvider(IOptions<S3StorageProviderSettings> opts, IMinioClientFactory minioClientFactory, IPathService pathService)
             : base(opts, pathService)
         {
             _storage = minioClientFactory.CreateClient();
+
+            // Validate SSE-C configuration if enabled
+            _settings.SseC?.Validate();
+
+            // Create SSEC object if enabled
+            if (_settings.SseC?.Enabled == true)
+            {
+                var key = Convert.FromBase64String(_settings.SseC.CustomerKeyBase64);
+                _ssec = new SSEC(key);
+            }
 
             // Initialize Polly retry policy for MinIO operations
             _minioRetryPolicy = Policy
@@ -62,6 +75,12 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
                 putObjectArgs = putObjectArgs.WithObjectSize(-1);
             }
 
+            // Apply SSE-C if enabled
+            if (_ssec != null)
+            {
+                putObjectArgs = putObjectArgs.WithServerSideEncryption(_ssec);
+            }
+
             // MINIO_RETRY: wrapped
             await RunWithMinioRetry(ct => _storage.PutObjectAsync(putObjectArgs, ct), ct).ConfigureAwait(false);
             return fullPath;
@@ -74,6 +93,12 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
                 .WithBucket(_settings.BucketName)
                 .WithObject(fullPath)
                 .WithCallbackStream(stream => stream.CopyTo(ms));
+
+            // Apply SSE-C if enabled
+            if (_ssec != null)
+            {
+                args = args.WithServerSideEncryption(_ssec);
+            }
 
             // MINIO_RETRY: wrapped
             await RunWithMinioRetry(ct => _storage.GetObjectAsync(args, ct), ct).ConfigureAwait(false);
@@ -93,6 +118,12 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
                     // Buffer the stream synchronously into the memory stream
                     stream.CopyTo(ms);
                 });
+
+            // Apply SSE-C if enabled
+            if (_ssec != null)
+            {
+                args = args.WithServerSideEncryption(_ssec);
+            }
 
             // MINIO_RETRY: wrapped
             await RunWithMinioRetry(ct => _storage.GetObjectAsync(args, ct), ct).ConfigureAwait(false);

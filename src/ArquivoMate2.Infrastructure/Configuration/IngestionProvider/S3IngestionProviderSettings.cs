@@ -31,5 +31,11 @@ namespace ArquivoMate2.Infrastructure.Configuration.IngestionProvider
         public string FailedSubfolderName { get; set; } = "failed";
 
         public TimeSpan PollingInterval { get; set; } = TimeSpan.FromMinutes(5);
+
+        /// <summary>
+        /// Optional SSE-C (Server-Side Encryption with Customer-Provided Keys) configuration.
+        /// When enabled, all S3 operations will include SSE-C headers.
+        /// </summary>
+        public StorageProvider.SseCConfiguration? SseC { get; set; }
     }
 }

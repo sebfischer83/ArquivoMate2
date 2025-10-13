@@ -14,6 +14,12 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
         protected readonly TSettings _settings;
         protected readonly IPathService _pathService;
 
+        /// <summary>
+        /// Indicates whether Server-Side Encryption with Customer-Provided Keys (SSE-C) is enabled.
+        /// Default implementation returns false; derived classes should override if they support SSE-C.
+        /// </summary>
+        public virtual bool IsSseCEnabled => false;
+
         protected StorageProviderBase(IOptions<TSettings> opts, IPathService pathService)
         {
             _settings = opts.Value;

@@ -90,6 +90,22 @@ namespace ArquivoMate2.Application.Handlers
                 {
                     Append(request.DocumentId, new DocumentEncryptionKeysAdded(request.DocumentId, artifacts.EncryptionKeys, DateTime.UtcNow));
                 }
+                
+                // Determine and set encryption type
+                var encryptionType = DocumentEncryptionType.None;
+                if (_encryptionService.IsEnabled)
+                {
+                    encryptionType |= DocumentEncryptionType.ClientSide;
+                }
+                if (_storage.IsSseCEnabled)
+                {
+                    encryptionType |= DocumentEncryptionType.SseC;
+                }
+                if (encryptionType != DocumentEncryptionType.None)
+                {
+                    Append(request.DocumentId, new DocumentEncryptionTypeSet(request.DocumentId, (int)encryptionType, DateTime.UtcNow));
+                }
+                
                 await RunChatBotAsync(request.DocumentId, request.UserId, artifacts.Content, cancellationToken);
                 await VectorizeDocumentAsync(request.DocumentId, request.UserId, artifacts.Content, cancellationToken);
                 LogMemoryUsage("After RunChatBotAsync", request.DocumentId);

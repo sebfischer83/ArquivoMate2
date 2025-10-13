@@ -33,6 +33,7 @@ namespace ArquivoMate2.Domain.Document
         public int NotesCount { get; private set; } = 0;
         public string Language { get; private set; } = string.Empty;
         public bool Encrypted { get; private set; } // NEW
+        public DocumentEncryptionType EncryptionType { get; private set; } = DocumentEncryptionType.None; // NEW
         public DateTime? OccurredOn { get; private set; }
 
         private string? _initialTitle;
@@ -50,6 +51,16 @@ namespace ArquivoMate2.Domain.Document
         public void Apply(DocumentEncryptionEnabled e)
         {
             Encrypted = true;
+            OccurredOn = e.OccurredOn;
+        }
+
+        public void Apply(DocumentEncryptionTypeSet e)
+        {
+            EncryptionType = (DocumentEncryptionType)e.EncryptionType;
+            if (EncryptionType != DocumentEncryptionType.None)
+            {
+                Encrypted = true;
+            }
             OccurredOn = e.OccurredOn;
         }
 

@@ -7,6 +7,11 @@ namespace ArquivoMate2.Application.Interfaces
 {
     public interface IStorageProvider
     {
+        /// <summary>
+        /// Indicates whether Server-Side Encryption with Customer-Provided Keys (SSE-C) is enabled.
+        /// </summary>
+        bool IsSseCEnabled { get; }
+
         Task<string> SaveFile(string userId, Guid documentId, string filename, byte[] file, string artifact = "file");
         Task<string> SaveFileAsync(string userId, Guid documentId, string filename, Stream content, string artifact = "file", CancellationToken ct = default);
         Task<byte[]> GetFileAsync(string fullPath, CancellationToken ct = default); // NEW

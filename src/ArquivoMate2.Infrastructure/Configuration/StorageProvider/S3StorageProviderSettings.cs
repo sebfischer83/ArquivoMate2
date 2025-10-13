@@ -13,5 +13,11 @@
         public string Region { get; set; } = string.Empty;
 
         public bool IsPublic { get; set; } = false;
+
+        /// <summary>
+        /// Optional SSE-C (Server-Side Encryption with Customer-Provided Keys) configuration.
+        /// When enabled, all S3 operations will include SSE-C headers.
+        /// </summary>
+        public SseCConfiguration? SseC { get; set; }
     }
 }

@@ -6,9 +6,9 @@ using MimeTypes;
 using Minio;
 using Minio.DataModel;
 using Minio.DataModel.Args;
+using Minio.DataModel.Encryption;
 using Minio.Exceptions;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -28,11 +28,24 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
         private readonly S3IngestionProviderSettings _settings;
         private readonly ILogger<S3IngestionProvider> _logger;
         private readonly IMinioClient _minioClient;
+        private readonly SSEC? _ssec;
+        private readonly SSECopy? _ssecCopy;
 
         public S3IngestionProvider(IOptions<S3IngestionProviderSettings> options, ILogger<S3IngestionProvider> logger)
         {
             _settings = options.Value;
             _logger = logger;
+
+            // Validate SSE-C configuration if enabled
+            _settings.SseC?.Validate();
+
+            // Create SSEC objects if enabled
+            if (_settings.SseC?.Enabled == true)
+            {
+                var key = Convert.FromBase64String(_settings.SseC.CustomerKeyBase64);
+                _ssec = new SSEC(key);
+                _ssecCopy = new SSECopy(key);
+            }
 
             var clientBuilder = new MinioClient()
                 .WithEndpoint(_settings.Endpoint)
@@ -180,6 +193,12 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
                 .WithObjectSize(content.CanSeek ? content.Length : -1)
                 .WithContentType(mimeType);
 
+            // Apply SSE-C if enabled
+            if (_ssec != null)
+            {
+                putArgs = putArgs.WithServerSideEncryption(_ssec);
+            }
+
             await _minioClient.PutObjectAsync(putArgs, cancellationToken).ConfigureAwait(false);
             _logger.LogInformation("Stored ingestion file for user {UserId} at {Destination}.", userId, destinationKey);
 
@@ -195,6 +214,12 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
                 .WithBucket(_settings.BucketName)
                 .WithObject(descriptor.FullPath)
                 .WithCallbackStream(stream => stream.CopyTo(ms));
+
+            // Apply SSE-C if enabled
+            if (_ssec != null)
+            {
+                args = args.WithServerSideEncryption(_ssec);
+            }
 
             await _minioClient.GetObjectAsync(args, cancellationToken).ConfigureAwait(false);
             return ms.ToArray();
@@ -218,46 +243,24 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
                 .WithBucket(_settings.BucketName)
                 .WithObject(sourceKey);
 
+            // Apply SSE-C for source if enabled
+            if (_ssecCopy != null)
+            {
+                source = source.WithServerSideEncryption(_ssecCopy);
+            }
+
             var args = new CopyObjectArgs()
                 .WithBucket(_settings.BucketName)
                 .WithObject(destinationKey)
                 .WithCopyObjectSource(source);
 
+            // Apply SSE-C for destination if enabled
+            if (_ssec != null)
+            {
+                args = args.WithServerSideEncryption(_ssec);
+            }
+
             await _minioClient.CopyObjectAsync(args, cancellationToken).ConfigureAwait(false);
-        }
-
-        private Task RemoveObjectAsync(string objectKey, CancellationToken cancellationToken)
-        {
-            var args = new RemoveObjectArgs()
-                .WithBucket(_settings.BucketName)
-                .WithObject(objectKey);
-
-            return _minioClient.RemoveObjectAsync(args, cancellationToken);
-        }
-
-        private async Task<string> EnsureUniqueObjectKeyAsync(string prefix, string fileName, CancellationToken cancellationToken)
-        {
-            var baseKey = CombineSegments(prefix, fileName);
-            if (!await ObjectExistsAsync(baseKey, cancellationToken).ConfigureAwait(false))
-            {
-                return baseKey;
-            }
-
-            var name = Path.GetFileNameWithoutExtension(fileName);
-            var extension = Path.GetExtension(fileName);
-            var counter = 1;
-
-            while (true)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var candidate = CombineSegments(prefix, $"{name}_{counter}{extension}");
-                if (!await ObjectExistsAsync(candidate, cancellationToken).ConfigureAwait(false))
-                {
-                    return candidate;
-                }
-
-                counter++;
-            }
         }
 
         private async Task<bool> ObjectExistsAsync(string objectKey, CancellationToken cancellationToken)
@@ -366,5 +369,39 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
         }
 
         private string NormalizeRootPrefix() => _settings.RootPrefix?.Trim('/') ?? string.Empty;
+
+        private Task RemoveObjectAsync(string objectKey, CancellationToken cancellationToken)
+        {
+            var args = new RemoveObjectArgs()
+                .WithBucket(_settings.BucketName)
+                .WithObject(objectKey);
+
+            return _minioClient.RemoveObjectAsync(args, cancellationToken);
+        }
+
+        private async Task<string> EnsureUniqueObjectKeyAsync(string prefix, string fileName, CancellationToken cancellationToken)
+        {
+            var baseKey = CombineSegments(prefix, fileName);
+            if (!await ObjectExistsAsync(baseKey, cancellationToken).ConfigureAwait(false))
+            {
+                return baseKey;
+            }
+
+            var name = Path.GetFileNameWithoutExtension(fileName);
+            var extension = Path.GetExtension(fileName);
+            var counter = 1;
+
+            while (true)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var candidate = CombineSegments(prefix, $"{name}_{counter}{extension}");
+                if (!await ObjectExistsAsync(candidate, cancellationToken).ConfigureAwait(false))
+                {
+                    return candidate;
+                }
+
+                counter++;
+            }
+        }
     }
 }

@@ -30,9 +30,5 @@
     <None Include="LICENSE" />
     <None Include="README.md" />
     <None Include="scripts\docker-build-multiarch.sh" />
-    <None Include="src\ArquivoMate2.Infrastructure.Services\StorageProvider\S3StorageProvider.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="src\ArquivoMate2.Infrastructure.Services\Search\" />
   </ItemGroup>
 </Project>

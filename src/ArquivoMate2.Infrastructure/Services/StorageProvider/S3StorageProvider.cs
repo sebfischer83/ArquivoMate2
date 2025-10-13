@@ -1,6 +1,5 @@
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Infrastructure.Configuration.StorageProvider;
-using EasyCaching.Core;
 using Microsoft.Extensions.Options;
 using MimeTypes;
 using Minio;
@@ -16,7 +15,7 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
     {
         private readonly IMinioClient _storage;
 
-        public S3StorageProvider(IOptions<S3StorageProviderSettings> opts, IMinioClientFactory minioClientFactory, IEasyCachingProviderFactory easyCachingProviderFactory, IPathService pathService)
+        public S3StorageProvider(IOptions<S3StorageProviderSettings> opts, IMinioClientFactory minioClientFactory, IPathService pathService)
             : base(opts, pathService)
         {
             _storage = minioClientFactory.CreateClient();

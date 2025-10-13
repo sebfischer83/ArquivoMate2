@@ -1,4 +1,4 @@
-﻿using ArquivoMate2.Application.Configuration;
+using ArquivoMate2.Application.Configuration;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Models;
 using ArquivoMate2.Domain.Document;
@@ -7,6 +7,7 @@ using ArquivoMate2.Domain.Email;
 using ArquivoMate2.Domain.ValueObjects;
 using ArquivoMate2.Domain.Users;
 using ArquivoMate2.Domain.Sharing;
+using ArquivoMate2.Infrastructure.Configuration.Caching;
 using ArquivoMate2.Infrastructure.Configuration.DeliveryProvider;
 using ArquivoMate2.Infrastructure.Configuration.IngestionProvider;
 using ArquivoMate2.Infrastructure.Configuration.Llm;
@@ -25,8 +26,7 @@ using ArquivoMate2.Infrastructure.Services.Sharing;
 using ArquivoMate2.Infrastructure.Services.StorageProvider;
 using ArquivoMate2.Shared.Models;
 using AutoMapper;
-using EasyCaching.Core.Configurations;
-using EasyCaching.Serialization.SystemTextJson.Configurations;
+using ArquivoMate2.Infrastructure.Services.Caching;
 using FluentStorage;
 using FluentStorage.AWS.Blobs;
 using JasperFx.Core;
@@ -53,6 +53,10 @@ using System.Threading.Tasks;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql.Tables;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using ZiggyCreatures.Caching.Fusion;
+using ZiggyCreatures.Caching.Fusion.Serialization.SystemTextJson;
 using EmailCriteria = ArquivoMate2.Domain.Email.EmailCriteria;
 using JasperFx.Events.Projections;
 using ArquivoMate2.Application.Interfaces.Sharing;
@@ -351,17 +355,53 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddHostedService<DatabaseMigrationService>();
             services.AddHostedService<MeiliInitService>();
 
-            services.AddEasyCaching(x => x.UseRedis(r =>
+            var cachingSection = config.GetSection("Caching");
+            services.Configure<CachingOptions>(cachingSection);
+
+            services.AddMemoryCache(options =>
             {
-                r.EnableLogging = false;
-                r.DBConfig.KeyPrefix = "redis:";
-                r.SerializerName = "A";
-                r.DBConfig.Endpoints.Add(new EasyCaching.Core.Configurations.ServerEndPoint("cache", int.Parse("6379")));
-                r.DBConfig.AbortOnConnectFail = false;
-            }).WithSystemTextJson("A"));
+                options.SizeLimit = 128L * 1024 * 1024;
+                options.CompactionPercentage = 0.20;
+            });
+
+            var redisConfiguration = cachingSection.GetValue<string>("Redis:Configuration")
+                ?? config["Redis:Configuration"]
+                ?? "cache:6379";
+            var redisInstanceName = cachingSection.GetValue<string>("Redis:InstanceName") ?? "redis:";
+
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = redisConfiguration;
+                options.InstanceName = redisInstanceName;
+            });
+
+            var serializerOptions = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = false,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            };
+
+            services.AddFusionCache(options =>
+            {
+                options.DefaultEntryOptions = new FusionCacheEntryOptions
+                {
+                    Duration = TimeSpan.FromMinutes(5),
+                    IsFailSafeEnabled = true,
+                    FactorySoftTimeout = TimeSpan.FromSeconds(2),
+                    FactoryHardTimeout = TimeSpan.FromSeconds(10),
+                    AllowBackgroundDistributedCacheOperations = true
+                };
+            })
+            .WithMemoryCache()
+            .WithDistributedCache()
+            .WithSerializer(new FusionCacheSystemTextJsonSerializer(serializerOptions));
+
+            services.AddSingleton<ITtlResolver, TtlResolver>();
+            services.AddSingleton<IAppCache, EasyToFusionCacheAdapter>();
 
             // Register a StackExchange.Redis ConnectionMultiplexer for direct Redis operations (admin tasks)
-            var redisConfig = config["Redis:Configuration"] ?? "cache:6379";
+            var redisConfig = redisConfiguration;
             var redisOptions = ConfigurationOptions.Parse(redisConfig);
             redisOptions.AbortOnConnectFail = false;
             var mux = ConnectionMultiplexer.Connect(redisOptions);

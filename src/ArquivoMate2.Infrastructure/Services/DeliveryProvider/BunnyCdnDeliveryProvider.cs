@@ -1,7 +1,6 @@
-﻿using ArquivoMate2.Application.Interfaces;
+using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Infrastructure.Configuration.DeliveryProvider;
 using ArquivoMate2.Infrastructure.Configuration.StorageProvider;
-using EasyCaching.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Minio;
@@ -18,18 +17,18 @@ namespace ArquivoMate2.Infrastructure.Services.DeliveryProvider
     public class BunnyCdnDeliveryProvider : IDeliveryProvider
     {
         private readonly BunnyDeliveryProviderSettings _settings;
-        private readonly IEasyCachingProvider _cache;
+        private readonly IAppCache _cache;
         private readonly IPathService _pathService;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
         public BunnyCdnDeliveryProvider(
             IOptions<BunnyDeliveryProviderSettings> opts,
-            IEasyCachingProviderFactory cachingProviderFactory,
+            IAppCache cache,
             IPathService pathService,
             IHttpContextAccessor httpContextAccessor)
         {
             _settings = opts.Value;
-            _cache = cachingProviderFactory.GetCachingProvider(EasyCachingConstValue.DefaultRedisName);
+            _cache = cache;
             _pathService = pathService;
             _httpContextAccessor = httpContextAccessor;
         }
@@ -44,9 +43,9 @@ namespace ArquivoMate2.Infrastructure.Services.DeliveryProvider
             var cacheKey = $"bunnyDelivery:{fullPath}-{_settings.ToString()}";
             var cachedUrl = await _cache.GetAsync<string>(cacheKey);
 
-            if (cachedUrl.HasValue)
+            if (!string.IsNullOrEmpty(cachedUrl))
             {
-                return cachedUrl.Value;
+                return cachedUrl;
             }
 
             var baseUrl = _settings.Host.TrimEnd('/');
@@ -71,7 +70,7 @@ namespace ArquivoMate2.Infrastructure.Services.DeliveryProvider
                 countriesBlocked: _settings.TokenCountriesBlocked
             );
 
-            _cache.Set(cacheKey, signedUrl, TimeSpan.FromSeconds(86400) - TimeSpan.FromMinutes(30));
+            await _cache.SetAsync(cacheKey, signedUrl, TimeSpan.FromSeconds(86400) - TimeSpan.FromMinutes(30));
 
 
             return signedUrl;

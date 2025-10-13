@@ -21,7 +21,7 @@ namespace ArquivoMate2.Shared.Models
 
         public DateTime UploadedAt { get; set; }
 
-        public bool Encrypted { get; set; } // NEW
+        public DocumentEncryptionType Encryption { get; set; } = DocumentEncryptionType.Unencrypted;
 
         // Resolved sender information (lightweight for lists)
         public PartyListDto? Sender { get; set; }

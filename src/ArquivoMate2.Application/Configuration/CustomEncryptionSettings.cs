@@ -1,6 +1,6 @@
 namespace ArquivoMate2.Application.Configuration
 {
-    public class EncryptionSettings
+    public class CustomEncryptionSettings
     {
         public bool Enabled { get; set; }
         public string MasterKeyBase64 { get; set; } = string.Empty; // 32 bytes base64

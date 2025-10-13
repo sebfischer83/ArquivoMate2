@@ -1,4 +1,6 @@
-﻿namespace ArquivoMate2.Infrastructure.Configuration.StorageProvider
+﻿using ArquivoMate2.Infrastructure.Configuration;
+
+namespace ArquivoMate2.Infrastructure.Configuration.StorageProvider
 {
     public class S3StorageProviderSettings : StorageProviderSettings
     {
@@ -13,5 +15,8 @@
         public string Region { get; set; } = string.Empty;
 
         public bool IsPublic { get; set; } = false;
+
+        public S3CustomerEncryptionSettings? CustomerEncryption { get; set; }
+
     }
 }

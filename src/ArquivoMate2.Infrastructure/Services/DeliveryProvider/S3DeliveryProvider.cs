@@ -4,6 +4,7 @@ using EasyCaching.Core;
 using Microsoft.Extensions.Options;
 using Minio.DataModel.Args;
 using Minio;
+using Minio.DataModel.Encryption;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +21,7 @@ namespace ArquivoMate2.Infrastructure.Services.DeliveryProvider
         private readonly S3DeliveryProviderSettings _settings;
         private readonly IMinioClient _storage;
         private readonly IEasyCachingProvider _cache;
+        private readonly SseCustomerKey? _customerEncryptionKey;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="S3DeliveryProvider"/> class.
@@ -34,6 +36,11 @@ namespace ArquivoMate2.Infrastructure.Services.DeliveryProvider
         {
             _settings = opts.Value;
             _storage = minioClientFactory.CreateClient();
+            _customerEncryptionKey = _settings.CustomerEncryption?.CreateCustomerKey();
+            if (_customerEncryptionKey is not null && _settings.IsPublic)
+            {
+                throw new InvalidOperationException("SSE-C customer encryption cannot be combined with public S3 delivery.");
+            }
             _cache = cachingProviderFactory.GetCachingProvider(EasyCachingConstValue.DefaultRedisName);
         }
 
@@ -65,6 +72,11 @@ namespace ArquivoMate2.Infrastructure.Services.DeliveryProvider
                 .WithBucket(_settings.BucketName)
                 .WithObject(fullPath)
                 .WithExpiry((int)TimeSpan.FromHours(1).TotalSeconds);
+
+            if (_customerEncryptionKey is not null)
+            {
+                args = args.WithServerSideEncryption(_customerEncryptionKey);
+            }
 
             var presignedUrl = await _storage.PresignedGetObjectAsync(args);
             await _cache.SetAsync(cacheKey, presignedUrl, TimeSpan.FromMinutes(55));

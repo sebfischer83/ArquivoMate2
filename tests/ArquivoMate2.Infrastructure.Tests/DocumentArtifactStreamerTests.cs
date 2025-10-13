@@ -11,6 +11,7 @@ using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.ReadModels;
 using ArquivoMate2.Infrastructure.Services;
+using ArquivoMate2.Shared.Models;
 using Marten;
 using Moq;
 using Xunit;
@@ -28,7 +29,7 @@ namespace ArquivoMate2.Infrastructure.Tests
             {
                 Id = documentId,
                 FilePath = "doc/file.pdf",
-                Encrypted = false,
+                Encryption = DocumentEncryptionType.Unencrypted,
                 Deleted = false
             };
 
@@ -48,7 +49,7 @@ namespace ArquivoMate2.Infrastructure.Tests
 
             var keysProvider = new Mock<IDocumentEncryptionKeysProvider>();
 
-            var streamer = new DocumentArtifactStreamer(query.Object, storage.Object, keysProvider.Object, new EncryptionSettings { Enabled = false });
+            var streamer = new DocumentArtifactStreamer(query.Object, storage.Object, keysProvider.Object, new CustomEncryptionSettings { Enabled = false });
 
             var (writeAsync, contentType) = await streamer.GetAsync(documentId, artifact, CancellationToken.None);
 
@@ -67,7 +68,7 @@ namespace ArquivoMate2.Infrastructure.Tests
             var documentId = Guid.NewGuid();
             var artifact = "file";
             var masterKey = Enumerable.Range(1, 32).Select(i => (byte)i).ToArray();
-            var encryptionSettings = new EncryptionSettings
+            var encryptionSettings = new CustomEncryptionSettings
             {
                 Enabled = true,
                 MasterKeyBase64 = Convert.ToBase64String(masterKey)
@@ -77,7 +78,7 @@ namespace ArquivoMate2.Infrastructure.Tests
             {
                 Id = documentId,
                 FilePath = "doc/file.enc",
-                Encrypted = true,
+                Encryption = DocumentEncryptionType.Custom,
                 Deleted = false
             };
 

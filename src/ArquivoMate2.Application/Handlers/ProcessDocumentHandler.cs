@@ -43,14 +43,14 @@ namespace ArquivoMate2.Application.Handlers
         private readonly IChatBot _chatBot;
         private readonly IDocumentProcessingNotifier _documentProcessingNotifier;
         private readonly ILanguageDetectionService _languageDetection;
-        private readonly IEncryptionService _encryptionService;
+        private readonly ICustomEncryptionService _encryptionService;
         private readonly IDocumentVectorizationService _vectorizationService;
 
         private static readonly byte[] PdfMagicNumber = new byte[] { 0x25, 0x50, 0x44, 0x46 }; // %PDF
         private static readonly HashSet<string> SupportedImageExtensions = new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp" };
 
         public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger, IDocumentProcessor documentTextExtractor, IFileMetadataService fileMetadataService, IPathService pathService,
-            IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot, IDocumentProcessingNotifier documentProcessingNotifier, ICurrentUserService currentUserService, ILanguageDetectionService languageDetection, IEncryptionService encryptionService, IDocumentVectorizationService vectorizationService)
+            IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot, IDocumentProcessingNotifier documentProcessingNotifier, ICurrentUserService currentUserService, ILanguageDetectionService languageDetection, ICustomEncryptionService encryptionService, IDocumentVectorizationService vectorizationService)
             => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService, _chatBot, _documentProcessingNotifier, _languageDetection, _encryptionService, _vectorizationService) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService, chatBot, documentProcessingNotifier, languageDetection, encryptionService, vectorizationService);
 
         // Hilfsmethode zum Loggen des Speicherverbrauchs

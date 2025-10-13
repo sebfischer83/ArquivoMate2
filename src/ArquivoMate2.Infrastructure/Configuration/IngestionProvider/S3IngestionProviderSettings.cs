@@ -1,3 +1,4 @@
+﻿using ArquivoMate2.Infrastructure.Configuration;
 using System;
 
 namespace ArquivoMate2.Infrastructure.Configuration.IngestionProvider
@@ -31,5 +32,7 @@ namespace ArquivoMate2.Infrastructure.Configuration.IngestionProvider
         public string FailedSubfolderName { get; set; } = "failed";
 
         public TimeSpan PollingInterval { get; set; } = TimeSpan.FromMinutes(5);
+
+        public S3CustomerEncryptionSettings? CustomerEncryption { get; set; }
     }
 }

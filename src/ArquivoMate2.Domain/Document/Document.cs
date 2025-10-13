@@ -32,7 +32,7 @@ namespace ArquivoMate2.Domain.Document
         public string ChatBotClass { get; private set; } = string.Empty;
         public int NotesCount { get; private set; } = 0;
         public string Language { get; private set; } = string.Empty;
-        public bool Encrypted { get; private set; } // NEW
+        public DocumentEncryptionType Encryption { get; private set; } = DocumentEncryptionType.Unencrypted;
         public DateTime? OccurredOn { get; private set; }
 
         private string? _initialTitle;
@@ -49,7 +49,7 @@ namespace ArquivoMate2.Domain.Document
 
         public void Apply(DocumentEncryptionEnabled e)
         {
-            Encrypted = true;
+            Encryption = DocumentEncryptionType.Custom;
             OccurredOn = e.OccurredOn;
         }
 

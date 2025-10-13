@@ -1,4 +1,5 @@
-﻿using System;
+using ArquivoMate2.Shared.Models;
+using System;
 using System.Collections.Generic;
 
 namespace ArquivoMate2.Domain.ReadModels
@@ -49,7 +50,7 @@ namespace ArquivoMate2.Domain.ReadModels
 
         public string Language { get; set; } = string.Empty; // ISO code of the detected document language
 
-        public bool Encrypted { get; set; } // Indicates whether encrypted delivery must be used
+        public DocumentEncryptionType Encryption { get; set; } = DocumentEncryptionType.Unencrypted; // Indicates encryption mode used for delivery
 
         // Reference to the resolved parties (stored as ids in events)
         public Guid? SenderId { get; set; }

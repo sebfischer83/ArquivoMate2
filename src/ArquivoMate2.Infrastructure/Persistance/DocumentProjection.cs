@@ -1,6 +1,7 @@
 ﻿using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.Import;
 using ArquivoMate2.Domain.ReadModels;
+using ArquivoMate2.Shared.Models;
 using Marten.Events.Aggregation;
 using System.Text.Json; // Required for dynamic event payload handling
 using System.Globalization; // Required for culture-invariant conversions
@@ -32,7 +33,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
         /// <param name="view">The read model to update.</param>
         public void Apply(DocumentEncryptionEnabled e, DocumentView view)
         {
-            view.Encrypted = true;
+            view.Encryption = DocumentEncryptionType.Custom;
             view.OccurredOn = e.OccurredOn;
         }
 

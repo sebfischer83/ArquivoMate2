@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, OnDestroy, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DocumentListItemDto } from '../../client/models/document-list-item-dto';
+import { DocumentEncryptionType } from '../../client/models/document-encryption-type';
 import { TuiPagination } from '@taiga-ui/kit';
 import { DocumentCardComponent } from '../document-card/document-card.component';
 import { TuiIcon } from '@taiga-ui/core';
@@ -117,6 +118,8 @@ export class DocumentCardGridComponent implements OnChanges, OnDestroy, OnInit {
   @Output() pageSizeChange = new EventEmitter<number>();
   @Output() itemClick = new EventEmitter<DocumentListItemDto>();
   @Output() reload = new EventEmitter<void>();
+
+  readonly DocumentEncryptionType = DocumentEncryptionType;
 
   trackById(_: number, item: DocumentListItemDto) { return item.id; }
   onCardClick(item: DocumentListItemDto) { this.itemClick.emit(item); }

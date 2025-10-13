@@ -21,7 +21,7 @@ namespace ArquivoMate2.Application.Handlers
         private readonly IPathService _pathService;
         private readonly OcrSettings _ocrSettings;
         private readonly IAutoShareService _autoShareService;
-        private readonly IEncryptionService _encryptionService;
+        private readonly ICustomEncryptionService _encryptionService;
 
         /// <summary>
         /// Initializes a new <see cref="UploadDocumentHandler"/> with the dependencies required for file persistence and event handling.
@@ -33,7 +33,7 @@ namespace ArquivoMate2.Application.Handlers
         /// <param name="ocrSettings">OCR settings used for metadata defaults.</param>
         /// <param name="autoShareService">Service that applies automatic sharing rules.</param>
         /// <param name="encryptionService">Service that indicates whether encryption is enabled.</param>
-        public UploadDocumentHandler(IDocumentSession session, IFileMetadataService fileMetadataService, ICurrentUserService currentUserService, IPathService pathService, OcrSettings ocrSettings, IAutoShareService autoShareService, IEncryptionService encryptionService)
+        public UploadDocumentHandler(IDocumentSession session, IFileMetadataService fileMetadataService, ICurrentUserService currentUserService, IPathService pathService, OcrSettings ocrSettings, IAutoShareService autoShareService, ICustomEncryptionService encryptionService)
         {
             _session = session;
             _fileMetadataService = fileMetadataService;

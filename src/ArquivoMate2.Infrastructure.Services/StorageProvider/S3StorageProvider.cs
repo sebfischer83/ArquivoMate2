@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using MimeTypes;
 using Minio;
 using Minio.DataModel.Args;
+using Minio.DataModel.Encryption;
 using Minio.Exceptions;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
@@ -19,12 +20,14 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
     public class S3StorageProvider : StorageProviderBase<S3StorageProviderSettings>
     {
         private readonly IMinioClient _storage;
+        private readonly SseCustomerKey? _customerEncryptionKey;
         private AsyncPolicy _minioRetryPolicy;
 
         public S3StorageProvider(IOptions<S3StorageProviderSettings> opts, IMinioClientFactory minioClientFactory, IEasyCachingProviderFactory easyCachingProviderFactory, IPathService pathService)
             : base(opts, pathService)
         {
             _storage = minioClientFactory.CreateClient();
+            _customerEncryptionKey = _settings.CustomerEncryption?.CreateCustomerKey();
 
             // Initialize Polly retry policy for MinIO operations
             _minioRetryPolicy = Policy
@@ -63,6 +66,11 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
                 putObjectArgs = putObjectArgs.WithObjectSize(-1);
             }
 
+            if (_customerEncryptionKey is not null)
+            {
+                putObjectArgs = putObjectArgs.WithServerSideEncryption(_customerEncryptionKey);
+            }
+
             // MINIO_RETRY: wrapped
             await RunWithMinioRetry(ct => _storage.PutObjectAsync(putObjectArgs, ct), ct).ConfigureAwait(false);
             return fullPath;
@@ -75,6 +83,11 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
                 .WithBucket(_settings.BucketName)
                 .WithObject(fullPath)
                 .WithCallbackStream(stream => stream.CopyTo(ms));
+
+            if (_customerEncryptionKey is not null)
+            {
+                args = args.WithServerSideEncryption(_customerEncryptionKey);
+            }
 
             // MINIO_RETRY: wrapped
             await RunWithMinioRetry(ct => _storage.GetObjectAsync(args, ct), ct).ConfigureAwait(false);
@@ -94,6 +107,11 @@ namespace ArquivoMate2.Infrastructure.Services.StorageProvider
                     // Buffer the stream synchronously into the memory stream
                     stream.CopyTo(ms);
                 });
+
+            if (_customerEncryptionKey is not null)
+            {
+                args = args.WithServerSideEncryption(_customerEncryptionKey);
+            }
 
             // MINIO_RETRY: wrapped
             await RunWithMinioRetry(ct => _storage.GetObjectAsync(args, ct), ct).ConfigureAwait(false);

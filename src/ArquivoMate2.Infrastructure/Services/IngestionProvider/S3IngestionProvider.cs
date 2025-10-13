@@ -7,6 +7,7 @@ using Minio;
 using Minio.DataModel;
 using Minio.DataModel.Args;
 using Minio.Exceptions;
+using Minio.DataModel.Encryption;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -28,6 +29,7 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
         private readonly S3IngestionProviderSettings _settings;
         private readonly ILogger<S3IngestionProvider> _logger;
         private readonly IMinioClient _minioClient;
+        private readonly SseCustomerKey? _customerEncryptionKey;
 
         public S3IngestionProvider(IOptions<S3IngestionProviderSettings> options, ILogger<S3IngestionProvider> logger)
         {
@@ -49,6 +51,7 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
             }
 
             _minioClient = clientBuilder.Build();
+            _customerEncryptionKey = _settings.CustomerEncryption?.CreateCustomerKey();
         }
 
         /// <summary>
@@ -180,6 +183,11 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
                 .WithObjectSize(content.CanSeek ? content.Length : -1)
                 .WithContentType(mimeType);
 
+            if (_customerEncryptionKey is not null)
+            {
+                putArgs = putArgs.WithServerSideEncryption(_customerEncryptionKey);
+            }
+
             await _minioClient.PutObjectAsync(putArgs, cancellationToken).ConfigureAwait(false);
             _logger.LogInformation("Stored ingestion file for user {UserId} at {Destination}.", userId, destinationKey);
 
@@ -195,6 +203,11 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
                 .WithBucket(_settings.BucketName)
                 .WithObject(descriptor.FullPath)
                 .WithCallbackStream(stream => stream.CopyTo(ms));
+
+            if (_customerEncryptionKey is not null)
+            {
+                args = args.WithServerSideEncryption(_customerEncryptionKey);
+            }
 
             await _minioClient.GetObjectAsync(args, cancellationToken).ConfigureAwait(false);
             return ms.ToArray();
@@ -218,10 +231,21 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
                 .WithBucket(_settings.BucketName)
                 .WithObject(sourceKey);
 
+            if (_customerEncryptionKey is not null)
+            {
+                source = source.WithServerSideEncryption(_customerEncryptionKey);
+            }
+
             var args = new CopyObjectArgs()
                 .WithBucket(_settings.BucketName)
                 .WithObject(destinationKey)
                 .WithCopyObjectSource(source);
+
+            if (_customerEncryptionKey is not null)
+            {
+                args = args.WithServerSideEncryption(_customerEncryptionKey)
+                           .WithCopySourceEncryption(_customerEncryptionKey);
+            }
 
             await _minioClient.CopyObjectAsync(args, cancellationToken).ConfigureAwait(false);
         }
@@ -268,6 +292,11 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
                     .WithBucket(_settings.BucketName)
                     .WithObject(objectKey);
 
+                if (_customerEncryptionKey is not null)
+                {
+                    args = args.WithServerSideEncryption(_customerEncryptionKey);
+                }
+
                 await _minioClient.StatObjectAsync(args, cancellationToken).ConfigureAwait(false);
                 return true;
             }
@@ -290,6 +319,11 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
                 .WithStreamData(ms)
                 .WithObjectSize(ms.Length)
                 .WithContentType("text/plain; charset=utf-8");
+
+            if (_customerEncryptionKey is not null)
+            {
+                args = args.WithServerSideEncryption(_customerEncryptionKey);
+            }
 
             await _minioClient.PutObjectAsync(args, cancellationToken).ConfigureAwait(false);
         }

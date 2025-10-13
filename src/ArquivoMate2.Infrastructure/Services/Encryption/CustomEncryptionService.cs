@@ -12,13 +12,13 @@ using System.Threading.Tasks;
 
 namespace ArquivoMate2.Infrastructure.Services.Encryption
 {
-    public class EncryptionService : IEncryptionService
+    public class CustomEncryptionService : ICustomEncryptionService
     {
         private readonly byte[] _kek;
         public bool IsEnabled { get; }
         private readonly IStorageProvider _inner;
 
-        public EncryptionService(IOptions<EncryptionSettings> settings, IStorageProvider inner)
+        public CustomEncryptionService(IOptions<CustomEncryptionSettings> settings, IStorageProvider inner)
         {
             var s = settings.Value;
             IsEnabled = s.Enabled && !string.IsNullOrWhiteSpace(s.MasterKeyBase64);

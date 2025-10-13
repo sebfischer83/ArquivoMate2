@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using ArquivoMate2.Infrastructure.Configuration;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,6 +30,8 @@ namespace ArquivoMate2.Infrastructure.Configuration.DeliveryProvider
         public string BucketName { get; set; } = string.Empty;
         public string Region { get; set; } = string.Empty;
         public bool IsPublic { get; set; } = false;
+        public S3CustomerEncryptionSettings? CustomerEncryption { get; set; }
+
     }
 
     public class BunnyDeliveryProviderSettings : DeliveryProviderSettings

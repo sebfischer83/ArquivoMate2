@@ -28,8 +28,8 @@ namespace ArquivoMate2.API.Controllers
         private readonly IStorageProvider _storage;
         private readonly IDocumentArtifactStreamer _streamer;
         private readonly IFileAccessTokenService _tokenService;
-        private readonly IEncryptionService _encryption;
-        private readonly EncryptionSettings _settings;
+        private readonly ICustomEncryptionService _encryption;
+        private readonly CustomEncryptionSettings _settings;
         private readonly IEasyCachingProvider _cache;
         private readonly ILogger<DeliveryController> _logger; // added
         private const int OneYearSeconds = 31536000; // 365 * 24 * 60 * 60
@@ -38,8 +38,8 @@ namespace ArquivoMate2.API.Controllers
             IStorageProvider storage,
             IDocumentArtifactStreamer streamer,
             IFileAccessTokenService tokenService,
-            IEncryptionService encryption,
-            IOptions<EncryptionSettings> settings,
+            ICustomEncryptionService encryption,
+            IOptions<CustomEncryptionSettings> settings,
             IEasyCachingProviderFactory cacheFactory,
             ILogger<DeliveryController> logger) // added
         {
@@ -91,14 +91,14 @@ namespace ArquivoMate2.API.Controllers
 
             // Load encryption keys when necessary (before attempting small artifact shortcut)
             DocumentEncryptionKeysAdded? encryptionKeys = null;
-            if (_settings.Enabled && view.Encrypted)
+            if (_settings.Enabled && view.Encryption == DocumentEncryptionType.Custom)
             {
                 var events = await _query.Events.FetchStreamAsync(documentId, token: ct);
                 encryptionKeys = events.Select(e => e.Data).OfType<DocumentEncryptionKeysAdded>().LastOrDefault();
                 if (encryptionKeys == null) return NotFound();
             }
 
-            // Small artifact fast-path (preview/thumb) – uses TryGetArtifactBytesAsync which already caches encrypted bytes
+            // Small artifact fast-path (preview/thumb) â€“ uses TryGetArtifactBytesAsync which already caches encrypted bytes
             if (artifact == DocumentArtifact.Preview || artifact == DocumentArtifact.Thumb)
             {
                 try

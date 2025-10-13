@@ -39,7 +39,7 @@ namespace ArquivoMate2.API.Controllers
         private readonly IStringLocalizer<DocumentsController> _localizer;
         private readonly IDocumentAccessService _documentAccessService;
         private readonly IFileAccessTokenService _tokenService; // Issues signed delivery tokens
-        private readonly EncryptionSettings _encryptionSettings; // Encryption feature configuration
+        private readonly CustomEncryptionSettings _encryptionSettings; // Encryption feature configuration
         private readonly AppSettings _appSettings; // Global application configuration
 
         // ActivitySource for tracing this controller. OpenTelemetry will pick up activities started from this source.
@@ -56,7 +56,7 @@ namespace ArquivoMate2.API.Controllers
             IStringLocalizer<DocumentsController> localizer,
             IDocumentAccessService documentAccessService,
             IFileAccessTokenService tokenService,
-            EncryptionSettings encryptionSettings,
+            CustomEncryptionSettings encryptionSettings,
             AppSettings appSettings)
         {
             _mediator = mediator;
@@ -136,7 +136,7 @@ namespace ArquivoMate2.API.Controllers
                             .Where(d => d.Id == id && !d.Deleted)
                             .FirstOrDefaultAsync(cancellationToken);
                         var mapped = _mapper.Map<DocumentDto>(document);
-                        if (document!.Encrypted) ApplyDeliveryTokens(mapped);
+                        if (document!.Encryption == DocumentEncryptionType.Custom) ApplyDeliveryTokens(mapped);
                         return Ok(mapped);
                     case PatchResult.Forbidden:
                         return Forbid(_localizer.GetString("Some fields are not allowed to update.").Value);
@@ -168,7 +168,7 @@ namespace ArquivoMate2.API.Controllers
 
             var documents = result.Documents.Select(item =>
             {
-                if (item.Encrypted && !string.IsNullOrEmpty(item.ThumbnailPath))
+                if (item.Encryption == DocumentEncryptionType.Custom && !string.IsNullOrEmpty(item.ThumbnailPath))
                 {
                     item.ThumbnailPath = BuildDeliveryUrl(item.Id, "thumb");
                 }
@@ -231,7 +231,7 @@ namespace ArquivoMate2.API.Controllers
             }
 
             var documentDto = result.Document;
-            if (documentDto.Encrypted)
+            if (documentDto.Encryption == DocumentEncryptionType.Custom)
             {
                 ApplyDeliveryTokens(documentDto);
             }

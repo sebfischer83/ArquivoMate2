@@ -272,6 +272,9 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddSingleton<IngestionProviderSettingsFactory>();
             var ingestionSettings = new IngestionProviderSettingsFactory(config).GetIngestionProviderSettings();
 
+            services.AddSingleton<IDocumentEncryptionDescriptor>(
+                new DocumentEncryptionDescriptor(settings, deliverySettings, ingestionSettings));
+
             services.AddScoped<IEmailSettingsRepository, EmailSettingsRepository>();
             services.AddScoped<IProcessedEmailRepository, ProcessedEmailRepository>();
             services.AddScoped<IEmailCriteriaRepository, EmailCriteriaRepository>();
@@ -345,6 +348,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
             }
 
             services.AddScoped<IMemberValueResolver<DocumentView, BaseDto, string, string>, PathResolver>();
+            services.AddScoped<DocumentEncryptionResolver>();
             services.AddScoped<StatusTranslationResolver<ImportHistoryView, ImportHistoryListItemDto>>();
             services.AddScoped<ImportSourceTranslationResolver<ImportHistoryView, ImportHistoryListItemDto>>();
             services.AddAutoMapper(typeof(Mapping.DocumentMapping).Assembly);
@@ -367,9 +371,9 @@ namespace ArquivoMate2.Infrastructure.Configuration
             var mux = ConnectionMultiplexer.Connect(redisOptions);
             services.AddSingleton<IConnectionMultiplexer>(mux);
 
-            services.Configure<EncryptionSettings>(config.GetSection("Encryption"));
-            services.AddSingleton(sp => sp.GetRequiredService<IOptions<EncryptionSettings>>().Value);
-            services.AddTransient<IEncryptionService, EncryptionService>();
+            services.Configure<CustomEncryptionSettings>(config.GetSection("CustomEncryption"));
+            services.AddSingleton(sp => sp.GetRequiredService<IOptions<CustomEncryptionSettings>>().Value);
+            services.AddTransient<ICustomEncryptionService, CustomEncryptionService>();
             services.AddTransient<IFileAccessTokenService, FileAccessTokenService>();
             services.Configure<AppSettings>(config.GetSection("App"));
             services.AddSingleton(sp => sp.GetRequiredService<IOptions<AppSettings>>().Value);

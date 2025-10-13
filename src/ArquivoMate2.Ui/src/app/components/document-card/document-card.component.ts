@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 import { NgOptimizedImage, DatePipe } from '@angular/common';
 import { TuiIcon } from '@taiga-ui/core';
 import { DocumentListItemDto } from '../../client/models';
+import { DocumentEncryptionType } from '../../client/models/document-encryption-type';
 
 /**
  * Standalone presentational component for a single document card.
@@ -25,6 +26,8 @@ export class DocumentCardComponent {
   @Input() variant: 'regular' | 'compact' | 'mini' = 'compact';
   /** Emitted when user clicks the card */
   @Output() cardClick = new EventEmitter<DocumentListItemDto>();
+
+  readonly DocumentEncryptionType = DocumentEncryptionType;
 
   onClick() {
     if (!this.document) return;

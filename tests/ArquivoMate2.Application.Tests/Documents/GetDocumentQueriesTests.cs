@@ -48,7 +48,7 @@ public class GetDocumentQueriesTests
                 UploadedAt = new DateTime(2024, 3, 2),
                 Title = "Own",
                 ThumbnailPath = "thumb1",
-                Encrypted = false
+                Encryption = DocumentEncryptionType.Unencrypted
             },
             new()
             {
@@ -60,7 +60,7 @@ public class GetDocumentQueriesTests
                 UploadedAt = new DateTime(2024, 2, 1),
                 Title = "Shared",
                 ThumbnailPath = "thumb2",
-                Encrypted = true
+                Encryption = DocumentEncryptionType.Custom
             },
             new()
             {
@@ -72,7 +72,7 @@ public class GetDocumentQueriesTests
                 UploadedAt = new DateTime(2024, 1, 1),
                 Title = "NoAccess",
                 ThumbnailPath = "thumb3",
-                Encrypted = false
+                Encryption = DocumentEncryptionType.Unencrypted
             }
         };
 
@@ -230,7 +230,7 @@ public class GetDocumentQueriesTests
                 Processed = true,
                 Content = "content",
                 ContentLength = 10,
-                Encrypted = true,
+                Encryption = DocumentEncryptionType.Custom,
                 ThumbnailPath = "thumb"
             }
         };

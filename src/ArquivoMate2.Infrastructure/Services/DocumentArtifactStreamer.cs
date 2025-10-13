@@ -2,6 +2,7 @@ using ArquivoMate2.Application.Configuration;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.ReadModels;
+using ArquivoMate2.Shared.Models;
 using Marten;
 using Marten.Events;
 using System;
@@ -19,10 +20,10 @@ namespace ArquivoMate2.Infrastructure.Services
     {
         private readonly IQuerySession _query;
         private readonly IStorageProvider _storage;
-        private readonly EncryptionSettings _enc;
+        private readonly CustomEncryptionSettings _enc;
         private readonly IDocumentEncryptionKeysProvider _keysProvider;
 
-        public DocumentArtifactStreamer(IQuerySession query, IStorageProvider storage, IDocumentEncryptionKeysProvider keysProvider, EncryptionSettings enc)
+        public DocumentArtifactStreamer(IQuerySession query, IStorageProvider storage, IDocumentEncryptionKeysProvider keysProvider, CustomEncryptionSettings enc)
         {
             _query = query;
             _storage = storage;
@@ -50,7 +51,7 @@ namespace ArquivoMate2.Infrastructure.Services
             };
             if (string.IsNullOrEmpty(path)) throw new FileNotFoundException();
 
-            if (_enc.Enabled && view.Encrypted)
+            if (_enc.Enabled && view.Encryption == DocumentEncryptionType.Custom)
             {
                 var keysEvent = await _keysProvider.GetLatestAsync(documentId, ct).ConfigureAwait(false);
                 if (keysEvent == null) throw new FileNotFoundException();

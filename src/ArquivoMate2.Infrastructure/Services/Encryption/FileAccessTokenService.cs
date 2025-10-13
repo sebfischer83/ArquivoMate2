@@ -9,9 +9,9 @@ namespace ArquivoMate2.Infrastructure.Services.Encryption
     public class FileAccessTokenService : IFileAccessTokenService
     {
         private readonly byte[] _kek;
-        private readonly EncryptionSettings _settings;
+        private readonly CustomEncryptionSettings _settings;
 
-        public FileAccessTokenService(IOptions<EncryptionSettings> settings)
+        public FileAccessTokenService(IOptions<CustomEncryptionSettings> settings)
         {
             _settings = settings.Value;
             if (_settings.Enabled && !string.IsNullOrWhiteSpace(_settings.MasterKeyBase64))

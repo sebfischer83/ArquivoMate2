@@ -106,7 +106,9 @@
               <div role="cell" class="col col-summary" [title]="d.summary || ''">{{ d.summary || '—' }}</div>
               <div role="cell" class="col col-status">
                 @if (d.accepted) { <tui-icon icon="@tui.check" class="ok" aria-label="Accepted" /> }
-                @if (d.encrypted) { <tui-icon icon="@tui.lock" class="lock" aria-label="Verschlüsselt" /> }
+                @if (d.encryption && d.encryption !== DocumentEncryptionType.Unencrypted) {
+                  <tui-icon icon="@tui.lock" class="lock" aria-label="Verschlüsselt" />
+                }
               </div>
               <div role="cell" class="col col-type">{{ d.type || '—' }}</div>
               <div role="cell" class="col col-date">@if (d.uploadedAt) { {{ d.uploadedAt | date:'short' }} } @else { — }</div>

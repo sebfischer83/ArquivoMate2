@@ -16,13 +16,13 @@ namespace ArquivoMate2.Infrastructure.Services.DeliveryProvider
     {
         private readonly IFileAccessTokenService _tokenService;
         private readonly AppSettings _appSettings;
-        private readonly EncryptionSettings _encryptionSettings;
+        private readonly CustomEncryptionSettings _encryptionSettings;
         private readonly ArquivoMate2.Application.Interfaces.IPathService _pathService;
 
         public ServerDeliveryProvider(
             IFileAccessTokenService tokenService,
             AppSettings appSettings,
-            EncryptionSettings encryptionSettings,
+            CustomEncryptionSettings encryptionSettings,
             ArquivoMate2.Application.Interfaces.IPathService pathService)
         {
             _tokenService = tokenService;

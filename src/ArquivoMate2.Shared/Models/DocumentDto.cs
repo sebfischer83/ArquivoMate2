@@ -53,7 +53,7 @@ namespace ArquivoMate2.Shared.Models
         public int NotesCount { get; set; } // NEW
 
         public string Language { get; set; } = string.Empty; // NEW
-        public bool Encrypted { get; set; } // NEW
+        public DocumentEncryptionType Encryption { get; set; } = DocumentEncryptionType.Unencrypted;
 
         public List<DocumentEventDto> History { get; set; } = new List<DocumentEventDto>();
 

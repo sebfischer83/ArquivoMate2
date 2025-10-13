@@ -318,7 +318,7 @@ Die Karte nutzt `tuiSurface` (appearance `flat`) für konsistentes Theming & Hov
 | Zustand | Darstellung |
 |---------|------------|
 | `accepted` | Grünes Badge `OK` |
-| `encrypted` | Neutrales Badge `LOCK` |
+| `encryption !== 'Unencrypted'` | Neutrales Badge `LOCK` |
 
 Eigene Box-Shadow/Border wurden entfernt zugunsten der Design Tokens von Taiga. Für zusätzliche Semantik können zukünftig Icons (`@taiga-ui/icons`) ergänzt oder Badges durch Tooltips erweitert werden.
 
@@ -345,13 +345,15 @@ Accepted / Encrypted sowie Upload-Datum und Typ werden jetzt im `meta` Block unt
 | Zustand      | Icon Token    | Darstellung / Semantik            |
 |--------------|---------------|-----------------------------------|
 | accepted     | `@tui.check`  | Erfolg (grün, `--tui-success-fill`)|
-| encrypted    | `@tui.lock`   | Neutral/Gesperrt (gedämpfter Text) |
+| encryption   | `@tui.lock`   | Neutral/Gesperrt (gedämpfter Text) |
 
 Implementation-Auszug:
 ```html
 <div class="status-line">
   @if (document.accepted) { <tui-icon class="icon-status accepted" icon="@tui.check" title="Accepted" aria-label="Accepted" /> }
-  @if (document.encrypted) { <tui-icon class="icon-status encrypted" icon="@tui.lock" title="Verschlüsselt" aria-label="Verschlüsselt" /> }
+  @if (document.encryption && document.encryption !== DocumentEncryptionType.Unencrypted) {
+    <tui-icon class="icon-status encrypted" icon="@tui.lock" title="Verschlüsselt" aria-label="Verschlüsselt" />
+  }
   @if (document.uploadedAt) { <span class="uploaded">{{ document.uploadedAt | date:'short' }}</span> }
   @if (document.type) { <span class="type">{{ document.type }}</span> }
 </div>

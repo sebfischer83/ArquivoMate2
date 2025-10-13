@@ -14,7 +14,9 @@
   <div class="meta">
     <div class="status-line">
       @if (document.accepted) { <tui-icon class="icon-status accepted" icon="@tui.check" title="Accepted" aria-label="Accepted" /> }
-      @if (document.encrypted) { <tui-icon class="icon-status encrypted" icon="@tui.lock" title="Verschlüsselt" aria-label="Verschlüsselt" /> }
+      @if (document.encryption && document.encryption !== DocumentEncryptionType.Unencrypted) {
+        <tui-icon class="icon-status encrypted" icon="@tui.lock" title="Verschlüsselt" aria-label="Verschlüsselt" />
+      }
       @if (document.uploadedAt) { <span class="uploaded" aria-label="Upload Datum">{{ document.uploadedAt | date:'short' }}</span> }
       @if (document.type) { <span class="type" aria-label="Dokumenttyp">{{ document.type }}</span> }
     </div>

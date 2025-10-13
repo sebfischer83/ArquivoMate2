@@ -4,7 +4,6 @@ using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.ValueObjects;
 using ArquivoMate2.Domain.ReadModels;
 using ArquivoMate2.Shared.Models; // DocumentArtifact
-using EasyCaching.Core;
 using Marten;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -30,7 +29,7 @@ namespace ArquivoMate2.API.Controllers
         private readonly IFileAccessTokenService _tokenService;
         private readonly IEncryptionService _encryption;
         private readonly EncryptionSettings _settings;
-        private readonly IEasyCachingProvider _cache;
+        private readonly IAppCache _cache;
         private readonly ILogger<DeliveryController> _logger; // added
         private const int OneYearSeconds = 31536000; // 365 * 24 * 60 * 60
 
@@ -40,7 +39,7 @@ namespace ArquivoMate2.API.Controllers
             IFileAccessTokenService tokenService,
             IEncryptionService encryption,
             IOptions<EncryptionSettings> settings,
-            IEasyCachingProviderFactory cacheFactory,
+            IAppCache cache,
             ILogger<DeliveryController> logger) // added
         {
             _query = query;
@@ -49,7 +48,7 @@ namespace ArquivoMate2.API.Controllers
             _tokenService = tokenService;
             _encryption = encryption;
             _settings = settings.Value;
-            _cache = cacheFactory.GetCachingProvider(EasyCachingConstValue.DefaultRedisName);
+            _cache = cache;
             _logger = logger; // added
         }
 
@@ -98,7 +97,7 @@ namespace ArquivoMate2.API.Controllers
                 if (encryptionKeys == null) return NotFound();
             }
 
-            // Small artifact fast-path (preview/thumb) – uses TryGetArtifactBytesAsync which already caches encrypted bytes
+            // Small artifact fast-path (preview/thumb) Â– uses TryGetArtifactBytesAsync which already caches encrypted bytes
             if (artifact == DocumentArtifact.Preview || artifact == DocumentArtifact.Thumb)
             {
                 try
@@ -200,8 +199,8 @@ namespace ArquivoMate2.API.Controllers
 
                 if (shouldCache)
                 {
-                    var cached = await _cache.GetAsync<byte[]>(cacheKey);
-                    if (cached.HasValue) encrypted = cached.Value;
+                    var cached = await _cache.GetAsync<byte[]>(cacheKey, ct);
+                    if (cached != null && cached.Length > 0) encrypted = cached;
                 }
 
                 if (encrypted == null)
@@ -209,7 +208,7 @@ namespace ArquivoMate2.API.Controllers
                     encrypted = await _storage.GetFileAsync(fullPath, ct);
                     if (shouldCache && encrypted != null && encrypted.Length > 0)
                     {
-                        await _cache.SetAsync(cacheKey, encrypted, TimeSpan.FromMinutes(_settings.CacheTtlMinutes));
+                        await _cache.SetAsync(cacheKey, encrypted, TimeSpan.FromMinutes(_settings.CacheTtlMinutes), ct: ct);
                     }
                 }
 

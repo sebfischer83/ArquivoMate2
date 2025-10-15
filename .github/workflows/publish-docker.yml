@@ -60,4 +60,4 @@ jobs:
 
       - name: Publish dotnet artifacts (optional)
         run: |
-          dotnet publish src/ArquivoMate2.API -c Release -o out /p:Version=${{ env.VERSION }}
+          dotnet publish src/ArquivoMate2.API -c Release -o out

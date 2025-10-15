@@ -2,7 +2,7 @@
   <PropertyGroup>
     <!-- Extract a purely numeric version for assembly/file version attributes -->
     <_NumericVersion Condition="'$(VERSION)' != ''">$([System.Text.RegularExpressions.Regex]::Match('$(VERSION)', '^[0-9]+(\.[0-9]+){0,3}').Value)</_NumericVersion>
-    <_NumericVersion Condition="'$(_NumericVersion)' == ''">0.0.0</_NumericVersion>
+    <_NumericVersion Condition="'$(VERSION)' == '' OR '$(_NumericVersion)' == ''">0.0.0</_NumericVersion>
 
     <!-- Use the numeric version as the MSBuild Version value -->
     <Version Condition="'$(VERSION)' != ''">$(_NumericVersion)</Version>

@@ -1,3 +1,6 @@
+using System;
+using System.Text.Json.Serialization;
+
 namespace ArquivoMate2.Shared.Models
 {
     /// <summary>
@@ -5,6 +8,7 @@ namespace ArquivoMate2.Shared.Models
     /// Can be combined using bitwise flags for multiple encryption layers.
     /// </summary>
     [Flags]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum DocumentEncryptionType
     {
         /// <summary>

@@ -134,15 +134,15 @@ export class PdfJsViewerComponent implements OnDestroy, AfterViewInit {
     this.error.set(null);
     this.ensureWorker();
     const task = getDocument({ url });
-    task.promise.then(doc => {
+    task.promise.then((doc: PDFDocumentProxy) => {
       this.pdfDoc = doc;
       this.totalPages.set(doc.numPages);
       this.pageIndex.set(1);
       this.renderPage();
       this.loading.set(false);
-    }).catch(err => {
+    }).catch((err: unknown) => {
       console.error(err);
-  this.error.set(this.transloco.translate('Document.PdfLoadError'));
+      this.error.set(this.transloco.translate('Document.PdfLoadError'));
       this.loading.set(false);
     });
   }
@@ -151,7 +151,7 @@ export class PdfJsViewerComponent implements OnDestroy, AfterViewInit {
     if (!this.pdfDoc) return;
     const pageNum = this.pageIndex();
     this.rendering = true;
-    this.pdfDoc.getPage(pageNum).then(page => {
+    this.pdfDoc.getPage(pageNum).then((page: PDFPageProxy) => {
       this.currentPage = page;
       // Combine intrinsic page rotation with user rotation (if any)
       let effectiveRotation = (page.rotate + this.rotation()) % 360;

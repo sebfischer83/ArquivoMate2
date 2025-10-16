@@ -2,7 +2,8 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, Input, OnDestroy, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TuiButton, TuiHint, TuiLoader } from '@taiga-ui/core';
-import { TuiTextareaModule, TuiToggleModule } from '@taiga-ui/kit';
+import { TuiTextarea } from '@taiga-ui/kit/components/textarea';
+import { TuiSwitch } from '@taiga-ui/kit/components/switch';
 import { finalize, Subscription } from 'rxjs';
 import { DocumentDto, DocumentEventDto } from '../../client/models';
 import { DocumentHistoryComponent } from '../document-history/document-history.component';
@@ -28,7 +29,7 @@ interface DocumentChatMessage {
 @Component({
   selector: 'am-document-chat',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TuiTextareaModule, TuiToggleModule, TuiButton, TuiHint, TuiLoader, DocumentHistoryComponent],
+  imports: [CommonModule, ReactiveFormsModule, TuiTextarea, TuiSwitch, TuiButton, TuiHint, TuiLoader, DocumentHistoryComponent],
   templateUrl: './document-chat.component.html',
   styleUrls: ['./document-chat.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -198,7 +199,8 @@ export class DocumentChatComponent implements OnDestroy {
     return this.messages().length === 0;
   }
 
-  protected scope(): 'document' | 'catalog' {
+  // Renamed from `scope` to `currentScope` to avoid conflict with the @Input() setter named `scope`
+  protected currentScope(): 'document' | 'catalog' {
     return this.scopeSignal();
   }
 
@@ -218,17 +220,17 @@ export class DocumentChatComponent implements OnDestroy {
   }
 
   protected placeholder(): string {
-    return this.scopeSignal() === 'catalog'
+    return this.currentScope() === 'catalog'
       ? 'Ask a question about your documents…'
       : 'Ask a question about this document…';
   }
 
   protected introTitle(): string {
-    return this.scopeSignal() === 'catalog' ? 'Document catalogue chat' : 'Document chat';
+    return this.currentScope() === 'catalog' ? 'Document catalogue chat' : 'Document chat';
   }
 
   protected introDescription(): string {
-    if (this.scopeSignal() === 'catalog') {
+    if (this.currentScope() === 'catalog') {
       return 'Start a conversation about your entire document catalogue.';
     }
     const doc = this.documentSignal();
@@ -236,8 +238,8 @@ export class DocumentChatComponent implements OnDestroy {
     return `Ask the assistant about ${name}.`;
   }
 
-  protected historyEvents(): ReadonlyArray<DocumentEventDto> {
-    return this.historySignal();
+  protected historyEvents(): DocumentEventDto[] {
+    return [...this.historySignal()];
   }
 
   private handleError(error: unknown): void {
@@ -256,16 +258,19 @@ export class DocumentChatComponent implements OnDestroy {
   }
 
   private appendAnswerMessage(
-    answer: string,
+    answer: string | null | undefined,
     model: string | null | undefined,
     citations: ReadonlyArray<DocumentChatAnswerCitation>,
     references: ReadonlyArray<DocumentChatAnswerReference>,
     documentCount: number | null
   ): void {
+    // Normalize nullable answer to a non-null string for the message text
+    const text = answer ?? '';
+
     this.appendMessage({
       id: this.createMessageId(),
       kind: 'answer',
-      text: answer,
+      text,
       timestamp: new Date(),
       model: model ?? undefined,
       citations,

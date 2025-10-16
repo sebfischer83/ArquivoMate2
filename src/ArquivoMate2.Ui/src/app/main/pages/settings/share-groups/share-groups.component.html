@@ -118,19 +118,17 @@
                   } @else {
                     <tui-scrollbar class="members-scroll">
                       <div class="member-item" *ngFor="let user of users(); track trackByUserId($index, user)">
-                        <tui-checkbox-labeled
-                          [checked]="isMemberSelected(user.id)"
-                          (checkedChange)="toggleMember(user.id, $event)"
-                        >
-                          {{ user.name || user.id }}
-                        </tui-checkbox-labeled>
-                      </div>
+                          <label class="member-checkbox">
+                            <input type="checkbox" tuiCheckbox [checked]="isMemberSelected(user.id)" (change)="toggleMember(user.id, $any($event.target).checked)" />
+                            <span class="member-name">{{ user.name || user.id }}</span>
+                          </label>
+                        </div>
                     </tui-scrollbar>
                   }
                 }
               </div>
               <div class="selected-members" *ngIf="groupForm.controls.memberUserIds.value?.length; else noMembers">
-                <tui-tag *ngFor="let member of selectedMemberLabels(); track member.id" size="s">{{ member.label }}</tui-tag>
+                <tui-chip *ngFor="let member of selectedMemberLabels(); track member.id" size="s">{{ member.label }}</tui-chip>
               </div>
               <ng-template #noMembers>
                 <span class="selected-placeholder">{{ t('Settings.ShareGroups.Form.NoMembersSelected') }}</span>

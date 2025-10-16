@@ -10,7 +10,8 @@ import {
   TuiSurface,
   TuiTextfield,
 } from '@taiga-ui/core';
-import { TuiCheckboxLabeled, TuiTag } from '@taiga-ui/kit';
+import { TuiCheckbox } from '@taiga-ui/kit/components/checkbox';
+import { TuiChip } from '@taiga-ui/kit/components/chip';
 import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
 import { firstValueFrom } from 'rxjs';
 import { ShareGroupsService } from '../../../../client/services/share-groups.service';
@@ -39,8 +40,8 @@ type ShareGroupFormControls = {
     TuiLoader,
     TuiNotification,
     TuiScrollbar,
-    TuiCheckboxLabeled,
-    TuiTag,
+  TuiCheckbox,
+  TuiChip,
   ],
   templateUrl: './share-groups.component.html',
   styleUrl: './share-groups.component.scss',
@@ -124,12 +125,14 @@ export class ShareGroupsComponent implements OnInit {
     if (!userId) {
       return;
     }
+    // userId was guarded above; explicitly narrow to string for TS
+    const id = userId as string;
     const control = this.groupForm.controls.memberUserIds;
     const current = new Set(control.value ?? []);
     if (checked) {
-      current.add(userId);
+      current.add(id);
     } else {
-      current.delete(userId);
+      current.delete(id);
     }
     control.setValue(Array.from(current));
     control.markAsDirty();
@@ -140,8 +143,10 @@ export class ShareGroupsComponent implements OnInit {
     if (!userId) {
       return false;
     }
+    // userId guarded above; narrow to string for TS
+    const id = userId as string;
     const control = this.groupForm.controls.memberUserIds;
-    return (control.value ?? []).includes(userId);
+    return (control.value ?? []).includes(id);
   }
 
   protected isDeleting(group: ShareGroupDto): boolean {
@@ -186,8 +191,8 @@ export class ShareGroupsComponent implements OnInit {
         }
         const updated = response.data ?? { id: editingId, name: trimmedName, memberUserIds: payloadIds };
         this.updateGroupList(updated);
-        const successMsg = response.message ?? this.transloco.translate('Settings.ShareGroups.Toast.Saved');
-        this.toast.success(successMsg);
+  const successMsg = (response.message ?? this.transloco.translate('Settings.ShareGroups.Toast.Saved')) as string;
+  this.toast.success(successMsg);
         this.groupForm.markAsPristine();
       } else {
         const request: CreateShareGroupRequest = {
@@ -201,8 +206,8 @@ export class ShareGroupsComponent implements OnInit {
         }
         const created = response.data ?? { id: undefined, name: trimmedName, memberUserIds: payloadIds };
         this.groups.update(current => [...current, this.normalizeGroup(created)]);
-        const successMsg = response.message ?? this.transloco.translate('Settings.ShareGroups.Toast.Saved');
-        this.toast.success(successMsg);
+  const successMsg = (response.message ?? this.transloco.translate('Settings.ShareGroups.Toast.Saved')) as string;
+  this.toast.success(successMsg);
         if (created.id) {
           this.editGroup(created);
         } else {

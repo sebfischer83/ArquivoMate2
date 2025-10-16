@@ -13,7 +13,7 @@
     <div *ngIf="messagesEmpty()" class="chat__empty">
       <h3 class="chat__empty-title">Start a conversation</h3>
       <p class="chat__empty-text">
-        {{ scope() === 'catalog' ? 'Ask about your entire catalogue to discover related documents.' : 'Ask about this document to receive focused answers with citations.' }}
+  {{ currentScope() === 'catalog' ? 'Ask about your entire catalogue to discover related documents.' : 'Ask about this document to receive focused answers with citations.' }}
       </p>
     </div>
 
@@ -69,13 +69,14 @@
   <form class="chat__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
     <label class="chat__label">
       <span class="chat__label-text">Question</span>
-      <tui-text-area
+      <textarea
+        tuiTextarea
         formControlName="question"
         [placeholder]="placeholder()"
         [disabled]="isLoading()"
         [maxLength]="questionMaxLength"
         class="chat__textarea"
-      ></tui-text-area>
+      ></textarea>
     </label>
 
     <div class="chat__form-footer">
@@ -85,7 +86,7 @@
         tuiHint="Include the most recent document events in the AI prompt"
         tuiHintDirection="top-right"
       >
-        <tui-toggle formControlName="includeHistory" [disabled]="!hasHistory()"></tui-toggle>
+  <input type="checkbox" tuiSwitch formControlName="includeHistory" [disabled]="!hasHistory()" />
         <span>Include document history</span>
       </label>
 

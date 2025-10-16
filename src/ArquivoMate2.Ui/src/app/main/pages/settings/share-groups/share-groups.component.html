@@ -1,0 +1,155 @@
+<ng-container *transloco="let t">
+  <div class="share-groups">
+    <div class="layout">
+      <section class="panel" tuiSurface appearance="floating">
+        <header class="panel-header">
+          <div class="panel-text">
+            <h2 class="panel-title">{{ t('Settings.ShareGroups.ListTitle') }}</h2>
+            <p class="panel-description">{{ t('Settings.ShareGroups.ListDescription') }}</p>
+          </div>
+          <div class="panel-actions">
+            <button tuiButton appearance="secondary" size="s" type="button" (click)="reload()" [disabled]="loadingGroups()">
+              @if (loadingGroups()) { {{ t('Settings.ShareGroups.Reloading') }} } @else {
+                {{ t('Settings.ShareGroups.Reload') }}
+              }
+            </button>
+            <button tuiButton appearance="primary" size="s" type="button" (click)="startCreate()" [disabled]="savingGroup()">
+              {{ t('Settings.ShareGroups.CreateButton') }}
+            </button>
+          </div>
+        </header>
+        <div class="panel-body">
+          @if (loadingGroups()) {
+            <div class="state">
+              <tui-loader size="m"></tui-loader>
+            </div>
+          } @else {
+            @if (sortedGroups().length === 0) {
+              <tui-notification status="neutral">
+                {{ t('Settings.ShareGroups.EmptyState') }}
+              </tui-notification>
+            } @else {
+              <tui-scrollbar class="group-scroll">
+                <ul class="group-list">
+                  @for (group of sortedGroups(); track trackByGroupId($index, group)) {
+                    <li class="group-item" [class.active]="editingGroupId() === (group.id ?? null)">
+                      <div class="group-info">
+                        <div class="group-name">{{ group.name || t('Settings.ShareGroups.Untitled') }}</div>
+                        <div class="group-members">{{ memberSummary(group) }}</div>
+                      </div>
+                      <div class="group-actions">
+                        <button tuiButton appearance="secondary" size="s" type="button" (click)="editGroup(group)">
+                          {{ t('Settings.ShareGroups.Edit') }}
+                        </button>
+                        <button
+                          tuiButton
+                          appearance="secondary"
+                          size="s"
+                          type="button"
+                          class="danger"
+                          (click)="deleteGroup(group)"
+                          [disabled]="isDeleting(group)"
+                        >
+                          @if (isDeleting(group)) { {{ t('Common.RemovingEllipsis') }} } @else {
+                            {{ t('Settings.ShareGroups.Delete.Label') }}
+                          }
+                        </button>
+                      </div>
+                    </li>
+                  }
+                </ul>
+              </tui-scrollbar>
+            }
+          }
+        </div>
+      </section>
+
+      <section class="panel sticky" tuiSurface appearance="floating">
+        <header class="panel-header">
+          <div class="panel-text">
+            <h2 class="panel-title">
+              @if (editingGroupId()) {
+                {{ t('Settings.ShareGroups.Form.EditTitle') }}
+              } @else {
+                {{ t('Settings.ShareGroups.Form.CreateTitle') }}
+              }
+            </h2>
+            <p class="panel-description">{{ t('Settings.ShareGroups.Form.Description') }}</p>
+          </div>
+        </header>
+        <div class="panel-body">
+          @if (savingGroup()) {
+            <div class="state">
+              <tui-loader size="m"></tui-loader>
+            </div>
+          }
+
+          <form [formGroup]="groupForm" (ngSubmit)="saveGroup()">
+            <div class="form-field">
+              <label for="groupName">{{ t('Settings.ShareGroups.Form.NameLabel') }}</label>
+              <tui-textfield>
+                <input
+                  tuiTextfield
+                  id="groupName"
+                  type="text"
+                  formControlName="name"
+                  [placeholder]="t('Settings.ShareGroups.Form.NamePlaceholder')"
+                  autocomplete="off"
+                />
+              </tui-textfield>
+              @if (groupForm.controls.name.touched && groupForm.controls.name.invalid) {
+                <span class="error">{{ t('Settings.ShareGroups.Form.NameRequired') }}</span>
+              }
+            </div>
+
+            <div class="form-field">
+              <label>{{ t('Settings.ShareGroups.Form.MembersLabel') }}</label>
+              <p class="hint">{{ t('Settings.ShareGroups.Form.MembersHint') }}</p>
+              <div class="members-container">
+                @if (loadingUsers()) {
+                  <div class="state compact">
+                    <tui-loader size="s"></tui-loader>
+                  </div>
+                } @else {
+                  @if (users().length === 0) {
+                    <tui-notification status="neutral">
+                      {{ t('Settings.ShareGroups.Form.NoMembersAvailable') }}
+                    </tui-notification>
+                  } @else {
+                    <tui-scrollbar class="members-scroll">
+                      <div class="member-item" *ngFor="let user of users(); track trackByUserId($index, user)">
+                        <tui-checkbox-labeled
+                          [checked]="isMemberSelected(user.id)"
+                          (checkedChange)="toggleMember(user.id, $event)"
+                        >
+                          {{ user.name || user.id }}
+                        </tui-checkbox-labeled>
+                      </div>
+                    </tui-scrollbar>
+                  }
+                }
+              </div>
+              <div class="selected-members" *ngIf="groupForm.controls.memberUserIds.value?.length; else noMembers">
+                <tui-tag *ngFor="let member of selectedMemberLabels(); track member.id" size="s">{{ member.label }}</tui-tag>
+              </div>
+              <ng-template #noMembers>
+                <span class="selected-placeholder">{{ t('Settings.ShareGroups.Form.NoMembersSelected') }}</span>
+              </ng-template>
+            </div>
+
+            <div class="form-actions">
+              <button tuiButton appearance="primary" size="m" type="submit" [disabled]="savingGroup()">
+                @if (savingGroup()) { {{ t('Common.SavingEllipsis') }} } @else {
+                  {{ t('Settings.ShareGroups.Form.Save') }}
+                }
+              </button>
+              <button tuiButton appearance="secondary" size="m" type="button" (click)="startCreate()" [disabled]="savingGroup()">
+                {{ t('Settings.ShareGroups.Form.CancelEdit') }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+</ng-container>

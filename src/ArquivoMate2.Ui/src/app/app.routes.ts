@@ -37,10 +37,15 @@ export const routes: Routes = [
                         redirectTo: 'email',
                         pathMatch: 'full'
                     },
-                    {
+                    { 
                         path: 'email',
                         loadComponent: () =>
                             import('./main/pages/settings/email-settings/email-settings.component').then(m => m.EmailSettingsComponent)
+                    },
+                    {
+                        path: 'share-groups',
+                        loadComponent: () =>
+                            import('./main/pages/settings/share-groups/share-groups.component').then(m => m.ShareGroupsComponent)
                     }
                 ]
             },

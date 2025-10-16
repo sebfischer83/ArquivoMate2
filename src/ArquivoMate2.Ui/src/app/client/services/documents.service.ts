@@ -11,10 +11,18 @@ import { BaseService } from '../base-service';
 import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
+import { apiDocumentsChatPost$Json } from '../fn/documents/api-documents-chat-post-json';
+import { ApiDocumentsChatPost$Json$Params } from '../fn/documents/api-documents-chat-post-json';
+import { apiDocumentsChatPost$Plain } from '../fn/documents/api-documents-chat-post-plain';
+import { ApiDocumentsChatPost$Plain$Params } from '../fn/documents/api-documents-chat-post-plain';
 import { apiDocumentsGet$Json } from '../fn/documents/api-documents-get-json';
 import { ApiDocumentsGet$Json$Params } from '../fn/documents/api-documents-get-json';
 import { apiDocumentsGet$Plain } from '../fn/documents/api-documents-get-plain';
 import { ApiDocumentsGet$Plain$Params } from '../fn/documents/api-documents-get-plain';
+import { apiDocumentsIdChatPost$Json } from '../fn/documents/api-documents-id-chat-post-json';
+import { ApiDocumentsIdChatPost$Json$Params } from '../fn/documents/api-documents-id-chat-post-json';
+import { apiDocumentsIdChatPost$Plain } from '../fn/documents/api-documents-id-chat-post-plain';
+import { ApiDocumentsIdChatPost$Plain$Params } from '../fn/documents/api-documents-id-chat-post-plain';
 import { apiDocumentsIdGet$Json } from '../fn/documents/api-documents-id-get-json';
 import { ApiDocumentsIdGet$Json$Params } from '../fn/documents/api-documents-id-get-json';
 import { apiDocumentsIdGet$Plain } from '../fn/documents/api-documents-id-get-plain';
@@ -35,6 +43,7 @@ import { apiDocumentsStatsGet$Json } from '../fn/documents/api-documents-stats-g
 import { ApiDocumentsStatsGet$Json$Params } from '../fn/documents/api-documents-stats-get-json';
 import { apiDocumentsStatsGet$Plain } from '../fn/documents/api-documents-stats-get-plain';
 import { ApiDocumentsStatsGet$Plain$Params } from '../fn/documents/api-documents-stats-get-plain';
+import { DocumentAnswerDtoApiResponse } from '../models/document-answer-dto-api-response';
 import { DocumentDtoApiResponse } from '../models/document-dto-api-response';
 import { DocumentListDtoApiResponse } from '../models/document-list-dto-api-response';
 import { DocumentStatsDtoApiResponse } from '../models/document-stats-dto-api-response';
@@ -363,6 +372,132 @@ export class DocumentsService extends BaseService {
   apiDocumentsIdGet$Json(params: ApiDocumentsIdGet$Json$Params, context?: HttpContext): Observable<DocumentDtoApiResponse> {
     return this.apiDocumentsIdGet$Json$Response(params, context).pipe(
       map((r: StrictHttpResponse<DocumentDtoApiResponse>): DocumentDtoApiResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `apiDocumentsIdChatPost()` */
+  static readonly ApiDocumentsIdChatPostPath = '/api/documents/{id}/chat';
+
+  /**
+   * Sends a user's natural language question to the configured chatbot and returns the generated answer.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiDocumentsIdChatPost$Plain()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsIdChatPost$Plain$Response(params: ApiDocumentsIdChatPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentAnswerDtoApiResponse>> {
+    return apiDocumentsIdChatPost$Plain(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Sends a user's natural language question to the configured chatbot and returns the generated answer.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiDocumentsIdChatPost$Plain$Response()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsIdChatPost$Plain(params: ApiDocumentsIdChatPost$Plain$Params, context?: HttpContext): Observable<DocumentAnswerDtoApiResponse> {
+    return this.apiDocumentsIdChatPost$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<DocumentAnswerDtoApiResponse>): DocumentAnswerDtoApiResponse => r.body)
+    );
+  }
+
+  /**
+   * Sends a user's natural language question to the configured chatbot and returns the generated answer.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiDocumentsIdChatPost$Json()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsIdChatPost$Json$Response(params: ApiDocumentsIdChatPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentAnswerDtoApiResponse>> {
+    return apiDocumentsIdChatPost$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Sends a user's natural language question to the configured chatbot and returns the generated answer.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiDocumentsIdChatPost$Json$Response()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsIdChatPost$Json(params: ApiDocumentsIdChatPost$Json$Params, context?: HttpContext): Observable<DocumentAnswerDtoApiResponse> {
+    return this.apiDocumentsIdChatPost$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<DocumentAnswerDtoApiResponse>): DocumentAnswerDtoApiResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `apiDocumentsChatPost()` */
+  static readonly ApiDocumentsChatPostPath = '/api/documents/chat';
+
+  /**
+   * Sends a question about the user's entire document catalogue to the chatbot.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiDocumentsChatPost$Plain()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsChatPost$Plain$Response(params?: ApiDocumentsChatPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentAnswerDtoApiResponse>> {
+    return apiDocumentsChatPost$Plain(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Sends a question about the user's entire document catalogue to the chatbot.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiDocumentsChatPost$Plain$Response()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsChatPost$Plain(params?: ApiDocumentsChatPost$Plain$Params, context?: HttpContext): Observable<DocumentAnswerDtoApiResponse> {
+    return this.apiDocumentsChatPost$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<DocumentAnswerDtoApiResponse>): DocumentAnswerDtoApiResponse => r.body)
+    );
+  }
+
+  /**
+   * Sends a question about the user's entire document catalogue to the chatbot.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiDocumentsChatPost$Json()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsChatPost$Json$Response(params?: ApiDocumentsChatPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentAnswerDtoApiResponse>> {
+    return apiDocumentsChatPost$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Sends a question about the user's entire document catalogue to the chatbot.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiDocumentsChatPost$Json$Response()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsChatPost$Json(params?: ApiDocumentsChatPost$Json$Params, context?: HttpContext): Observable<DocumentAnswerDtoApiResponse> {
+    return this.apiDocumentsChatPost$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<DocumentAnswerDtoApiResponse>): DocumentAnswerDtoApiResponse => r.body)
     );
   }
 

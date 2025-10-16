@@ -1,0 +1,128 @@
+<div class="chat" [class.chat--loading]="isLoading()">
+  <header class="chat__intro">
+    <h2 class="chat__title">{{ introTitle() }}</h2>
+    <p class="chat__subtitle">{{ introDescription() }}</p>
+  </header>
+
+  <div
+    #messagesContainer
+    class="chat__messages"
+    role="log"
+    aria-live="polite"
+  >
+    <div *ngIf="messagesEmpty()" class="chat__empty">
+      <h3 class="chat__empty-title">Start a conversation</h3>
+      <p class="chat__empty-text">
+        {{ scope() === 'catalog' ? 'Ask about your entire catalogue to discover related documents.' : 'Ask about this document to receive focused answers with citations.' }}
+      </p>
+    </div>
+
+    <ng-container *ngFor="let message of messages(); trackBy: trackByMessage">
+      <article
+        class="chat__message"
+        [class.chat__message--question]="message.kind === 'question'"
+        [class.chat__message--answer]="message.kind === 'answer'"
+        [class.chat__message--system]="message.kind === 'system'"
+      >
+        <header class="chat__message-header">
+          <span class="chat__message-role">{{ roleLabel(message.kind) }}</span>
+          <time class="chat__message-time">{{ message.timestamp | date: 'shortTime' }}</time>
+        </header>
+        <div class="chat__message-body">
+          <p class="chat__message-text">{{ message.text }}</p>
+
+          <div *ngIf="message.model" class="chat__message-model">
+            Model: {{ message.model }}
+          </div>
+
+          <div *ngIf="message.documentCount !== null && message.documentCount !== undefined" class="chat__message-count">
+            Documents considered: {{ message.documentCount }}
+          </div>
+
+          <section *ngIf="message.citations?.length" class="chat__message-citations">
+            <h4 class="chat__section-title">Sources</h4>
+            <ul class="chat__citation-list">
+              <li *ngFor="let citation of message.citations; trackBy: trackByCitation" class="chat__citation-item">
+                <span class="chat__citation-snippet">“{{ citation.snippet }}”</span>
+                <span *ngIf="citation.source" class="chat__citation-source">— {{ citation.source }}</span>
+              </li>
+            </ul>
+          </section>
+
+          <section *ngIf="message.documents?.length" class="chat__message-references">
+            <h4 class="chat__section-title">Suggested documents</h4>
+            <ul class="chat__reference-list">
+              <li *ngFor="let reference of message.documents; trackBy: trackByReference" class="chat__reference-item">
+                <span class="chat__reference-title">{{ reference.title || reference.documentId }}</span>
+                <span *ngIf="reference.date" class="chat__reference-date">{{ reference.date | date: 'mediumDate' }}</span>
+                <span *ngIf="reference.score !== null && reference.score !== undefined" class="chat__reference-score">
+                  Score: {{ reference.score | number: '1.2-2' }}
+                </span>
+              </li>
+            </ul>
+          </section>
+        </div>
+      </article>
+    </ng-container>
+  </div>
+
+  <form class="chat__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label class="chat__label">
+      <span class="chat__label-text">Question</span>
+      <tui-text-area
+        formControlName="question"
+        [placeholder]="placeholder()"
+        [disabled]="isLoading()"
+        [maxLength]="questionMaxLength"
+        class="chat__textarea"
+      ></tui-text-area>
+    </label>
+
+    <div class="chat__form-footer">
+      <label
+        class="chat__history-toggle"
+        [class.chat__history-toggle--disabled]="!hasHistory()"
+        tuiHint="Include the most recent document events in the AI prompt"
+        tuiHintDirection="top-right"
+      >
+        <tui-toggle formControlName="includeHistory" [disabled]="!hasHistory()"></tui-toggle>
+        <span>Include document history</span>
+      </label>
+
+      <div class="chat__actions">
+        <button
+          *ngIf="isLoading()"
+          type="button"
+          tuiButton
+          appearance="flat"
+          class="chat__button chat__button--cancel"
+          (click)="cancel()"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          tuiButton
+          appearance="primary"
+          class="chat__button"
+          [disabled]="form.invalid || isLoading()"
+        >
+          Ask
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="errorMessage()" class="chat__error" role="alert">
+      {{ errorMessage() }}
+    </div>
+  </form>
+
+  <section *ngIf="historyPreviewVisible()" class="chat__history">
+    <header class="chat__history-header">History included in the prompt</header>
+    <app-document-history [events]="historyEvents()"></app-document-history>
+  </section>
+
+  <div *ngIf="isLoading()" class="chat__loader" aria-hidden="true">
+    <tui-loader size="m"></tui-loader>
+  </div>
+</div>

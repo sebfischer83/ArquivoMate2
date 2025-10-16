@@ -178,6 +178,47 @@
         "AsOf": "As of"
       },
       "LoadingCount": "Loading…"
+    },
+    "ShareGroups": {
+      "ListTitle": "Share groups",
+      "ListDescription": "Organize teams that should access shared documents together.",
+      "Reload": "Refresh",
+      "Reloading": "Refreshing…",
+      "CreateButton": "New group",
+      "LoadingGroups": "Loading groups…",
+      "EmptyState": "No share groups have been created yet.",
+      "Untitled": "Untitled group",
+      "Edit": "Edit",
+      "Delete": {
+        "Label": "Delete",
+        "Confirm": "Delete the group \"{{name}}\"?"
+      },
+      "EmptyMembers": "No members assigned",
+      "MemberFallback": "Unknown user",
+      "LoadingUsers": "Loading users…",
+      "Form": {
+        "CreateTitle": "Create group",
+        "EditTitle": "Edit group",
+        "Description": "Set up a name and members for document sharing.",
+        "NameLabel": "Name",
+        "NamePlaceholder": "e.g. Sales",
+        "NameRequired": "Please provide a name.",
+        "MembersLabel": "Members",
+        "MembersHint": "Members will gain access to all documents shared with this group.",
+        "NoMembersAvailable": "No additional users found.",
+        "NoMembersSelected": "No members selected.",
+        "Save": "Save",
+        "CancelEdit": "Cancel",
+        "ValidationError": "Check the name and members."
+      },
+      "Toast": {
+        "LoadError": "Could not load share groups.",
+        "SaveError": "Share group could not be saved.",
+        "Saved": "Share group saved.",
+        "DeleteError": "Share group could not be deleted.",
+        "Deleted": "Share group deleted.",
+        "UsersLoadError": "Could not load the user list."
+      }
     }
   }
 }

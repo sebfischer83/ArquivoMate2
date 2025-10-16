@@ -176,6 +176,47 @@
         "AsOf": "Stand"
       },
       "LoadingCount": "Lädt …"
+    },
+    "ShareGroups": {
+      "ListTitle": "Freigabegruppen",
+      "ListDescription": "Organisiere Teams, die gemeinsam auf Dokumente zugreifen dürfen.",
+      "Reload": "Aktualisieren",
+      "Reloading": "Aktualisiere…",
+      "CreateButton": "Neue Gruppe",
+      "LoadingGroups": "Lade Gruppen …",
+      "EmptyState": "Es sind noch keine Freigabegruppen vorhanden.",
+      "Untitled": "Unbenannte Gruppe",
+      "Edit": "Bearbeiten",
+      "Delete": {
+        "Label": "Löschen",
+        "Confirm": "Soll die Gruppe \"{{name}}\" wirklich gelöscht werden?"
+      },
+      "EmptyMembers": "Keine Mitglieder zugewiesen",
+      "MemberFallback": "Unbekannter Benutzer",
+      "LoadingUsers": "Lade Benutzer …",
+      "Form": {
+        "CreateTitle": "Neue Gruppe anlegen",
+        "EditTitle": "Gruppe bearbeiten",
+        "Description": "Definiere Namen und Mitglieder für gemeinsame Freigaben.",
+        "NameLabel": "Name",
+        "NamePlaceholder": "z. B. Vertrieb",
+        "NameRequired": "Bitte einen Namen vergeben.",
+        "MembersLabel": "Mitglieder",
+        "MembersHint": "Mitglieder erhalten Zugriff auf alle Dokumente, die mit dieser Gruppe geteilt werden.",
+        "NoMembersAvailable": "Keine weiteren Benutzer gefunden.",
+        "NoMembersSelected": "Keine Mitglieder ausgewählt.",
+        "Save": "Speichern",
+        "CancelEdit": "Abbrechen",
+        "ValidationError": "Bitte Name und Mitglieder prüfen."
+      },
+      "Toast": {
+        "LoadError": "Freigabegruppen konnten nicht geladen werden.",
+        "SaveError": "Freigabegruppe konnte nicht gespeichert werden.",
+        "Saved": "Freigabegruppe gespeichert.",
+        "DeleteError": "Freigabegruppe konnte nicht gelöscht werden.",
+        "Deleted": "Freigabegruppe gelöscht.",
+        "UsersLoadError": "Benutzerliste konnte nicht geladen werden."
+      }
     }
   }
 }

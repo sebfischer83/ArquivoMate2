@@ -24,6 +24,11 @@ export class SettingsComponent {
       description: 'Postfächer und Abrufregeln verwalten',
       link: 'email',
     },
+    {
+      label: 'Freigabegruppen',
+      description: 'Teams für Dokumentfreigaben verwalten',
+      link: 'share-groups',
+    },
   ];
 
   // No body scroll workaround anymore — layout is handled by main-area flex rules

@@ -11,10 +11,13 @@ using ArquivoMate2.Infrastructure.Configuration.Auth;
 using Hangfire;
 using Hangfire.PostgreSql;
 using JasperFx.Core;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -36,6 +39,7 @@ using System.Collections.Generic; // for KeyValuePair in OTel attributes
 using Microsoft.Extensions.Options; // added for options access
 using ArquivoMate2.Infrastructure.Services; // for LanguageDetectionService & options
 using ArquivoMate2.Application.Behaviors; // register pipeline behavior
+using Microsoft.Net.Http.Headers;
 
 namespace ArquivoMate2.API
 {
@@ -369,40 +373,63 @@ namespace ArquivoMate2.API
             {
                 var oidcSettings = config as OIDCSettings;
 
-                builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                              .AddJwtBearer(options =>
-                              {
-                                  options.Authority = oidcSettings!.Authority;
-                                  options.Audience = oidcSettings.Audience;
-                                  options.RequireHttpsMetadata = true;
-                                  options.MapInboundClaims = false;
+                builder.Services.AddAuthentication(options =>
+                {
+                    options.DefaultScheme = "Smart";
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddPolicyScheme("Smart", "BearerOrCookie", options =>
+                {
+                    options.ForwardDefaultSelector = context =>
+                        context.Request.Headers.ContainsKey(HeaderNames.Authorization)
+                            ? JwtBearerDefaults.AuthenticationScheme
+                            : CookieAuthenticationDefaults.AuthenticationScheme;
+                })
+                .AddCookie("Cookies", options =>
+                {
+                    options.Cookie.HttpOnly = true;
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                    options.Cookie.SameSite = SameSiteMode.None;
+                    if (!string.IsNullOrWhiteSpace(oidcSettings!.CookieDomain))
+                    {
+                        options.Cookie.Domain = oidcSettings.CookieDomain;
+                    }
+                    options.SlidingExpiration = true;
+                    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.Authority = oidcSettings!.Authority;
+                    options.Audience = oidcSettings.Audience;
+                    options.RequireHttpsMetadata = true;
+                    options.MapInboundClaims = false;
 
-                                  options.TokenValidationParameters = new TokenValidationParameters
-                                  {
-                                      ValidateIssuer = false,
-                                      ValidIssuer = oidcSettings.Issuer,
-                                      ValidateAudience = false,
-                                      ValidAudience = oidcSettings.Audience,
-                                      ValidateLifetime = false,
-                                      NameClaimType = "name",
-                                      RoleClaimType = "roles"
-                                  };
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = false,
+                        ValidIssuer = oidcSettings.Issuer,
+                        ValidateAudience = false,
+                        ValidAudience = oidcSettings.Audience,
+                        ValidateLifetime = false,
+                        NameClaimType = "name",
+                        RoleClaimType = "roles"
+                    };
 
-                                  options.Events = new JwtBearerEvents
-                                  {
-                                      OnMessageReceived = context =>
-                                      {
-                                          var accessToken = context.Request.Query["access_token"];
-                                          var path = context.HttpContext.Request.Path;
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            var path = context.HttpContext.Request.Path;
 
-                                          if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/documents"))
-                                          {
-                                              context.Token = accessToken!;
-                                          }
-                                          return Task.CompletedTask;
-                                      }
-                                  };
-                              });
+                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/documents"))
+                            {
+                                context.Token = accessToken!;
+                            }
+                            return Task.CompletedTask;
+                        }
+                    };
+                });
             }
 
             builder.Services.AddAuthorization();

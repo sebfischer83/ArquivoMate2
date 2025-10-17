@@ -73,8 +73,9 @@
 .json-wrapper { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-gutter: stable both-edges; }
 .history-details .json {
 	margin: 0;
-	font-size: 0.65rem;
-	line-height: 1.25;
+	/* slightly larger for readability */
+	font-size: 0.85rem;
+	line-height: 1.35;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	// wrap long values while preserving indentation
 	white-space: pre-wrap; // keeps existing line breaks + allows wrapping
@@ -95,7 +96,7 @@
 .details-header .toolbar button { font-size: 0.55rem; }
 
 /* Interactive JSON tree */
-.json-tree { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.65rem; line-height: 1.25; }
+.json-tree { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85rem; line-height: 1.35; }
 .json-tree .jt-line { white-space: nowrap; display: flex; align-items: flex-start; gap: .25rem; }
 .json-tree .jt-line.root { font-weight: 600; }
 .json-tree .jt-children { display: block; }

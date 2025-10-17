@@ -118,7 +118,10 @@ export class DocumentCardGridComponent implements OnChanges, OnDestroy, OnInit {
   @Output() itemClick = new EventEmitter<DocumentListItemDto>();
   @Output() reload = new EventEmitter<void>();
 
-  trackById(_: number, item: DocumentListItemDto) { return item.id; }
+  trackById(index: number, item: DocumentListItemDto) { 
+    // Use index as fallback to ensure unique tracking even if id is missing
+    return item?.id ?? `item-${index}`; 
+  }
   onCardClick(item: DocumentListItemDto) { this.itemClick.emit(item); }
   changeSize(size: string) { const v = parseInt(size, 10); if (!isNaN(v)) this.pageSizeChange.emit(v); }
   onIndexChange(i: number) { if (this.displayLoading()) return; this.pageChange.emit(i + 1); }

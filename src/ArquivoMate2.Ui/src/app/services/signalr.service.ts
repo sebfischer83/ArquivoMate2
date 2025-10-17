@@ -16,27 +16,30 @@ export class SignalrService {
   startConnection(hubUrl: string): Promise<void> {
     console.log('Starting SignalR connection to:', hubUrl);
     
+    // Get token once for debugging
+    const initialToken = this.auth.getAccessToken();
+    console.log('🔑 Initial token available:', !!initialToken, 'Token length:', initialToken?.length || 0);
+    
     // Verbesserte Builder-Konfiguration
     this.hubConnection = new HubConnectionBuilder()
       .withUrl(hubUrl, {
-        // Authentication
+        // Authentication: Factory is called for each connection attempt (reconnect-friendly)
         accessTokenFactory: () => {
           const token = this.auth.getAccessToken();
-          console.log('🔑 Providing access token for SignalR:', token ? 'Token available' : 'No token');
+          console.log('🔑 accessTokenFactory called - Token available:', token ? `yes (${token.substring(0, 20)}...)` : 'NO TOKEN');
           return token || '';
         },        
+        // Try WebSocket first, then ServerSentEvents, finally LongPolling
         transport: HttpTransportType.WebSockets | HttpTransportType.ServerSentEvents | HttpTransportType.LongPolling,
-        skipNegotiation: false,
+        skipNegotiation: false, // Allow automatic fallback to other transports on failure
         withCredentials: false,
-        timeout: 30000,
-        headers: {
-          'Authorization': `Bearer ${this.auth.getAccessToken() || ''}`
-        }
+        timeout: 30000
       })
       .configureLogging(LogLevel.Warning) 
       .withAutomaticReconnect([0, 2000, 10000, 30000])
       .build();   
-  this.hubConnection.onclose((error: any) => {
+    
+    this.hubConnection.onclose((error: any) => {
       console.error('SignalR connection closed:', error);
       if (error) {
         console.error('Close error details:', {
@@ -47,7 +50,7 @@ export class SignalrService {
       }
     });
 
-  this.hubConnection.onreconnecting((error: any) => {
+    this.hubConnection.onreconnecting((error: any) => {
       console.warn('SignalR reconnecting:', error);
       if (error) {
         console.warn('Reconnecting error details:', {
@@ -57,20 +60,22 @@ export class SignalrService {
       }
     });
 
-  this.hubConnection.onreconnected((connectionId: string | undefined) => {
+    this.hubConnection.onreconnected((connectionId: string | undefined) => {
       console.log('SignalR reconnected with ID:', connectionId);
       // Registriere Handler nach Reconnect erneut
       this.registerPendingHandlers();
       // Event-Handler müssen nach Reconnect erneut registriert werden
       this.onReconnected?.();
-    });    return this.hubConnection
+    });
+    
+    return this.hubConnection
       .start()
       .then(() => {
-       
+        console.log('✅ SignalR connection established');
         // Registriere zwischengespeicherte Handler
         this.registerPendingHandlers();
       })
-  .catch((err: any) => {
+      .catch((err: any) => {
         console.error('❌ SignalR Connection Error: ', err);
         console.error('🔍 Error details:', {
           message: err.message,
@@ -80,8 +85,11 @@ export class SignalrService {
           transport: err.transport,
           // Zusätzliche Debug-Informationen
           hasToken: !!this.auth.getAccessToken(),
-          tokenLength: this.auth.getAccessToken()?.length || 0
+          tokenLength: this.auth.getAccessToken()?.length || 0,
+          tokenSample: this.auth.getAccessToken()?.substring(0, 50)
         });
+        // Re-throw to allow caller to handle
+        throw err;
       });
   }
 

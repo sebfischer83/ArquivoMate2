@@ -33,6 +33,11 @@
                 "glob": "**/*",
                 "input": "node_modules/@taiga-ui/icons/src",
                 "output": "assets/taiga-ui/icons/"
+              },
+              {
+                "glob": "**/*",
+                "input": "node_modules/pdfjs-dist/build",
+                "output": "assets/pdfjs"
               }
             ],
             "styles": [
@@ -42,7 +47,8 @@
               "node_modules/filepond/dist/filepond.min.css"
             ],
             "allowedCommonJsDependencies": [
-              "filepond"
+              "filepond",
+              "pdfjs-dist"
             ]
           },
           "configurations": {

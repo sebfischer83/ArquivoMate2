@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { UploadWidgetComponent } from './upload-widget.component';
 import { DocumentCardGridComponent } from '../../../components/document-card-grid/document-card-grid.component';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 
 @Component({
@@ -17,6 +18,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class DashboardComponent {
   private facade = inject(DocumentsFacadeService);
+  private router = inject(Router);
   documents = this.facade.documents;
   total = this.facade.totalCount;
   isLoading = this.facade.isLoading;
@@ -35,8 +37,9 @@ export class DashboardComponent {
   onPageSizeChange(s: number) { this.facade.setPageSize(s); }
   onReload() { this.facade.load(true); }
   onItemClick(doc: any) {
-    // placeholder for navigation or detail view integration
-    console.debug('Document clicked', doc?.id);
+    if (doc?.id) {
+      this.router.navigate(['/app/document', doc.id]);
+    }
   }
 
   onSearchInput(val: string) { this.searchValue = val; this.facade.setSearchTerm(val.trim()); }

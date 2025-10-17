@@ -4,13 +4,14 @@ import { CommonModule } from '@angular/common';
 import { TuiLoader, TuiSurface } from '@taiga-ui/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Subject } from 'rxjs';
+import { OAuthService } from 'angular-oauth2-oidc';
 
 // pdf.js imports
-import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy, type PDFPageProxy } from 'pdfjs-dist';
-// NOTE: pdfjs-dist v5 ESM build no longer provides a default export when using ?url in Angular CLI.
-// We compute the worker script URL via import.meta.url so the bundler rewrites it correctly.
-// This avoids relying on a synthetic default export that does not exist.
-const pdfWorkerUrl: string = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+import * as pdfjsLib from 'pdfjs-dist';
+import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
+
+// Worker wird aus den kopierten Assets geladen
+const pdfWorkerUrl = '/assets/pdfjs/pdf.worker.min.mjs';
 
 declare const window: any;
 
@@ -37,6 +38,7 @@ export class PdfJsViewerComponent implements OnDestroy, AfterViewInit {
 
   private sanitizer = inject(DomSanitizer);
   private transloco = inject(TranslocoService);
+  private auth = inject(OAuthService);
 
   @Input() set src(url: string | null) {
     if (!url) {
@@ -84,6 +86,7 @@ export class PdfJsViewerComponent implements OnDestroy, AfterViewInit {
 
   private pdfDoc: PDFDocumentProxy | null = null;
   private currentPage: PDFPageProxy | null = null;
+  private currentRenderTask: any = null; // RenderTask von pdfjs
   @ViewChild('canvasEl', { static: true }) private canvasRef?: ElementRef<HTMLCanvasElement>;
   @ViewChild('wrapper', { static: true }) private wrapperRef?: ElementRef<HTMLElement>;
   private rendering = false;
@@ -113,6 +116,16 @@ export class PdfJsViewerComponent implements OnDestroy, AfterViewInit {
   }
 
   private clearDoc() {
+    // Laufenden Render-Task abbrechen
+    if (this.currentRenderTask) {
+      try {
+        this.currentRenderTask.cancel();
+      } catch (e) {
+        // Ignore cancellation errors
+      }
+      this.currentRenderTask = null;
+    }
+    
     this.pdfDoc = null;
     this.currentPage = null;
     const c = this.canvasRef?.nativeElement;
@@ -123,9 +136,9 @@ export class PdfJsViewerComponent implements OnDestroy, AfterViewInit {
   }
 
   private ensureWorker() {
-    if (!GlobalWorkerOptions.workerSrc) {
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
       // Assign resolved URL only once. (Type expects string)
-      GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
     }
   }
 
@@ -133,7 +146,21 @@ export class PdfJsViewerComponent implements OnDestroy, AfterViewInit {
     this.loading.set(true);
     this.error.set(null);
     this.ensureWorker();
-    const task = getDocument({ url });
+    
+    // Bearer Token für PDF.js Request hinzufügen
+    const token = this.auth.getAccessToken();
+    const httpHeaders: Record<string, string> = {};
+    
+    if (token) {
+      httpHeaders['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const task = pdfjsLib.getDocument({ 
+      url,
+      httpHeaders,
+      withCredentials: false // Bearer Token wird verwendet, nicht Cookies
+    });
+    
     task.promise.then((doc: PDFDocumentProxy) => {
       this.pdfDoc = doc;
       this.totalPages.set(doc.numPages);
@@ -147,41 +174,81 @@ export class PdfJsViewerComponent implements OnDestroy, AfterViewInit {
     });
   }
 
-  private renderPage() {
+  private async renderPage() {
     if (!this.pdfDoc) return;
+    
+    // Abbrechen eines laufenden Render-Tasks und warten bis Cancellation abgeschlossen ist
+    if (this.currentRenderTask) {
+      try {
+        this.currentRenderTask.cancel();
+        // Warten bis das Promise rejected wird (Cancellation abgeschlossen)
+        await this.currentRenderTask.promise.catch(() => {
+          // Cancellation errors ignorieren
+        });
+      } catch (e) {
+        // Ignore cancellation errors
+      }
+      this.currentRenderTask = null;
+    }
+    
     const pageNum = this.pageIndex();
     this.rendering = true;
-    this.pdfDoc.getPage(pageNum).then((page: PDFPageProxy) => {
+    
+    try {
+      const page: PDFPageProxy = await this.pdfDoc.getPage(pageNum);
       this.currentPage = page;
+      
       // Combine intrinsic page rotation with user rotation (if any)
       let effectiveRotation = (page.rotate + this.rotation()) % 360;
       if (this.normalizeUpsideDown && effectiveRotation === 180) {
         effectiveRotation = 0;
       }
+      
       const wrapperEl = this.wrapperRef?.nativeElement;
       const baseViewport = page.getViewport({ scale: 1, rotation: effectiveRotation });
       const scale = this.computeScale(baseViewport.width, baseViewport.height, wrapperEl);
-  const viewport = page.getViewport({ scale, rotation: effectiveRotation });
-  this.lastScale.set(scale);
+      const viewport = page.getViewport({ scale, rotation: effectiveRotation });
+      this.lastScale.set(scale);
+      
       const canvas = this.canvasRef!.nativeElement;
       const ctx = canvas.getContext('2d');
-  canvas.height = viewport.height;
-  canvas.width = viewport.width;
-  // Also set CSS size so that intrinsic pixel size maps 1:1 unless browser scales
-  canvas.style.width = `${viewport.width}px`;
-  canvas.style.height = `${viewport.height}px`;
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+      // Also set CSS size so that intrinsic pixel size maps 1:1 unless browser scales
+      canvas.style.width = `${viewport.width}px`;
+      canvas.style.height = `${viewport.height}px`;
+      
       if (!ctx) {
         this.rendering = false;
         return;
       }
-      const renderTask = page.render({ canvasContext: ctx, canvas, viewport });
-      renderTask.promise.then(() => {
+      
+      this.currentRenderTask = page.render({ canvasContext: ctx, canvas, viewport });
+      
+      try {
+        await this.currentRenderTask.promise;
+        this.currentRenderTask = null;
         this.rendering = false;
+        
+        // Pending page nach erfolgreichem Render verarbeiten
         if (this.pendingPage !== null) {
-          const p = this.pendingPage; this.pendingPage = null; this.pageIndex.set(p); this.renderPage();
+          const p = this.pendingPage;
+          this.pendingPage = null;
+          this.pageIndex.set(p);
+          this.renderPage();
         }
-      });
-    });
+      } catch (err: any) {
+        // Ignore cancellation errors
+        if (err?.name !== 'RenderingCancelledException') {
+          console.error('Render error:', err);
+        }
+        this.currentRenderTask = null;
+        this.rendering = false;
+      }
+    } catch (err) {
+      console.error('Error getting page:', err);
+      this.rendering = false;
+    }
   }
 
   /**

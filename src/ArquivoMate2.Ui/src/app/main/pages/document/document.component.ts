@@ -95,7 +95,7 @@ export class DocumentComponent implements OnInit {
     // Resolver supplies data under 'document'
     const resolved: DocumentDto | null | undefined = this.route.snapshot.data['document'];
     if (resolved) {
-      console.log(resolved);
+      // console.log(resolved);
       this.document.set(resolved);
       this.updateSafePreview();
       this.history.set(resolved.history ?? []);

@@ -45,6 +45,8 @@ namespace ArquivoMate2.Infrastructure.Configuration.Auth
 
         public string Authority { get; set; } = string.Empty;
         public required string Issuer { get; set; }
+
+        public string? CookieDomain { get; set; }
     }
 
     public enum AuthType

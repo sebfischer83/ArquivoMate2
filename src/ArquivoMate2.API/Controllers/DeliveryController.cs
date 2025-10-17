@@ -4,6 +4,7 @@ using ArquivoMate2.Domain.Document;
 using ArquivoMate2.Domain.ValueObjects;
 using ArquivoMate2.Domain.ReadModels;
 using ArquivoMate2.Shared.Models; // DocumentArtifact
+using ArquivoMate2.Shared.Models.Sharing;
 using Marten;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,68 +15,85 @@ using System.Text;
 using System.Text.Json;
 using ArquivoMate2.API.Results;
 using ArquivoMate2.API.Utilities;
-using Microsoft.Extensions.Logging; // added
+using Microsoft.Extensions.Logging;
 
 namespace ArquivoMate2.API.Controllers
 {
     [ApiController]
-    [AllowAnonymous] // Access controlled solely via signed token
+    [Authorize]
     [Route("api/delivery")]
     public class DeliveryController : ControllerBase
     {
         private readonly IQuerySession _query;
         private readonly IStorageProvider _storage;
         private readonly IDocumentArtifactStreamer _streamer;
-        private readonly IFileAccessTokenService _tokenService;
         private readonly IEncryptionService _encryption;
         private readonly EncryptionSettings _settings;
         private readonly IAppCache _cache;
-        private readonly ILogger<DeliveryController> _logger; // added
-        private const int OneYearSeconds = 31536000; // 365 * 24 * 60 * 60
+        private readonly ICurrentUserService _currentUserService;
+        private readonly ILogger<DeliveryController> _logger;
+        private const int PrivateCacheSeconds = 86400; // 24h for user-scoped responses
 
         public DeliveryController(IQuerySession query,
             IStorageProvider storage,
             IDocumentArtifactStreamer streamer,
-            IFileAccessTokenService tokenService,
             IEncryptionService encryption,
             IOptions<EncryptionSettings> settings,
             IAppCache cache,
-            ILogger<DeliveryController> logger) // added
+            ICurrentUserService currentUserService,
+            ILogger<DeliveryController> logger)
         {
             _query = query;
             _storage = storage;
             _streamer = streamer;
-            _tokenService = tokenService;
             _encryption = encryption;
             _settings = settings.Value;
             _cache = cache;
-            _logger = logger; // added
+            _currentUserService = currentUserService;
+            _logger = logger;
         }
 
         /// <summary>
-        /// Delivers an (optionally encrypted) artifact for a document when a valid access token is supplied.
+        /// Delivers an (optionally encrypted) artifact for a document when the authenticated owner requests it.
         /// </summary>
         /// <param name="documentId">Identifier of the document to deliver.</param>
         /// <param name="artifact">Which artifact to return (file, preview, thumb, metadata, archive).</param>
-        /// <param name="token">Signed access token that authorizes delivery of the requested artifact.</param>
         /// <param name="ct">Cancellation token for the request.</param>
         /// <returns>
         /// A streamed file result that writes the artifact directly into the HTTP response, or NotFound when validation fails
         /// or the artifact cannot be retrieved / decrypted.
         /// </returns>
         [HttpGet("{documentId:guid}/{artifact}")]
-        public async Task<IActionResult> Get(Guid documentId, DocumentArtifact artifact, [FromQuery] string token, CancellationToken ct)
+        public async Task<IActionResult> Get(Guid documentId, DocumentArtifact artifact, CancellationToken ct)
         {
-            // Validate token first
-            if (!_tokenService.TryValidate(token, out var tDoc, out var tArtifactStr) || tDoc != documentId)
-                return NotFound();
-            if (!DocumentArtifactExtensions.TryParse(tArtifactStr, out var tokenArtifact) || tokenArtifact != artifact)
-                return NotFound();
-
             var view = await _query.Query<DocumentView>()
                 .Where(d => d.Id == documentId && !d.Deleted)
                 .FirstOrDefaultAsync(ct);
             if (view == null) return NotFound();
+
+            var isAuthenticated = User?.Identity?.IsAuthenticated ?? false;
+            if (!isAuthenticated)
+            {
+                return Unauthorized();
+            }
+
+            var currentUserId = _currentUserService.GetUserIdByClaimPrincipal(User);
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return Unauthorized();
+            }
+            if (!string.Equals(view.UserId, currentUserId, StringComparison.Ordinal))
+            {
+                var accessView = await _query.LoadAsync<DocumentAccessView>(documentId, ct);
+                var hasReadShare = accessView?.EffectiveUserPermissions != null &&
+                                   accessView.EffectiveUserPermissions.TryGetValue(currentUserId ?? string.Empty, out var granted) &&
+                                   granted.HasFlag(DocumentPermissions.Read);
+
+                if (!hasReadShare)
+                {
+                    return NotFound();
+                }
+            }
 
             string? fullPath = artifact switch
             {
@@ -185,13 +203,13 @@ namespace ArquivoMate2.API.Controllers
         }
 
         /// <summary>
-        /// Adds cache headers to the HTTP response instructing clients and proxies to cache the response
-        /// for one year and treat it as immutable. Used for delivered artifacts (stable content).
+        /// Adds private cache headers to the HTTP response so browsers can reuse the artifact
+        /// for a short period while keeping it scoped to the authenticated user.
         /// </summary>
         private void ApplyClientCacheHeaders()
         {
-            Response.Headers["Cache-Control"] = $"public, max-age={OneYearSeconds}, immutable";
-            Response.Headers["Expires"] = DateTime.UtcNow.AddSeconds(OneYearSeconds).ToString("R");
+            Response.Headers["Cache-Control"] = $"private, max-age={PrivateCacheSeconds}";
+            Response.Headers["Expires"] = DateTime.UtcNow.AddSeconds(PrivateCacheSeconds).ToString("R");
 
             // Help browsers/CDNs accept cross-origin embedding/fetching of delivered artifacts.
             // If an Origin header is present, echo it explicitly; otherwise allow all origins.

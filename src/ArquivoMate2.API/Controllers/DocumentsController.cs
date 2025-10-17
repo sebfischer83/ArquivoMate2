@@ -39,7 +39,6 @@ namespace ArquivoMate2.API.Controllers
         private readonly IStringLocalizer<DocumentsController> _localizer;
         private readonly IDocumentAccessService _documentAccessService;
         private readonly IFileAccessTokenService _tokenService; // Issues signed delivery tokens
-        private readonly EncryptionSettings _encryptionSettings; // Encryption feature configuration
         private readonly AppSettings _appSettings; // Global application configuration
 
         // ActivitySource for tracing this controller. OpenTelemetry will pick up activities started from this source.
@@ -56,7 +55,6 @@ namespace ArquivoMate2.API.Controllers
             IStringLocalizer<DocumentsController> localizer,
             IDocumentAccessService documentAccessService,
             IFileAccessTokenService tokenService,
-            EncryptionSettings encryptionSettings,
             AppSettings appSettings)
         {
             _mediator = mediator;
@@ -66,7 +64,6 @@ namespace ArquivoMate2.API.Controllers
             _localizer = localizer;
             _documentAccessService = documentAccessService;
             _tokenService = tokenService;
-            _encryptionSettings = encryptionSettings;
             _appSettings = appSettings;
         }
 
@@ -136,7 +133,7 @@ namespace ArquivoMate2.API.Controllers
                             .Where(d => d.Id == id && !d.Deleted)
                             .FirstOrDefaultAsync(cancellationToken);
                         var mapped = _mapper.Map<DocumentDto>(document);
-                        if (document!.Encrypted) ApplyDeliveryTokens(mapped);
+                        if (document!.Encrypted) ApplyDeliveryUrls(mapped);
                         return Ok(mapped);
                     case PatchResult.Forbidden:
                         return Forbid(_localizer.GetString("Some fields are not allowed to update.").Value);
@@ -170,8 +167,7 @@ namespace ArquivoMate2.API.Controllers
             {
                 if (item.Encrypted && !string.IsNullOrEmpty(item.ThumbnailPath))
                 {
-                    // Use UploadedAt from list item as the stable anchor for token expiry
-                    item.ThumbnailPath = BuildDeliveryUrl(item.Id, "thumb", item.UploadedAt);
+                    item.ThumbnailPath = BuildDeliveryUrl(item.Id, "thumb");
                 }
                 return item;
             }).ToList();
@@ -234,7 +230,7 @@ namespace ArquivoMate2.API.Controllers
             var documentDto = result.Document;
             if (documentDto.Encrypted)
             {
-                ApplyDeliveryTokens(documentDto);
+                ApplyDeliveryUrls(documentDto);
             }
 
             return Ok(documentDto);
@@ -285,68 +281,26 @@ namespace ArquivoMate2.API.Controllers
         }
 
         /// <summary>
-        /// Applies signed delivery URLs to encrypted document artifacts so they can be fetched securely.
+        /// Applies delivery URLs to encrypted document artifacts so they can be fetched securely by an authenticated client.
         /// </summary>
-        private void ApplyDeliveryTokens(DocumentDto dto)
+        private void ApplyDeliveryUrls(DocumentDto dto)
         {
-            // Compute a stable base timestamp for the token so the generated token remains identical
-            // across multiple calls until the token expiry. Use ProcessedAt when available, otherwise UploadedAt.
-            var baseTimestamp = dto.ProcessedAt ?? dto.UploadedAt;
-
-            dto.FilePath = string.IsNullOrEmpty(dto.FilePath) ? dto.FilePath : BuildDeliveryUrl(dto, "file", baseTimestamp);
-            dto.PreviewPath = string.IsNullOrEmpty(dto.PreviewPath) ? dto.PreviewPath : BuildDeliveryUrl(dto, "preview", baseTimestamp);
-            dto.ThumbnailPath = string.IsNullOrEmpty(dto.ThumbnailPath) ? dto.ThumbnailPath : BuildDeliveryUrl(dto, "thumb", baseTimestamp);
-            dto.MetadataPath = string.IsNullOrEmpty(dto.MetadataPath) ? dto.MetadataPath : BuildDeliveryUrl(dto, "metadata", baseTimestamp);
-            dto.ArchivePath = string.IsNullOrEmpty(dto.ArchivePath) ? dto.ArchivePath : BuildDeliveryUrl(dto, "archive", baseTimestamp);
+            dto.FilePath = string.IsNullOrEmpty(dto.FilePath) ? dto.FilePath : BuildDeliveryUrl(dto.Id, "file");
+            dto.PreviewPath = string.IsNullOrEmpty(dto.PreviewPath) ? dto.PreviewPath : BuildDeliveryUrl(dto.Id, "preview");
+            dto.ThumbnailPath = string.IsNullOrEmpty(dto.ThumbnailPath) ? dto.ThumbnailPath : BuildDeliveryUrl(dto.Id, "thumb");
+            dto.MetadataPath = string.IsNullOrEmpty(dto.MetadataPath) ? dto.MetadataPath : BuildDeliveryUrl(dto.Id, "metadata");
+            dto.ArchivePath = string.IsNullOrEmpty(dto.ArchivePath) ? dto.ArchivePath : BuildDeliveryUrl(dto.Id, "archive");
         }
 
         /// <summary>
-        /// Builds a signed delivery URL for a specific document artifact.
+        /// Builds a delivery URL for a specific document artifact served by the API.
         /// </summary>
-        private string BuildDeliveryUrl(DocumentDto dto, string artifact, DateTime baseTimestamp)
+        private string BuildDeliveryUrl(Guid documentId, string artifact)
         {
-            // Deterministic expiry: anchor expiry to the document's processed/uploaded timestamp.
-            // If the anchored expiry is already in the past, move to the next TTL window so the token stays valid
-            // while remaining deterministic for the current window.
-            var expires = ComputeWindowedExpiry(baseTimestamp);
-            var token = _tokenService.Create(dto.Id, artifact, expires);
             var baseUrl = !string.IsNullOrWhiteSpace(_appSettings.PublicBaseUrl)
                 ? _appSettings.PublicBaseUrl!.TrimEnd('/')
                 : ($"{Request.Scheme}://{Request.Host}");
-            return $"{baseUrl}/api/delivery/{dto.Id}/{artifact}?token={Uri.EscapeDataString(token)}";
-        }
-
-        // Overload for list mapping when only an Id and a base timestamp (UploadedAt) is available
-        private string BuildDeliveryUrl(Guid documentId, string artifact, DateTime baseTimestamp)
-        {
-            var expires = ComputeWindowedExpiry(baseTimestamp);
-            var token = _tokenService.Create(documentId, artifact, expires);
-            var baseUrl = !string.IsNullOrWhiteSpace(_appSettings.PublicBaseUrl)
-                ? _appSettings.PublicBaseUrl!.TrimEnd('/')
-                : ($"{Request.Scheme}://{Request.Host}");
-            return $"{baseUrl}/api/delivery/{documentId}/{artifact}?token={Uri.EscapeDataString(token)}";
-        }
-
-        // Compute an expiry anchored to baseTimestamp but ensure it is in the future by advancing
-        // to the next token TTL window when necessary. This keeps tokens deterministic per window.
-        private DateTimeOffset ComputeWindowedExpiry(DateTime baseTimestamp)
-        {
-            var anchor = DateTime.SpecifyKind(baseTimestamp, DateTimeKind.Utc);
-            var windowSeconds = Math.Max(1, _encryptionSettings.TokenTtlMinutes) * 60L;
-            var anchorUnix = new DateTimeOffset(anchor).ToUnixTimeSeconds();
-            var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-            // initial candidate expiry = anchor + one window
-            var expiresUnix = anchorUnix + windowSeconds;
-
-            if (expiresUnix <= nowUnix)
-            {
-                // advance to the next window that lies in the future
-                var windowsElapsed = (nowUnix - anchorUnix) / windowSeconds;
-                expiresUnix = anchorUnix + (windowsElapsed + 1) * windowSeconds;
-            }
-
-            return DateTimeOffset.FromUnixTimeSeconds(expiresUnix);
+            return $"{baseUrl}/api/delivery/{documentId}/{artifact}";
         }
 
         /// <summary>

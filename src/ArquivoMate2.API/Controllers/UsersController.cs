@@ -1,10 +1,14 @@
 using System.Collections.Generic;
+using System.Security.Claims;
 using ArquivoMate2.Application.Commands.Users;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Queries.Users;
 using ArquivoMate2.Shared.ApiModels;
 using ArquivoMate2.Shared.Models.Users;
 using MediatR;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -43,11 +47,21 @@ public class UsersController : ControllerBase
     ///     Synchronises the authenticated user with the application store.
     /// </summary>
     [HttpPost("login")]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<UserDto>))]
-    public async Task<ActionResult<ApiResponse<UserDto>>> Upsert([FromBody] UpsertUserRequest request, CancellationToken cancellationToken)
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> LoginToCookie()
     {
-        var result = await _mediator.Send(new UpsertUserCommand(_currentUserService.UserId, request.Name), cancellationToken);
-        return Ok(result);
+        var cookieIdentity = new ClaimsIdentity(User.Claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(cookieIdentity);
+
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, new AuthenticationProperties
+        {
+            IsPersistent = true,
+            AllowRefresh = true,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+        });
+
+        return NoContent();
     }
 
     /// <summary>

@@ -1,36 +1,37 @@
 # Key Backup Process
 
-This guide describes how ArquivoMate safeguards workspace encryption keys and ensures that administrators can recover data during an incident.
+## Summary
+ArquivoMate safeguards workspace encryption keys through hardware-backed storage, encrypted recovery kits, and disciplined backup procedures. This document explains how administrators maintain recoverability during incidents.
 
-## Primary Protection
+## Current Status
+Managed HSM clusters protect master keys in production. Recovery kits and recurring validation jobs are implemented; work on an optional universal recovery key is tracked separately.
 
-- **Hardware Security Module (HSM):** Workspace master keys are generated and stored inside the managed HSM cluster. Application services request short-lived data-encryption keys from the HSM rather than handling the master key directly.
-- **Event store metadata:** Whenever a document is ingested, its data-encryption key (DEK) is wrapped with the workspace master key and persisted alongside the document metadata. Without these wrap records the DEK cannot be reconstructed.
+## Key Components
+- **Hardware Security Module (HSM):** Generates and stores workspace master keys. Application services request short-lived data-encryption keys from the HSM rather than handling the master key directly.
+- **Event Store Metadata:** Each ingestion wraps the document-specific DEK with the master key and persists the wrap record for later decryption.
+- **Recovery Kit:** An encrypted bundle created during provisioning that contains the wrapped master key, integrity metadata, and checksums.
 
-## Recovery Kit
-
-- **Kit contents:** During workspace provisioning, the platform generates an encrypted recovery kit that contains the wrapped master key, integrity metadata, and validation checksums.
-- **Access controls:** The kit is protected by an administrator-defined passphrase and requires a secondary factor (hardware token or TOTP) to unlock.
-- **Distribution:** Organizations are encouraged to store the kit in a dedicated secrets vault separate from the production environment to reduce the impact of compromise.
-
-## Ongoing Validation
-
-- **Scheduled drills:** Automated jobs attempt to decrypt the recovery kit on a recurring schedule. Failures trigger alerts so administrators can rotate credentials or reissue the kit.
-- **Inventory tracking:** The platform records which administrators have confirmed receipt of the kit and prompts them for periodic acknowledgements.
+## Process Flow
+1. Provisioning creates the recovery kit, encrypts it with an admin-specified passphrase, and enforces a secondary factor (hardware token or TOTP) for unlock.
+2. Administrators store the kit in a dedicated secrets vault isolated from production.
+3. Scheduled validation jobs attempt to decrypt the kit; failures raise alerts for credential rotation or kit reissuance.
+4. Inventory tracking records which administrators acknowledge possession of the kit and reminds them periodically.
 
 ## Restoration Workflow
+1. An authorised administrator starts the recovery flow and uploads the kit.
+2. The system unlocks the kit with the passphrase plus secondary factor.
+3. Workspace master keys rotate; stored DEKs are unwrapped with the recovered key and re-wrapped with the new key.
+4. Services revoke active tokens so only re-authenticated users access the restored content.
 
-1. A new administrator signs in and initiates the recovery flow.
-2. The recovery kit is uploaded and unlocked with the passphrase and secondary factor.
-3. The system rotates the workspace master key, unwraps the stored DEKs with the recovered key, and re-wraps them with the rotated key.
-4. Services invalidate existing access tokens to ensure that only re-authenticated users can access restored content.
+## Operational Guidance
+- Maintain separate storage locations for database backups and recovery kits.
+- Export the event store regularly to preserve all DEK wrap records.
+- Run restoration drills that decrypt sample documents, confirming that backups and keys remain usable.
 
-## Backup Strategy
+## Future Improvements
+- Introduce multi-wrap support for a universal recovery key (see `docs/EncryptionRecoveryKey.md`).
+- Automate evidence collection for compliance audits (e.g., signed drill reports).
 
-Until a universal recovery key is introduced, ArquivoMate relies on comprehensive backups to guarantee recoverability:
-
-- **Database backups:** Regular exports of the event store preserve all DEK wrap records required to decrypt documents.
-- **Secure storage:** Master keys and recovery kits are stored separately from database backups, ideally in geographically distinct facilities.
-- **Restoration tests:** Routine exercises confirm that a combination of backups and stored keys can decrypt sample documents, providing early warning of missing or corrupted data.
-
-Following these practices ensures that encrypted content remains recoverable even if primary administrators lose access to the workspace.
+## References
+- `src/ArquivoMate2.Infrastructure/Encryption`
+- `docs/EncryptionRecoveryKey.md`

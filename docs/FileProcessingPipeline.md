@@ -1,35 +1,46 @@
 # File Processing Pipeline
 
-This guide explains how ArquivoMate processes PDF files and images today, and outlines the path to support Office documents in future releases.
+## Summary
+ArquivoMate processes uploaded files through a multi-stage pipeline that ensures validation, normalization, encryption, and indexing. This guide documents the current state for PDFs and images and outlines the work required to support Office documents.
 
-## Current Workflow for PDFs
+## Current Status
+PDF and image processing are production-ready. Office document support is planned and shares the same pipeline principles but still requires conversion and extraction services.
 
-1. **Upload:** Users submit PDFs through the web client or API. Each upload includes metadata such as document owner, workspace, and retention policy.
-2. **Validation:** The service verifies the MIME type and ensures that the file is free of malware using the antivirus scanning service.
-3. **Normalization:** PDFs are normalized to PDF/A when possible to guarantee long-term readability. Non-conforming files are flagged for manual review.
-4. **Text extraction:** The document passes through the text extraction service that uses OCR when embedded text is unavailable. Extracted content feeds the search index.
-5. **Encryption and storage:** The normalized PDF and its metadata are encrypted with the workspace key and stored in the object repository.
-6. **Indexing and notification:** Metadata and extracted text are indexed for search. Subscribers are notified about the new document via webhooks and in-app alerts.
+## Key Components
+- **Upload services:** Accept files via the web client or API along with ownership, workspace, and retention metadata.
+- **Validation:** Enforce MIME-type checks, antivirus scanning, and workspace-specific file policies.
+- **Normalization/OCR:** Convert content to archival formats, extract text, and run OCR when needed.
+- **Encryption and Storage:** Encrypt processed artifacts and metadata with the workspace key before writing to object storage.
+- **Indexing and Notifications:** Publish metadata and extracted text to the search index and emit webhooks/in-app alerts.
 
-## Current Workflow for Images
+## Process Flow
+### PDFs
+1. Upload with metadata.
+2. Validate MIME type and scan for malware.
+3. Normalize to PDF/A when possible; flag exceptions for review.
+4. Extract text (using OCR when embedded text is missing).
+5. Encrypt and store the normalized PDF and metadata.
+6. Index the content and notify subscribers.
 
-1. **Upload:** Supported formats (JPEG, PNG, TIFF) are uploaded with contextual metadata.
-2. **Validation:** The antivirus service scans the image. The system also checks the file dimensions and size against workspace policies.
-3. **Pre-processing:** Images are normalized to an archival format (lossless PNG) and orientation is corrected using EXIF data when available.
-4. **OCR:** The OCR pipeline detects text regions and extracts machine-readable content. The output is attached as alternate text for accessibility and indexing.
-5. **Encryption and storage:** The processed image and OCR results are encrypted with the workspace key and stored in the object repository.
-6. **Indexing and notification:** Metadata and OCR text are indexed. Consumers subscribed to the workspace receive notifications about the new asset.
+### Images
+1. Upload supported formats (JPEG, PNG, TIFF) with metadata.
+2. Run antivirus scanning and enforce size/dimension policies.
+3. Normalize to archival PNG and correct orientation using EXIF data.
+4. Execute OCR to extract machine-readable text for accessibility and indexing.
+5. Encrypt and store the processed image plus OCR results.
+6. Index metadata and OCR text, then notify subscribers.
 
-## Enabling Office Document Support
+## Future Enhancements
+To extend support to Office documents (Word, Excel, PowerPoint):
+1. Improve file-type detection and validate digital signatures when present.
+2. Integrate a headless conversion service (e.g., LibreOffice) to render Office files into PDF/A or HTML for downstream processing.
+3. Implement format-specific parsers that output a unified schema (text, tables, slides) for indexing.
+4. Preserve change tracking, comments, and other revision metadata while enforcing redaction policies.
+5. Encrypt both the converted output and the original file, storing each for reprocessing or download scenarios.
+6. Index structured content (titles, spreadsheet cells, slide notes) and reuse existing webhook notifications.
+7. Update governance policies to incorporate new metadata fields and digital-signature validation results.
 
-To extend the pipeline to Office documents (Word, Excel, PowerPoint), ArquivoMate can follow these steps:
-
-1. **File type detection:** Enhance the upload validator to recognize Office MIME types and verify digital signatures when present.
-2. **Conversion service:** Integrate a headless conversion engine (such as LibreOffice in server mode) to transform Office files into PDF/A or HTML. This ensures consistency with existing archival and OCR steps.
-3. **Content extraction:** Use format-specific parsers to extract structured content (text, tables, slides) and convert it into a unified schema for indexing.
-4. **Change tracking preservation:** Store revision history and comments where available to maintain auditability. Sensitive fields should be redacted according to workspace policies.
-5. **Encryption and storage:** Encrypt the converted output and original Office file with the workspace key. Store both versions to support future reprocessing and downloads.
-6. **Indexing and notification:** Index structured data such as document titles, spreadsheet cell values, and presentation slide notes. Notify subscribers using the existing webhook infrastructure.
-7. **Governance updates:** Update compliance rules to account for new metadata fields, retention policies, and digital signature validation results.
-
-Implementing these enhancements reuses the established pipeline while adding the conversion and extraction capabilities required for Office formats.
+## References
+- `src/ArquivoMate2.Application/Documents/Commands/UploadDocumentCommand.cs`
+- `src/ArquivoMate2.Infrastructure/DocumentProcessing`
+- `tests/ArquivoMate2.Infrastructure.Tests` (processing pipeline coverage)

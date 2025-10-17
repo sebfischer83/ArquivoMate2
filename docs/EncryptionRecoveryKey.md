@@ -1,35 +1,30 @@
-# Recovery-Key-Unterstützung
+# Recovery-Key Support
 
-## Ausgangssituation
-- Für jedes Artefakt wird beim Speichern ein zufälliger Data Encryption Key (DEK) erzeugt.
-- Der Artefaktinhalt wird ausschließlich mit diesem DEK verschlüsselt.
-- Der DEK wird anschließend genau einmal mit dem konfigurierten Master-Key (`MasterKeyBase64`) per AES-GCM eingewickelt und als `DocumentEncryptionKeysAdded`-Event in der Datenbank gespeichert.
+## Summary
+Each stored document artifact receives a unique data-encryption key (DEK). The artifact content is encrypted solely with this DEK, which is wrapped once with the configured master key (`MasterKeyBase64`) using AES-GCM and recorded in a `DocumentEncryptionKeysAdded` event. Without these event records, the DEK cannot be reconstructed, so the master key alone is insufficient for decrypting artifacts.
 
-Ohne diese Eventdaten lässt sich der DEK nicht rekonstruieren; der Master-Key alleine genügt nicht, um Artefakte zu entschlüsseln.
+## Current Status
+ArquivoMate2 does not currently support a universal recovery key. Only the master key is available, and DEK wraps are persisted exclusively inside the event store. Consequently, a recovery key cannot decrypt artifacts unless corresponding wrap metadata is stored alongside each DEK.
 
-### Reicht ein Recovery-Key alleine aus?
-Nein. Selbst wenn ein zusätzlicher Recovery-Key konfiguriert wäre, benötigt man weiterhin die in der Datenbank gespeicherten Wrap-Informationen (eingewickelter DEK, Nonce, Tag). Ohne diese Metadaten gibt es nichts, was der Recovery-Key entschlüsseln könnte. Damit der Recovery-Key greift, muss der DEK zuvor beim Speichern auch mit diesem Schlüssel eingewickelt und mitsamt den dazugehörigen Parametern persistiert worden sein.
+## Key Concepts
+- **Wrap Metadata:** Every DEK wrap requires the encrypted DEK, the nonce, the authentication tag, and a key identifier. These values reside inside the event payload.
+- **Multiple Wraps:** Supporting an additional recovery key means storing multiple wrap entries per artifact so that either key can decrypt the DEK.
+- **Operational Discipline:** Recovery keys must be protected and rotated with the same care as the master key, and disaster-recovery rehearsals are mandatory.
 
-## Warum ein allgemeiner Recovery-Key heute nicht möglich ist
-Ein universeller Recovery-Key müsste jeden eingewickelten DEK rekonstruieren können. Da aber nur der Master-Key existiert und die DEKs ausschließlich in der Datenbank abgelegt sind, fehlt die dafür notwendige zusätzliche Verpackung bzw. ein alternativer Speicherort.
+## Implementation Requirements
+1. **Configuration:** Extend `EncryptionSettings` with an optional `RecoveryKeyBase64` value.
+2. **Write Path:** When persisting an artifact, wrap the DEK with both the primary master key and the recovery key, generating separate nonces and tags.
+3. **Data Model:** Update `EncryptedArtifactKey` (and the event payload) to hold multiple entries such as `(KeyId, WrappedDek, Nonce, Tag)`.
+4. **Read Path:** Attempt decryption with the primary wrap first; if it fails or the master key is unavailable, select the recovery-key entry by its key identifier.
+5. **Operations:** Define secure storage, rotation, and validation procedures so the recovery key is available and trustworthy during incidents.
 
-## Voraussetzungen, damit ein Recovery-Key funktionieren kann
-Damit ein Recovery-Key praktikabel wird, sind folgende Erweiterungen erforderlich:
+## Operational Guidance for Current Installations
+Until the multi-wrap design is implemented, installations must safeguard the existing metadata:
+1. **Back Up the Event Store:** Regularly export all `DocumentEncryptionKeysAdded` events, including wrap fields. Neither the master key nor a future recovery key can operate without these records.
+2. **Protect Secrets:** Store the master key (and any recovery key once supported) separately from backups in an HSM or secret-management system.
+3. **Maintain Off-site Copies:** Keep at least one encrypted backup outside the production environment to cover disaster scenarios such as fire or ransomware.
+4. **Perform Recovery Drills:** Test decrypting artifacts using the backup plus the master key so missing events or corrupt backups are detected early.
 
-1. **Konfiguration erweitern** – Ergänzung von `EncryptionSettings` um einen optionalen Recovery-Key (`RecoveryKeyBase64`).
-2. **Key-Wraps verdoppeln** – Beim Speichern muss der DEK sowohl mit dem primären Master-Key als auch mit dem Recovery-Key eingewickelt werden. Beide Wraps benötigen eigene Nonces und Tags.
-3. **Datenmodell anpassen** – `EncryptedArtifactKey` (bzw. die Event-Payload) muss mehrere Wrap-Einträge verwalten können, z. B. `(KeyId, WrappedDek, Nonce, Tag)`.
-4. **Lesepfad erweitern** – Beim Entschlüsseln zunächst den primären Wrap verwenden; schlägt dies fehl oder ist der Master-Key verloren, muss der Recovery-Key anhand seiner Key-ID ausgewählt werden.
-5. **Betriebliche Prozesse** – Sicherer Umgang mit dem Recovery-Key (Aufbewahrung, Rotation, Tests), damit er im Ernstfall verfügbar ist.
-
-Erst wenn diese Punkte umgesetzt sind, kann ein Recovery-Key Artefakte wiederherstellen. Ohne die notwendigen Eventdaten oder zusätzlichen Wraps bleibt der Master-Key alleine wirkungslos.
-
-## Notfall-Strategien für heutige Installationen
-Bis alle oben genannten Erweiterungen implementiert sind, bleibt nur der Schutz der vorhandenen Wrap-Metadaten. Eine praktikable Notfall-Sicherung sieht deshalb so aus:
-
-1. **Regelmäßige Backups der Event-Store-Datenbank** – Export der `DocumentEncryptionKeysAdded`-Events inklusive aller Wrap-Felder. Ohne diese Daten können weder Master- noch künftige Recovery-Keys wirken.
-2. **Sichere Schlüsselverwahrung** – Den Master-Key (und spätere Recovery-Keys) getrennt von den Backups lagern, z. B. in einem Hardware-Sicherheitsmodul oder einem Secret-Management-System.
-3. **Offsite-Kopie** – Mindestens eine verschlüsselte Kopie der Backups außerhalb der Produktionsumgebung lagern, um Katastrophenszenarien (Brand, Ransomware) abzudecken.
-4. **Wiederherstellungsübungen** – Regelmäßig testen, ob sich aus Backup + Master-Key tatsächlich ein Artefakt entschlüsseln lässt. So fallen fehlende Events oder beschädigte Sicherungen frühzeitig auf.
-
-Auf diese Weise existiert zwar kein universeller Recovery-Key, aber eine vollständige Notfall-Sicherung: Wer die gesicherten Events und den korrekt verwahrten Schlüssel besitzt, kann die DEKs rekonstruieren und damit die Artefakte wieder entschlüsseln.
+## References
+- `src/ArquivoMate2.Domain/Documents/Events/DocumentEncryptionKeysAdded.cs`
+- `src/ArquivoMate2.Infrastructure/Encryption`

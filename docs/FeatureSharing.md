@@ -1,23 +1,35 @@
 # Feature Sharing Overview
 
-This document outlines how ArquivoMate enables secure sharing of documents across workspaces while preserving control over sensitive content.
+## Summary
+ArquivoMate provides secure document sharing across workspaces while keeping ownership, governance, and auditability intact. This guide describes the sharing model, enforcement mechanisms, and lifecycle controls.
 
-## Sharing Model
+## Current Status
+User and group sharing with permission tiers is available in production. Delivery hardening and revocation are enforced server-side; workspace governance policies automatically apply to shared artifacts.
 
-- **Scoped invitations:** Owners can invite individual accounts or groups to access a document. Each invitation is tied to the parent workspace so that retention policies, legal holds, and geographic restrictions remain intact.
-- **Permission tiers:** Sharing supports read-only, comment, and download permissions. The system automatically records who granted each capability and when it was last updated.
-- **Auditable actions:** All changes to sharing state—new invitations, permission edits, and revocations—are written to the audit log. Administrators can filter the log by document, user, or action type.
+## Key Components
+- **DocumentShare aggregate:** Tracks the document ID, owner, share target (user or group), and granted permissions.
+- **DocumentAccessView projection:** Consolidates direct and inherited permissions for quick lookup by the API layer.
+- **Audit logging:** Emits events for share creation, updates, and revocations so administrators can review activity.
 
-## Secure Delivery
+## Process Flow
+1. An owner issues a share invitation scoped to the workspace.
+2. The platform records the chosen permission tier (read, comment, download) and writes an audit event.
+3. Recipients authenticate and redeem signed delivery links that carry expiry metadata.
+4. Maintainers can revoke access at any time, which invalidates existing tokens and updates the audit log.
 
-- **Link hardening:** Shared links are signed with the workspace key and include an expiry timestamp. Recipients must authenticate before a signed link can be redeemed.
-- **Automatic revocation:** Workspace maintainers can revoke a share at any time. The platform immediately invalidates existing links and blocks the issuance of new access tokens for revoked users.
-- **Recipient verification:** The service enforces email-domain allow lists and optional MFA requirements for external recipients to mitigate credential misuse.
+## Operational Guidance
+- **Link Hardening:** Signed delivery links require authentication and expire automatically.
+- **Revocation:** Revoking a share prevents new access tokens and immediately blocks existing ones.
+- **Recipient Controls:** Email-domain allow lists and optional MFA requirements protect against credential abuse.
+- **Governance:** Retention, classification labels, export restrictions, and usage analytics flow from the parent workspace without additional configuration.
+- **Integrations:** Webhooks notify downstream systems when shares are created or revoked, keeping ticketing and SIEM tooling current.
 
-## Governance and Lifecycle
+## Future Improvements
+- Expand permission tiers with granular edit/delete distinctions for external collaborators.
+- Provide admin dashboards that surface anomalous access patterns.
+- Automate periodic reviews for long-lived shares.
 
-- **Policy inheritance:** Shared documents inherit workspace-wide governance, including retention, classification labels, and export restrictions.
-- **Usage insights:** Maintainers can review access analytics, such as last-viewed timestamps and download counts, to confirm that sharing aligns with compliance expectations.
-- **Lifecycle hooks:** Webhooks inform downstream systems when a share is created or revoked so that ticketing and SIEM tooling stay synchronized with document access.
-
-Together these controls allow teams to collaborate on stored content without losing visibility or compromising the security posture of the workspace.
+## References
+- `src/ArquivoMate2.Domain/Sharing`
+- `src/ArquivoMate2.Infrastructure/Services/Sharing`
+- `src/ArquivoMate2.API/Controllers/ShareGroupsController.cs`

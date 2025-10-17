@@ -1,61 +1,51 @@
-# Dokumenten-Chatbot – Architektur- und Umsetzungsleitfaden
+# Document Chatbot Architecture and Implementation Plan
 
-## Zielbild
-Ein Benutzer soll im Web-Client ein Dokument öffnen und anschließend freie Fragen zum Inhalt stellen können. Die Antwort wird live von einem LLM generiert, das den Dokumenttext und optional weitere Metadaten als Kontext erhält. Bestehende Komponenten für Dokumentverarbeitung und die Speicherung der Chatbot-Metadaten bleiben unverändert.
+## Summary
+The goal is to let users open a document in the web client and ask free-form questions about its content. Responses are generated live by a large language model (LLM) that receives the document text and optional metadata as context. Existing document-processing pipelines and chatbot metadata storage remain unchanged.
 
-## Backend-Erweiterungen
-### 1. Domänen- und Application-Layer
-- **Neue Capability:** Ergänze `IChatBot` um eine Methode wie `Task<string> AnswerQuestion(DocumentContext context, string question, CancellationToken ct)` oder führe ein separates Interface `IDocumentQaChatBot` ein, damit `AnalyzeDocumentContent` unverändert bleibt. Die Implementierung soll neben der reinen Frage auch Dokumenttext, Zusammenfassung, Keywords und ggf. Historie entgegennehmen, um das Prompting zu verbessern.
-- **Service-Klasse:** Implementiere einen `DocumentQuestionAnsweringService`, der
-  1. das `DocumentAggregate` bzw. die Read-Model-Projektion lädt,
-  2. den Kontext (Text, Summary, Keywords, Nutzer-Metadaten) vorbereitet,
-  3. `IChatBot.AnswerQuestion` aufruft,
-  4. das Ergebnis (Antwort + verwendete Quellen) zurückgibt.
-- **Caching/Chunking:** Da Dokumente sehr groß sein können, plane ein Chunking (z. B. mit `ISearchClient` für semantische Suche über Absätze) ein, um nur relevante Textteile in den Prompt aufzunehmen.
+## Current Status
+The document describes a proposed architecture; the production system does not yet expose the outlined chatbot endpoints. All components referenced below exist in the solution today, but the chatbot-specific interfaces and services must still be added.
 
-### 2. API-Layer
-- **Controller:** Ergänze `DocumentsController` in `ArquivoMate2.API` um einen `POST /api/documents/{id}/chat`-Endpunkt. Der Request enthält `question` (Pflicht) und optionale Flags (`includeHistory`, `maxSnippets`, etc.). Der Endpoint delegiert an den `DocumentQuestionAnsweringService` und streamt Antworten (Server-Sent Events) oder liefert eine synchrone Antwort. Zusätzlich stelle einen `POST /api/documents/chat`-Endpunkt bereit, damit der Chatbot auch katalogweite Fragen ohne spezifischen Dokumentkontext beantworten und passende Dokument-IDs oder Zählwerte zurückliefern kann.
-- **DTOs:** Lege Request/Response-Datenstrukturen in `ArquivoMate2.Shared` an (z. B. `DocumentQuestionRequestDto`, `DocumentAnswerDto` mit Antworttext, verwendeten Passagen, Modellname). Nutze AutoMapper-Profile, falls nötig. Erweitere die Antwort zusätzlich um optionale `documents` (Liste aus IDs, Titel, Zusammenfassung, Dateigröße) sowie `documentCount`, damit der Client Trefferlisten oder Statistiken anzeigen kann.
-- **Auth & Rate Limiting:** Wiederverwende bestehende AuthZ-Mechanismen (z. B. `[Authorize]`). Füge Rate-Limiting/Metering ein, um Missbrauch zu verhindern.
+## Key Components
 
-### 3. Infrastruktur
-- **OpenAI-Implementierung:** Erweitere `OpenAIChatBot` so, dass die neue Methode Chat-Completion mit System-/User-Messages und JSONl oder Textantwort unterstützt. Nutze die Function-Calling-Tools (`load_document_chunk`), damit das Modell gezielt Dokumentsegmente anfordern kann, bevor es antwortet. Übergebe in der System-/User-Message nur Chunk-IDs plus Positionsbereiche – der eigentliche Text wird ausschließlich über das Tool nachgeladen. Ergänze ein zweites Tool `query_documents`, über das das Modell per Funktionsaufruf den Dokumentkatalog durchsuchen, filtern oder zählen kann. Verwende das Streaming-SDK, falls du SSE im Backend anbietest.
-- **Konfiguration:** Ergänze `ChatBotSettings` (z. B. Max Tokens, Temperatur, Embedding-Modell). Aktualisiere `appsettings` und die `ChatBotSettingsFactory`, damit das neue Verhalten konfigurierbar bleibt.
-- **Vektorsuche (Optional):** Falls Q/A qualitativ nicht reicht, integriere einen Embedding-Service (OpenAI Embeddings oder Azure AI Search). Die erzeugten Vektoren können im bestehenden Meilisearch oder einem dedizierten Vektorstore abgelegt werden.
+### Domain and Application Layer
+- Extend `IChatBot` with a method such as `Task<DocumentAnswerResult> AnswerQuestion(DocumentQuestionContext context, string question, CancellationToken ct)` or introduce a dedicated `IDocumentQuestionChatBot` interface to keep the existing `AnalyzeDocumentContent` flow intact.
+- Implement a `DocumentQuestionAnsweringService` that loads the `DocumentAggregate` or corresponding read model, prepares the context (text, summary, keywords, user metadata), invokes `IChatBot.AnswerQuestion`, and returns the answer plus cited snippets.
+- Plan for deterministic chunking so that only the relevant text is used for prompts. The service can reuse `ISearchClient` or the vector store for semantic retrieval.
 
-## Frontend-Anpassungen (Angular)
-1. **Service:** Erweitere `DocumentsService` um eine Methode `askDocumentQuestion(id: string, request: DocumentQuestionRequestDto)` die den neuen Endpoint konsumiert. Bei Streaming: Nutze `EventSource` oder `RxJS`-Wrapper.
-2. **UI-Komponenten:**
-   - Neue `DocumentChatComponent`, die Frage-Input, Verlauf und Antworten anzeigt.
-   - Wiederverwendung der bestehenden Resolver, um Dokumentdetails (Summary, Keywords) in die Komponente einzuspeisen.
-   - Optional: Clientseitige Konversationsspeicherung, Anzeige der verwendeten Textstellen, Feedback-Buttons.
-3. **State-Management:** Falls NgRx im Projekt genutzt wird, füge Actions/Effects für Frage-/Antwortzyklen hinzu. Alternativ verwende lokale Component State + Services.
-4. **UX-Details:**
-   - Ladeanimation während die Antwort generiert wird.
-   - Fehlerhandling (Timeout, Modell nicht erreichbar).
-   - Hinweis auf Kosten/Datenschutz.
+### API Layer
+- Add `POST /api/documents/{id}/chat` to `DocumentsController` in `ArquivoMate2.API`. The request includes the question and optional flags such as `includeHistory` or `maxSnippets`. The endpoint delegates to the `DocumentQuestionAnsweringService` and can either stream responses (Server-Sent Events) or return a synchronous payload.
+- Expose `POST /api/documents/chat` for catalogue-wide questions that are not tied to a specific document. The response may contain recommended document IDs or aggregate counts.
+- Define DTOs in `ArquivoMate2.Shared` (`DocumentQuestionRequestDto`, `DocumentAnswerDto`) that capture the answer text, cited passages, model name, and optional collections like `documents` or `documentCount`.
+- Reuse existing authorization attributes (e.g., `[Authorize]`) and enforce rate limiting to prevent abuse.
 
-## Sequenzdiagramm (vereinfachte Beschreibung)
-1. UI sendet `POST /api/documents/{id}/chat` mit Frage.
-2. Controller validiert, lädt Dokumentkontext, ruft Service.
-3. Service ermittelt relevante Dokumentteile (ggf. via Suche) und ruft `IChatBot.AnswerQuestion`.
-4. ChatBot-Implementierung baut Prompt, ruft OpenAI (oder anderes LLM) und gibt Antwort zurück.
-5. Service verpackt Antwort, optional mit referenzierten Snippets.
-6. UI zeigt Antwort im Chatverlauf und referenzierte Stellen an.
+### Infrastructure Layer
+- Update `OpenAIChatBot` so that it supports chat completions with system/user messages, streaming responses, and function calling for chunk loading. Provide tools such as `load_document_chunk` and `query_documents` so the model can fetch context lazily.
+- Extend `ChatBotSettings`, `ChatBotSettingsFactory`, and the related configuration (`appsettings`) with parameters for model, max tokens, temperature, and embedding behavior.
+- Optionally integrate embeddings using OpenAI or Azure AI Search. Persist vectors in the existing search infrastructure or a dedicated store to support retrieval-augmented generation (RAG).
 
-## Nicht-funktionale Anforderungen & ToDos
-- **Logging/Tracing:** Protokolliere Prompts (ggf. pseudonymisiert) und Antworten für Monitoring, halte DSGVO-Konformität ein.
-- **Kostenkontrolle:** Hinterlege Limits für maximale Prompt-Länge und Anzahl Tokens.
-- **Testing:**
-  - Unit-Tests für den Service (Prompt-Zusammenstellung, Auswahl der Textsnippets).
-  - Integrationstest mit einem Mock-`IChatBot`.
-  - End-to-End-Test im UI (Cypress) für Frage-Antwort-Fluss.
-- **Security:** Stelle sicher, dass nur berechtigte Benutzer auf Dokumente zugreifen und Fragen stellen dürfen. Prüfe Input Sanitization.
+### Frontend (Angular)
+- Extend `DocumentsService` with `askDocumentQuestion(id: string, request: DocumentQuestionRequestDto)` that calls the new endpoint. Support streaming answers through `EventSource` or RxJS wrappers when SSE is enabled.
+- Introduce a `DocumentChatComponent` that provides question input, history, and answer rendering. Reuse existing resolvers to inject document summaries and keywords.
+- If NgRx is used, add actions/effects for question submission and answer handling. Otherwise maintain the state locally within the component.
+- Provide UX affordances such as loading indicators, error handling for timeouts or unavailable models, and privacy/cost notices.
 
-## Umsetzungsschritte (Roadmap)
-1. Architektur-Review und Festlegung des Prompting-Ansatzes (reine Retrieval vs. RAG).
-2. Backend: Interface anpassen, Service implementieren, Endpoint hinzufügen.
-3. Infrastruktur: OpenAI-Konfiguration erweitern, optional Embeddings/Chunking umsetzen.
-4. Frontend: Service + Komponenten implementieren, UI/UX feintunen.
-5. Tests, Observability, Rollout.
+## Implementation Plan
+1. Conduct an architecture review to finalise the prompting approach (retrieval-only versus full RAG).
+2. Update interfaces, add the service, and implement the new endpoints in the backend.
+3. Extend the infrastructure layer with configuration updates, OpenAI tooling, and optional embedding support.
+4. Build the Angular service and component, ensuring the UI matches the backend contract.
+5. Add observability, complete automated tests, and roll out gradually.
+
+## Non-Functional Considerations
+- **Logging and Tracing:** Capture prompts (with sensitive data removed) and responses for monitoring while remaining GDPR-compliant.
+- **Cost Management:** Enforce limits for prompt length, max tokens, and concurrent conversations.
+- **Testing:** Provide unit tests for prompt assembly, integration tests with a mock `IChatBot`, and end-to-end coverage via Cypress.
+- **Security:** Ensure only authorised users can access documents and ask questions. Sanitize user input before forwarding to the LLM.
+
+## References
+- `src/ArquivoMate2.API/Controllers/DocumentsController.cs`
+- `src/ArquivoMate2.Application` (service layer)
+- `src/ArquivoMate2.Infrastructure/ChatBot/OpenAIChatBot.cs`
+- `src/ArquivoMate2.Web` (Angular client)
 

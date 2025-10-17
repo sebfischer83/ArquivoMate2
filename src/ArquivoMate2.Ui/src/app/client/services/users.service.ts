@@ -15,10 +15,8 @@ import { apiUsersApiKeyPost$Json } from '../fn/users/api-users-api-key-post-json
 import { ApiUsersApiKeyPost$Json$Params } from '../fn/users/api-users-api-key-post-json';
 import { apiUsersApiKeyPost$Plain } from '../fn/users/api-users-api-key-post-plain';
 import { ApiUsersApiKeyPost$Plain$Params } from '../fn/users/api-users-api-key-post-plain';
-import { apiUsersLoginPost$Json } from '../fn/users/api-users-login-post-json';
-import { ApiUsersLoginPost$Json$Params } from '../fn/users/api-users-login-post-json';
-import { apiUsersLoginPost$Plain } from '../fn/users/api-users-login-post-plain';
-import { ApiUsersLoginPost$Plain$Params } from '../fn/users/api-users-login-post-plain';
+import { apiUsersLoginPost } from '../fn/users/api-users-login-post';
+import { ApiUsersLoginPost$Params } from '../fn/users/api-users-login-post';
 import { apiUsersMeGet$Json } from '../fn/users/api-users-me-get-json';
 import { ApiUsersMeGet$Json$Params } from '../fn/users/api-users-me-get-json';
 import { apiUsersMeGet$Plain } from '../fn/users/api-users-me-get-plain';
@@ -29,7 +27,6 @@ import { apiUsersOthersGet$Plain } from '../fn/users/api-users-others-get-plain'
 import { ApiUsersOthersGet$Plain$Params } from '../fn/users/api-users-others-get-plain';
 import { CurrentUserDtoApiResponse } from '../models/current-user-dto-api-response';
 import { UserApiKeyDtoApiResponse } from '../models/user-api-key-dto-api-response';
-import { UserDtoApiResponse } from '../models/user-dto-api-response';
 import { UserDtoIEnumerableApiResponse } from '../models/user-dto-i-enumerable-api-response';
 
 @Injectable({ providedIn: 'root' })
@@ -110,12 +107,12 @@ export class UsersService extends BaseService {
    *
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `apiUsersLoginPost$Plain()` instead.
+   * To access only the response body, use `apiUsersLoginPost()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiUsersLoginPost$Plain$Response(params?: ApiUsersLoginPost$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDtoApiResponse>> {
-    return apiUsersLoginPost$Plain(this.http, this.rootUrl, params, context);
+  apiUsersLoginPost$Response(params?: ApiUsersLoginPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return apiUsersLoginPost(this.http, this.rootUrl, params, context);
   }
 
   /**
@@ -124,43 +121,13 @@ export class UsersService extends BaseService {
    *
    *
    * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `apiUsersLoginPost$Plain$Response()` instead.
+   * To access the full response (for headers, for example), `apiUsersLoginPost$Response()` instead.
    *
    * This method sends `application/*+json` and handles request body of type `application/*+json`.
    */
-  apiUsersLoginPost$Plain(params?: ApiUsersLoginPost$Plain$Params, context?: HttpContext): Observable<UserDtoApiResponse> {
-    return this.apiUsersLoginPost$Plain$Response(params, context).pipe(
-      map((r: StrictHttpResponse<UserDtoApiResponse>): UserDtoApiResponse => r.body)
-    );
-  }
-
-  /**
-   * Synchronises the authenticated user with the application store.
-   *
-   *
-   *
-   * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `apiUsersLoginPost$Json()` instead.
-   *
-   * This method sends `application/*+json` and handles request body of type `application/*+json`.
-   */
-  apiUsersLoginPost$Json$Response(params?: ApiUsersLoginPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDtoApiResponse>> {
-    return apiUsersLoginPost$Json(this.http, this.rootUrl, params, context);
-  }
-
-  /**
-   * Synchronises the authenticated user with the application store.
-   *
-   *
-   *
-   * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `apiUsersLoginPost$Json$Response()` instead.
-   *
-   * This method sends `application/*+json` and handles request body of type `application/*+json`.
-   */
-  apiUsersLoginPost$Json(params?: ApiUsersLoginPost$Json$Params, context?: HttpContext): Observable<UserDtoApiResponse> {
-    return this.apiUsersLoginPost$Json$Response(params, context).pipe(
-      map((r: StrictHttpResponse<UserDtoApiResponse>): UserDtoApiResponse => r.body)
+  apiUsersLoginPost(params?: ApiUsersLoginPost$Params, context?: HttpContext): Observable<void> {
+    return this.apiUsersLoginPost$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
     );
   }
 

@@ -84,5 +84,4 @@ export type { UpsertUserRequest } from './models/upsert-user-request';
 export type { UserApiKeyDto } from './models/user-api-key-dto';
 export type { UserApiKeyDtoApiResponse } from './models/user-api-key-dto-api-response';
 export type { UserDto } from './models/user-dto';
-export type { UserDtoApiResponse } from './models/user-dto-api-response';
 export type { UserDtoIEnumerableApiResponse } from './models/user-dto-i-enumerable-api-response';

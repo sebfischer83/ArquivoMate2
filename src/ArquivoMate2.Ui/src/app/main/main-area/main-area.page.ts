@@ -3,7 +3,10 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { DocumentsService } from '../../client/services/documents.service';
 import { KeyValuePipe, NgForOf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { filter, take } from 'rxjs/operators';
+import { firstValueFrom } from 'rxjs';
 import { tuiAsPortal, TuiPortals, TuiThemeColorService } from '@taiga-ui/cdk';
+import { ApiConfiguration } from '../../client/api-configuration';
 import {
   TuiAppearance,
   TuiButton,
@@ -75,6 +78,7 @@ export class MainAreaComponent implements OnInit, OnDestroy {
   private signalRService = inject(SignalrService);
   protected stateService = inject(StateService);
   private auth = inject(OAuthService);
+  private apiConfig = inject(ApiConfiguration);
   protected readonly darkMode = inject(TUI_DARK_MODE);
   private readonly themeService = inject(TuiThemeColorService);
 
@@ -120,9 +124,19 @@ export class MainAreaComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit(): Promise<void> {
-    const baseUrl ='http://localhost:5000'
-   
+    // Warten bis Token sicher vorhanden ist
+    if (!this.auth.hasValidAccessToken()) {
+      await firstValueFrom(
+        this.auth.events.pipe(
+          filter(e => e.type === 'token_received'),
+          filter(() => this.auth.hasValidAccessToken()),
+          take(1)
+        )
+      );
+    }
 
+    // Nutze baseUrl aus runtime-config.json (bereits geladen in app.config.ts)
+    const baseUrl = this.apiConfig.rootUrl || 'http://localhost:5000';
     await this.connectSignalR(`${baseUrl}/hubs/documents`);
   }
   private async connectSignalR(url: string): Promise<void> {

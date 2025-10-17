@@ -389,7 +389,7 @@ namespace ArquivoMate2.API
                 {
                     options.Cookie.HttpOnly = true;
                     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-                    options.Cookie.SameSite = SameSiteMode.None;
+                    options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None;
                     if (!string.IsNullOrWhiteSpace(oidcSettings!.CookieDomain))
                     {
                         options.Cookie.Domain = oidcSettings.CookieDomain;
@@ -406,14 +406,30 @@ namespace ArquivoMate2.API
 
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
-                        ValidateIssuer = false,
+                        // Enable validation to ensure token is properly issued and signed
+                        ValidateIssuer = true,
                         ValidIssuer = oidcSettings.Issuer,
-                        ValidateAudience = false,
+
+                        ValidateAudience = true,
                         ValidAudience = oidcSettings.Audience,
-                        ValidateLifetime = false,
+
+                        ValidateLifetime = true,
+
+                        // Ensure the signing key from provider is validated
+                        ValidateIssuerSigningKey = true,
+
+                        // Use standard claim types for name/role mapping
                         NameClaimType = "name",
-                        RoleClaimType = "roles"
+                        RoleClaimType = "roles",
+
+                        // Allow small clock skew to account for minor clock differences between systems
+                        ClockSkew = TimeSpan.FromMinutes(2)
                     };
+
+                    // The JwtBearer handler will automatically fetch the provider's signing keys from
+                    // the authority's metadata endpoint (/.well-known/openid-configuration). Ensure
+                    // options.Authority is correct; if validation fails at runtime, verify
+                    // oidcSettings.Issuer/Audience values and server time synchronization (NTP).
 
                     options.Events = new JwtBearerEvents
                     {

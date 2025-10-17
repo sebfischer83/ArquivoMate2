@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Security.Claims;
 using ArquivoMate2.Application.Commands.Users;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Queries.Users;
@@ -11,6 +9,10 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Asn1.Ocsp;
+using System.Collections.Generic;
+using System.Security.Claims;
+using System.Threading;
 
 namespace ArquivoMate2.API.Controllers;
 
@@ -49,8 +51,9 @@ public class UsersController : ControllerBase
     [HttpPost("login")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> LoginToCookie()
+    public async Task<IActionResult> LoginToCookie([FromBody] UpsertUserRequest request, CancellationToken cancellationToken)
     {
+        var result = await _mediator.Send(new UpsertUserCommand(_currentUserService.UserId, request.Name), cancellationToken);
         var cookieIdentity = new ClaimsIdentity(User.Claims, CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(cookieIdentity);
 

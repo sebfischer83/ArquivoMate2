@@ -21,11 +21,6 @@ export interface ApiDeliveryDocumentIdArtifactGet$Params {
  * Which artifact to return (file, preview, thumb, metadata, archive).
  */
   artifact: DocumentArtifact;
-
-/**
- * Signed access token that authorizes delivery of the requested artifact.
- */
-  token?: string;
 }
 
 export function apiDeliveryDocumentIdArtifactGet(http: HttpClient, rootUrl: string, params: ApiDeliveryDocumentIdArtifactGet$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
@@ -33,7 +28,6 @@ export function apiDeliveryDocumentIdArtifactGet(http: HttpClient, rootUrl: stri
   if (params) {
     rb.path('documentId', params.documentId, {});
     rb.path('artifact', params.artifact, {});
-    rb.query('token', params.token, {});
   }
 
   return http.request(

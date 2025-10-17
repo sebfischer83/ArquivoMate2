@@ -1,7 +1,7 @@
 import { TUI_DARK_MODE, TuiDropdownService, TuiRoot } from "@taiga-ui/core";
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { OAuthEvent, OAuthEventType, OAuthService } from "angular-oauth2-oidc";
+import { OAuthEvent, OAuthSuccessEvent, OAuthService } from "angular-oauth2-oidc";
 import { getAuthConfig } from "./app.config";
 import { tuiAsPortal } from "@taiga-ui/cdk";
 import { HttpClient } from '@angular/common/http';
@@ -30,7 +30,7 @@ export class App {
     this.oauthService.configure(getAuthConfig());
     this.oauthService.events
       .pipe(filter((event: OAuthEvent) =>
-        event.type === OAuthEventType.TokenReceived || event.type === OAuthEventType.TokenRefreshed
+        event instanceof OAuthSuccessEvent
       ))
       .subscribe(() => {
         this.cookieEstablished = false;
@@ -53,7 +53,11 @@ export class App {
 
     const endpoint = new URL('/api/users/login', this.apiConfiguration.rootUrl).toString();
 
-    this.http.post(endpoint, {}, { withCredentials: true, observe: 'response' })
+  const claims = (this.oauthService.getIdentityClaims() as any) || {};
+  const name = claims.preferred_username || claims.name || claims.sub || '';
+  const body = { name };
+
+  this.http.post(endpoint, body, { withCredentials: true, observe: 'response' })
       .pipe(finalize(() => {
         this.cookieExchangeInFlight = false;
       }))

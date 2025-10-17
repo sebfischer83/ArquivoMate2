@@ -9,26 +9,25 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 import { UpsertUserRequest } from '../../models/upsert-user-request';
-import { UserDtoApiResponse } from '../../models/user-dto-api-response';
 
-export interface ApiUsersLoginPost$Json$Params {
+export interface ApiUsersLoginPost$Params {
       body?: UpsertUserRequest
 }
 
-export function apiUsersLoginPost$Json(http: HttpClient, rootUrl: string, params?: ApiUsersLoginPost$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<UserDtoApiResponse>> {
-  const rb = new RequestBuilder(rootUrl, apiUsersLoginPost$Json.PATH, 'post');
+export function apiUsersLoginPost(http: HttpClient, rootUrl: string, params?: ApiUsersLoginPost$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  const rb = new RequestBuilder(rootUrl, apiUsersLoginPost.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/*+json');
   }
 
   return http.request(
-    rb.build({ responseType: 'json', accept: 'text/json', context })
+    rb.build({ responseType: 'text', accept: '*/*', context })
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<UserDtoApiResponse>;
+      return (r as HttpResponse<any>).clone({ body: undefined }) as StrictHttpResponse<void>;
     })
   );
 }
 
-apiUsersLoginPost$Json.PATH = '/api/users/login';
+apiUsersLoginPost.PATH = '/api/users/login';

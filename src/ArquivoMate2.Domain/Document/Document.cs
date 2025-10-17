@@ -36,6 +36,9 @@ namespace ArquivoMate2.Domain.Document
         public DocumentEncryptionType EncryptionType { get; private set; } = DocumentEncryptionType.None; // NEW
         public DateTime? OccurredOn { get; private set; }
 
+        // store original file name for DTOs and UI
+        public string OriginalFileName { get; private set; } = string.Empty;
+
         private string? _initialTitle;
 
         public Document() { }
@@ -102,6 +105,8 @@ namespace ArquivoMate2.Domain.Document
             ThumbnailPath = e.ThumbnailPath;
             PreviewPath = e.PreviewPath;
             ArchivePath = e.ArchivePath;
+            // record original filename if present
+            if (!string.IsNullOrWhiteSpace(e.OriginalFileName)) OriginalFileName = e.OriginalFileName;
             OccurredOn = e.OccurredOn;
         }
 

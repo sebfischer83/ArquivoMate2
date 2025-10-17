@@ -27,6 +27,7 @@
     <None Include=".dockerignore" />
     <None Include="docs\delivery.md" />
     <None Include="docs\ProjectOverview.md" />
+    <None Include="docs\ShareGroupsController.md" />
     <None Include="docs\SSE-C-Implementation.md" />
     <None Include="LICENSE" />
     <None Include="README.md" />

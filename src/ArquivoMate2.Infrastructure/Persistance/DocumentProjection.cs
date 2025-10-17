@@ -392,6 +392,7 @@ namespace ArquivoMate2.Infrastructure.Persistance
             view.ThumbnailPath = e.ThumbnailPath;
             view.PreviewPath = e.PreviewPath;
             view.ArchivePath = e.ArchivePath; // Persist the optional archive bundle path
+            view.OriginalFileName = e.OriginalFileName; // Persist original filename
             view.OccurredOn = e.OccurredOn;
         }
 

@@ -59,6 +59,7 @@ export class DocumentComponent implements OnInit {
    * Priority: explicit originalFileName field -> filePath basename -> empty string
    */
   readonly originalFileName = computed(() => {
+    console.log(this.document()); 
     const doc = this.document();
     if (!doc) return '';
     const candidate = (doc as any).originalFileName as string | undefined; // allow backend extension

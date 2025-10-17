@@ -20,9 +20,26 @@ using System.Text.Json;
 
 namespace ArquivoMate2.Application.Handlers
 {
+    /// <summary>
+    /// Handler responsible for processing documents after upload. This includes
+    /// loading document metadata, detecting language, extracting text content,
+    /// generating derivatives (thumbnails, preview and archive PDFs), saving
+    /// artifacts (optionally encrypted), running chatbot analysis and
+    /// vectorizing content for semantic search.
+    /// </summary>
     public class ProcessDocumentHandler : IRequestHandler<ProcessDocumentCommand, (Document? Document, string? TempFilePath)>
     {
+        /// <summary>
+        /// Lightweight record used to keep loaded context while processing a document.
+        /// Contains the current <see cref="Document"/>, its <see cref="DocumentMetadata"/>
+        /// and the physical file path on disk.
+        /// </summary>
         private record LoadedContext(Document Document, DocumentMetadata Metadata, string PhysicalPath);
+
+        /// <summary>
+        /// Aggregates artifact paths and derived data produced during extraction and
+        /// generation steps. Also contains any encryption keys created for artifacts.
+        /// </summary>
         private record ExtractionArtifacts(
             string Content,
             string OriginalFilePath,
@@ -49,6 +66,23 @@ namespace ArquivoMate2.Application.Handlers
         private static readonly byte[] PdfMagicNumber = new byte[] { 0x25, 0x50, 0x44, 0x46 }; // %PDF
         private static readonly HashSet<string> SupportedImageExtensions = new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp" };
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="ProcessDocumentHandler"/> with required services.
+        /// </summary>
+        /// <param name="session">Marten document session used to append events and aggregate streams.</param>
+        /// <param name="logger">Logger for diagnostic messages.</param>
+        /// <param name="documentTextExtractor">Service used to extract text from PDFs and images and to generate previews.</param>
+        /// <param name="fileMetadataService">Service to read/write file metadata persisted during upload.</param>
+        /// <param name="pathService">Service used to resolve upload path locations.</param>
+        /// <param name="storage">Storage provider for persisting artifact files.</param>
+        /// <param name="thumbnailService">Service used to generate thumbnails for image documents.</param>
+        /// <param name="chatBot">Optional chatbot used to analyse extracted text and suggest metadata like title.</param>
+        /// <param name="documentProcessingNotifier">Notifier used to report processing status to clients.</param>
+        /// <param name="currentUserService">Current user service (not stored locally) - kept for DI compatibility.</param>
+        /// <param name="languageDetection">Language detection service used to detect OCR and language settings.</param>
+        /// <param name="encryptionService">Optional encryption service to encrypt artifact uploads.
+        /// If not enabled, artifacts are saved directly via the storage provider.</param>
+        /// <param name="vectorizationService">Service used to create and delete semantic vectors for document content.</param>
         public ProcessDocumentHandler(IDocumentSession session, ILogger<ProcessDocumentHandler> logger, IDocumentProcessor documentTextExtractor, IFileMetadataService fileMetadataService, IPathService pathService,
             IStorageProvider storage, IThumbnailService thumbnailService, IChatBot chatBot, IDocumentProcessingNotifier documentProcessingNotifier, ICurrentUserService currentUserService, ILanguageDetectionService languageDetection, IEncryptionService encryptionService, IDocumentVectorizationService vectorizationService)
             => (_session, _logger, _documentTextExtractor, this.fileMetadataService, this.pathService, _storage, _thumbnailService, _chatBot, _documentProcessingNotifier, _languageDetection, _encryptionService, _vectorizationService) = (session, logger, documentTextExtractor, fileMetadataService, pathService, storage, thumbnailService, chatBot, documentProcessingNotifier, languageDetection, encryptionService, vectorizationService);
@@ -61,6 +95,14 @@ namespace ArquivoMate2.Application.Handlers
             _logger.LogInformation("Memory usage at {Step} for Document {DocumentId}: Managed={UsedMB} MB, WorkingSet={WorkingSetMB} MB", step, documentId, usedMB, workingSetMB);
         }
 
+        /// <summary>
+        /// Main entry point for the mediatR handler. Processes a document identified by the command
+        /// and returns the final <see cref="Document"/> (if processing succeeded) and the original
+        /// temporary file path on disk used during processing.
+        /// </summary>
+        /// <param name="request">The processing command containing document and import identifiers.</param>
+        /// <param name="cancellationToken">Cancellation token for cooperative cancellation.</param>
+        /// <returns>A tuple containing the resulting <see cref="Document"/> (or null on failure) and the temporary file path (if available).</returns>
         public async Task<(Document? Document, string? TempFilePath)> Handle(ProcessDocumentCommand request, CancellationToken cancellationToken)
         {
             var sw = Stopwatch.StartNew();
@@ -147,6 +189,12 @@ namespace ArquivoMate2.Application.Handlers
             }
         }
 
+        /// <summary>
+        /// Attempts to delete a list of artifact files from storage. Exceptions while deleting
+        /// individual files are logged as debug and processing continues.
+        /// </summary>
+        /// <param name="artifacts">Extraction artifacts container with paths to delete.</param>
+        /// <param name="ct">Cancellation token.</param>
         private async Task CleanupArtifactsAsync(ExtractionArtifacts artifacts, CancellationToken ct)
         {
             var paths = new[] { artifacts.OriginalFilePath, artifacts.MetadataFilePath, artifacts.ThumbnailPath, artifacts.PreviewPdfPath, artifacts.ArchivePdfPath };
@@ -164,6 +212,14 @@ namespace ArquivoMate2.Application.Handlers
         }
 
         #region Load & Validation
+        /// <summary>
+        /// Loads the current document aggregate and its associated metadata from the
+        /// metadata service. Also computes the expected physical upload path for the file.
+        /// Throws <see cref="KeyNotFoundException"/> if document or metadata are missing.
+        /// </summary>
+        /// <param name="request">Process command that contains document id and user id.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A <see cref="LoadedContext"/> containing the document, metadata and physical path.</returns>
         private async Task<LoadedContext> LoadAsync(ProcessDocumentCommand request, CancellationToken ct)
         {
             var doc = await _session.Events.AggregateStreamAsync<Document>(request.DocumentId, token: ct);
@@ -186,6 +242,14 @@ namespace ArquivoMate2.Application.Handlers
         #endregion
 
         #region Language Detection
+        /// <summary>
+        /// Detects the document language using the language detection service when needed.
+        /// If a single language is determined it updates the stored metadata accordingly.
+        /// Any errors encountered are logged and processing continues.
+        /// </summary>
+        /// <param name="ctx">Loaded context containing document and metadata.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The effective metadata which may have been modified to reflect detected language.</returns>
         private async Task<DocumentMetadata> DetectAndMaybeUpdateLanguageAsync(LoadedContext ctx, CancellationToken ct)
         {
             var metadata = ctx.Metadata;
@@ -244,6 +308,11 @@ namespace ArquivoMate2.Application.Handlers
         #endregion
 
         #region Extraction & Derivatives
+        /// <summary>
+        /// Orchestrates extraction and derivative generation. Based on file type, it
+        /// dispatches to dedicated handlers for PDF or single-image documents.
+        /// Unsupported file types will cause the document to be marked as failed.
+        /// </summary>
         private async Task<ExtractionArtifacts> ExtractAndGenerateAsync(ProcessDocumentCommand request, LoadedContext ctx, CancellationToken ct)
         {
             bool isPdf = await IsPdfFileAsync(ctx.PhysicalPath, ctx.Metadata);
@@ -255,6 +324,9 @@ namespace ArquivoMate2.Application.Handlers
             throw new NotSupportedException($"File type {ctx.Metadata.Extension} is not supported");
         }
 
+        /// <summary>
+        /// Extracts text from a PDF and persists generated derivatives and artifacts.
+        /// </summary>
         private async Task<ExtractionArtifacts> ProcessPdfAsync(ProcessDocumentCommand request, LoadedContext ctx, CancellationToken ct)
         {
             using var stream = OpenForSequentialRead(ctx.PhysicalPath);
@@ -264,6 +336,9 @@ namespace ArquivoMate2.Application.Handlers
             return artifacts with { Content = content };
         }
 
+        /// <summary>
+        /// Extracts text from a single image and persists generated derivatives and artifacts.
+        /// </summary>
         private async Task<ExtractionArtifacts> ProcessImageAsync(ProcessDocumentCommand request, LoadedContext ctx, CancellationToken ct)
         {
             using var stream = OpenForSequentialRead(ctx.PhysicalPath);
@@ -273,6 +348,11 @@ namespace ArquivoMate2.Application.Handlers
             return artifacts with { Content = content };
         }
 
+        /// <summary>
+        /// Persists the original file and generated artifacts (metadata, thumbnail, preview and archive PDFs).
+        /// If encryption is enabled the artifacts will be saved via the encryption service which may return
+        /// encryption keys. All saved artifact paths and keys are returned in <see cref="ExtractionArtifacts"/>.
+        /// </summary>
         private async Task<ExtractionArtifacts> PersistAndGenerateDerivativesAsync(ProcessDocumentCommand request, LoadedContext ctx, FileStream openStream, CancellationToken ct)
         {
             var keys = new List<EncryptedArtifactKey>();
@@ -332,17 +412,24 @@ namespace ArquivoMate2.Application.Handlers
             }
             if (kArch != null) keys.Add(kArch);
 
-            Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, archivePath, DateTime.UtcNow));
+            Append(request.DocumentId, new DocumentFilesPrepared(request.DocumentId, filePath, metaPath, thumbPath, previewPath, archivePath, ctx.Metadata.OriginalFileName, DateTime.UtcNow));
 
             return new ExtractionArtifacts(string.Empty, filePath, metaPath, thumbPath, previewPath, archivePath, ctx.Metadata, keys);
         }
 
+        /// <summary>
+        /// Saves a byte array either via the encryption service (if enabled) or directly via the storage provider.
+        /// </summary>
         private async Task<(string path, EncryptedArtifactKey? key)> SaveMaybeEncryptedAsync(string userId, Guid docId, string filename, byte[] bytes, string artifact, CancellationToken ct)
         {
             using var ms = new MemoryStream(bytes, writable: false);
             return await SaveMaybeEncryptedAsync(userId, docId, filename, ms, artifact, ct).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Saves a stream either via the encryption service (if enabled) or directly via the storage provider.
+        /// The stream position will be reset to 0 when possible before saving.
+        /// </summary>
         private async Task<(string path, EncryptedArtifactKey? key)> SaveMaybeEncryptedAsync(string userId, Guid docId, string filename, Stream content, string artifact, CancellationToken ct)
         {
             if (content.CanSeek)
@@ -361,6 +448,10 @@ namespace ArquivoMate2.Application.Handlers
         #endregion
 
         #region ChatBot
+        /// <summary>
+        /// Executes the chatbot analysis for extracted content and processes the returned
+        /// document analysis result. Any exceptions are caught and logged but do not stop processing.
+        /// </summary>
         private async Task RunChatBotAsync(Guid documentId, string userId, string content, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(content)) return;
@@ -375,6 +466,10 @@ namespace ArquivoMate2.Application.Handlers
             }
         }
 
+        /// <summary>
+        /// Vectorizes document content using the configured vectorization service. If content
+        /// is empty, any existing vectors for the document will be removed.
+        /// </summary>
         private async Task VectorizeDocumentAsync(Guid documentId, string userId, string content, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(content))
@@ -393,6 +488,9 @@ namespace ArquivoMate2.Application.Handlers
             }
         }
 
+        /// <summary>
+        /// Attempts to delete vector store entries for a document. Exceptions are logged at debug level.
+        /// </summary>
         private async Task TryDeleteVectorsAsync(Guid documentId, string userId, CancellationToken ct)
         {
             try
@@ -405,6 +503,10 @@ namespace ArquivoMate2.Application.Handlers
             }
         }
 
+        /// <summary>
+        /// Processes the result returned by the chatbot: resolves or creates parties
+        /// and appends events carrying extracted structured data and suggested titles.
+        /// </summary>
         private async Task ProcessChatbotResultAsync(Guid documentId, string userId, DocumentAnalysisResult chatbotResult)
         {
             if (chatbotResult == null) return;
@@ -417,6 +519,10 @@ namespace ArquivoMate2.Application.Handlers
                 Append(documentId, new DocumentTitleSuggested(documentId, chatbotResult.Title, DateTime.UtcNow));
         }
 
+        /// <summary>
+        /// Finds an existing party (sender/recipient) by fuzzy search or creates a new
+        /// PartyInfo instance stored in the database. Returns the party Id.
+        /// </summary>
         private async Task<Guid> ResolveOrCreatePartyAsync(PartyInfo? party, string userId)
         {
             if (party == null) return Guid.Empty;
@@ -436,6 +542,10 @@ namespace ArquivoMate2.Application.Handlers
         #endregion
 
         #region Helpers
+        /// <summary>
+        /// Creates a temporary file stream that will be deleted on close. The caller is
+        /// responsible for disposing the stream when finished.
+        /// </summary>
         private static FileStream CreateTempFileStream()
         {
             var tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -445,6 +555,9 @@ namespace ArquivoMate2.Application.Handlers
         private void Append(Guid streamId, object @event) => _session.Events.Append(streamId, @event);
         private bool IsSingleImage(DocumentMetadata metadata) => SupportedImageExtensions.Contains(metadata.Extension);
 
+        /// <summary>
+        /// Determines whether a file should be treated as PDF by checking extension, mime type and the file magic number.
+        /// </summary>
         private async Task<bool> IsPdfFileAsync(string filePath, DocumentMetadata metadata)
         {
             try
@@ -462,6 +575,9 @@ namespace ArquivoMate2.Application.Handlers
             }
         }
 
+        /// <summary>
+        /// Reads the start of the file and checks for the PDF magic number sequence.
+        /// </summary>
         private async Task<bool> HasPdfMagicNumberAsync(string filePath)
         {
             try
@@ -480,6 +596,9 @@ namespace ArquivoMate2.Application.Handlers
             }
         }
 
+        /// <summary>
+        /// Opens a file stream optimized for sequential read access.
+        /// </summary>
         private FileStream OpenForSequentialRead(string path) => new(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan);
         #endregion
     }

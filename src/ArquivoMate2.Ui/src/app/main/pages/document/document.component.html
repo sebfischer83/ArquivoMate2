@@ -5,7 +5,7 @@
 			<div class="toolbar">
 				<div class="left">
 					<button tuiButton size="s" appearance="secondary" iconStart="@tui.arrow-left" type="button" (click)="back()">{{ t('Document.Back') || '←' }}</button>
-					<h2 tuiTitle="m" class="doc-title">{{ originalFileName() || t('Document.DocumentTitleFallback') }}</h2>
+					<h2 tuiTitle="m" class="doc-title">{{ document()?.title || originalFileName() || t('Document.DocumentTitleFallback') }}</h2>
 				</div>
 				<div class="actions" *ngIf="hasData()">
 					<!-- If archivePath exists show dropdown menu, else show direct download button -->

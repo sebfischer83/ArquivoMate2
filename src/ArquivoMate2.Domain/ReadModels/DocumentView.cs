@@ -55,5 +55,8 @@ namespace ArquivoMate2.Domain.ReadModels
         // Reference to the resolved parties (stored as ids in events)
         public Guid? SenderId { get; set; }
         public Guid? RecipientId { get; set; }
+
+        // Original filename provided by the uploader
+        public string OriginalFileName { get; set; } = string.Empty;
     }
 }

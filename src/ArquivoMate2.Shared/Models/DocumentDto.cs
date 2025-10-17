@@ -60,5 +60,8 @@ namespace ArquivoMate2.Shared.Models
 
         // Resolved sender details
         public PartyDto? Sender { get; set; }
+
+        // Original uploaded filename (as provided by the client at upload time)
+        public string OriginalFileName { get; set; } = string.Empty;
     }
 }

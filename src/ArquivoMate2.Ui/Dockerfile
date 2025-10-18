@@ -36,6 +36,11 @@ COPY . .
 # Use the local ng (from node_modules) via npx to ensure project tools are used
 RUN npx ng build --configuration production
 
+# Ensure runtime-config.json is not baked into the dist output. We rely on
+# runtime-config.template.json + the entrypoint to produce runtime-config.json
+# at container startup. Remove any accidentally present runtime-config.json.
+RUN rm -f /app/dist/ArquivoMate2.Ui/runtime-config.json || true
+
 # Pre-compress static assets: create .br and .gz alongside original files so nginx can
 # serve pre-compressed files when available. Install brotli CLI in the build image.
 RUN apk add --no-cache brotli && \
@@ -57,16 +62,25 @@ COPY --chown=app:app nginx.conf /etc/nginx/conf.d/default.conf
 
 # Entrypoint script for dynamic VERSION injection (copy as app user)
 COPY --chown=app:app docker-entrypoint.sh /docker-entrypoint.sh
+# Convert entrypoint to Unix line endings inside the runtime image to avoid CRLF issues
+# (dos2unix is small; install, convert, then remove)
+RUN apk add --no-cache dos2unix && \
+	dos2unix /docker-entrypoint.sh || true && \
+	apk del dos2unix || true
 # Only set the executable bit; ownership is already correct
 RUN chmod +x /docker-entrypoint.sh
 
-USER app
+# Ensure the html directory itself is writable by the 'app' user so the entrypoint
+# can create runtime-config.json at container start. We avoid recursive chown to
+# keep the copy operation fast (files are already owned by app via --chown above).
+RUN chown app:app /usr/share/nginx/html || true
 
-EXPOSE 8080
+EXPOSE 80
 STOPSIGNAL SIGTERM
 
-# Use 8080 for compatibility with some platforms that block 80
-ENV PORT=8080
+# Use 80 as the container HTTP port (nginx default). The host can map any external port
+# to container port 80 when running the container (docker run -p HOST:80 ...).
+ENV PORT=80
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
+ENTRYPOINT ["sh", "/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

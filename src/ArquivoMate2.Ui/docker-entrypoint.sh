@@ -4,14 +4,26 @@ set -e
 RUNTIME_CFG="/usr/share/nginx/html/runtime-config.json"
 RUNTIME_TEMPLATE="/usr/share/nginx/html/runtime-config.template.json"
 
-VERSION_VALUE="${VERSION:-0.0.0-dev}" 
-API_BASE_URL_VALUE="${API_BASE_URL:-http://localhost:5000}" 
-OIDC_ISSUER_VALUE="${OIDC_ISSUER:-https://example-issuer.local/realms/app/}" 
-OIDC_CLIENT_ID_VALUE="${OIDC_CLIENT_ID:-spa-client}" 
-OIDC_SCOPE_VALUE="${OIDC_SCOPE:-openid profile email}" 
+VERSION_VALUE="${VERSION:-0.0.0-dev}"
+API_BASE_URL_VALUE="${API_BASE_URL:-http://localhost:5000}"
+OIDC_ISSUER_VALUE="${OIDC_ISSUER:-https://example-issuer.local/realms/app/}"
+OIDC_CLIENT_ID_VALUE="${OIDC_CLIENT_ID:-spa-client}"
+OIDC_SCOPE_VALUE="${OIDC_SCOPE:-openid profile email}"
 
 if [ -f "$RUNTIME_TEMPLATE" ]; then
-  cp "$RUNTIME_TEMPLATE" "$RUNTIME_CFG"
+  # Try to copy template to runtime config. Use -f to force overwrite; if that fails
+  # (some filesystems or permissions), write via a temporary file and atomically mv it.
+  if cp -f "$RUNTIME_TEMPLATE" "$RUNTIME_CFG" 2>/dev/null; then
+    echo "[entrypoint] Copied runtime template to runtime-config.json"
+  else
+    echo "[entrypoint] cp -f failed, attempting safe write via tmp file"
+    TMPFILE="$(mktemp /tmp/runtime-config.XXXXXX)" || TMPFILE="/tmp/runtime-config.$$"
+    if cp "$RUNTIME_TEMPLATE" "$TMPFILE" 2>/dev/null && mv -f "$TMPFILE" "$RUNTIME_CFG" 2>/dev/null; then
+      echo "[entrypoint] Wrote runtime-config.json via tmpfile"
+    else
+      echo "[entrypoint] WARNING: failed to write runtime-config.json (permissions?)" >&2
+    fi
+  fi
 fi
 
 if [ -f "$RUNTIME_CFG" ]; then

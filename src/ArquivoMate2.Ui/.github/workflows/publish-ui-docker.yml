@@ -1,0 +1,64 @@
+name: Publish UI Docker Image
+
+on:
+  push:
+    tags:
+      - 'ui-v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish (eg. ui-v1.2.3)'
+        required: false
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to registry
+        uses: docker/login-action@v2
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Determine tag
+        id: tag
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            # fallback to branch + short sha
+            SHORT=$(echo $GITHUB_SHA | cut -c1-7)
+            echo "tag=ui-${{ github.run_number }}-${SHORT}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src/ArquivoMate2.Ui
+          file: ./src/ArquivoMate2.Ui/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            sebfischer83/arquivomate2ui:${{ steps.tag.outputs.tag }}
+            sebfischer83/arquivomate2ui:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Image info
+        run: |
+          echo "Published sebfischer83/arquivomate2ui:${{ steps.tag.outputs.tag }}"

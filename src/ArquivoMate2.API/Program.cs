@@ -163,15 +163,21 @@ namespace ArquivoMate2.API
                 options.Queues = new[] { "documents", "maintenance" };
                 options.WorkerCount = 5;
             });
+            
+            // CORS Configuration - supports multiple origins from appsettings
+            var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() 
+                ?? new[] { "https://localhost:4200", "http://localhost:4200" };
+            
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAllOrigins", policy =>
+                options.AddPolicy("AllowConfiguredOrigins", policy =>
                 {
                     policy
-                        .WithOrigins("https://localhost:4200", "http://localhost:4200")
+                        .WithOrigins(allowedOrigins)
                         .AllowAnyHeader()
                         .AllowAnyMethod()
-                        .AllowCredentials();
+                        .AllowCredentials()
+                        .WithExposedHeaders("Content-Disposition"); // For file downloads
                 });
             });
 
@@ -263,7 +269,7 @@ namespace ArquivoMate2.API
                 });
             }
 
-            app.UseCors("AllowAllOrigins");
+            app.UseCors("AllowConfiguredOrigins");
             app.UseAuthentication();
             app.UseAuthorization();
 
@@ -293,7 +299,7 @@ namespace ArquivoMate2.API
 
             app.MapHangfireDashboard();
 
-            app.MapHub<DocumentProcessingHub>("/hubs/documents", opt => { }).RequireCors("AllowAllOrigins");
+            app.MapHub<DocumentProcessingHub>("/hubs/documents", opt => { }).RequireCors("AllowConfiguredOrigins");
 
             var supportedCultures = new[] { "en", "de" };
             var localizationOptions = new RequestLocalizationOptions()

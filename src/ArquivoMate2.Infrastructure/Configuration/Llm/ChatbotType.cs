@@ -4,6 +4,7 @@ namespace ArquivoMate2.Infrastructure.Configuration.Llm
 {
     public enum ChatbotType
     {
-        OpenAI
+        OpenAI,
+        OpenRouter
     }
 }

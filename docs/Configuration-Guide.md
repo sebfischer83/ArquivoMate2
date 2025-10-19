@@ -16,8 +16,9 @@ This guide provides a comprehensive reference for all configuration options in A
 8. [Caching](#caching)
 9. [Search (Meilisearch)](#search-meilisearch)
 10. [ChatBot (OpenAI)](#chatbot-openai)
-11. [Document Processing](#document-processing)
-12. [Logging](#logging)
+11. [ChatBot (OpenRouter)](#chatbot-openrouter)
+12. [Document Processing](#document-processing)
+13. [Logging](#logging)
 13. [Localization](#localization)
 14. [Environment Variables](#environment-variables)
 15. [Security Best Practices](#security-best-practices)
@@ -736,8 +737,54 @@ AI-powered document analysis using OpenAI GPT models.
 AMate__ChatBot__Args__ApiKey=sk-your-openai-api-key
 AMate__ChatBot__Args__Model=gpt-4o
 ```
+## ChatBot (OpenRouter)
+
+OpenRouter nutzt dieselbe OpenAI SDK, ruft die Anfragen aber ueber die OpenRouter-Plattform ab.
+Das Modell und der API-Schluessel muessen explizit gesetzt werden. Optional koennen `Referer` und `SiteName`
+angegeben werden, damit OpenRouter die Herkunft der Anfragen verifizieren kann.
+
+```json
+{
+  "ChatBot": {
+    "Type": "OpenRouter",
+    "Args": {
+      "ApiKey": "sk-or-your-api-key",
+      "Model": "openrouter/auto",
+      "Endpoint": "https://openrouter.ai/api/v1",
+      "Referer": "https://your-app.example",
+      "SiteName": "ArquivoMate",
+      "EmbeddingsApiKey": "sk-openai-embeddings",
+      "EmbeddingModel": "text-embedding-3-small"
+    }
+  }
+}
+```
+
+**Eigenschaften:**
+
+- `Type`: AI Provider (`OpenRouter`)
+- `ApiKey`: OpenRouter API-Schluessel (Pflicht)
+- `Model`: Voll qualifizierter Modellname bei OpenRouter (Pflicht, z. B. `openrouter/auto` oder `anthropic/claude-3.5-sonnet`)
+- `Endpoint`: API-Endpunkt (Standard: `https://openrouter.ai/api/v1`)
+- `Referer`: Optionaler HTTP-Referer fuer OpenRouter
+- `SiteName`: Optionaler Anzeigename der Anwendung
+- `EmbeddingsApiKey`: Optionaler OpenAI API-Schluessel fuer Embeddings; ohne Wert wird Vektorisierung deaktiviert
+- `EmbeddingModel`: Eingesetztes Embedding-Modell (z. B. `text-embedding-3-small`)
+
+**Environment Variables:**
+```bash
+AMate__ChatBot__Type=OpenRouter
+AMate__ChatBot__Args__ApiKey=sk-or-your-api-key
+AMate__ChatBot__Args__Model=openrouter/auto
+AMate__ChatBot__Args__Endpoint=https://openrouter.ai/api/v1
+AMate__ChatBot__Args__Referer=https://your-app.example
+AMate__ChatBot__Args__SiteName=ArquivoMate
+AMate__ChatBot__Args__EmbeddingsApiKey=sk-openai-embeddings
+AMate__ChatBot__Args__EmbeddingModel=text-embedding-3-small
+```
 
 ---
+
 
 ## Document Processing
 

@@ -21,6 +21,8 @@ namespace ArquivoMate2.Infrastructure.Configuration.Llm
             {
                 ChatbotType.OpenAI => section.GetSection("Args").Get<OpenAISettings>()
                                                ?? throw new InvalidOperationException("OpenAISettings fehlt."),
+                ChatbotType.OpenRouter => section.GetSection("Args").Get<OpenRouterSettings>()
+                                                   ?? throw new InvalidOperationException("OpenRouterSettings fehlt."),
                 //FileProviderType.NFS => section.Get<NfsFileProviderSettings>()
                 //                               ?? throw new InvalidOperationException("NfsFileProviderSettings fehlt."),
                 //FileProviderType.Bunny => section.Get<BunnyFileProviderSettings>()

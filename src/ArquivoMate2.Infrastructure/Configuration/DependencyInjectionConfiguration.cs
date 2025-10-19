@@ -215,51 +215,64 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddScoped<IDocumentAccessUpdater, DocumentAccessUpdater>(); // Updates the read model for document access
             services.AddScoped<ArquivoMate2.Application.Interfaces.ImportHistory.IImportHistoryReadStore, ArquivoMate2.Infrastructure.Services.ImportHistory.ImportHistoryReadStore>();
             services.AddSingleton<ChatBotSettingsFactory>();
-            var chatbotSettings = new ChatBotSettingsFactory(config).GetChatBotSettings();
 
-            if (chatbotSettings is OpenAISettings openAISettings)
+            // Register ChatBot and vectorization services optionally. If ChatBot settings are missing or invalid,
+            // fall back to NullChatBot and NullDocumentVectorizationService to keep DI resolution stable.
+            try
             {
-                services.AddSingleton(openAISettings);
-
-                // Register an embeddings client implementation using OpenAI settings
-                services.AddSingleton<IEmbeddingsClient>(sp =>
-                    new OpenAiEmbeddingsClient(openAISettings.EmbeddingModel, openAISettings.ApiKey));
-
-                var vectorStoreConnection = config.GetConnectionString("VectorStore");
-                if (!string.IsNullOrWhiteSpace(vectorStoreConnection))
+                var chatbotSettings = new ChatBotSettingsFactory(config).GetChatBotSettings();
+                if (chatbotSettings is OpenAISettings openAISettings)
                 {
-                    services.AddSingleton<IDocumentVectorizationService>(sp =>
-                        new DocumentVectorizationService(
-                            vectorStoreConnection!,
-                            openAISettings,
-                            sp.GetRequiredService<IEmbeddingsClient>(),
-                            sp.GetRequiredService<ILogger<DocumentVectorizationService>>()));
+                    services.AddSingleton(openAISettings);
+
+                    // Register an embeddings client implementation using OpenAI settings
+                    services.AddSingleton<IEmbeddingsClient>(sp =>
+                        new OpenAiEmbeddingsClient(openAISettings.EmbeddingModel, openAISettings.ApiKey));
+
+                    var vectorStoreConnection = config.GetConnectionString("VectorStore");
+                    if (!string.IsNullOrWhiteSpace(vectorStoreConnection))
+                    {
+                        services.AddSingleton<IDocumentVectorizationService>(sp =>
+                            new DocumentVectorizationService(
+                                vectorStoreConnection!,
+                                openAISettings,
+                                sp.GetRequiredService<IEmbeddingsClient>(),
+                                sp.GetRequiredService<ILogger<DocumentVectorizationService>>()));
+                    }
+                    else
+                    {
+                        services.AddSingleton<IDocumentVectorizationService, NullDocumentVectorizationService>();
+                    }
+
+                    if (openAISettings.UseBatch)
+                    {
+                        services.AddScoped<IChatBot, OpenAIBatchChatBot>(_ =>
+                        {
+                            BatchClient client = new BatchClient(openAISettings.ApiKey);
+                            return new OpenAIBatchChatBot(client);
+                        });
+                    }
+                    else
+                    {
+                        services.AddScoped<IChatBot, OpenAIChatBot>(sp =>
+                        {
+                            ChatClient client = new(model: openAISettings.Model, apiKey: openAISettings.ApiKey);
+                            return new OpenAIChatBot(client, sp.GetRequiredService<IDocumentVectorizationService>(), sp.GetRequiredService<ILogger<OpenAIChatBot>>());
+                        });
+                    }
                 }
                 else
                 {
+                    // Unknown chatbot type - fallback to null
                     services.AddSingleton<IDocumentVectorizationService, NullDocumentVectorizationService>();
-                }
-
-                if (openAISettings.UseBatch)
-                {
-                    services.AddScoped<IChatBot, OpenAIBatchChatBot>(_ =>
-                    {
-                        BatchClient client = new BatchClient(openAISettings.ApiKey);
-                        return new OpenAIBatchChatBot(client);
-                    });
-                }
-                else
-                {
-                    services.AddScoped<IChatBot, OpenAIChatBot>(sp =>
-                    {
-                        ChatClient client = new(model: openAISettings.Model, apiKey: openAISettings.ApiKey);
-                        return new OpenAIChatBot(client, sp.GetRequiredService<IDocumentVectorizationService>(), sp.GetRequiredService<ILogger<OpenAIChatBot>>());
-                    });
+                    services.AddSingleton<IChatBot, NullChatBot>();
                 }
             }
-            else
+            catch (Exception ex)
             {
-                throw new InvalidOperationException("Unsupported ChatBotSettings");
+                // If configuration is missing or invalid, log at DI time isn't straightforward. Fall back to null implementations.
+                services.AddSingleton<IDocumentVectorizationService, NullDocumentVectorizationService>();
+                services.AddSingleton<IChatBot, NullChatBot>();
             }
 
             services.Configure<OcrSettings>(config.GetSection("OcrSettings"));

@@ -149,7 +149,17 @@ namespace ArquivoMate2.Application.Handlers
                 }
                 
                 await RunChatBotAsync(request.DocumentId, request.UserId, artifacts.Content, cancellationToken);
-                await VectorizeDocumentAsync(request.DocumentId, request.UserId, artifacts.Content, cancellationToken);
+                
+                // Vectorization is optional - errors should not fail the entire document processing
+                try
+                {
+                    await VectorizeDocumentAsync(request.DocumentId, request.UserId, artifacts.Content, cancellationToken);
+                }
+                catch (Exception vecEx)
+                {
+                    _logger.LogWarning(vecEx, "Vectorization failed for document {DocumentId} - continuing without vectors", request.DocumentId);
+                }
+                
                 LogMemoryUsage("After RunChatBotAsync", request.DocumentId);
 
                 Append(request.ImportProcessId, new MarkSucceededDocumentImport(request.ImportProcessId, request.DocumentId, DateTime.UtcNow));

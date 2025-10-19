@@ -74,6 +74,9 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            // Ensure root and per-user prefixes exist (create placeholder objects) before scanning
+            await EnsureRootAndUserPrefixesAsync(cancellationToken).ConfigureAwait(false);
+
             var descriptors = new List<IngestionFileDescriptor>();
 
             await foreach (var item in ListObjectsAsync(cancellationToken).ConfigureAwait(false))
@@ -401,6 +404,84 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
                 }
 
                 counter++;
+            }
+        }
+
+        private async Task EnsureRootAndUserPrefixesAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var root = NormalizeRootPrefix(); // e.g. "ingestion" or empty
+                var prefix = string.IsNullOrEmpty(root) ? string.Empty : root + "/";
+
+                var userIds = new HashSet<string>(StringComparer.Ordinal);
+
+                // Gather existing user ids by listing objects under the root
+                await foreach (var item in ListObjectsAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (item.IsDir) continue;
+                    var key = item.Key;
+                    if (string.IsNullOrEmpty(key)) continue;
+                    var rel = GetRelativeKey(key);
+                    if (string.IsNullOrEmpty(rel)) continue;
+                    var segs = rel.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                    if (segs.Length >= 1)
+                    {
+                        var userId = segs[0];
+                        if (!string.IsNullOrWhiteSpace(userId)) userIds.Add(userId);
+                    }
+                }
+
+                // For each user create placeholder objects for subfolders
+                foreach (var userId in userIds)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    // processing, processed, failed
+                    var processingKey = CombineSegments(BuildUserSubfolder(userId, _settings.ProcessingSubfolderName), ".keep");
+                    var processedKey = CombineSegments(BuildUserSubfolder(userId, _settings.ProcessedSubfolderName), ".keep");
+                    var failedKey = CombineSegments(BuildUserSubfolder(userId, _settings.FailedSubfolderName), ".keep");
+
+                    // Create zero-byte objects if they don't exist
+                    if (!await ObjectExistsAsync(processingKey, cancellationToken).ConfigureAwait(false))
+                    {
+                        var putArgs = new PutObjectArgs()
+                            .WithBucket(_settings.BucketName)
+                            .WithObject(processingKey)
+                            .WithStreamData(new MemoryStream(Array.Empty<byte>()))
+                            .WithObjectSize(0)
+                            .WithContentType("application/x-directory");
+                        await _minioClient.PutObjectAsync(putArgs, cancellationToken).ConfigureAwait(false);
+                    }
+
+                    if (!await ObjectExistsAsync(processedKey, cancellationToken).ConfigureAwait(false))
+                    {
+                        var putArgs = new PutObjectArgs()
+                            .WithBucket(_settings.BucketName)
+                            .WithObject(processedKey)
+                            .WithStreamData(new MemoryStream(Array.Empty<byte>()))
+                            .WithObjectSize(0)
+                            .WithContentType("application/x-directory");
+                        await _minioClient.PutObjectAsync(putArgs, cancellationToken).ConfigureAwait(false);
+                    }
+
+                    if (!await ObjectExistsAsync(failedKey, cancellationToken).ConfigureAwait(false))
+                    {
+                        var putArgs = new PutObjectArgs()
+                            .WithBucket(_settings.BucketName)
+                            .WithObject(failedKey)
+                            .WithStreamData(new MemoryStream(Array.Empty<byte>()))
+                            .WithObjectSize(0)
+                            .WithContentType("application/x-directory");
+                        await _minioClient.PutObjectAsync(putArgs, cancellationToken).ConfigureAwait(false);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to ensure S3 ingestion prefixes");
             }
         }
     }

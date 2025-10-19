@@ -319,6 +319,12 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     services.AddSingleton<Microsoft.Extensions.Options.IOptions<S3IngestionProviderSettings>>(Microsoft.Extensions.Options.Options.Create(s3));
                     services.AddSingleton<IIngestionProvider, S3IngestionProvider>();
                     break;
+                case SftpIngestionProviderSettings sftp:
+                    services.AddSingleton(sftp);
+                    services.AddSingleton<IngestionProviderSettings>(sftp);
+                    services.AddSingleton<Microsoft.Extensions.Options.IOptions<SftpIngestionProviderSettings>>(Microsoft.Extensions.Options.Options.Create(sftp));
+                    services.AddSingleton<IIngestionProvider, SftpIngestionProvider>();
+                    break;
                 default:
                     services.AddSingleton(ingestionSettings);
                     services.AddSingleton<IngestionProviderSettings>(ingestionSettings);
@@ -358,11 +364,8 @@ namespace ArquivoMate2.Infrastructure.Configuration
             var cachingSection = config.GetSection("Caching");
             services.Configure<CachingOptions>(cachingSection);
 
-            services.AddMemoryCache(options =>
-            {
-                options.SizeLimit = 128L * 1024 * 1024;
-                options.CompactionPercentage = 0.20;
-            });
+            // Use in-memory cache without explicit SizeLimit so localization and other libraries can cache without specifying sizes
+            services.AddMemoryCache();
 
             var redisConfiguration = cachingSection.GetValue<string>("Redis:Configuration")
                 ?? config["Redis:Configuration"]

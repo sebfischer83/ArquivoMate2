@@ -160,7 +160,7 @@ namespace ArquivoMate2.API
 
             builder.Services.AddHangfireServer(options =>
             {
-                options.Queues = new[] { "documents", "maintenance" };
+                options.Queues = new[] { "default", "documents", "maintenance" };
                 options.WorkerCount = 5;
             });
             
@@ -327,8 +327,12 @@ namespace ArquivoMate2.API
                     case S3IngestionProviderSettings s3 when s3.Type == IngestionProviderType.S3:
                         ScheduleIngestionJob("s3-ingestion", s3.PollingInterval);
                         break;
+                    case SftpIngestionProviderSettings sftp when sftp.Type == IngestionProviderType.Sftp:
+                        ScheduleIngestionJob("sftp-ingestion", sftp.PollingInterval);
+                        break;
                 }
             }
+            app.UseHangfireDashboard();
 
             app.Run();
         }

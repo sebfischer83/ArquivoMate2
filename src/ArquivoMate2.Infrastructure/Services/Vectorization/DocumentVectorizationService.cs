@@ -193,6 +193,13 @@ namespace ArquivoMate2.Infrastructure.Services.Vectorization
                     return;
                 }
 
+                // First, ensure the pgvector extension is installed
+                var extensionCommandText = "CREATE EXTENSION IF NOT EXISTS vector;";
+                using (var extensionCommand = new NpgsqlCommand(extensionCommandText, connection))
+                {
+                    await extensionCommand.ExecuteNonQueryAsync(cancellationToken);
+                }
+
                 var commandText = $@"
 CREATE TABLE IF NOT EXISTS document_vectors (
     id uuid PRIMARY KEY,

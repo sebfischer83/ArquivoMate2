@@ -61,7 +61,7 @@ services:
                 memory: 1024M
 
   db-init:
-    image: postgres:18
+    image: pgvector/pgvector:pg18
     depends_on:
       db:
         condition: service_healthy

@@ -33,6 +33,7 @@ namespace ArquivoMate2.Infrastructure.Configuration.IngestionProvider
             {
                 IngestionProviderType.FileSystem => BuildFileSystemSettings(section),
                 IngestionProviderType.S3 => BuildS3Settings(section),
+                IngestionProviderType.Sftp => BuildSftpSettings(section),
                 IngestionProviderType.None => new IngestionProviderSettings { Type = IngestionProviderType.None },
                 _ => throw new InvalidOperationException($"Unsupported IngestionProvider type: {type}")
             };
@@ -82,6 +83,55 @@ namespace ArquivoMate2.Infrastructure.Configuration.IngestionProvider
             if (string.IsNullOrWhiteSpace(settings.Endpoint))
             {
                 throw new InvalidOperationException("IngestionProvider:Args:Endpoint must be configured.");
+            }
+
+            if (settings.PollingInterval <= TimeSpan.Zero)
+            {
+                settings.PollingInterval = TimeSpan.FromMinutes(5);
+            }
+
+            if (string.IsNullOrWhiteSpace(settings.RootPrefix))
+            {
+                settings.RootPrefix = "ingestion";
+            }
+
+            if (string.IsNullOrWhiteSpace(settings.ProcessingSubfolderName))
+            {
+                settings.ProcessingSubfolderName = "processing";
+            }
+
+            if (string.IsNullOrWhiteSpace(settings.ProcessedSubfolderName))
+            {
+                settings.ProcessedSubfolderName = "processed";
+            }
+
+            if (string.IsNullOrWhiteSpace(settings.FailedSubfolderName))
+            {
+                settings.FailedSubfolderName = "failed";
+            }
+
+            return settings;
+        }
+
+        private SftpIngestionProviderSettings BuildSftpSettings(IConfigurationSection section)
+        {
+            var argsSection = section.GetSection("Args");
+            var settings = argsSection.Get<SftpIngestionProviderSettings>() ?? new SftpIngestionProviderSettings();
+            settings.Type = IngestionProviderType.Sftp;
+
+            if (string.IsNullOrWhiteSpace(settings.Host))
+            {
+                throw new InvalidOperationException("IngestionProvider:Args:Host must be configured.");
+            }
+
+            if (settings.Port <= 0)
+            {
+                settings.Port = 22;
+            }
+
+            if (string.IsNullOrWhiteSpace(settings.Username))
+            {
+                throw new InvalidOperationException("IngestionProvider:Args:Username must be configured.");
             }
 
             if (settings.PollingInterval <= TimeSpan.Zero)

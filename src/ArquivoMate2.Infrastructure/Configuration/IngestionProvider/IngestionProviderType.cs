@@ -7,6 +7,7 @@ namespace ArquivoMate2.Infrastructure.Configuration.IngestionProvider
     {
         FileSystem,
         S3,
+        Sftp,
         None
     }
 }

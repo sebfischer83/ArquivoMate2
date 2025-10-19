@@ -45,10 +45,14 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
                 return Task.FromResult<IReadOnlyList<IngestionFileDescriptor>>(Array.Empty<IngestionFileDescriptor>());
             }
 
+            // Ensure root and user subfolders exist on first run
+            EnsureRootAndUserFolders();
+
             var result = new List<IngestionFileDescriptor>();
 
             if (!Directory.Exists(_settings.RootPath))
             {
+                // If root still doesn't exist after attempted ensure, create it and return empty
                 Directory.CreateDirectory(_settings.RootPath);
                 return Task.FromResult<IReadOnlyList<IngestionFileDescriptor>>(result);
             }
@@ -225,6 +229,44 @@ namespace ArquivoMate2.Infrastructure.Services.IngestionProvider
             while (File.Exists(candidate));
 
             return candidate;
+        }
+
+        private void EnsureRootAndUserFolders()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(_settings.RootPath)) return;
+
+                // Create root if missing
+                if (!Directory.Exists(_settings.RootPath))
+                {
+                    Directory.CreateDirectory(_settings.RootPath);
+                    _logger.LogInformation("Created ingestion root directory: {RootPath}", _settings.RootPath);
+                }
+
+                // Ensure subfolders exist for all existing user directories
+                foreach (var userDirectory in Directory.EnumerateDirectories(_settings.RootPath))
+                {
+                    try
+                    {
+                        var processingDir = Path.Combine(userDirectory, _settings.ProcessingSubfolderName);
+                        var processedDir = Path.Combine(userDirectory, _settings.ProcessedSubfolderName);
+                        var failedDir = Path.Combine(userDirectory, _settings.FailedSubfolderName);
+
+                        Directory.CreateDirectory(processingDir);
+                        Directory.CreateDirectory(processedDir);
+                        Directory.CreateDirectory(failedDir);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed ensuring user subfolders for {UserDirectory}", userDirectory);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to ensure ingestion root and user folders");
+            }
         }
     }
 }

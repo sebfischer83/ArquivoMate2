@@ -25,6 +25,7 @@
     </None>
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
+    <None Include="docs\Configuration-Guide.md" />
     <None Include="docs\delivery.md" />
     <None Include="docs\ProjectOverview.md" />
     <None Include="docs\ShareGroupsController.md" />

@@ -97,7 +97,14 @@
 								<div class="keywords-chips">
 									@for (k of keywords(); track k) {
 										<span tuiChip size="s" appearance="primary" class="keyword-chip" [class.added]="lastAddedKeyword() === k" [class.removing]="removalSet().has(k)" title="Keyword">{{ k }}
-											<button type="button" class="chip-remove" aria-label="Keyword entfernen" (click)="$event.stopPropagation(); removeKeyword(k)">&times;</button>
+																						<button type="button" class="chip-remove" aria-label="Keyword entfernen" (click)="$event.stopPropagation(); removeKeyword(k)" [disabled]="removalSet().has(k) || keywordPendingSet().has(k)">
+																								<ng-container *ngIf="keywordPendingSet().has(k); else cross">
+																										<svg width="12" height="12" viewBox="0 0 50 50" class="chip-spinner" aria-hidden="true">
+																											<circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="31.4 31.4" transform="rotate(-90 25 25)"></circle>
+																										</svg>
+																								</ng-container>
+																								<ng-template #cross>&times;</ng-template>
+																						</button>
 										</span>
 									}
 									@if (!keywords().length) {
@@ -106,7 +113,7 @@
 								</div>
 								<div class="keywords-add-row">
 									<input type="text" class="keyword-input" [value]="newKeyword()" (input)="onKeywordInput($any($event.target).value)" (keydown)="onKeywordKey($event)" [placeholder]="t('Document.NewKeyword')" />
-									<button tuiButton size="xs" appearance="flat" type="button" (click)="addKeyword()" [disabled]="!newKeyword().trim()">{{ t('Document.Add') }}</button>
+									<button tuiButton size="xs" appearance="flat" type="button" (click)="addKeyword()" [disabled]="!newKeyword().trim() || keywordAddPending()">{{ keywordAddPending() ? t('Document.LoadingEllipsis') : t('Document.Add') }}</button>
 								</div>
 							</div>
 							<div class="prop-grid">

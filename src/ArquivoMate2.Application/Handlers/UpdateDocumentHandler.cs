@@ -55,7 +55,8 @@ namespace ArquivoMate2.Application.Handlers
 
             _logger.LogInformation("Starting update for document {documentId}. {count} properties will be changed.", request.DocumentId, request.Dto.Fields.Count);
 
-            var disallowed = request.Dto.Fields.Keys.Where(k => DisallowedProperties.Contains(k)).ToArray();
+            // Detect disallowed properties with case-insensitive comparison
+            var disallowed = request.Dto.Fields.Keys.Where(k => DisallowedProperties.Any(d => string.Equals(d, k, StringComparison.OrdinalIgnoreCase))).ToArray();
             if (disallowed.Any())
             {
                 _logger.LogError("Disallowed properties attempted to update: {@disallowed}", disallowed);
@@ -65,7 +66,8 @@ namespace ArquivoMate2.Application.Handlers
             // Translate the incoming dictionary into strongly typed values compatible with the aggregate
             foreach (var kvp in request.Dto.Fields)
             {
-                var propertyInfo = typeof(Document).GetProperty(kvp.Key);
+                // Perform a case-insensitive property lookup on the Document type
+                var propertyInfo = typeof(Document).GetProperty(kvp.Key, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
                 if (propertyInfo == null)
                 {
                     _logger.LogError("Property {property} doesnt exist on {document}.", kvp.Key, nameof(Document));
@@ -108,7 +110,9 @@ namespace ArquivoMate2.Application.Handlers
                         var json = JsonSerializer.Serialize(kvp.Value);
                         value = JsonSerializer.Deserialize(json, targetType);
                     }
-                    changes.Add(kvp.Key, value!);
+
+                    // Use the canonical property name from PropertyInfo to ensure consistent casing in events/projections
+                    changes.Add(propertyInfo.Name, value!);
                 }
                 catch (Exception ex)
                 {

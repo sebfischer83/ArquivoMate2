@@ -132,6 +132,8 @@ namespace ArquivoMate2.API
             builder.Services.AddScoped<IDocumentEncryptionKeysExportService, DocumentEncryptionKeysExportService>();
             builder.Services.AddTransient<DocumentEncryptionKeysExportJob>();
             builder.Services.AddTransient<MaintenanceExportCleanupJob>();
+            // Cleanup job for expired public shares
+            builder.Services.AddTransient<MaintenanceExpiredSharesCleanupJob>();
 
             builder.Services.AddSignalR().AddJsonProtocol(options =>
             {
@@ -314,6 +316,12 @@ namespace ArquivoMate2.API
                 "maintenance-export-cleanup",
                 job => job.ExecuteAsync(CancellationToken.None),
                 Cron.Daily));
+
+            // Recurring job to remove expired public shares - runs hourly
+            TryAddOrUpdateRecurringJob(() => RecurringJob.AddOrUpdate<MaintenanceExpiredSharesCleanupJob>(
+                "maintenance-expired-shares-cleanup",
+                job => job.ExecuteAsync(CancellationToken.None),
+                Cron.Hourly));
 
             using (var scope = app.Services.CreateScope())
             {

@@ -21,6 +21,8 @@ using System.Linq;
 using System.Threading;
 using ArquivoMate2.Domain.ReadModels;
 using System.Diagnostics;
+using ArquivoMate2.Domain.Sharing;
+using ArquivoMate2.Application.Queries.Sharing;
 
 namespace ArquivoMate2.API.Controllers
 {
@@ -336,6 +338,51 @@ namespace ArquivoMate2.API.Controllers
                 ExpiresAtUtc = share.ExpiresAtUtc,
                 Url = url
             });
+        }
+
+        /// <summary>
+        /// Lists public shares created for a document (owner only).
+        /// </summary>
+        [HttpGet("{id:guid}/shares")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<IEnumerable<ExternalShare>>))]
+        public async Task<ActionResult<ApiResponse<IEnumerable<ExternalShare>>>> ListPublicShares(Guid id, CancellationToken cancellationToken)
+        {
+            var userId = _currentUserService.UserId;
+            // verify ownership/access: reuse document access service
+            var hasAccess = await _documentAccessService.HasAccessToDocumentAsync(id, userId, cancellationToken);
+            if (!hasAccess) return NotFound();
+
+            var shares = await _mediator.Send(new GetDocumentSharesQuery(id, userId), cancellationToken);
+            // Map to ExternalShare like model if necessary - but GetDocumentSharesQuery returns DocumentShareDto; we can instead call IExternalShareService
+            // To keep it simple call service directly
+            var svc = HttpContext.RequestServices.GetService(typeof(IExternalShareService)) as IExternalShareService;
+            if (svc == null) return StatusCode(StatusCodes.Status500InternalServerError);
+
+            var result = await svc.ListByDocumentAsync(id, cancellationToken);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Deletes a specific public share for the given document (owner only).
+        /// </summary>
+        [HttpDelete("{id:guid}/shares/{shareId:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeletePublicShare(Guid id, Guid shareId, CancellationToken cancellationToken)
+        {
+            var userId = _currentUserService.UserId;
+            var hasAccess = await _documentAccessService.HasAccessToDocumentAsync(id, userId, cancellationToken);
+            if (!hasAccess) return NotFound();
+
+            var svc = HttpContext.RequestServices.GetService(typeof(IExternalShareService)) as IExternalShareService;
+            if (svc == null) return StatusCode(StatusCodes.Status500InternalServerError);
+
+            var share = await svc.GetAsync(shareId, cancellationToken);
+            if (share == null || share.DocumentId != id) return NotFound();
+
+            var deleted = await svc.DeleteAsync(shareId, cancellationToken);
+            if (!deleted) return NotFound();
+            return NoContent();
         }
     }
 }

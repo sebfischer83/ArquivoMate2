@@ -113,6 +113,11 @@
   100% { transform:scale(1); opacity:1; }
 }
 
+/* Inline spinner used inside chip remove button */
+.chip-spinner { display:inline-block; vertical-align:middle; color:var(--tui-text-03); }
+.chip-spinner circle { transform-origin: 25px 25px; animation: chip-rotate 0.9s linear infinite; }
+@keyframes chip-rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
 /* Summary box aligns with property label styling */
 .summary-box { background: var(--tui-base-02); padding: 0.65rem 0.75rem 0.75rem; border-radius: 0.5rem; margin-bottom: 0.75rem; }
 .summary-box .summary-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--tui-text-03); font-weight: 600; margin-bottom: 0.35rem; }

@@ -8,6 +8,7 @@ using ArquivoMate2.Shared.Models.Sharing; // ShareTargetType
 using Marten;
 using MediatR;
 using ArquivoMate2.Application.Interfaces.Sharing; // abstraction ports
+using Microsoft.Extensions.Logging;
 
 namespace ArquivoMate2.Application.Handlers.Sharing;
 
@@ -17,13 +18,15 @@ public class CreateDocumentShareHandler : IRequestHandler<CreateDocumentShareCom
     private readonly IQuerySession _querySession;
     private readonly IDocumentOwnershipLookup _ownershipLookup; // ownership lookup abstraction
     private readonly IDocumentAccessUpdater _accessUpdater; // access projection updater
+    private readonly ILogger<CreateDocumentShareHandler> _logger;
 
-    public CreateDocumentShareHandler(IDocumentSession session, IQuerySession querySession, IDocumentOwnershipLookup ownershipLookup, IDocumentAccessUpdater accessUpdater)
+    public CreateDocumentShareHandler(IDocumentSession session, IQuerySession querySession, IDocumentOwnershipLookup ownershipLookup, IDocumentAccessUpdater accessUpdater, ILogger<CreateDocumentShareHandler> logger)
     {
         _session = session;
         _querySession = querySession;
         _ownershipLookup = ownershipLookup;
         _accessUpdater = accessUpdater;
+        _logger = logger;
     }
 
     public async Task<DocumentShareDto> Handle(CreateDocumentShareCommand request, CancellationToken cancellationToken)
@@ -65,6 +68,7 @@ public class CreateDocumentShareHandler : IRequestHandler<CreateDocumentShareCom
             .FirstOrDefaultAsync(cancellationToken);
 
         DocumentShare share;
+        var isNew = false;
         if (existingShare is not null)
         {
             var newPermissions = existingShare.Permissions | requestedPermissions;
@@ -93,12 +97,22 @@ public class CreateDocumentShareHandler : IRequestHandler<CreateDocumentShareCom
                 GrantedBy = request.OwnerUserId,
                 Permissions = requestedPermissions
             };
+            isNew = true;
         }
 
         _session.Store(share);
         await _session.SaveChangesAsync(cancellationToken);
 
         await _accessUpdater.AddShareAsync(share, cancellationToken);
+
+        if (isNew)
+        {
+            _logger.LogInformation("Document share {ShareId} created for document {DocumentId} by {UserId}", share.Id, share.DocumentId, request.OwnerUserId);
+        }
+        else
+        {
+            _logger.LogInformation("Document share {ShareId} for document {DocumentId} updated by {UserId}", share.Id, share.DocumentId, request.OwnerUserId);
+        }
 
         return new DocumentShareDto
         {

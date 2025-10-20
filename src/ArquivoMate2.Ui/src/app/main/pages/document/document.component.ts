@@ -51,6 +51,9 @@ export class DocumentComponent implements OnInit, OnDestroy {
   // Animation state
   readonly lastAddedKeyword = signal<string | null>(null);
   readonly removalSet = signal<Set<string>>(new Set());
+  // Pending keyword operations
+  readonly keywordAddPending = signal(false);
+  readonly keywordPendingSet = signal<Set<string>>(new Set());
   // Notes state/signals
   readonly notes = signal<DocumentNoteDto[] | null>(null);
   readonly notesLoading = signal(false);
@@ -297,22 +300,95 @@ export class DocumentComponent implements OnInit, OnDestroy {
       this.newKeyword.set('');
       return; // ignore duplicates
     }
-    this.keywords.set([...current, raw]);
+    // keep snapshot for potential revert
+    const prev = [...current];
+    const optimistic = [...prev, raw];
+    this.keywords.set(optimistic);
     this.newKeyword.set('');
     this.lastAddedKeyword.set(raw);
     // clear highlight after animation
     setTimeout(() => {
       if (this.lastAddedKeyword() === raw) this.lastAddedKeyword.set(null);
     }, 400);
+
+    // Persist change
+    const id = this.documentId();
+    if (!id) {
+      // revert
+      this.keywords.set(prev);
+      this.toast.error(this.transloco.translate('Document.KeywordSaveError') || 'Fehler beim Speichern');
+      return;
+    }
+
+  this.keywordAddPending.set(true);
+  // API expects field name casing like `Keywords` (server-side expects that key), use that to avoid 400
+  this.api.apiDocumentsIdUpdateFieldsPatch$Json({ id, body: { fields: { Keywords: optimistic } } as any }).subscribe({
+      next: (resp: any) => {
+        const ok = resp?.success !== false;
+        if (!ok) {
+          this.keywords.set(prev);
+          this.toast.error(this.transloco.translate('Document.KeywordSaveError') || 'Fehler beim Speichern');
+        } else if (resp?.data) {
+          // sync full document if returned
+          this.document.set(resp.data);
+          // success feedback
+          this.toast.success(this.transloco.translate('Document.KeywordSaved') || 'Schlagwort gespeichert');
+        }
+        this.keywordAddPending.set(false);
+      },
+      error: () => {
+        this.keywords.set(prev);
+        this.keywordAddPending.set(false);
+        this.toast.error(this.transloco.translate('Document.KeywordSaveError') || 'Fehler beim Speichern');
+      }
+    });
   }
 
   removeKeyword(k: string): void {
     // stage removal to allow CSS animation
     if (this.removalSet().has(k)) return;
     this.removalSet.update(set => new Set([...Array.from(set), k]));
+    // apply visual removal first, then persist
     setTimeout(() => {
-      this.keywords.set(this.keywords().filter(x => x !== k));
-      this.removalSet.update(set => { set.delete(k); return new Set(set); });
+      const prev = [...this.keywords()];
+      const updated = prev.filter(x => x !== k);
+      this.keywords.set(updated);
+      // try to persist
+      const id = this.documentId();
+      if (!id) {
+        // restore
+        this.keywords.set(prev);
+        this.removalSet.update(set => { set.delete(k); return new Set(set); });
+        this.toast.error(this.transloco.translate('Document.KeywordSaveError') || 'Fehler beim Speichern');
+        return;
+      }
+
+      // mark as pending (removalSet already indicates animation/pending)
+      this.keywordPendingSet.update(s => new Set([...Array.from(s), k]));
+
+  // API expects `Keywords` with upper-case K based on server contract
+  this.api.apiDocumentsIdUpdateFieldsPatch$Json({ id, body: { fields: { Keywords: updated } } as any }).subscribe({
+        next: (resp: any) => {
+          const ok = resp?.success !== false;
+          if (!ok) {
+            this.keywords.set(prev);
+            this.toast.error(this.transloco.translate('Document.KeywordSaveError') || 'Fehler beim Speichern');
+          } else if (resp?.data) {
+            this.document.set(resp.data);
+            // success feedback
+            this.toast.success(this.transloco.translate('Document.KeywordRemoved') || 'Schlagwort entfernt');
+          }
+          this.keywordPendingSet.update(s => { s.delete(k); return new Set(s); });
+          this.removalSet.update(set => { set.delete(k); return new Set(set); });
+        },
+        error: () => {
+          this.keywords.set(prev);
+          this.keywordPendingSet.update(s => { s.delete(k); return new Set(s); });
+          this.removalSet.update(set => { set.delete(k); return new Set(set); });
+          this.toast.error(this.transloco.translate('Document.KeywordSaveError') || 'Fehler beim Speichern');
+        }
+      });
+
       if (this.lastAddedKeyword() === k) this.lastAddedKeyword.set(null);
     }, 180); // matches CSS transition duration
   }

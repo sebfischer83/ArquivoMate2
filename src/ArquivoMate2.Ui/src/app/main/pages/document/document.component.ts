@@ -1,5 +1,5 @@
 // ...existing code...
-import { ChangeDetectionStrategy, Component, OnInit, signal, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TuiButton, TuiSurface, TuiTitle, TuiDropdown, TuiDropdownOpen } from '@taiga-ui/core';
 import { TuiTabs, TuiChip } from '@taiga-ui/kit';
@@ -10,7 +10,7 @@ import { PdfJsViewerToolbarComponent } from '../../../components/pdfjs-viewer/pd
 import { ContentToolbarComponent } from './components/content-toolbar/content-toolbar.component';
 import { DocumentHistoryComponent } from '../../../components/document-history/document-history.component';
 import { DocumentEventDto } from '../../../client/models/document-event-dto';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DocumentsService } from '../../../client/services/documents.service';
 import { DocumentDownloadService } from '../../../services/document-download.service';
 import { DocumentDto } from '../../../client/models/document-dto';
@@ -22,6 +22,9 @@ import { DocumentNotesService } from '../../../client/services/document-notes.se
 import { DocumentNoteDto } from '../../../client/models/document-note-dto';
 import { NotesListComponent } from './components/notes-list/notes-list.component';
 import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
+import { DocumentNavigationService } from '../../../services/document-navigation.service';
+import { Subject } from 'rxjs';
+import { take, takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-document',
@@ -30,7 +33,7 @@ import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
   styleUrls: ['./document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DocumentComponent implements OnInit {
+export class DocumentComponent implements OnInit, OnDestroy {
   readonly tabIndex = signal(0);
   readonly documentId = signal<string | null>(null);
   readonly loading = signal<boolean>(false);
@@ -54,6 +57,27 @@ export class DocumentComponent implements OnInit {
   readonly notesError = signal<string | null>(null);
   readonly addingNote = signal(false);
   private notesLoadedOnce = false;
+  private readonly destroy$ = new Subject<void>();
+  private readonly documentNavigator = inject(DocumentNavigationService);
+  private readonly router = inject(Router);
+  readonly navigationPending = signal(false);
+  readonly navigationLoading = computed(() => this.documentNavigator.isLoading());
+  readonly navigationBusy = computed(() => this.navigationPending() || this.navigationLoading());
+  readonly canNavigatePrevious = computed(() => {
+    const id = this.documentId();
+    if (!id) return false;
+    return this.documentNavigator.canNavigate(id, -1);
+  });
+  readonly canNavigateNext = computed(() => {
+    const id = this.documentId();
+    if (!id) return false;
+    return this.documentNavigator.canNavigate(id, 1);
+  });
+  readonly hasNavigationContext = computed(() => {
+    const id = this.documentId();
+    if (!id) return false;
+    return this.documentNavigator.hasContextFor(id);
+  });
   /**
    * Pure original filename (never ID). Derived from potential backend fields.
    * Priority: explicit originalFileName field -> filePath basename -> empty string
@@ -93,23 +117,30 @@ export class DocumentComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Resolver supplies data under 'document'
-    const resolved: DocumentDto | null | undefined = this.route.snapshot.data['document'];
-    if (resolved) {
-      // console.log(resolved);
-      this.document.set(resolved);
-      this.updateSafePreview();
-      this.history.set(resolved.history ?? []);
-      // initialize local keywords copy
-      this.keywords.set([...(resolved.keywords ?? [])]);
-    } else {
+    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
+      const id = params.get('id');
+      this.documentId.set(id);
+    });
+
+    this.route.data.pipe(takeUntil(this.destroy$)).subscribe(data => {
+      const resolved: DocumentDto | null | undefined = data['document'];
+      if (resolved) {
+        this.applyDocument(resolved);
+        return;
+      }
+
       const id = this.documentId();
       if (!id) {
         this.error.set('Keine Dokument-ID.');
         return;
       }
       this.fetch(id);
-    }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   fetch(id: string): void {
@@ -128,11 +159,7 @@ export class DocumentComponent implements OnInit {
           this.toast.error(msg);
           return;
         }
-        this.document.set(dto);
-        this.updateSafePreview();
-        this.history.set(dto.history ?? []);
-        this.keywords.set([...(dto.keywords ?? [])]);
-        this.loading.set(false);
+        this.applyDocument(dto);
       },
       error: () => {
         this.loading.set(false);
@@ -147,6 +174,20 @@ export class DocumentComponent implements OnInit {
   retry(): void {
     const id = this.documentId();
     if (id) this.fetch(id);
+  }
+
+  private applyDocument(dto: DocumentDto): void {
+    this.document.set(dto);
+    this.updateSafePreview();
+    this.history.set(dto.history ?? []);
+    this.keywords.set([...(dto.keywords ?? [])]);
+    this.notes.set(null);
+    this.notesError.set(null);
+    this.notesLoading.set(false);
+    this.addingNote.set(false);
+    this.notesLoadedOnce = false;
+    this.loading.set(false);
+    this.error.set(null);
   }
 
   get filePath(): string | null {
@@ -311,6 +352,43 @@ export class DocumentComponent implements OnInit {
   }
 
   retryNotes(): void { this.notesLoadedOnce = false; this.loadNotes(); }
+
+  goToPrevious(): void {
+    this.navigateRelative(-1);
+  }
+
+  goToNext(): void {
+    this.navigateRelative(1);
+  }
+
+  private navigateRelative(direction: 1 | -1): void {
+    const currentId = this.documentId();
+    if (!currentId) return;
+    if (this.navigationBusy()) return;
+
+    const stream = direction > 0 ? this.documentNavigator.getNextId(currentId) : this.documentNavigator.getPreviousId(currentId);
+    this.navigationPending.set(true);
+    stream.pipe(take(1)).subscribe({
+      next: targetId => {
+        if (!targetId) {
+          this.navigationPending.set(false);
+          this.toast.info(this.transloco.translate('Document.NoMoreDocuments'));
+          return;
+        }
+        this.router
+          .navigate(['/app/document', targetId], { replaceUrl: true })
+          .then(() => this.navigationPending.set(false))
+          .catch(() => {
+            this.navigationPending.set(false);
+            this.toast.error(this.transloco.translate('Document.NavigationError'));
+          });
+      },
+      error: () => {
+        this.navigationPending.set(false);
+        this.toast.error(this.transloco.translate('Document.NavigationError'));
+      },
+    });
+  }
 
   addNote(text: string): void {
     const id = this.documentId();

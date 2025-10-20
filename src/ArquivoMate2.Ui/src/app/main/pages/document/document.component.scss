@@ -65,8 +65,10 @@
   align-items: center;
   flex-wrap: wrap;
  }
- .toolbar .left { display: flex; align-items: center; gap: 0.75rem; }
- .toolbar .actions { display: flex; gap: 0.5rem; }
+.toolbar .left { display: flex; align-items: center; gap: 0.75rem; }
+.toolbar .actions { display: flex; gap: 0.5rem; }
+.toolbar .nav-buttons { display:flex; gap:0.5rem; align-items:center; }
+.toolbar .nav-buttons button[tuiButton] { white-space:nowrap; }
 
  .properties { margin-top: 0.25rem; }
  .prop-grid {

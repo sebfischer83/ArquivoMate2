@@ -1,10 +1,11 @@
-import { inject, Injectable, signal, computed, effect } from '@angular/core';
+import { inject, Injectable, signal, computed } from '@angular/core';
 import { DocumentsService } from '../client/services/documents.service';
 import { TranslocoService } from '@jsverse/transloco';
 import { DocumentListDto } from '../client/models/document-list-dto';
 import { DocumentListDtoApiResponse } from '../client/models/document-list-dto-api-response';
 import { ToastService } from './toast.service';
 import { ApiDocumentsGet$Json$Params } from '../client/fn/documents/api-documents-get-json';
+import { DocumentNavigationService } from './document-navigation.service';
 
 // Facade: encapsulates retrieval, transformation & lightweight caching for documents list.
 // NOTE: Backend responses are now wrapped in an ApiResponse<T> envelope (success, message, errors, data,...).
@@ -14,6 +15,7 @@ export class DocumentsFacadeService {
   private api = inject(DocumentsService);
   private toast = inject(ToastService);
   private transloco = inject(TranslocoService);
+  private navigation = inject(DocumentNavigationService);
 
   private readonly documentsSignal = signal<DocumentListDto | null>(null);
   private readonly loadingSignal = signal<boolean>(false);
@@ -76,6 +78,13 @@ export class DocumentsFacadeService {
             return;
         }
         this.documentsSignal.set(data);
+        this.navigation.updateContext(data, {
+          Page: this.page(),
+          PageSize: this.pageSizeInternal(),
+          Search: this.searchTerm() || undefined,
+          Type: this.typeFilter() || undefined,
+          Accepted: this.acceptedFilter() ?? undefined,
+        });
         this.lastLoadedAt = now;
         this.loadingSignal.set(false);
       },

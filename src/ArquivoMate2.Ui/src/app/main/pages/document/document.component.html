@@ -4,8 +4,32 @@
 		<div class="document-detail">
 			<div class="toolbar">
 				<div class="left">
-					<button tuiButton size="s" appearance="secondary" iconStart="@tui.arrow-left" type="button" (click)="back()">{{ t('Document.Back') || '←' }}</button>
-					<h2 tuiTitle="m" class="doc-title">{{ document()?.title || originalFileName() || t('Document.DocumentTitleFallback') }}</h2>
+                                        <button tuiButton size="s" appearance="secondary" iconStart="@tui.arrow-left" type="button" (click)="back()">{{ t('Document.Back') || '←' }}</button>
+                                        <div class="nav-buttons" *ngIf="hasData()">
+                                                <button
+                                                        tuiButton
+                                                        size="s"
+                                                        appearance="secondary"
+                                                        iconStart="@tui.chevron-left"
+                                                        type="button"
+                                                        (click)="goToPrevious()"
+                                                        [disabled]="!hasNavigationContext() || !canNavigatePrevious() || navigationBusy()"
+                                                >
+                                                        {{ t('Document.PreviousDocument') }}
+                                                </button>
+                                                <button
+                                                        tuiButton
+                                                        size="s"
+                                                        appearance="secondary"
+                                                        iconStart="@tui.chevron-right"
+                                                        type="button"
+                                                        (click)="goToNext()"
+                                                        [disabled]="!hasNavigationContext() || !canNavigateNext() || navigationBusy()"
+                                                >
+                                                        {{ t('Document.NextDocument') }}
+                                                </button>
+                                        </div>
+                                        <h2 tuiTitle="m" class="doc-title">{{ document()?.title || originalFileName() || t('Document.DocumentTitleFallback') }}</h2>
 				</div>
 				<div class="actions" *ngIf="hasData()">
 					<!-- If archivePath exists show dropdown menu, else show direct download button -->

@@ -1,5 +1,4 @@
-// ...existing code...
-import { ChangeDetectionStrategy, Component, OnInit, signal, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TuiButton, TuiSurface, TuiTitle, TuiDropdown, TuiDropdownOpen } from '@taiga-ui/core';
 import { TuiTabs, TuiChip } from '@taiga-ui/kit';
@@ -10,7 +9,7 @@ import { PdfJsViewerToolbarComponent } from '../../../components/pdfjs-viewer/pd
 import { ContentToolbarComponent } from './components/content-toolbar/content-toolbar.component';
 import { DocumentHistoryComponent } from '../../../components/document-history/document-history.component';
 import { DocumentEventDto } from '../../../client/models/document-event-dto';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DocumentsService } from '../../../client/services/documents.service';
 import { DocumentDownloadService } from '../../../services/document-download.service';
 import { DocumentDto } from '../../../client/models/document-dto';
@@ -22,6 +21,9 @@ import { DocumentNotesService } from '../../../client/services/document-notes.se
 import { DocumentNoteDto } from '../../../client/models/document-note-dto';
 import { NotesListComponent } from './components/notes-list/notes-list.component';
 import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
+import { DocumentNavigationService, DocumentNavigationPage } from '../../../services/document-navigation.service';
+import { DocumentListItemDto } from '../../../client/models/document-list-item-dto';
+import { combineLatest, firstValueFrom, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-document',
@@ -30,7 +32,7 @@ import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
   styleUrls: ['./document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DocumentComponent implements OnInit {
+export class DocumentComponent implements OnInit, OnDestroy {
   readonly tabIndex = signal(0);
   readonly documentId = signal<string | null>(null);
   readonly loading = signal<boolean>(false);
@@ -54,12 +56,48 @@ export class DocumentComponent implements OnInit {
   readonly notesError = signal<string | null>(null);
   readonly addingNote = signal(false);
   private notesLoadedOnce = false;
+  readonly navPage = signal<number>(1);
+  readonly navIndex = signal<number>(-1);
+  readonly navLoading = signal(false);
+  readonly hasNavContext = computed(() => this.navigation.hasContext());
+  readonly canGoPrevious = computed(() => {
+    this.navigation.cacheVersion();
+    if (!this.navigation.hasContext()) return false;
+    const page = this.navPage();
+    const index = this.navIndex();
+    if (index > 0) return true;
+    const pageData = this.navigation.getCachedPage(page);
+    if (pageData?.hasPrev) return true;
+    if (page > 1) return true;
+    return false;
+  });
+  readonly canGoNext = computed(() => {
+    this.navigation.cacheVersion();
+    if (!this.navigation.hasContext()) return false;
+    const page = this.navPage();
+    const index = this.navIndex();
+    if (index < 0) return false;
+    const pageData = this.navigation.getCachedPage(page);
+    if (pageData) {
+      if (index < pageData.items.length - 1) return true;
+      if (pageData.hasNext) return true;
+    }
+    const pageCount = this.navigation.pageCount();
+    if (pageCount > 0) return page < pageCount;
+    const total = this.navigation.totalCount();
+    const size = this.navigation.pageSize();
+    if (total > 0 && size > 0) {
+      return page < Math.ceil(total / size);
+    }
+    return false;
+  });
+  private navOperationId = 0;
+  private readonly subscriptions = new Subscription();
   /**
    * Pure original filename (never ID). Derived from potential backend fields.
    * Priority: explicit originalFileName field -> filePath basename -> empty string
    */
   readonly originalFileName = computed(() => {
-    console.log(this.document()); 
     const doc = this.document();
     if (!doc) return '';
     const candidate = (doc as any).originalFileName as string | undefined; // allow backend extension
@@ -70,7 +108,6 @@ export class DocumentComponent implements OnInit {
     // Strip query (?...) and fragment (#...)
     base = base.split('?')[0].split('#')[0];
     return base;
-    return '';
   });
 
   private safePreview: SafeResourceUrl | null = null;
@@ -84,32 +121,282 @@ export class DocumentComponent implements OnInit {
     private location: Location,
     private sanitizer: DomSanitizer,
     private transloco: TranslocoService,
-  ) {
-    this.documentId.set(this.route.snapshot.paramMap.get('id'));
-  }
+    private router: Router,
+    private navigation: DocumentNavigationService,
+  ) {}
 
   back(): void {
     this.location.back();
   }
 
   ngOnInit(): void {
-    // Resolver supplies data under 'document'
-    const resolved: DocumentDto | null | undefined = this.route.snapshot.data['document'];
-    if (resolved) {
-      // console.log(resolved);
-      this.document.set(resolved);
-      this.updateSafePreview();
-      this.history.set(resolved.history ?? []);
-      // initialize local keywords copy
-      this.keywords.set([...(resolved.keywords ?? [])]);
-    } else {
-      const id = this.documentId();
-      if (!id) {
-        this.error.set('Keine Dokument-ID.');
+    const paramAndQuery$ = combineLatest([this.route.paramMap, this.route.queryParamMap]);
+    this.subscriptions.add(
+      paramAndQuery$.subscribe(([params, query]) => {
+        const id = params.get('id');
+        const page = this.parsePositiveInt(query.get('page'), 1);
+        const fallbackSize = this.navigation.pageSize();
+        const pageSize = this.parsePositiveInt(query.get('pageSize'), fallbackSize > 0 ? fallbackSize : 20);
+        const search = this.normalizeSearch(query.get('search'));
+        this.onRouteStateChange(id, page, pageSize, search);
+      })
+    );
+
+    this.subscriptions.add(
+      this.route.data.subscribe(data => {
+        const resolved: DocumentDto | null | undefined = data['document'];
+        if (resolved) {
+          this.applyDocument(resolved);
+        } else {
+          const id = this.documentId() ?? this.route.snapshot.paramMap.get('id');
+          if (id) {
+            this.fetch(id);
+          } else {
+            this.loading.set(false);
+          }
+        }
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
+
+  private onRouteStateChange(id: string | null, page: number, pageSize: number, search: string | null): void {
+    const normalizedPage = page > 0 ? page : 1;
+    const normalizedPageSize = pageSize > 0 ? pageSize : 20;
+    const normalizedSearch = this.normalizeSearch(search);
+
+    this.navigation.ensureContext({ pageSize: normalizedPageSize, search: normalizedSearch });
+    this.navPage.set(normalizedPage);
+
+    if (!id) {
+      this.documentId.set(null);
+      this.resetDocumentState();
+      const message = this.transloco.translate('Document.DocumentLoadError');
+      this.error.set(message);
+      this.loading.set(false);
+      return;
+    }
+
+    const currentId = this.documentId();
+    if (currentId !== id) {
+      this.resetDocumentState();
+      this.documentId.set(id);
+      this.loading.set(true);
+      this.error.set(null);
+    }
+
+    void this.locateDocument(id, normalizedPage);
+  }
+
+  private resetDocumentState(): void {
+    this.navOperationId++;
+    this.navLoading.set(false);
+    this.navIndex.set(-1);
+    this.document.set(null);
+    this.history.set([]);
+    this.keywords.set([]);
+    this.newKeyword.set('');
+    this.lastAddedKeyword.set(null);
+    this.removalSet.set(new Set());
+    this.notes.set(null);
+    this.notesError.set(null);
+    this.notesLoading.set(false);
+    this.addingNote.set(false);
+    this.notesLoadedOnce = false;
+    this.copiedContent.set(false);
+    this.wrapContent.set(true);
+    this.tabIndex.set(0);
+    this.downloadLoading.set(false);
+    this.downloadMenuOpen.set(false);
+    this.safePreview = null;
+  }
+
+  private async locateDocument(id: string, page: number): Promise<void> {
+    if (!id) {
+      this.navIndex.set(-1);
+      return;
+    }
+
+    const cached = this.findDocumentInCachedPages(id);
+    if (cached) {
+      this.navPage.set(cached.page);
+      this.navIndex.set(cached.index);
+      return;
+    }
+
+    const targetPage = page > 0 ? page : 1;
+    const pageData = await this.getNavigationPage(targetPage);
+    if (!pageData) {
+      this.navPage.set(targetPage);
+      this.navIndex.set(-1);
+      return;
+    }
+    let index = pageData.items.findIndex(item => item?.id === id);
+    if (index < 0) {
+      const fallback = this.findDocumentInCachedPages(id);
+      if (fallback) {
+        this.navPage.set(fallback.page);
+        this.navIndex.set(fallback.index);
         return;
       }
-      this.fetch(id);
     }
+    this.navPage.set(targetPage);
+    this.navIndex.set(index);
+  }
+
+  private findDocumentInCachedPages(id: string): { page: number; index: number } | null {
+    const pages = this.navigation.getCachedPages();
+    for (const page of pages) {
+      const index = page.items.findIndex(item => item?.id === id);
+      if (index >= 0) {
+        return { page: page.page, index };
+      }
+    }
+    return null;
+  }
+
+  private async getNavigationPage(page: number): Promise<DocumentNavigationPage | null> {
+    const normalizedPage = page > 0 ? page : 1;
+    const cached = this.navigation.getCachedPage(normalizedPage);
+    if (cached) {
+      return cached;
+    }
+    const opId = ++this.navOperationId;
+    this.navLoading.set(true);
+    try {
+      const result = await firstValueFrom(this.navigation.ensurePage(normalizedPage));
+      if (this.navOperationId !== opId) {
+        return null;
+      }
+      return result;
+    } catch (error) {
+      if (this.navOperationId === opId) {
+        console.error('Failed to load navigation page', error);
+      }
+      return null;
+    } finally {
+      if (this.navOperationId === opId) {
+        this.navLoading.set(false);
+      }
+    }
+  }
+
+  private hasAnotherPageAfter(page: number): boolean {
+    const pageCount = this.navigation.pageCount();
+    if (pageCount > 0) {
+      return page < pageCount;
+    }
+    const total = this.navigation.totalCount();
+    const size = this.navigation.pageSize();
+    if (total > 0 && size > 0) {
+      return page < Math.ceil(total / size);
+    }
+    const pageData = this.navigation.getCachedPage(page);
+    return !!pageData?.hasNext;
+  }
+
+  private hasPageBefore(page: number): boolean {
+    if (page > 1) {
+      return true;
+    }
+    const pageData = this.navigation.getCachedPage(page);
+    return !!pageData?.hasPrev;
+  }
+
+  private navigateToDocument(item: DocumentListItemDto | null | undefined, page: number, index: number): void {
+    const id = item?.id;
+    if (!id) {
+      return;
+    }
+    this.navPage.set(page);
+    this.navIndex.set(index);
+    const queryParams: Record<string, any> = { page };
+    const size = this.navigation.pageSize();
+    if (size > 0) {
+      queryParams['pageSize'] = size;
+    }
+    const search = this.navigation.search();
+    if (search) {
+      queryParams['search'] = search;
+    }
+    void this.router.navigate(['/app/document', id], { queryParams });
+  }
+
+  async goToPrevious(): Promise<void> {
+    if (!this.canGoPrevious() || this.navLoading()) {
+      return;
+    }
+    const page = this.navPage();
+    const index = this.navIndex();
+    const currentPage = await this.getNavigationPage(page);
+    if (!currentPage) {
+      return;
+    }
+    if (index > 0) {
+      const target = currentPage.items[index - 1];
+      this.navigateToDocument(target, page, index - 1);
+      return;
+    }
+    if (!this.hasPageBefore(page)) {
+      return;
+    }
+    const previousPageNumber = Math.max(1, page - 1);
+    const previousPage = await this.getNavigationPage(previousPageNumber);
+    if (!previousPage || previousPage.items.length === 0) {
+      return;
+    }
+    const targetIndex = previousPage.items.length - 1;
+    const target = previousPage.items[targetIndex];
+    this.navigateToDocument(target, previousPageNumber, targetIndex);
+  }
+
+  async goToNext(): Promise<void> {
+    if (!this.canGoNext() || this.navLoading()) {
+      return;
+    }
+    const page = this.navPage();
+    const index = this.navIndex();
+    const currentPage = await this.getNavigationPage(page);
+    if (!currentPage) {
+      return;
+    }
+    if (index >= 0 && index < currentPage.items.length - 1) {
+      const target = currentPage.items[index + 1];
+      this.navigateToDocument(target, page, index + 1);
+      return;
+    }
+    if (!this.hasAnotherPageAfter(page)) {
+      return;
+    }
+    const nextPageNumber = page + 1;
+    const nextPage = await this.getNavigationPage(nextPageNumber);
+    if (!nextPage || nextPage.items.length === 0) {
+      return;
+    }
+    const target = nextPage.items[0];
+    this.navigateToDocument(target, nextPageNumber, 0);
+  }
+
+  private parsePositiveInt(value: string | null, fallback: number): number {
+    const parsed = Number.parseInt(value ?? '', 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  }
+
+  private normalizeSearch(value: string | null): string | null {
+    const trimmed = (value ?? '').trim();
+    return trimmed.length ? trimmed : null;
+  }
+
+  private applyDocument(dto: DocumentDto): void {
+    this.document.set(dto);
+    this.updateSafePreview();
+    this.history.set(dto.history ?? []);
+    this.keywords.set([...(dto.keywords ?? [])]);
+    this.loading.set(false);
+    this.error.set(null);
   }
 
   fetch(id: string): void {
@@ -128,11 +415,7 @@ export class DocumentComponent implements OnInit {
           this.toast.error(msg);
           return;
         }
-        this.document.set(dto);
-        this.updateSafePreview();
-        this.history.set(dto.history ?? []);
-        this.keywords.set([...(dto.keywords ?? [])]);
-        this.loading.set(false);
+        this.applyDocument(dto);
       },
       error: () => {
         this.loading.set(false);

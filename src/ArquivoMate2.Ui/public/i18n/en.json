@@ -24,6 +24,8 @@
   "NoNotes": "No notes yet",
   "NoteSaved": "Note saved",
     "Back": "Back",
+    "Previous": "Previous",
+    "Next": "Next",
     "DocumentTitleFallback": "Document",
     "LoadingEllipsis": "Loading…",
     "Open": "Open",

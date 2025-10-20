@@ -63,6 +63,7 @@ using ArquivoMate2.Application.Interfaces.Sharing;
 using ArquivoMate2.Infrastructure.Services.Encryption; // Encryption helpers
 using ArquivoMate2.Infrastructure.Persistance;
 using Minio.Handlers; // ensure interface is visible
+using System.Net.Http;
 
 namespace ArquivoMate2.Infrastructure.Configuration
 {
@@ -225,12 +226,18 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 {
                     services.AddSingleton(openAISettings);
 
-                    // Register an embeddings client implementation using OpenAI settings
-                    services.AddSingleton<IEmbeddingsClient>(sp =>
-                        new OpenAiEmbeddingsClient(openAISettings.EmbeddingModel, openAISettings.ApiKey));
+                    if (openAISettings.EnableEmbeddings)
+                    {
+                        services.AddSingleton<IEmbeddingsClient>(sp =>
+                            new OpenAiEmbeddingsClient(openAISettings.EmbeddingModel, openAISettings.ApiKey));
+                    }
+                    else
+                    {
+                        services.AddSingleton<IEmbeddingsClient, NullEmbeddingsClient>();
+                    }
 
                     var vectorStoreConnection = config.GetConnectionString("VectorStore");
-                    if (!string.IsNullOrWhiteSpace(vectorStoreConnection))
+                    if (openAISettings.EnableEmbeddings && !string.IsNullOrWhiteSpace(vectorStoreConnection))
                     {
                         services.AddSingleton<IDocumentVectorizationService>(sp =>
                             new DocumentVectorizationService(
@@ -259,6 +266,58 @@ namespace ArquivoMate2.Infrastructure.Configuration
                             ChatClient client = new(model: openAISettings.Model, apiKey: openAISettings.ApiKey);
                             return new OpenAIChatBot(client, sp.GetRequiredService<IDocumentVectorizationService>(), sp.GetRequiredService<ILogger<OpenAIChatBot>>());
                         });
+                    }
+                }
+                else if (chatbotSettings is OpenRouterSettings openRouterSettings)
+                {
+                    // bind settings and register
+                    services.AddSingleton(openRouterSettings);
+                    services.Configure<OpenRouterSettings>(config.GetSection("ChatBot").GetSection("Args"));
+
+                    services.AddHttpClient<OpenRouterChatBot>(client =>
+                    {
+                        client.BaseAddress = new Uri(openRouterSettings.BaseUrl);
+                        if (!string.IsNullOrWhiteSpace(openRouterSettings.ApiKey))
+                        {
+                            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", openRouterSettings.ApiKey);
+                        }
+                    });
+
+                    services.AddScoped<IChatBot, OpenRouterChatBot>();
+
+                    if (openRouterSettings.EnableEmbeddings)
+                    {
+                        services.AddSingleton<IEmbeddingsClient>(sp =>
+                            new OpenAiEmbeddingsClient(openRouterSettings.EmbeddingModel, openRouterSettings.ApiKey));
+                    }
+                    else
+                    {
+                        services.AddSingleton<IEmbeddingsClient, NullEmbeddingsClient>();
+                    }
+
+                    var vectorStoreConnection = config.GetConnectionString("VectorStore");
+                    if (openRouterSettings.EnableEmbeddings && !string.IsNullOrWhiteSpace(vectorStoreConnection))
+                    {
+                        var mapped = new OpenAISettings
+                        {
+                            ApiKey = openRouterSettings.ApiKey,
+                            Model = openRouterSettings.Model,
+                            EmbeddingModel = openRouterSettings.EmbeddingModel,
+                            EmbeddingDimensions = 1536,
+                            UseBatch = openRouterSettings.UseBatch,
+                            EnableEmbeddings = openRouterSettings.EnableEmbeddings
+                        };
+
+                        services.AddSingleton<IDocumentVectorizationService>(sp =>
+                            new DocumentVectorizationService(
+                                vectorStoreConnection!,
+                                mapped,
+                                sp.GetRequiredService<IEmbeddingsClient>(),
+                                sp.GetRequiredService<ILogger<DocumentVectorizationService>>()));
+                    }
+                    else
+                    {
+                        services.AddSingleton<IDocumentVectorizationService, NullDocumentVectorizationService>();
                     }
                 }
                 else

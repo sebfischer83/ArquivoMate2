@@ -16,5 +16,8 @@ namespace ArquivoMate2.Infrastructure.Configuration.Llm
         public string EmbeddingModel { get; set; } = "text-embedding-3-small";
 
         public int EmbeddingDimensions { get; set; } = 1536;
+
+        // New: allow disabling embeddings/vectorization completely via config (ChatBot:Args:EnableEmbeddings=false)
+        public bool EnableEmbeddings { get; set; } = true;
     }
 }

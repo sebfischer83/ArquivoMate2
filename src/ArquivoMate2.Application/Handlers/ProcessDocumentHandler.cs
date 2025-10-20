@@ -170,6 +170,10 @@ namespace ArquivoMate2.Application.Handlers
                 sw.Stop();
                 _logger.LogInformation("Processed document {DocumentId} in {ElapsedMs}ms", request.DocumentId, sw.ElapsedMilliseconds);
                 LogMemoryUsage("End Handle", request.DocumentId);
+
+                await _documentProcessingNotifier.NotifyStatusChangedAsync(request.UserId,
+                    new DocumentProcessingNotification(request.DocumentId.ToString(), DocumentProcessingStatus.Completed, "Document processing ended"));
+
                 return (finalDoc, loaded.PhysicalPath);
             }
             catch (Exception ex)

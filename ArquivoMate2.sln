@@ -41,6 +41,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArquivoMate2.Application.Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArquivoMate2.Infrastructure.Tests", "tests\ArquivoMate2.Infrastructure.Tests\ArquivoMate2.Infrastructure.Tests.csproj", "{283F256B-156D-4367-9C17-66A47F770D77}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArquivoMate2.Api.Tests", "tests\ArquivoMate2.Api.Tests\ArquivoMate2.Api.Tests.csproj", "{32FAE717-46C9-4290-85CC-86B385BFCE60}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -155,6 +157,18 @@ Global
 		{283F256B-156D-4367-9C17-66A47F770D77}.Release|x64.Build.0 = Release|Any CPU
 		{283F256B-156D-4367-9C17-66A47F770D77}.Release|x86.ActiveCfg = Release|Any CPU
 		{283F256B-156D-4367-9C17-66A47F770D77}.Release|x86.Build.0 = Release|Any CPU
+		{32FAE717-46C9-4290-85CC-86B385BFCE60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32FAE717-46C9-4290-85CC-86B385BFCE60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32FAE717-46C9-4290-85CC-86B385BFCE60}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{32FAE717-46C9-4290-85CC-86B385BFCE60}.Debug|x64.Build.0 = Debug|Any CPU
+		{32FAE717-46C9-4290-85CC-86B385BFCE60}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{32FAE717-46C9-4290-85CC-86B385BFCE60}.Debug|x86.Build.0 = Debug|Any CPU
+		{32FAE717-46C9-4290-85CC-86B385BFCE60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32FAE717-46C9-4290-85CC-86B385BFCE60}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32FAE717-46C9-4290-85CC-86B385BFCE60}.Release|x64.ActiveCfg = Release|Any CPU
+		{32FAE717-46C9-4290-85CC-86B385BFCE60}.Release|x64.Build.0 = Release|Any CPU
+		{32FAE717-46C9-4290-85CC-86B385BFCE60}.Release|x86.ActiveCfg = Release|Any CPU
+		{32FAE717-46C9-4290-85CC-86B385BFCE60}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -168,6 +182,7 @@ Global
 		{FAB44361-B814-4905-A6D8-970E26D84277} = {0C9B3825-AA48-4875-82BB-AA785E888D78}
 		{93F2038A-D7D7-4831-8733-0DA647CF9F35} = {0C9B3825-AA48-4875-82BB-AA785E888D78}
 		{283F256B-156D-4367-9C17-66A47F770D77} = {0C9B3825-AA48-4875-82BB-AA785E888D78}
+		{32FAE717-46C9-4290-85CC-86B385BFCE60} = {0C9B3825-AA48-4875-82BB-AA785E888D78}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {81D83805-8D95-4B36-989A-46692749969B}

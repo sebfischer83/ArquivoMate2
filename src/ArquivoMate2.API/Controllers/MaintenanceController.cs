@@ -287,17 +287,6 @@ public class MaintenanceController : ControllerBase
         return Ok(new { RedisInfo = redisInfoStructured, KeyCounts = keyCountsResult, MeiliHealth = meiliHealth, MeiliIndexStats = meiliIndexStats, MeiliVersion = meiliVersion, Database = dbStats });
     }
 
-    /// <summary>
-    /// Returns Postgres version, top largest tables and Marten related tables & assembly version.
-    /// </summary>
-    [HttpGet("db-stats")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetDatabaseStats(CancellationToken cancellationToken)
-    {
-        var dto = await GetDatabaseStatsInternal(cancellationToken);
-        return Ok(dto);
-    }
-
     private async Task<DatabaseStatsDto> GetDatabaseStatsInternal(CancellationToken cancellationToken)
     {
         var connStr = _configuration.GetConnectionString("Default");

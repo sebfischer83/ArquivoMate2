@@ -1,4 +1,4 @@
-import { inject, Injectable, signal, computed } from '@angular/core';
+import { inject, Injectable, signal, computed, effect } from '@angular/core';
 import { DocumentsService } from '../client/services/documents.service';
 import { TranslocoService } from '@jsverse/transloco';
 import { DocumentListDto } from '../client/models/document-list-dto';
@@ -6,6 +6,8 @@ import { DocumentListDtoApiResponse } from '../client/models/document-list-dto-a
 import { ToastService } from './toast.service';
 import { ApiDocumentsGet$Json$Params } from '../client/fn/documents/api-documents-get-json';
 import { DocumentNavigationService } from './document-navigation.service';
+import { StateService } from './state.service';
+import { DocumentProcessingStatus } from '../models/document-processing-status';
 
 // Facade: encapsulates retrieval, transformation & lightweight caching for documents list.
 // NOTE: Backend responses are now wrapped in an ApiResponse<T> envelope (success, message, errors, data,...).
@@ -25,6 +27,8 @@ export class DocumentsFacadeService {
   private page = signal<number>(1);
   private pageSizeInternal = signal<number>(20);
 
+  // (notifications) — simplified: we'll reload list when any Completed notification arrives
+
   // New filter signals
   private searchTerm = signal<string>('');
   private typeFilter = signal<string | null>(null);
@@ -42,6 +46,38 @@ export class DocumentsFacadeService {
   // Debounce mechanism (simple) for search
   private searchTimer: any;
   private readonly searchDebounceMs = 300;
+  // Debounce for notification-triggered reloads to avoid many rapid reloads
+  private notifyReloadTimer: any;
+  private readonly notifyReloadDebounceMs = 300;
+
+  // React to document processing notifications and reload when a document completes
+  private state = inject(StateService);
+
+  constructor() {
+    // Ensure state service has its event handlers registered (main area usually does this,
+    // but we proactively ensure it here to avoid missing notifications if this service is used early)
+    try {
+      this.state.ensureInitialized();
+    } catch {
+      // swallow; ensureInitialized is idempotent
+    }
+
+    // Create an effect reacting to changes in the notification signal
+    effect(() => {
+      const notes = this.state.documentNotification();
+      if (!notes || notes.length === 0) return;
+
+      // Simplified behavior: if any notification indicates Completed, reload the documents list
+      const anyCompleted = notes.some(n => n.status === DocumentProcessingStatus.Completed);
+      if (anyCompleted) {
+        if (this.notifyReloadTimer) clearTimeout(this.notifyReloadTimer);
+        this.notifyReloadTimer = setTimeout(() => {
+          this.load(true);
+          this.notifyReloadTimer = null;
+        }, this.notifyReloadDebounceMs);
+      }
+    });
+  }
 
   load(force = false): void {
     const now = Date.now();

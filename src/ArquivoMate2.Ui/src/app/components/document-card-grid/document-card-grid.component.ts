@@ -4,6 +4,7 @@ import { DocumentListItemDto } from '../../client/models/document-list-item-dto'
 import { TuiPagination } from '@taiga-ui/kit';
 import { DocumentCardComponent } from '../document-card/document-card.component';
 import { TuiIcon } from '@taiga-ui/core';
+import { LocaleAwareDatePipe } from '../../utils/locale-aware-date.pipe';
 
 /**
  * Reusable grid component to display a paged list of documents as Taiga UI style cards.
@@ -12,7 +13,7 @@ import { TuiIcon } from '@taiga-ui/core';
 @Component({
   standalone: true,
   selector: 'am-document-card-grid',
-  imports: [CommonModule, TuiPagination, DocumentCardComponent, TuiIcon],
+  imports: [CommonModule, TuiPagination, DocumentCardComponent, TuiIcon, LocaleAwareDatePipe],
   templateUrl: './document-card-grid.component.html',
   styleUrl: './document-card-grid.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

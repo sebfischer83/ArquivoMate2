@@ -308,7 +308,7 @@
                 }
               </span>
               @if (lastCountRefresh()) {
-                <span class="meta">{{ t('Settings.Email.Status.AsOf') }}: {{ lastCountRefresh() | date:'short' }}</span>
+                <span class="meta">{{ t('Settings.Email.Status.AsOf') }}: {{ lastCountRefresh() | localeDate:'short' }}</span>
               }
             </div>
 

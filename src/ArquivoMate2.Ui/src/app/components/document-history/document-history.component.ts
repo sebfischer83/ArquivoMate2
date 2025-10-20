@@ -4,6 +4,7 @@ import { prettyPrintJson } from 'pretty-print-json';
 import { TuiButton } from '@taiga-ui/core';
 // Removed DomSanitizer usage to avoid unsafe HTML bindings; using tokenization instead
 import { CommonModule } from '@angular/common';
+import { LocaleAwareDatePipe } from '../../utils/locale-aware-date.pipe';
 import { DocumentEventDto } from '../../client/models/document-event-dto';
 
 // We rely on pretty-print-json for fallback static formatting.
@@ -12,7 +13,7 @@ import { DocumentEventDto } from '../../client/models/document-event-dto';
 @Component({
 	standalone: true,
 	selector: 'app-document-history',
-	imports: [CommonModule, TuiButton],
+	imports: [CommonModule, TuiButton, LocaleAwareDatePipe],
 	templateUrl: './document-history.component.html',
 	styleUrls: ['./document-history.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,

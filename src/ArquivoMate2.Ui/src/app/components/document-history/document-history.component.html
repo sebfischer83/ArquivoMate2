@@ -7,7 +7,7 @@
 			[class.active]="ev === selectedEvent()"
 		>
 			<div class="row-top">
-				<span class="time">{{ ev.occurredOn | date : 'yyyy-MM-dd HH:mm:ss' }}</span>
+				<span class="time">{{ ev.occurredOn | localeDate }}</span>
 				<span class="type">{{ ev.eventType }}</span>
 			</div>
 			<div class="user" [class.hidden]="!ev.userId">User: {{ ev.userId || '' }}</div>
@@ -18,7 +18,7 @@
 		<div class="details-header">
 			<strong>Detail</strong>
 			<span class="meta">
-				{{ selectedEvent()?.occurredOn | date : 'yyyy-MM-dd HH:mm:ss' }} • {{ selectedEvent()?.eventType || '—' }}
+				{{ selectedEvent()?.occurredOn | localeDate  }} • {{ selectedEvent()?.eventType || '—' }}
 				<span class="user-inline" [class.hidden]="!selectedEvent()?.userId"> • {{ selectedEvent()?.userId }}</span>
 			</span>
 			<div class="toolbar" *ngIf="hasJson">

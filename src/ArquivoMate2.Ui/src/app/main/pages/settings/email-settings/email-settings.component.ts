@@ -5,6 +5,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators, FormsModule } 
 import { TuiButton, TuiTextfield, TuiHint } from '@taiga-ui/core';
 import { TuiExpand } from '@taiga-ui/core/components/expand';
 import { TranslocoService, TranslocoModule } from '@jsverse/transloco';
+import { LocaleAwareDatePipe } from '../../../../utils/locale-aware-date.pipe';
 // TuiSwitch removed: using native checkboxes for these boolean controls
 import { firstValueFrom } from 'rxjs';
 import { EmailService } from '../../../../client/services/email.service';
@@ -102,7 +103,7 @@ type ConnectionStatus = { kind: 'success' | 'error'; message: string };
 @Component({
   standalone: true,
   selector: 'app-email-settings',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, TuiButton, TuiTextfield, TuiHint, TuiExpand, TranslocoModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, TuiButton, TuiTextfield, TuiHint, TuiExpand, TranslocoModule, LocaleAwareDatePipe],
   templateUrl: './email-settings.component.html',
   styleUrl: './email-settings.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

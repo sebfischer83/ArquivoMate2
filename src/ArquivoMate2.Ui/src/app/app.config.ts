@@ -1,6 +1,6 @@
 import { NG_EVENT_PLUGINS, provideEventPlugins } from "@taiga-ui/event-plugins";
 import { provideAnimations } from "@angular/platform-browser/animations";
-import { ApplicationConfig, provideAppInitializer, inject } from '@angular/core';
+import { ApplicationConfig, provideAppInitializer, inject, LOCALE_ID } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideOAuthClient } from 'angular-oauth2-oidc';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -19,6 +19,10 @@ import { TranslocoHttpLoader } from './transloco-loader';
 import { provideTransloco } from '@jsverse/transloco';
 import { AVAILABLE_LANGS, readPersistedLanguage } from './config/i18n.config';
 import { TranslocoService } from '@jsverse/transloco';
+import { registerLocaleData } from '@angular/common';
+import localeDe from '@angular/common/locales/de';
+import localeEn from '@angular/common/locales/en';
+import localeRu from '@angular/common/locales/ru';
 
 const defaultAuthConfig: AuthConfig = {
   issuer: 'https://default-issuer.com',
@@ -92,5 +96,45 @@ export const appConfig: ApplicationConfig = {
         },
         loader: TranslocoHttpLoader
       })
+    ,
+    // Provide LOCALE_ID based on Transloco active language so Angular DatePipe
+    // uses the same locale as the translations. Also register locale data
+    // for supported locales (en, de, ru).
+    {
+      provide: LOCALE_ID,
+      useFactory: (transloco: TranslocoService) => {
+        const lang = (transloco.getActiveLang() as string) || 'en';
+        const map: Record<string, string> = {
+          en: 'en-US',
+          de: 'de',
+          ru: 'ru'
+        };
+        const locale = map[lang] ?? 'en-US';
+
+        // register locale data lazily (idempotent)
+        try {
+          // Avoid registering same locale multiple times
+          const registeredKey = `__am_registered_${locale}`;
+          // Use (globalThis as any) as cheap registry
+          if (!(globalThis as any)[registeredKey]) {
+            if (locale.startsWith('de')) {
+              registerLocaleData(localeDe, 'de');
+            } else if (locale.startsWith('ru')) {
+              registerLocaleData(localeRu, 'ru');
+            } else {
+              registerLocaleData(localeEn, 'en-US');
+            }
+            (globalThis as any)[registeredKey] = true;
+          }
+        } catch (e) {
+          // ignore - registration is best-effort
+          // eslint-disable-next-line no-console
+          console.warn('[ArquivoMate2] Failed to register locale data', e);
+        }
+
+        return locale;
+      },
+      deps: [TranslocoService]
+    }
   ]
 };

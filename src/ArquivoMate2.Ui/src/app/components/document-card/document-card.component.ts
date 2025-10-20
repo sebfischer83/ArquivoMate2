@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import { NgOptimizedImage, DatePipe } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import { TuiIcon } from '@taiga-ui/core';
 import { DocumentListItemDto } from '../../client/models';
+import { LocaleAwareDatePipe } from '../../utils/locale-aware-date.pipe';
 
 /**
  * Standalone presentational component for a single document card.
@@ -11,7 +12,7 @@ import { DocumentListItemDto } from '../../client/models';
 @Component({
   selector: 'am-document-card',
   standalone: true,
-  imports: [NgOptimizedImage, DatePipe, TuiIcon],
+  imports: [NgOptimizedImage, LocaleAwareDatePipe, TuiIcon],
   templateUrl: './document-card.component.html',
   styleUrls: ['./document-card.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

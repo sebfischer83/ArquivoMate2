@@ -26,7 +26,7 @@
       >
         <header class="chat__message-header">
           <span class="chat__message-role">{{ roleLabel(message.kind) }}</span>
-          <time class="chat__message-time">{{ message.timestamp | date: 'shortTime' }}</time>
+          <time class="chat__message-time">{{ message.timestamp | localeDate:'shortTime' }}</time>
         </header>
         <div class="chat__message-body">
           <p class="chat__message-text">{{ message.text }}</p>
@@ -54,7 +54,7 @@
             <ul class="chat__reference-list">
               <li *ngFor="let reference of message.documents; trackBy: trackByReference" class="chat__reference-item">
                 <span class="chat__reference-title">{{ reference.title || reference.documentId }}</span>
-                <span *ngIf="reference.date" class="chat__reference-date">{{ reference.date | date: 'mediumDate' }}</span>
+                <span *ngIf="reference.date" class="chat__reference-date">{{ reference.date | localeDate: 'mediumDate' }}</span>
                 <span *ngIf="reference.score !== null && reference.score !== undefined" class="chat__reference-score">
                   Score: {{ reference.score | number: '1.2-2' }}
                 </span>

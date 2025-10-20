@@ -7,6 +7,7 @@ import { TuiSwitch } from '@taiga-ui/kit/components/switch';
 import { finalize, Subscription } from 'rxjs';
 import { DocumentDto, DocumentEventDto } from '../../client/models';
 import { DocumentHistoryComponent } from '../document-history/document-history.component';
+import { LocaleAwareDatePipe } from '../../utils/locale-aware-date.pipe';
 import {
   DocumentChatAnswerCitation,
   DocumentChatAnswerReference,
@@ -29,7 +30,7 @@ interface DocumentChatMessage {
 @Component({
   selector: 'am-document-chat',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TuiTextarea, TuiSwitch, TuiButton, TuiHint, TuiLoader, DocumentHistoryComponent],
+  imports: [CommonModule, ReactiveFormsModule, TuiTextarea, TuiSwitch, TuiButton, TuiHint, TuiLoader, DocumentHistoryComponent, LocaleAwareDatePipe],
   templateUrl: './document-chat.component.html',
   styleUrls: ['./document-chat.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

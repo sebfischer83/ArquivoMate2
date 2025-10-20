@@ -23,6 +23,8 @@
     "NoteSaved": "Заметка сохранена",
     "NotesLoadError": "Не удалось загрузить заметки",
     "Back": "Назад",
+    "Previous": "Предыдущий",
+    "Next": "Следующий",
     "DocumentTitleFallback": "Документ",
     "LoadingEllipsis": "Загрузка…",
     "Open": "Открыть",

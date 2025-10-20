@@ -6,6 +6,7 @@ import { UploadWidgetComponent } from './upload-widget.component';
 import { DocumentCardGridComponent } from '../../../components/document-card-grid/document-card-grid.component';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { DocumentNavigationService } from '../../../services/document-navigation.service';
 
 
 @Component({
@@ -19,6 +20,7 @@ import { Router } from '@angular/router';
 export class DashboardComponent {
   private facade = inject(DocumentsFacadeService);
   private router = inject(Router);
+  private navigation = inject(DocumentNavigationService);
   documents = this.facade.documents;
   total = this.facade.totalCount;
   isLoading = this.facade.isLoading;
@@ -38,7 +40,27 @@ export class DashboardComponent {
   onReload() { this.facade.load(true); }
   onItemClick(doc: any) {
     if (doc?.id) {
-      this.router.navigate(['/app/document', doc.id]);
+      const list = this.documents();
+      const page = this.currentPage();
+      const pageSize = this.pageSize();
+      const search = (this.currentSearch() || '').trim();
+
+      this.navigation.prepare({
+        page,
+        pageSize,
+        search,
+        list: list || null,
+      });
+
+      const queryParams: Record<string, any> = {
+        page,
+        pageSize,
+      };
+      if (search) {
+        queryParams['search'] = search;
+      }
+
+      this.router.navigate(['/app/document', doc.id], { queryParams });
     }
   }
 

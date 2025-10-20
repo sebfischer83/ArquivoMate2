@@ -3,10 +3,12 @@
 	<div class="main-area" tuiSurface appearance="floating">
 		<div class="document-detail">
 			<div class="toolbar">
-				<div class="left">
-					<button tuiButton size="s" appearance="secondary" iconStart="@tui.arrow-left" type="button" (click)="back()">{{ t('Document.Back') || '←' }}</button>
-					<h2 tuiTitle="m" class="doc-title">{{ document()?.title || originalFileName() || t('Document.DocumentTitleFallback') }}</h2>
-				</div>
+                                <div class="left">
+                                        <button tuiButton size="s" appearance="secondary" iconStart="@tui.arrow-left" type="button" (click)="back()">{{ t('Document.Back') || '←' }}</button>
+                                        <button tuiButton size="s" appearance="flat" iconStart="@tui.chevron-left" type="button" (click)="goToPrevious()" [disabled]="!canGoPrevious() || navLoading()">{{ t('Document.Previous') || '‹' }}</button>
+                                        <button tuiButton size="s" appearance="flat" iconStart="@tui.chevron-right" type="button" (click)="goToNext()" [disabled]="!canGoNext() || navLoading()">{{ t('Document.Next') || '›' }}</button>
+                                        <h2 tuiTitle="m" class="doc-title">{{ document()?.title || originalFileName() || t('Document.DocumentTitleFallback') }}</h2>
+                                </div>
 				<div class="actions" *ngIf="hasData()">
 					<!-- If archivePath exists show dropdown menu, else show direct download button -->
 					@if (document()?.archivePath) {

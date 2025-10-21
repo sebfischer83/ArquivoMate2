@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using ArquivoMate2.Application.Interfaces;
@@ -14,7 +15,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
     {
         public string ModelName => string.Empty;
 
-        public Task<DocumentAnalysisResult> AnalyzeDocumentContent(string content, CancellationToken cancellationToken)
+        public Task<DocumentAnalysisResult> AnalyzeDocumentContent(string content, IReadOnlyList<DocumentTypeOption> availableTypes, CancellationToken cancellationToken)
         {
             var empty = new DocumentAnalysisResult();
             return Task.FromResult(empty);

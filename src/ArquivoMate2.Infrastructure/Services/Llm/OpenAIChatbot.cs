@@ -1,5 +1,6 @@
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Models;
+using ArquivoMate2.Infrastructure.Configuration.Llm;
 using OpenAI.Chat;
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
         private readonly ChatClient _client;
         private readonly IDocumentVectorizationService _vectorizationService;
         private readonly ILogger<OpenAIChatBot> _logger;
+        private readonly string _responseLanguage;
 
         private const string LoadChunkToolName = "load_document_chunk";
         private const string QueryDocumentsToolName = "query_documents";
@@ -29,28 +31,32 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
-        public OpenAIChatBot(ChatClient client, IDocumentVectorizationService vectorizationService, ILogger<OpenAIChatBot> logger)
+        public OpenAIChatBot(ChatClient client, IDocumentVectorizationService vectorizationService, ILogger<OpenAIChatBot> logger, OpenAISettings settings)
         {
             _client = client;
             _vectorizationService = vectorizationService;
             _logger = logger;
+            _responseLanguage = string.IsNullOrWhiteSpace(settings.ResponseLanguage)
+                ? "German"
+                : settings.ResponseLanguage;
         }
 
         public string ModelName => _client.Model;
 
-        public async Task<DocumentAnalysisResult> AnalyzeDocumentContent(string content, CancellationToken cancellationToken)
+        public async Task<DocumentAnalysisResult> AnalyzeDocumentContent(string content, IReadOnlyList<DocumentTypeOption> availableTypes, CancellationToken cancellationToken)
         {
             var messages = new List<ChatMessage>
                 {
-                    new SystemChatMessage("You are an assistant that analyzes the document and ALWAYS returns JSON according to the defined schema. Respond in German. Suggest maximum of 5 keywords. The summary should not exceed 500 characters. Let fields empty if you can't fill them. The title should be a very short description of the content."),
+                    new SystemChatMessage(BuildSystemPrompt(availableTypes)),
                     new UserChatMessage($"Document text:\n{content}")
                 };
 
+            var schemaJson = OpenAIHelper.BuildSchemaJson(availableTypes?.Select(t => t.Name) ?? Array.Empty<string>());
             var options = new ChatCompletionOptions
             {
                 ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
                     jsonSchemaFormatName: "analyze_document",
-                    jsonSchema: BinaryData.FromString(OpenAIHelper.SchemaJson),
+                    jsonSchema: BinaryData.FromString(schemaJson),
                     jsonSchemaIsStrict: true)
             };
 
@@ -63,6 +69,23 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             {
                 PropertyNameCaseInsensitive = true
             })!;
+        }
+
+        private string BuildSystemPrompt(IReadOnlyList<DocumentTypeOption> availableTypes)
+        {
+            var typeNames = (availableTypes ?? Array.Empty<DocumentTypeOption>())
+                .Select(t => t?.Name)
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Select(name => name!.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var language = string.IsNullOrWhiteSpace(_responseLanguage) ? "German" : _responseLanguage;
+            var typeInstruction = typeNames.Count > 0
+                ? $"Select the documentType from the following list and return the exact value: {string.Join(", ", typeNames)}."
+                : "If you cannot determine a documentType, return an empty string for that field.";
+
+            return $"You are an assistant that analyzes the document and ALWAYS returns JSON according to the defined schema. Respond in {language}. {typeInstruction} Suggest maximum of 5 keywords. The summary should not exceed 500 characters. Let fields empty if you can't fill them. The title should be a very short description of the content.";
         }
 
         public async Task<DocumentAnswerResult> AnswerQuestion(DocumentQuestionContext context, string question, IDocumentQuestionTooling tooling, CancellationToken cancellationToken)

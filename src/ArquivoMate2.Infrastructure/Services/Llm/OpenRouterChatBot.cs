@@ -55,11 +55,22 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
 
         public string ModelName => _settings.Model;
 
-        public async Task<DocumentAnalysisResult> AnalyzeDocumentContent(string content, CancellationToken cancellationToken)
+        public async Task<DocumentAnalysisResult> AnalyzeDocumentContent(string content, IReadOnlyList<DocumentTypeOption> availableTypes, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(content)) return new DocumentAnalysisResult();
 
-            var systemPrompt = "You are an assistant that analyzes the document and ALWAYS returns ONLY JSON matching the schema. Respond in German. Suggest maximum of 5 keywords. Summary <= 500 chars. Empty fields if unknown. Title must be very short.";
+            var schemaJson = OpenAIHelper.BuildSchemaJson(availableTypes?.Select(t => t.Name) ?? Array.Empty<string>());
+            var language = string.IsNullOrWhiteSpace(_settings.ResponseLanguage) ? "German" : _settings.ResponseLanguage;
+            var typeNames = (availableTypes ?? Array.Empty<DocumentTypeOption>())
+                .Select(t => t?.Name)
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Select(name => name!.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            var typeInstruction = typeNames.Count > 0
+                ? $"Select the documentType from this list and return the exact value: {string.Join(", ", typeNames)}."
+                : "If you cannot determine a documentType, leave the field empty.";
+            var systemPrompt = $"You are an assistant that analyzes the document and ALWAYS returns ONLY JSON matching the schema. Respond in {language}. {typeInstruction} Suggest maximum of 5 keywords. Summary <= 500 chars. Empty fields if unknown. Title must be very short.";
 
             // OpenRouter (OpenAI compatible) structured output via response_format json_schema
             var payload = new
@@ -76,7 +87,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
                     json_schema = new
                     {
                         name = "analyze_document",
-                        schema = JsonDocument.Parse(OpenAIHelper.SchemaJson).RootElement
+                        schema = JsonDocument.Parse(schemaJson).RootElement
                     }
                 },
                 max_tokens = 1500
@@ -515,7 +526,8 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
         }
 
         private static string TrimSnippet(string content)
-            => string.IsNullOrWhiteSpace(content) ? string.Empty : (content.Length <= 400 ? content : content.Substring(0, 400) + "…");
+            => string.IsNullOrWhiteSpace(content) ? string.Empty : (content.Length <= 400 ? content : content.Substring(0, 400) + "Â…");
+        private static string Truncate(string s, int max) => s.Length <= max ? s : s.Substring(0, max) + "Â…";
         #endregion
 
         #region Small models
@@ -530,6 +542,6 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
         }
         #endregion
 
-        private static string Truncate(string s, int max) => s.Length <= max ? s : s.Substring(0, max) + "…";
+        private static string Truncate(string s, int max) => s.Length <= max ? s : s.Substring(0, max) + "Â…";
     }
 }

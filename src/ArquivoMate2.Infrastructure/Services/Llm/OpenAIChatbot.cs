@@ -13,6 +13,9 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using OpenAI.Files;
+using OpenAI.Assistants;
+using System.ClientModel;
 
 namespace ArquivoMate2.Infrastructure.Services.Llm
 {
@@ -21,7 +24,8 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
         private readonly ChatClient _client;
         private readonly IDocumentVectorizationService _vectorizationService;
         private readonly ILogger<OpenAIChatBot> _logger;
-    private readonly string _serverLanguage;
+        private readonly string _serverLanguage;
+        private readonly OpenAISettings _settings;
 
         private const string LoadChunkToolName = "load_document_chunk";
         private const string QueryDocumentsToolName = "query_documents";
@@ -39,6 +43,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             _serverLanguage = string.IsNullOrWhiteSpace(settings.ServerLanguage)
                 ? "German"
                 : settings.ServerLanguage;
+            _settings = settings;
         }
 
         public string ModelName => _client.Model;
@@ -48,7 +53,8 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             var messages = new List<ChatMessage>
                 {
                     new SystemChatMessage(BuildSystemPrompt(availableTypes)),
-                    new UserChatMessage($"Document text:\n{content}")
+                    new UserChatMessage($"Document text:\n{content}"),
+
                 };
 
             var schemaJson = OpenAIHelper.BuildSchemaJson(availableTypes?.Select(t => t.Name) ?? Array.Empty<string>());
@@ -792,6 +798,37 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             builder.AppendLine("Use query_documents to search for similar or related documents, filter by metadata, or retrieve counts when the user asks.");
 
             return builder.ToString();
+        }
+
+        public async Task<T> AnalyzeDocumentImage<T>(byte[] imageBytes, string contentType, string question, string systemPrompt, string? structuredJsonSchema, CancellationToken cancellationToken)
+        {
+            var imagePart = ChatMessageContentPart.CreateImagePart(new BinaryData(imageBytes), contentType, ChatImageDetailLevel.High);
+
+              var messages = new List<ChatMessage>
+                {
+                    new SystemChatMessage(systemPrompt),
+                    new UserChatMessage(imagePart, ChatMessageContentPart.CreateTextPart(question)),
+                };
+
+
+            var schemaJson = structuredJsonSchema ?? "";
+            var options = new ChatCompletionOptions
+            {
+                ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
+                    jsonSchemaFormatName: "analyze_document",
+                    jsonSchema: BinaryData.FromString(schemaJson),
+                    jsonSchemaIsStrict: true)
+            };
+
+            cancellationToken.ThrowIfCancellationRequested();
+            ChatCompletion response = await _client.CompleteChatAsync(messages, options);
+
+            string jsonText = response.Content[0].Text;
+
+            return JsonSerializer.Deserialize<T>(jsonText, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            })!;
         }
 
         private sealed record DocumentChunk(string Id, string Content, int Index, int StartPosition, int EndPosition);

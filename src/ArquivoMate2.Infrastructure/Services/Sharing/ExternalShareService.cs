@@ -23,7 +23,10 @@ namespace ArquivoMate2.Infrastructure.Services.Sharing
 
         public async Task<ExternalShare> CreateAsync(Guid documentId, string ownerUserId, string artifact, TimeSpan ttl, CancellationToken ct)
         {
-            var now = DateTime.UtcNow;
+            // Use DateTimeKind.Unspecified when storing into Postgres timestamp without time zone to avoid Npgsql UTC-kind restriction
+            var nowUtc = DateTime.UtcNow;
+            var now = DateTime.SpecifyKind(nowUtc, DateTimeKind.Unspecified);
+
             var share = new ExternalShare
             {
                 Id = Guid.NewGuid(),
@@ -69,7 +72,10 @@ namespace ArquivoMate2.Infrastructure.Services.Sharing
 
         public async Task<int> DeleteExpiredAsync(CancellationToken ct)
         {
-            var now = DateTime.UtcNow;
+            // Use DateTimeKind.Unspecified to avoid Npgsql rejecting UTC-kind DateTime for timestamptz/"timestamp without time zone" comparisons
+            var nowUtc = DateTime.UtcNow;
+            var now = DateTime.SpecifyKind(nowUtc, DateTimeKind.Unspecified);
+
             var expired = await _query.Query<ExternalShare>()
                 .Where(s => s.ExpiresAtUtc < now || s.Revoked)
                 .ToListAsync(ct);

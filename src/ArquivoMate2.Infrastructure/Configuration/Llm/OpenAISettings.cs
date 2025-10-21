@@ -19,5 +19,12 @@ namespace ArquivoMate2.Infrastructure.Configuration.Llm
 
         // New: allow disabling embeddings/vectorization completely via config (ChatBot:Args:EnableEmbeddings=false)
         public bool EnableEmbeddings { get; set; } = true;
+
+        // Vision / Assistants usage
+        public bool UseAssistantsVision { get; set; } = false;
+        // Optional model to use for vision-capable assistant (e.g. "gpt-4o" or specific vision model)
+        public string? VisionModel { get; set; } = null;
+        // If set, reuse this assistant id instead of creating a new one on every request
+        public string? AssistantId { get; set; } = null;
     }
 }

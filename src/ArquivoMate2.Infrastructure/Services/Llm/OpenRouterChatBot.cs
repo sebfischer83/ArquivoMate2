@@ -286,6 +286,25 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             });
         }
 
+        public Task<DocumentAnswerResult> AnswerQuestionWithPrompt(string question, byte[]? imageBytes, string? imageContentType, string? structuredJsonSchema, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(question)) throw new ArgumentException("Question must not be empty", nameof(question));
+
+            if (imageBytes == null || imageBytes.Length == 0)
+            {
+                // No image provided - delegate to text overload with empty content
+                return AnswerQuestionWithPrompt(question, string.Empty, structuredJsonSchema, cancellationToken);
+            }
+
+            var base64 = Convert.ToBase64String(imageBytes);
+            var mime = string.IsNullOrWhiteSpace(imageContentType) ? "image/png" : imageContentType;
+
+            var imageDescriptor = $"[Image: mime={mime}; base64={base64}]";
+            var prompt = imageDescriptor + "\n\nPlease extract any readable text from the image above and use it as the document content. Then answer the following question:\n" + question;
+
+            return AnswerQuestionWithPrompt(question, prompt, structuredJsonSchema, cancellationToken);
+        }
+
         private sealed class NoopTooling : IDocumentQuestionTooling
         {
             public Task<DocumentQueryResult> QueryDocumentsAsync(DocumentQuery query, CancellationToken cancellationToken)
@@ -595,6 +614,11 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
         private static string TrimSnippet(string content)
             => string.IsNullOrWhiteSpace(content) ? string.Empty : (content.Length <= 400 ? content : content.Substring(0, 400) + "...");
         private static string Truncate(string s, int max) => s.Length <= max ? s : s.Substring(0, max) + "...";
+
+        public Task<T> AnalyzeDocumentImage<T>(byte[] imageBytes, string contentType, string question, string systemPrompt, string? structuredJsonSchema, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
         #endregion
 
         #region Small models

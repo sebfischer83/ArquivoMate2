@@ -34,5 +34,10 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
         {
             throw new NotSupportedException("Document question answering is not supported in batch mode.");
         }
+
+        public Task<DocumentAnswerResult> AnswerQuestionWithPrompt(string question, byte[]? imageBytes, string? imageContentType, string? structuredJsonSchema, CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException("Document question answering with images is not supported in batch mode.");
+        }
     }
 }

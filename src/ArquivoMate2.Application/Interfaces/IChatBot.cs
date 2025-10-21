@@ -14,6 +14,14 @@ namespace ArquivoMate2.Application.Interfaces
             IReadOnlyList<DocumentTypeOption> availableTypes,
             CancellationToken cancellationToken);
 
+        Task<T> AnalyzeDocumentImage<T>(
+            byte[] imageBytes,
+            string contentType,
+            string question,
+            string systemPrompt,
+            string? structuredJsonSchema,
+            CancellationToken cancellationToken);
+
         Task<DocumentAnswerResult> AnswerQuestion(
             DocumentQuestionContext context,
             string question,
@@ -30,5 +38,6 @@ namespace ArquivoMate2.Application.Interfaces
             string documentContent,
             string? structuredJsonSchema,
             CancellationToken cancellationToken);
+
     }
 }

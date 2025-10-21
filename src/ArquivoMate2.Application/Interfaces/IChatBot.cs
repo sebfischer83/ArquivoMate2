@@ -19,5 +19,16 @@ namespace ArquivoMate2.Application.Interfaces
             string question,
             IDocumentQuestionTooling tooling,
             CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Ask a question by providing the document content directly as prompt text.
+        /// Optionally a JSON schema can be provided to request structured output from the model.
+        /// Implementations should honour the schema when possible and return a DocumentAnswerResult.
+        /// </summary>
+        Task<DocumentAnswerResult> AnswerQuestionWithPrompt(
+            string question,
+            string documentContent,
+            string? structuredJsonSchema,
+            CancellationToken cancellationToken);
     }
 }

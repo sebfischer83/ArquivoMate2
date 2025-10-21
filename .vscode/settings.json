@@ -1,0 +1,5 @@
+{
+    "i18n-ally.localesPaths": [
+        "src/ArquivoMate2.Ui/public/i18n"
+    ]
+}

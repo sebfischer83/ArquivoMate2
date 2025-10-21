@@ -8,8 +8,8 @@ namespace ArquivoMate2.Infrastructure.Configuration.DocumentTypes
     public class DocumentTypeOptions
     {
         /// <summary>
-        /// Initial list of document type names that are seeded into Marten.
+        /// Initial list of document types (name + optional system feature) that are seeded into Marten.
         /// </summary>
-        public List<string> Seed { get; set; } = new();
+        public List<DocumentTypeSeedOption> Seed { get; set; } = new();
     }
 }

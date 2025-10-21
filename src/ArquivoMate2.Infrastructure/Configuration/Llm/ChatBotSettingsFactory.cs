@@ -16,17 +16,23 @@ namespace ArquivoMate2.Infrastructure.Configuration.Llm
             var section = _configuration.GetSection("ChatBot");
             var type = section.GetValue<ChatbotType?>("Type")
                        ?? throw new InvalidOperationException("ChatBot:Type ist nicht konfiguriert.");
-
-            return type switch
+            // Create the settings object from ChatBot:Args as before
+            var settings = type switch
             {
                 ChatbotType.OpenAI => section.GetSection("Args").Get<OpenAISettings>()
                                                ?? throw new InvalidOperationException("OpenAISettings fehlt."),
-                //FileProviderType.NFS => section.Get<NfsFileProviderSettings>()
-                //                               ?? throw new InvalidOperationException("NfsFileProviderSettings fehlt."),
-                //FileProviderType.Bunny => section.Get<BunnyFileProviderSettings>()
-                //                               ?? throw new InvalidOperationException("BunnyFileProviderSettings fehlt."),
                 _ => throw new InvalidOperationException($"Unbekannter ChatBot-Typ: {type}")
             };
+
+            // If a centralized ServerConfig.ServerLanguage is defined, prefer that value
+            var serverLang = _configuration["ServerConfig:ServerLanguage"]; 
+            if (!string.IsNullOrWhiteSpace(serverLang))
+            {
+                // Use the new ServerLanguage property directly
+                settings.ServerLanguage = serverLang;
+            }
+
+            return settings;
         }
     }
 }

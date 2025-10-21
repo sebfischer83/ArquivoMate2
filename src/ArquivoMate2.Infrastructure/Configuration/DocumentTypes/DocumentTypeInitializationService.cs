@@ -41,32 +41,47 @@ namespace ArquivoMate2.Infrastructure.Configuration.DocumentTypes
             var existingNames = existing.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             var added = 0;
-            foreach (var rawName in _options.Seed)
+            var updated = 0;
+            foreach (var seed in _options.Seed)
             {
-                if (string.IsNullOrWhiteSpace(rawName))
+                if (seed == null || string.IsNullOrWhiteSpace(seed.Name))
                 {
                     continue;
                 }
 
-                var name = rawName.Trim();
-                if (existingNames.Contains(name))
+                var name = seed.Name.Trim();
+                var existingDef = existing.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
+                if (existingDef != null)
                 {
+                    // Update existing definition's SystemFeature and ensure it's locked
+                    var newFeature = seed.SystemFeature ?? string.Empty;
+                    if (existingDef.SystemFeature != newFeature || !existingDef.IsLocked)
+                    {
+                        existingDef.SystemFeature = newFeature;
+                        existingDef.IsLocked = true;
+                        existingDef.UpdatedAtUtc = DateTime.UtcNow;
+                        session.Store(existingDef);
+                        updated++;
+                    }
                     continue;
                 }
 
                 session.Store(new DocumentTypeDefinition
                 {
                     Name = name,
+                    NormalizedName = name.ToUpperInvariant(),
+                    SystemFeature = seed.SystemFeature ?? string.Empty,
                     IsLocked = true,
                     CreatedAtUtc = DateTime.UtcNow
                 });
                 added++;
             }
 
-            if (added > 0)
+            if (added > 0 || updated > 0)
             {
                 await session.SaveChangesAsync(cancellationToken);
-                _logger.LogInformation("Seeded {Count} document types.", added);
+                if (added > 0) _logger.LogInformation("Seeded {Count} document types.", added);
+                if (updated > 0) _logger.LogInformation("Updated {Count} existing document types.", updated);
             }
         }
 

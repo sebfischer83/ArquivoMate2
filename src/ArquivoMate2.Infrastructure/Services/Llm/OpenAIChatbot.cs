@@ -21,7 +21,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
         private readonly ChatClient _client;
         private readonly IDocumentVectorizationService _vectorizationService;
         private readonly ILogger<OpenAIChatBot> _logger;
-        private readonly string _responseLanguage;
+    private readonly string _serverLanguage;
 
         private const string LoadChunkToolName = "load_document_chunk";
         private const string QueryDocumentsToolName = "query_documents";
@@ -36,9 +36,9 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             _client = client;
             _vectorizationService = vectorizationService;
             _logger = logger;
-            _responseLanguage = string.IsNullOrWhiteSpace(settings.ResponseLanguage)
+            _serverLanguage = string.IsNullOrWhiteSpace(settings.ServerLanguage)
                 ? "German"
-                : settings.ResponseLanguage;
+                : settings.ServerLanguage;
         }
 
         public string ModelName => _client.Model;
@@ -80,7 +80,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            var language = string.IsNullOrWhiteSpace(_responseLanguage) ? "German" : _responseLanguage;
+            var language = string.IsNullOrWhiteSpace(_serverLanguage) ? "German" : _serverLanguage;
             var typeInstruction = typeNames.Count > 0
                 ? $"Select the documentType from the following list and return the exact value: {string.Join(", ", typeNames)}."
                 : "If you cannot determine a documentType, return an empty string for that field.";
@@ -211,6 +211,70 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             var answerText = response.Content.FirstOrDefault()?.Text?.Trim() ?? string.Empty;
 
             return ParseFinalAnswer(answerText, chunkMap, ModelName);
+        }
+
+    public async Task<DocumentAnswerResult> AnswerQuestionWithPrompt(string question, string documentContent, string? structuredJsonSchema, CancellationToken cancellationToken)
+    {
+            if (string.IsNullOrWhiteSpace(question)) throw new ArgumentException("Question must not be empty", nameof(question));
+
+            // If no structured schema is requested, re-use the existing tooling-based flow with a noop tooling
+            if (string.IsNullOrWhiteSpace(structuredJsonSchema))
+            {
+                var ctx = new DocumentQuestionContext
+                {
+                    Content = documentContent ?? string.Empty,
+                    DocumentId = Guid.Empty,
+                    UserId = null,
+                    Title = string.Empty,
+                    Summary = null,
+                    Keywords = Array.Empty<string>(),
+                    Language = _serverLanguage
+                };
+
+                IDocumentQuestionTooling tooling = new NoopDocumentQuestionTooling();
+                return await AnswerQuestion(ctx, question, tooling, cancellationToken);
+            }
+
+            // Build a simple prompt that uses the full document as context and requests JSON matching the provided schema
+            var messages = new List<ChatMessage>
+            {
+                new SystemChatMessage($"Answer the user's question and RETURN ONLY JSON matching the supplied schema. Respond in {_serverLanguage} if possible."),
+                new UserChatMessage($"Document text:\n{documentContent}\n\nQuestion: {question}")
+            };
+
+            var options = new ChatCompletionOptions
+            {
+                ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
+                    jsonSchemaFormatName: "answer_document_question",
+                    jsonSchema: BinaryData.FromString(structuredJsonSchema),
+                    jsonSchemaIsStrict: false)
+            };
+
+            cancellationToken.ThrowIfCancellationRequested();
+            ChatCompletion response = await _client.CompleteChatAsync(messages, options, cancellationToken);
+            var answerText = response.Content.FirstOrDefault()?.Text?.Trim() ?? string.Empty;
+
+            // Parse using the same parser, no chunk citations available in this mode
+            var chunkMap = new Dictionary<string, DocumentChunk>();
+            var parsed = ParseFinalAnswer(answerText, chunkMap, ModelName);
+            // Attach raw structured JSON so callers can parse custom schema shapes
+            return new DocumentAnswerResult
+            {
+                Answer = parsed.Answer,
+                Model = parsed.Model,
+                Citations = parsed.Citations,
+                Documents = parsed.Documents,
+                DocumentCount = parsed.DocumentCount,
+                StructuredJson = string.IsNullOrWhiteSpace(answerText) ? null : answerText
+            };
+        }
+
+        private sealed class NoopDocumentQuestionTooling : IDocumentQuestionTooling
+        {
+            public Task<DocumentQueryResult> QueryDocumentsAsync(DocumentQuery query, CancellationToken cancellationToken)
+            {
+                return Task.FromResult(new DocumentQueryResult());
+            }
         }
 
         private static T? GetPropertyValue<T>(object? obj, string propName)

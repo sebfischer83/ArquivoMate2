@@ -384,6 +384,36 @@ namespace ArquivoMate2.API.Controllers
             if (!deleted) return NotFound();
             return NoContent();
         }
+
+        /// <summary>
+        /// Sets or unsets the Accepted flag on a document (owner/edit access required).
+        /// </summary>
+        [HttpPatch("{id:guid}/accept")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ApiResponse<bool>))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<bool>>> SetAccepted(Guid id, [FromBody] bool accepted, CancellationToken cancellationToken, [FromServices] IQuerySession querySession)
+        {
+            var userId = _currentUserService.UserId;
+
+            var document = await querySession.Query<Domain.ReadModels.DocumentView>()
+                .Where(d => d.Id == id && !d.Deleted)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (document == null) return NotFound();
+
+            var hasEditAccess = await _documentAccessService.HasEditAccessToDocumentAsync(id, userId, cancellationToken);
+            if (!hasEditAccess) return NotFound();
+
+            try
+            {
+                var success = await _mediator.Send(new ArquivoMate2.Application.Commands.SetDocumentAcceptedCommand(id, accepted, userId), cancellationToken);
+                if (!success) return NotFound();
+                return Ok(new ApiResponse<bool>(true));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
+            }
+        }
     }
 }
 

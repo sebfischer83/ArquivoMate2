@@ -24,7 +24,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
                 ["recipient"] = BuildPartySchema(),
                 ["customerNumber"] = new Dictionary<string, object?> { ["type"] = "string" },
                 ["invoiceNumber"] = new Dictionary<string, object?> { ["type"] = "string" },
-                ["totalPrice"] = new Dictionary<string, object?> { ["type"] = "number" },
+                ["totalPrice"] = new Dictionary<string, object?> { ["type"] = new[] { "number", "null" } },
                 ["title"] = new Dictionary<string, object?> { ["type"] = "string" },
                 ["keywords"] = new Dictionary<string, object?>
                 {

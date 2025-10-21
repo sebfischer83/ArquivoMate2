@@ -60,7 +60,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             if (string.IsNullOrWhiteSpace(content)) return new DocumentAnalysisResult();
 
             var schemaJson = OpenAIHelper.BuildSchemaJson(availableTypes?.Select(t => t.Name) ?? Array.Empty<string>());
-            var language = string.IsNullOrWhiteSpace(_settings.ResponseLanguage) ? "German" : _settings.ResponseLanguage;
+            var language = string.IsNullOrWhiteSpace(_settings.ServerLanguage) ? "German" : _settings.ServerLanguage;
             var typeNames = (availableTypes ?? Array.Empty<DocumentTypeOption>())
                 .Select(t => t?.Name)
                 .Where(name => !string.IsNullOrWhiteSpace(name))
@@ -225,6 +225,73 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
 
             var answerText = response.FinalContent?.Trim() ?? string.Empty;
             return ParseFinalAnswer(answerText, chunkMap, ModelName);
+        }
+
+        public Task<DocumentAnswerResult> AnswerQuestionWithPrompt(string question, string documentContent, string? structuredJsonSchema, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(question)) throw new ArgumentException("Question must not be empty", nameof(question));
+
+            // If no structured schema requested, delegate to existing AnswerQuestion flow
+            if (string.IsNullOrWhiteSpace(structuredJsonSchema))
+            {
+                var ctx = new DocumentQuestionContext
+                {
+                    Content = documentContent ?? string.Empty,
+                    DocumentId = Guid.Empty,
+                    UserId = null,
+                    Title = string.Empty,
+                    Summary = null,
+                    Keywords = Array.Empty<string>(),
+                    Language = _settings.ServerLanguage
+                };
+
+                IDocumentQuestionTooling tooling = new NoopTooling();
+                return AnswerQuestion(ctx, question, tooling, cancellationToken);
+            }
+
+            // Build payload asking for json_schema response_format
+            var messages = new[]
+            {
+                new { role = "system", content = "Answer the user's question and RETURN ONLY JSON matching the supplied schema." },
+                new { role = "user", content = documentContent + "\n\nQuestion: " + question }
+            };
+
+            var request = new
+            {
+                model = _settings.Model,
+                messages,
+                response_format = new
+                {
+                    type = "json_schema",
+                    json_schema = new
+                    {
+                        name = "answer_document_question",
+                        schema = JsonDocument.Parse(structuredJsonSchema).RootElement
+                    }
+                },
+                max_tokens = 1600
+            };
+
+            var completion = SendCompletionAsync(request, cancellationToken).GetAwaiter().GetResult();
+            var answerText = completion.FinalContent ?? string.Empty;
+            var parsed = ParseFinalAnswer(answerText, new Dictionary<string, DocumentChunk>(), ModelName);
+            return Task.FromResult(new DocumentAnswerResult
+            {
+                Answer = parsed.Answer,
+                Model = parsed.Model,
+                Citations = parsed.Citations,
+                Documents = parsed.Documents,
+                DocumentCount = parsed.DocumentCount,
+                StructuredJson = string.IsNullOrWhiteSpace(answerText) ? null : answerText
+            });
+        }
+
+        private sealed class NoopTooling : IDocumentQuestionTooling
+        {
+            public Task<DocumentQueryResult> QueryDocumentsAsync(DocumentQuery query, CancellationToken cancellationToken)
+            {
+                return Task.FromResult(new DocumentQueryResult());
+            }
         }
 
         #region Internal request helpers
@@ -526,8 +593,8 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
         }
 
         private static string TrimSnippet(string content)
-            => string.IsNullOrWhiteSpace(content) ? string.Empty : (content.Length <= 400 ? content : content.Substring(0, 400) + "");
-        private static string Truncate(string s, int max) => s.Length <= max ? s : s.Substring(0, max) + "";
+            => string.IsNullOrWhiteSpace(content) ? string.Empty : (content.Length <= 400 ? content : content.Substring(0, 400) + "...");
+        private static string Truncate(string s, int max) => s.Length <= max ? s : s.Substring(0, max) + "...";
         #endregion
 
         #region Small models
@@ -541,7 +608,5 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             public static CompletionResponse Empty { get; } = new CompletionResponse(string.Empty, new List<ToolCall>());
         }
         #endregion
-
-        private static string Truncate(string s, int max) => s.Length <= max ? s : s.Substring(0, max) + "";
     }
 }

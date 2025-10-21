@@ -242,6 +242,12 @@ namespace ArquivoMate2.Domain.Document
             OccurredOn = e.OccurredOn;
         }
 
+        public void Apply(DocumentAccepted e)
+        {
+            Accepted = e.Accepted;
+            OccurredOn = e.OccurredOn;
+        }
+
         public void Apply(DocumentLanguageDetected e)
         {
             Language = e.IsoCode;

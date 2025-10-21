@@ -32,6 +32,13 @@ namespace ArquivoMate2.Application.Models
         /// Optional aggregate count of documents that match a query.
         /// </summary>
         public long? DocumentCount { get; init; }
+
+        /// <summary>
+        /// Raw JSON payload returned by the LLM when a structured JSON schema was requested.
+        /// This contains the original JSON string (if any) the model returned and can be
+        /// used by callers to parse custom schemas that don't match the built-in shape.
+        /// </summary>
+        public string? StructuredJson { get; init; }
     }
 
     /// <summary>

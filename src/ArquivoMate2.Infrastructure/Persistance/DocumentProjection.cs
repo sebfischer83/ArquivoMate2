@@ -419,6 +419,16 @@ namespace ArquivoMate2.Infrastructure.Persistance
         }
 
         /// <summary>
+        /// Handles acceptance state changes emitted by the aggregate.
+        /// </summary>
+        public void Apply(DocumentAccepted e, DocumentView view)
+        {
+            view.Accepted = e.Accepted;
+            view.AcceptedAt = e.OccurredOn;
+            view.OccurredOn = e.OccurredOn;
+        }
+
+        /// <summary>
         /// Stores the detected language after analysis.
         /// </summary>
         /// <param name="e">Language detection event.</param>

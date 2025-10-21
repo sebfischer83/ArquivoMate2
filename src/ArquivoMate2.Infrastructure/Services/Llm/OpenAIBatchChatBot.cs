@@ -12,10 +12,10 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
     {
         private readonly BatchClient _client;
 
-        public OpenAIBatchChatBot(BatchClient client, string responseLanguage)
+            public OpenAIBatchChatBot(BatchClient client, string serverLanguage)
         {
             _client = client;
-            _ = responseLanguage; // parameter kept for parity with other bots
+                _ = serverLanguage; // parameter kept for parity with other bots
         }
 
         public string ModelName => string.Empty;
@@ -26,6 +26,11 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
         }
 
         public Task<DocumentAnswerResult> AnswerQuestion(DocumentQuestionContext context, string question, IDocumentQuestionTooling tooling, CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException("Document question answering is not supported in batch mode.");
+        }
+
+        public Task<DocumentAnswerResult> AnswerQuestionWithPrompt(string question, string documentContent, string? structuredJsonSchema, CancellationToken cancellationToken)
         {
             throw new NotSupportedException("Document question answering is not supported in batch mode.");
         }

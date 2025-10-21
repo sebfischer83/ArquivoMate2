@@ -33,5 +33,18 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             };
             return Task.FromResult(result);
         }
+
+        public Task<DocumentAnswerResult> AnswerQuestionWithPrompt(string question, string documentContent, string? structuredJsonSchema, CancellationToken cancellationToken)
+        {
+            var result = new DocumentAnswerResult
+            {
+                Answer = string.Empty,
+                Model = string.Empty,
+                Citations = Array.Empty<DocumentAnswerCitation>(),
+                Documents = Array.Empty<DocumentAnswerReference>(),
+                DocumentCount = null
+            };
+            return Task.FromResult(result);
+        }
     }
 }

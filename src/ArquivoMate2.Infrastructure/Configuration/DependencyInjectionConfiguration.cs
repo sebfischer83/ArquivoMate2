@@ -132,28 +132,28 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 options.Events.StreamIdentity = JasperFx.Events.StreamIdentity.AsGuid;
 
                 options.Schema.For<Document>()
-                    .Index(d => d.UserId).Index(d => d.Hash);
+                .Index(d => d.UserId)
+                .Index(d => d.Hash);
 
+                // Use NormalizedName for case-insensitive uniqueness
                 options.Schema.For<DocumentTypeDefinition>()
-                    .UniqueIndex(x => x.Name);
+                    .UniqueIndex(x => x.NormalizedName);
 
                 options.Schema.For<UserDocumentType>()
                     .Index(x => x.UserId)
-                    .UniqueIndex(x => new { x.UserId, x.DocumentTypeId });
+                    .Index(x => x.DocumentTypeId); // removed composite UniqueIndex that caused Guid.UserId chain
 
                 options.Schema.For<UserProfile>();
 
                 options.Schema.For<DocumentShare>()
                     .Index(x => x.DocumentId)
-                    .Index(x => x.OwnerUserId)
-                    .Index(x => x.Target.Identifier);
+                    .Index(x => x.OwnerUserId);
 
                 options.Schema.For<ShareGroup>()
                     .Index(x => x.OwnerUserId);
 
                 options.Schema.For<ShareAutomationRule>()
-                    .Index(x => x.OwnerUserId)
-                    .Index(x => x.Target.Identifier);
+                    .Index(x => x.OwnerUserId);
 
                 options.Schema.For<DocumentAccessView>()
                     .Index(x => x.OwnerUserId); // Base index (extend with custom GIN for EffectiveUserIds if required)
@@ -206,7 +206,13 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddScoped<IFileMetadataService, FileMetadataService>();
             services.AddScoped<IPathService, PathService>();
             services.AddScoped<IThumbnailService, ThumbnailService>();
-            services.Configure<DocumentTypeOptions>(config.GetSection("DocumentTypes"));
+            // Register system feature processors and registry
+            // Individual processors should be registered so the registry can discover them via IEnumerable<ISystemFeatureProcessor>
+            services.AddScoped<ArquivoMate2.Application.Features.ISystemFeatureProcessor, ArquivoMate2.Application.Features.Processors.LabResultsFeatureProcessor>();
+            // Changed: register the registry as Scoped to allow consuming scoped ISystemFeatureProcessor instances
+            services.AddScoped<ArquivoMate2.Application.Features.ISystemFeatureProcessorRegistry, ArquivoMate2.Application.Features.SystemFeatureProcessorRegistry>();
+            // Document types were moved to ServerConfig.DocumentTypes in appsettings.json
+            services.Configure<DocumentTypeOptions>(config.GetSection("ServerConfig").GetSection("DocumentTypes"));
             services.AddHostedService<DocumentTypeInitializationService>();
             var meilisearchUrl = config["Meilisearch:Url"]
                 ?? throw new InvalidOperationException("Meilisearch URL is not configured.");
@@ -267,7 +273,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
                         services.AddScoped<IChatBot, OpenAIBatchChatBot>(_ =>
                         {
                             BatchClient client = new BatchClient(openAISettings.ApiKey);
-                            return new OpenAIBatchChatBot(client, openAISettings.ResponseLanguage);
+                            return new OpenAIBatchChatBot(client, openAISettings.ServerLanguage);
                         });
                     }
                     else
@@ -318,7 +324,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
                             ApiKey = openRouterSettings.ApiKey,
                             Model = openRouterSettings.Model,
                             EmbeddingModel = openRouterSettings.EmbeddingModel,
-                            EmbeddingDimensions = 1536,
+                            EmbeddingDimensions =1536,
                             UseBatch = openRouterSettings.UseBatch,
                             EnableEmbeddings = openRouterSettings.EnableEmbeddings
                         };
@@ -342,7 +348,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
                     services.AddSingleton<IChatBot, NullChatBot>();
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // If configuration is missing or invalid, log at DI time isn't straightforward. Fall back to null implementations.
                 services.AddSingleton<IDocumentVectorizationService, NullDocumentVectorizationService>();

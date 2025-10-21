@@ -74,9 +74,7 @@
 				</div>
 			</div>
 			</div>
-			<div class="title-row">
-				<h2 tuiTitle="m" class="doc-title" *ngIf="hasData()">{{ document()?.title || originalFileName() || t('Document.DocumentTitleFallback') }}</h2>
-			</div>
+			
 
 			<ng-container *ngIf="loading()">
 				<section class="skeleton" [attr.aria-label]="t('Document.LoadingDocument')">
@@ -94,14 +92,18 @@
 				</div>
 			</ng-container>
 			<ng-container *ngIf="hasData() && document() as doc">
-				<app-document-tabs [(activeIndex)]="activeItemIndex" [sticky]="true" [notesCount]="document()?.notesCount || 0"></app-document-tabs>
+				
 				<div class="doc-split"> 
 					<div class="detail-pane left-col">
-						<!-- Content toolbar moved outside of scroll container so it does not scroll away -->
+														<app-document-tabs [(activeIndex)]="activeItemIndex" [sticky]="true" [notesCount]="document()?.notesCount || 0"></app-document-tabs>
+								<div class="title-row">
+				<h2 tuiTitle="m" class="doc-title" *ngIf="hasData()">{{ document()?.title || originalFileName() || t('Document.DocumentTitleFallback') }}</h2>
+			</div>
 						<ng-container *ngIf="activeItemIndex === 1">
 							<app-content-toolbar class="outside-content-toolbar" [wrap]="wrapContent" [copied]="copiedContent" (toggleWrap)="toggleWrap()" (copy)="copyContent()" />
 						</ng-container>
 				            <div class="left-scroll">
+
 						<div class="tab-content">
 						<section class="tab-pane properties" [class.active]="activeItemIndex === 0">
 							<div *ngIf="doc.summary" class="summary-box details-summary">

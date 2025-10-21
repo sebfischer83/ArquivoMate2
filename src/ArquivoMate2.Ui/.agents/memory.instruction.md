@@ -19,8 +19,3 @@ applyTo: '**'
 		`this.dialogs.open<boolean>(TUI_CONFIRM, { label: 'Akzeptieren', data: { content: msg, yes, no } }).subscribe(res => { if (res) this.acceptDocument(); });`
 
 	recordedAt: 2025-10-21T00:00:00Z
-
-- translation-preference: |
-	When selecting translation keys for generic words (e.g., Yes/No, Cancel, Save), first look under the `Common` namespace (e.g. `Common.Yes`, `Common.No`) before using page- or feature-specific keys.
-	This keeps wording consistent across the app and centralizes common phrases.
-	recordedAt: 2025-10-21T00:00:00Z

@@ -2,10 +2,11 @@
 <div class="document-layout page-flex-root">
 	<div class="main-area" tuiSurface appearance="floating">
 		<div class="document-detail">
+			<div class="toolbar-wrapper">
 			<div class="toolbar">
 				<div class="left">
                                         <button tuiButton size="s" appearance="secondary" iconStart="@tui.arrow-left" type="button" (click)="back()">{{ t('Document.Back') || '←' }}</button>
-                                        <div class="nav-buttons" *ngIf="hasData()">
+										<div class="nav-buttons" *ngIf="hasData()">
                                                 <button
                                                         tuiButton
                                                         size="s"
@@ -28,22 +29,34 @@
                                                 >
                                                         {{ t('Document.NextDocument') }}
                                                 </button>
+						<!-- Accept button: shown when document is not accepted -->
+						<button
+							*ngIf="!document()?.accepted"
+							tuiButton
+							size="s"
+							appearance="primary"
+							iconStart="@tui.check"
+							type="button"
+							(click)="confirmAccept()"
+							[disabled]="acceptPending() || loading()"
+						>
+							{{ t('Document.Accept') || 'Accept' }}
+						</button>
                                         </div>
-                                        <h2 tuiTitle="m" class="doc-title">{{ document()?.title || originalFileName() || t('Document.DocumentTitleFallback') }}</h2>
 				</div>
 				<div class="actions" *ngIf="hasData()">
 					<!-- If archivePath exists show dropdown menu, else show direct download button -->
-					@if (document()?.archivePath) {
+					<ng-container *ngIf="document()?.archivePath; else noArchive">
 						<button
-								size="s"
-								appearance="flat"
-								tuiButton
-								iconStart="@tui.download"
-								type="button"
-								[tuiDropdownOpen]="downloadMenuOpen()"
-								(tuiDropdownOpenChange)="onDownloadMenu($event)"
-								[tuiDropdown]="downloadMenu"
-								[disabled]="!filePath || downloadLoading()"
+							size="s"
+							appearance="flat"
+							tuiButton
+							iconStart="@tui.download"
+							type="button"
+							[tuiDropdownOpen]="downloadMenuOpen()"
+							(tuiDropdownOpenChange)="onDownloadMenu($event)"
+							[tuiDropdown]="downloadMenu"
+							[disabled]="!filePath || downloadLoading()"
 						>
 							{{ downloadLoading() ? t('Document.LoadingEllipsis') : t('Document.Download') }}
 						</button>
@@ -53,14 +66,19 @@
 								<button type="button" tuiButton size="s" appearance="flat" class="menu-item" (click)="downloadArchive(); closeDownloadMenu()" [disabled]="downloadLoading()">{{ t('Document.DownloadArchive') }}</button>
 							</div>
 						</ng-template>
-					} @else {
+					</ng-container>
+					<ng-template #noArchive>
 						<button tuiButton size="s" appearance="flat" iconStart="@tui.download" type="button" (click)="downloadOriginal()" [disabled]="!filePath || downloadLoading()">{{ downloadLoading() ? t('Document.LoadingEllipsis') : t('Document.Download') }}</button>
-					}
+					</ng-template>
 						<button tuiButton size="s" appearance="flat" iconStart="@tui.external-link" type="button" (click)="openInNewTab()" [disabled]="!filePath">{{ t('Document.Open') }}</button>
 				</div>
 			</div>
+			</div>
+			<div class="title-row">
+				<h2 tuiTitle="m" class="doc-title" *ngIf="hasData()">{{ document()?.title || originalFileName() || t('Document.DocumentTitleFallback') }}</h2>
+			</div>
 
-			@if (loading()) {
+			<ng-container *ngIf="loading()">
 				<section class="skeleton" [attr.aria-label]="t('Document.LoadingDocument')">
 					<div class="sk-line w-30"></div>
 					<div class="sk-line w-55"></div>
@@ -68,23 +86,23 @@
 					<div class="sk-line w-65"></div>
 					<div class="sk-line w-25"></div>
 				</section>
-			}
-			@if (error()) {
+			</ng-container>
+			<ng-container *ngIf="error()">
 				<div class="error" tuiSurface appearance="negative">
 					<p>{{ error() }}</p>
 					<button tuiButton appearance="primary" size="s" iconStart="@tui.refresh-ccw" type="button" (click)="retry()">{{ t('Document.Retry') }}</button>
 				</div>
-			}
-			@if (hasData() && document(); as doc) {
+			</ng-container>
+			<ng-container *ngIf="hasData() && document() as doc">
 				<app-document-tabs [(activeIndex)]="activeItemIndex" [sticky]="true" [notesCount]="document()?.notesCount || 0"></app-document-tabs>
 				<div class="doc-split"> 
 					<div class="detail-pane left-col">
 						<!-- Content toolbar moved outside of scroll container so it does not scroll away -->
-						@if (activeItemIndex === 1) {
+						<ng-container *ngIf="activeItemIndex === 1">
 							<app-content-toolbar class="outside-content-toolbar" [wrap]="wrapContent" [copied]="copiedContent" (toggleWrap)="toggleWrap()" (copy)="copyContent()" />
-						}
-            <div class="left-scroll">
-					<div class="tab-content">
+						</ng-container>
+				            <div class="left-scroll">
+						<div class="tab-content">
 						<section class="tab-pane properties" [class.active]="activeItemIndex === 0">
 							<div *ngIf="doc.summary" class="summary-box details-summary">
 								<div class="summary-label">{{ t('Document.Summary') }}</div>
@@ -95,21 +113,21 @@
 									<span class="keywords-label">{{ t('Document.Keywords') }}</span>
 								</div>
 								<div class="keywords-chips">
-									@for (k of keywords(); track k) {
+									<ng-container *ngFor="let k of keywords(); trackBy: trackByKeyword">
 										<span tuiChip size="s" appearance="primary" class="keyword-chip" [class.added]="lastAddedKeyword() === k" [class.removing]="removalSet().has(k)" title="Keyword">{{ k }}
-																						<button type="button" class="chip-remove" aria-label="Keyword entfernen" (click)="$event.stopPropagation(); removeKeyword(k)" [disabled]="removalSet().has(k) || keywordPendingSet().has(k)">
-																								<ng-container *ngIf="keywordPendingSet().has(k); else cross">
-																										<svg width="12" height="12" viewBox="0 0 50 50" class="chip-spinner" aria-hidden="true">
-																											<circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="31.4 31.4" transform="rotate(-90 25 25)"></circle>
-																										</svg>
-																								</ng-container>
-																								<ng-template #cross>&times;</ng-template>
-																						</button>
+											<button type="button" class="chip-remove" aria-label="Keyword entfernen" (click)="$event.stopPropagation(); removeKeyword(k)" [disabled]="removalSet().has(k) || keywordPendingSet().has(k)">
+												<ng-container *ngIf="keywordPendingSet().has(k); else cross">
+													<svg width="12" height="12" viewBox="0 0 50 50" class="chip-spinner" aria-hidden="true">
+														<circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="31.4 31.4" transform="rotate(-90 25 25)"></circle>
+													</svg>
+												</ng-container>
+												<ng-template #cross>&times;</ng-template>
+										</button>
 										</span>
-									}
-									@if (!keywords().length) {
-											<span class="keywords-empty">{{ t('Document.NoKeywords') }}</span>
-									}
+									</ng-container>
+									<ng-container *ngIf="!keywords().length">
+										<span class="keywords-empty">{{ t('Document.NoKeywords') }}</span>
+									</ng-container>
 								</div>
 								<div class="keywords-add-row">
 									<input type="text" class="keyword-input" [value]="newKeyword()" (input)="onKeywordInput($any($event.target).value)" (keydown)="onKeywordKey($event)" [placeholder]="t('Document.NewKeyword')" />
@@ -153,19 +171,20 @@
 															<div class="preview-header">
 																<h3 tuiTitle="s">{{ t('Document.Preview') }}</h3>
 															</div>
-															@if (previewPath) {
+															<ng-container *ngIf="previewPath; else noPreview">
 																<div class="preview-toolbar-wrapper">
 																	<app-pdfjs-viewer-toolbar [viewer]="pdfViewer" class="pdf-toolbar-sticky"></app-pdfjs-viewer-toolbar>
 																</div>
 																<div class="preview-frame">
 																	<app-pdfjs-viewer #pdfViewer [initialFitMode]="'width'" [src]="previewPath"></app-pdfjs-viewer>
 																</div>
-															} @else {
+															</ng-container>
+															<ng-template #noPreview>
 																<div class="no-preview" tuiSurface appearance="floating">{{ t('Document.NoPreview') }}</div>
-															}
+															</ng-template>
 											</div>
-            </div><!-- /.doc-split -->
-			}
+					</div><!-- /.doc-split -->
+			</ng-container>
 		</div>
 	</div>
 </div>

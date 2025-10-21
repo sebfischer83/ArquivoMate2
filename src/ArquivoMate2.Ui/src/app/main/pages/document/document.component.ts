@@ -151,6 +151,7 @@ export class DocumentComponent implements OnInit, OnDestroy {
       }
     });
   }
+  
 
   // trackBy function for keywords ngFor to improve rendering
   trackByKeyword(index: number, item: string): string {

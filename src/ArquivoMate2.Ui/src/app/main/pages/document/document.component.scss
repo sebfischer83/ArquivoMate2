@@ -65,6 +65,9 @@
   align-items: center;
   flex-wrap: wrap;
  }
+.toolbar-wrapper { width: 100%; display: block; }
+.toolbar { width: 100%; }
+.doc-title { display: block !important; width: 100% !important; margin: 0.5rem 0 0; clear: both; }
 .toolbar .left { display: flex; align-items: center; gap: 0.75rem; }
 .toolbar .actions { display: flex; gap: 0.5rem; }
 .toolbar .nav-buttons { display:flex; gap:0.5rem; align-items:center; }

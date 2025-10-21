@@ -171,8 +171,8 @@
 								</div>
 							</div>
 							<div class="prop-grid">
-								<div class="prop"><span class="label">{{ t('Document.FileName') }}</span><span class="value mono">{{ originalFileName() || '-' }}</span></div>
-								<div class="prop"><span class="label">ID</span><span class="value mono" title="Doppelklick zum Kopieren" (dblclick)="copyId()">{{ doc.id }}</span></div>
+								<div class="prop"><span class="label">{{ t('Document.FileName') }}</span><label tuiLabel size="s" class="value mono">{{ originalFileName() || '-' }}</label></div>
+								<div class="prop"><span class="label">ID</span><label tuiLabel size="s" class="value mono" title="Doppelklick zum Kopieren" (dblclick)="copyId()">{{ doc.id }}</label></div>
 								<div class="prop"><span class="label">{{ t('Document.Title') }}</span>
 									<span class="value" *ngIf="!editMode()">{{ doc.title }}</span>
 									<span class="value" *ngIf="editMode()">
@@ -181,27 +181,27 @@
 								</div>
 								<div class="prop"><span class="label">{{ t('Document.Type') }}</span>
 									<span class="value" *ngIf="!editMode()">{{ doc.type || '-' }}</span>
-																		<span class="value" *ngIf="editMode()">
-																			<input
-																				tuiInput
-																				type="text"
-																				[value]="editBuffer().type || ''"
-																				(input)="setEditType($any($event.target).value)"
-																				list="documentTypesList"
-																				[placeholder]="t('Document.SelectType') || 'Type wählen'"
-																			/>
-																			<datalist id="documentTypesList">
-																				<ng-container *ngFor="let n of documentTypeNames()">
-																					<option [value]="n"></option>
-																				</ng-container>
-																			</datalist>
-																		</span>
-																		</div>
+									<span class="value" *ngIf="editMode()">
+										<tui-textfield tuiTextfieldSize="s">
+											<input
+												#typeInput
+												type="text"
+												tuiComboBox
+												[formControl]="editTypeControl"
+											/>
+											<tui-data-list-wrapper
+												*tuiTextfieldDropdown
+												[items]="documentTypeNames()"
+												(itemClick)="editTypeControl.setValue($event)"
+											></tui-data-list-wrapper>
+										</tui-textfield>
+									</span>
+								</div>
 																		<div class="prop"><span class="label">{{ t('Document.Accepted') }}</span><span class="value">{{ doc.accepted ? t('Document.Yes') : t('Document.No') }}</span></div>
 								<div class="prop"><span class="label">{{ t('Document.UploadedAt') }}</span><span class="value">{{ doc.uploadedAt || '-' }}</span></div>
-								<div class="prop" *ngIf="doc.contentLength"><span class="label">{{ t('Document.ContentLength') }}</span><span class="value mono">{{ doc.contentLength }}</span></div>
-								<div class="prop" *ngIf="doc.invoiceNumber"><span class="label">{{ t('Document.InvoiceNumber') }}</span><span class="value mono">{{ doc.invoiceNumber }}</span></div>
-								<div class="prop" *ngIf="doc.customerNumber"><span class="label">{{ t('Document.CustomerNumber') }}</span><span class="value mono">{{ doc.customerNumber }}</span></div>
+								<div class="prop" *ngIf="doc.contentLength"><span class="label">{{ t('Document.ContentLength') }}</span><label tuiLabel size="s" class="value mono">{{ doc.contentLength }}</label></div>
+								<div class="prop" *ngIf="doc.invoiceNumber"><span class="label">{{ t('Document.InvoiceNumber') }}</span><label tuiLabel size="s" class="value mono">{{ doc.invoiceNumber }}</label></div>
+								<div class="prop" *ngIf="doc.customerNumber"><span class="label">{{ t('Document.CustomerNumber') }}</span><label tuiLabel size="s" class="value mono">{{ doc.customerNumber }}</label></div>
 							</div>
 						</section>
 						<section class="tab-pane content-view" [class.active]="activeItemIndex === 1">

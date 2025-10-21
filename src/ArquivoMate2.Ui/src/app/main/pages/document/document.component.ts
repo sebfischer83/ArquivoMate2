@@ -1,8 +1,9 @@
 // ...existing code...
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, signal, computed, inject, Injector } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TuiButton, TuiSurface, TuiTitle, TuiDropdown, TuiDropdownOpen, TuiDialogService, TuiTextfield } from '@taiga-ui/core';
-import { TuiTabs, TuiChip, TUI_CONFIRM } from '@taiga-ui/kit';
+import { TuiButton, TuiSurface, TuiTitle, TuiDropdown, TuiDropdownOpen, TuiDialogService, TuiTextfield, TuiTextfieldDropdownDirective, TuiLabel } from '@taiga-ui/core';
+import { TuiTabs, TuiChip, TuiDataListWrapper, TUI_CONFIRM, TuiComboBox } from '@taiga-ui/kit';
+import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { DocumentTabsComponent } from './components/document-tabs/document-tabs.component';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PdfJsViewerComponent } from '../../../components/pdfjs-viewer/pdfjs-viewer.component';
@@ -30,7 +31,7 @@ import { take, takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-document',
-  imports: [CommonModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, TuiDropdown, TuiDropdownOpen, TuiChip, DocumentHistoryComponent, PdfJsViewerComponent, DocumentTabsComponent, PdfJsViewerToolbarComponent, ContentToolbarComponent, NotesListComponent, TranslocoModule],
+  imports: [CommonModule, ReactiveFormsModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, TuiDropdown, TuiDropdownOpen, TuiChip, TuiTextfield, TuiTextfieldDropdownDirective, TuiDataListWrapper, TuiComboBox, TuiLabel, DocumentHistoryComponent, PdfJsViewerComponent, DocumentTabsComponent, PdfJsViewerToolbarComponent, ContentToolbarComponent, NotesListComponent, TranslocoModule],
   templateUrl: './document.component.html',
   styleUrls: ['./document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -71,6 +72,8 @@ export class DocumentComponent implements OnInit, OnDestroy {
   readonly editMode = signal(false);
   // Buffer for editing fields before saving
   readonly editBuffer = signal<{ title?: string | null; type?: string | null }>({});
+  // Form control used to provide NgControl for Taiga ComboBox and to sync value with editBuffer
+  readonly editTypeControl = new FormControl<string | null>(null);
   private notesLoadedOnce = false;
   private readonly destroy$ = new Subject<void>();
   private readonly documentNavigator = inject(DocumentNavigationService);
@@ -215,6 +218,11 @@ export class DocumentComponent implements OnInit, OnDestroy {
       }
       this.fetch(id);
     });
+
+    // Keep editBuffer.type in sync with the form control value
+    this.editTypeControl.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(v => {
+      this.editBuffer.update(b => ({ ...b, type: v ?? null }));
+    });
   }
 
   ngOnDestroy(): void {
@@ -279,6 +287,8 @@ export class DocumentComponent implements OnInit, OnDestroy {
     if (!doc) return;
     this.editBuffer.set({ title: doc.title ?? null, type: doc.type ?? null });
     this.editMode.set(true);
+    // initialize form control without emitting change to valueChanges subscription
+    this.editTypeControl.setValue(doc.type ?? null, { emitEvent: false });
   }
 
   cancelEdit(): void {
@@ -336,9 +346,23 @@ export class DocumentComponent implements OnInit, OnDestroy {
     this.editBuffer.update(b => ({ ...b, title: value }));
   }
 
-  setEditType(value: string | null): void {
-    this.editBuffer.update(b => ({ ...b, type: value }));
+  setEditType(value: unknown): void {
+    // Accept either a raw string (from a data-list item) or an input event/value.
+    let v: string | null = null;
+    if (value == null) v = null;
+    else if (typeof value === 'string') v = value;
+    else if ((value as any)?.target) {
+      // event from an <input> element
+      v = (value as any).target?.value ?? null;
+    } else {
+      // fallback: try to stringify
+      try { v = String(value); } catch { v = null; }
+    }
+
+    this.editBuffer.update(b => ({ ...b, type: v }));
   }
+
+  
 
   // (computed signal `documentTypeNames` is defined earlier) — template calls documentTypeNames()
 

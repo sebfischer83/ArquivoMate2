@@ -1,4 +1,5 @@
-﻿using ArquivoMate2.Application.Models;
+using ArquivoMate2.Application.Models;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,7 +9,10 @@ namespace ArquivoMate2.Application.Interfaces
     {
         string ModelName { get; }
 
-        Task<DocumentAnalysisResult> AnalyzeDocumentContent(string content, CancellationToken cancellationToken);
+        Task<DocumentAnalysisResult> AnalyzeDocumentContent(
+            string content,
+            IReadOnlyList<DocumentTypeOption> availableTypes,
+            CancellationToken cancellationToken);
 
         Task<DocumentAnswerResult> AnswerQuestion(
             DocumentQuestionContext context,

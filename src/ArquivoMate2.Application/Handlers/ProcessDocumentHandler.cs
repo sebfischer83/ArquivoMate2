@@ -8,6 +8,7 @@ using ArquivoMate2.Application.Commands;
 using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Application.Models;
 using ArquivoMate2.Domain.Document;
+using ArquivoMate2.Domain.DocumentTypes;
 using ArquivoMate2.Domain.Import;
 using ArquivoMate2.Domain.ValueObjects;
 using ArquivoMate2.Shared.Models;
@@ -471,13 +472,60 @@ namespace ArquivoMate2.Application.Handlers
             if (string.IsNullOrWhiteSpace(content)) return;
             try
             {
-                var result = await _chatBot.AnalyzeDocumentContent(content, ct);
-                await ProcessChatbotResultAsync(documentId, userId, result);
+                var typeDefinitions = await _session.Query<DocumentTypeDefinition>()
+                    .OrderBy(x => x.Name)
+                    .ToListAsync(ct);
+                var options = typeDefinitions
+                    .Select(t => new DocumentTypeOption { Id = t.Id, Name = t.Name, IsLocked = t.IsLocked })
+                    .ToList();
+
+                var result = await _chatBot.AnalyzeDocumentContent(content, options, ct);
+
+                if (!string.IsNullOrWhiteSpace(result?.DocumentType))
+                {
+                    var resolved = await EnsureUserDocumentTypeAsync(userId, result.DocumentType, typeDefinitions, ct);
+                    result.DocumentType = resolved?.Name ?? string.Empty;
+                }
+
+                await ProcessChatbotResultAsync(documentId, userId, result ?? new DocumentAnalysisResult());
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Chatbot analysis failed for {DocumentId}. Continuing without chatbot data.", documentId);
             }
+        }
+
+        private async Task<DocumentTypeDefinition?> EnsureUserDocumentTypeAsync(string userId, string? requestedType, IReadOnlyList<DocumentTypeDefinition> availableTypes, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(requestedType))
+            {
+                return null;
+            }
+
+            var resolved = availableTypes
+                .FirstOrDefault(t => string.Equals(t.Name, requestedType, StringComparison.OrdinalIgnoreCase));
+
+            if (resolved == null)
+            {
+                _logger.LogWarning("Document type '{RequestedType}' is not defined. Ignoring for user {UserId}.", requestedType, userId);
+                return null;
+            }
+
+            var exists = await _session.Query<UserDocumentType>()
+                .AnyAsync(x => x.UserId == userId && x.DocumentTypeId == resolved.Id, ct);
+
+            if (!exists)
+            {
+                _session.Store(new UserDocumentType
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    DocumentTypeId = resolved.Id,
+                    CreatedAtUtc = DateTime.UtcNow
+                });
+            }
+
+            return resolved;
         }
 
         /// <summary>

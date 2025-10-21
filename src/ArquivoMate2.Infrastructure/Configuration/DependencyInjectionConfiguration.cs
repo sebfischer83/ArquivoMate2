@@ -7,11 +7,13 @@ using ArquivoMate2.Domain.Email;
 using ArquivoMate2.Domain.ValueObjects;
 using ArquivoMate2.Domain.Users;
 using ArquivoMate2.Domain.Sharing;
+using ArquivoMate2.Domain.DocumentTypes;
 using ArquivoMate2.Infrastructure.Configuration.Caching;
 using ArquivoMate2.Infrastructure.Configuration.DeliveryProvider;
 using ArquivoMate2.Infrastructure.Configuration.IngestionProvider;
 using ArquivoMate2.Infrastructure.Configuration.Llm;
 using ArquivoMate2.Infrastructure.Configuration.StorageProvider;
+using ArquivoMate2.Infrastructure.Configuration.DocumentTypes;
 using ArquivoMate2.Infrastructure.Mapping;
 using ArquivoMate2.Domain.ReadModels;
 using ArquivoMate2.Infrastructure.Repositories;
@@ -132,6 +134,13 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 options.Schema.For<Document>()
                     .Index(d => d.UserId).Index(d => d.Hash);
 
+                options.Schema.For<DocumentTypeDefinition>()
+                    .UniqueIndex(x => x.Name);
+
+                options.Schema.For<UserDocumentType>()
+                    .Index(x => x.UserId)
+                    .UniqueIndex(x => new { x.UserId, x.DocumentTypeId });
+
                 options.Schema.For<UserProfile>();
 
                 options.Schema.For<DocumentShare>()
@@ -197,6 +206,8 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddScoped<IFileMetadataService, FileMetadataService>();
             services.AddScoped<IPathService, PathService>();
             services.AddScoped<IThumbnailService, ThumbnailService>();
+            services.Configure<DocumentTypeOptions>(config.GetSection("DocumentTypes"));
+            services.AddHostedService<DocumentTypeInitializationService>();
             var meilisearchUrl = config["Meilisearch:Url"]
                 ?? throw new InvalidOperationException("Meilisearch URL is not configured.");
             var meilisearchApiKey = config["Meilisearch:ApiKey"]
@@ -256,7 +267,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
                         services.AddScoped<IChatBot, OpenAIBatchChatBot>(_ =>
                         {
                             BatchClient client = new BatchClient(openAISettings.ApiKey);
-                            return new OpenAIBatchChatBot(client);
+                            return new OpenAIBatchChatBot(client, openAISettings.ResponseLanguage);
                         });
                     }
                     else
@@ -264,7 +275,11 @@ namespace ArquivoMate2.Infrastructure.Configuration
                         services.AddScoped<IChatBot, OpenAIChatBot>(sp =>
                         {
                             ChatClient client = new(model: openAISettings.Model, apiKey: openAISettings.ApiKey);
-                            return new OpenAIChatBot(client, sp.GetRequiredService<IDocumentVectorizationService>(), sp.GetRequiredService<ILogger<OpenAIChatBot>>());
+                            return new OpenAIChatBot(
+                                client,
+                                sp.GetRequiredService<IDocumentVectorizationService>(),
+                                sp.GetRequiredService<ILogger<OpenAIChatBot>>(),
+                                openAISettings);
                         });
                     }
                 }

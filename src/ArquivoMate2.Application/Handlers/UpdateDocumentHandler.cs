@@ -1,5 +1,6 @@
 ﻿using ArquivoMate2.Application.Commands;
 using ArquivoMate2.Domain.Document;
+using ArquivoMate2.Domain.DocumentTypes;
 using Marten;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -120,6 +121,46 @@ namespace ArquivoMate2.Application.Handlers
                     return PatchResult.Failed;
                 }
             }
+            if (changes.TryGetValue(nameof(Document.Type), out var typeValue))
+            {
+                var newType = typeValue as string;
+                if (!string.IsNullOrWhiteSpace(newType))
+                {
+                    var definition = await _session.Query<DocumentTypeDefinition>()
+                        .FirstOrDefaultAsync(x => x.Name.Equals(newType.Trim(), StringComparison.OrdinalIgnoreCase), cancellationToken);
+
+                    if (definition == null)
+                    {
+                        _logger.LogWarning("Attempt to set unknown document type '{DocumentType}' for document {DocumentId}", newType, request.DocumentId);
+                        return PatchResult.Invalid;
+                    }
+
+                    var normalizedName = definition.Name;
+                    changes[nameof(Document.Type)] = normalizedName;
+
+                    if (!string.Equals(doc.Type, normalizedName, StringComparison.Ordinal))
+                    {
+                        var exists = await _session.Query<UserDocumentType>()
+                            .AnyAsync(x => x.UserId == doc.UserId && x.DocumentTypeId == definition.Id, cancellationToken);
+
+                        if (!exists)
+                        {
+                            _session.Store(new UserDocumentType
+                            {
+                                Id = Guid.NewGuid(),
+                                UserId = doc.UserId,
+                                DocumentTypeId = definition.Id,
+                                CreatedAtUtc = DateTime.UtcNow
+                            });
+                        }
+                    }
+                }
+                else
+                {
+                    changes[nameof(Document.Type)] = string.Empty;
+                }
+            }
+
             var @event = new DocumentUpdated(request.DocumentId, changes, DateTime.UtcNow);
             _session.Events.Append(request.DocumentId, @event);
             await _session.SaveChangesAsync();

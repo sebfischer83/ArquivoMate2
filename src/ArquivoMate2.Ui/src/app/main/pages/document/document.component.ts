@@ -1,7 +1,7 @@
 // ...existing code...
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, signal, computed, inject, Injector } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TuiButton, TuiSurface, TuiTitle, TuiDropdown, TuiDropdownOpen, TuiDialogService } from '@taiga-ui/core';
+import { TuiButton, TuiSurface, TuiTitle, TuiDropdown, TuiDropdownOpen, TuiDialogService, TuiTextfield } from '@taiga-ui/core';
 import { TuiTabs, TuiChip, TUI_CONFIRM } from '@taiga-ui/kit';
 import { DocumentTabsComponent } from './components/document-tabs/document-tabs.component';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -14,11 +14,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { DocumentsService } from '../../../client/services/documents.service';
 import { DocumentDownloadService } from '../../../services/document-download.service';
 import { DocumentDto } from '../../../client/models/document-dto';
+import { DocumentTypeDto } from '../../../client/models/document-type-dto';
 import { DocumentNoteDtoIEnumerableApiResponse } from '../../../client/models/document-note-dto-i-enumerable-api-response';
 import { DocumentNoteDtoApiResponse } from '../../../client/models/document-note-dto-api-response';
 import { ToastService } from '../../../services/toast.service';
 import { Location } from '@angular/common';
 import { DocumentNotesService } from '../../../client/services/document-notes.service';
+import { DocumentTypesService } from '../../../client/services/document-types.service';
 import { DocumentNoteDto } from '../../../client/models/document-note-dto';
 import { NotesListComponent } from './components/notes-list/notes-list.component';
 import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
@@ -59,6 +61,16 @@ export class DocumentComponent implements OnInit, OnDestroy {
   readonly notesLoading = signal(false);
   readonly notesError = signal<string | null>(null);
   readonly addingNote = signal(false);
+  // document types loaded from server
+  readonly documentTypes = signal<DocumentTypeDto[] | null>(null);
+  readonly documentTypesLoading = signal(false);
+  readonly documentTypesError = signal<string | null>(null);
+  // convenience list of type names for UI (used by combo-box)
+  readonly documentTypeNames = computed(() => (this.documentTypes() ?? []).map(t => t?.name ?? ''));
+  // Global edit mode state
+  readonly editMode = signal(false);
+  // Buffer for editing fields before saving
+  readonly editBuffer = signal<{ title?: string | null; type?: string | null }>({});
   private notesLoadedOnce = false;
   private readonly destroy$ = new Subject<void>();
   private readonly documentNavigator = inject(DocumentNavigationService);
@@ -88,7 +100,7 @@ export class DocumentComponent implements OnInit, OnDestroy {
    * Priority: explicit originalFileName field -> filePath basename -> empty string
    */
   readonly originalFileName = computed(() => {
-    console.log(this.document()); 
+    // console.log(this.document()); 
     const doc = this.document();
     if (!doc) return '';
     const candidate = (doc as any).originalFileName as string | undefined; // allow backend extension
@@ -113,6 +125,7 @@ export class DocumentComponent implements OnInit, OnDestroy {
     private location: Location,
     private sanitizer: DomSanitizer,
     private transloco: TranslocoService,
+    private docTypesApi: DocumentTypesService,
   ) {
     this.documentId.set(this.route.snapshot.paramMap.get('id'));
   }
@@ -151,7 +164,7 @@ export class DocumentComponent implements OnInit, OnDestroy {
       }
     });
   }
-  
+
 
   // trackBy function for keywords ngFor to improve rendering
   trackByKeyword(index: number, item: string): string {
@@ -254,6 +267,114 @@ export class DocumentComponent implements OnInit, OnDestroy {
     this.notesLoadedOnce = false;
     this.loading.set(false);
     this.error.set(null);
+    // Load available document types when displaying a document
+    this.loadDocumentTypes();
+    // reset edit buffer and mode
+    this.editMode.set(false);
+    this.editBuffer.set({});
+  }
+
+  startEdit(): void {
+    const doc = this.document();
+    if (!doc) return;
+    this.editBuffer.set({ title: doc.title ?? null, type: doc.type ?? null });
+    this.editMode.set(true);
+  }
+
+  cancelEdit(): void {
+    this.editMode.set(false);
+    this.editBuffer.set({});
+  }
+
+  saveEdit(): void {
+    const id = this.documentId();
+    if (!id) return;
+    const buffer = this.editBuffer();
+    const fields: any = {};
+    const current = this.document();
+    // Only include fields that actually changed compared to the current document
+    if (buffer.title !== undefined) {
+      const origTitle = current?.title ?? null;
+      if (buffer.title !== origTitle) fields.Title = buffer.title;
+    }
+    if (buffer.type !== undefined) {
+      const origType = current?.type ?? null;
+      if (buffer.type !== origType) fields.Type = buffer.type;
+    }
+    if (Object.keys(fields).length === 0) { this.editMode.set(false); return; }
+    // call update-fields endpoint
+    this.api.apiDocumentsIdUpdateFieldsPatch$Json({ id, body: { fields } as any }).subscribe({
+      next: (resp: any) => {
+        const ok = resp?.success !== false;
+        if (!ok) {
+          this.toast.error(this.transloco.translate('Document.SaveError') || 'Fehler beim Speichern');
+          return;
+        }
+        if (resp?.data) {
+          this.document.set(resp.data as DocumentDto);
+        } else {
+          // optimistic update locally
+          const doc = this.document();
+          if (doc) {
+            if (fields.Title !== undefined) doc.title = fields.Title;
+            if (fields.Type !== undefined) doc.type = fields.Type;
+            this.document.set({ ...doc });
+          }
+        }
+        this.toast.success(this.transloco.translate('Document.Saved') || 'Gespeichert');
+        this.editMode.set(false);
+        this.editBuffer.set({});
+      },
+      error: () => {
+        this.toast.error(this.transloco.translate('Document.SaveError') || 'Fehler beim Speichern');
+      }
+    });
+  }
+
+  // Helpers used from template to update the edit buffer (avoid complex expressions in template)
+  setEditTitle(value: string | null): void {
+    this.editBuffer.update(b => ({ ...b, title: value }));
+  }
+
+  setEditType(value: string | null): void {
+    this.editBuffer.update(b => ({ ...b, type: value }));
+  }
+
+  // (computed signal `documentTypeNames` is defined earlier) — template calls documentTypeNames()
+
+  private loadDocumentTypes(): void {
+    // If already loading, skip
+    if (this.documentTypesLoading()) return;
+    // Check global cache populated at app initialization
+    const cached = (globalThis as any).__am_documentTypes as DocumentTypeDto[] | null | undefined;
+    if (Array.isArray(cached) && cached.length) {
+      this.documentTypes.set(cached as DocumentTypeDto[]);
+      this.documentTypesLoading.set(false);
+      this.documentTypesError.set(null);
+      return;
+    }
+
+    this.documentTypesLoading.set(true);
+    this.documentTypesError.set(null);
+    this.docTypesApi.apiDocumentTypesGet$Json().pipe(take(1)).subscribe({
+      next: (resp: any) => {
+        const ok = resp?.success !== false;
+        const list = resp?.data ?? [];
+        if (!ok) {
+          this.documentTypesError.set(this.transloco.translate('Document.TypesLoadError'));
+          this.documentTypesLoading.set(false);
+          return;
+        }
+        // set component signal and update global cache for other consumers
+        this.documentTypes.set(list as DocumentTypeDto[]);
+        (globalThis as any).__am_documentTypes = list;
+        this.documentTypesLoading.set(false);
+      },
+      error: () => {
+        this.documentTypesLoading.set(false);
+        this.documentTypesError.set(this.transloco.translate('Document.TypesLoadError'));
+      }
+    });
   }
 
   get filePath(): string | null {
@@ -340,6 +461,24 @@ export class DocumentComponent implements OnInit, OnDestroy {
     } else {
       this.fallbackCopy(text);
       this.markContentCopied();
+    }
+  }
+
+  /** Copy the current document ID to the clipboard when user double-clicks the ID */
+  copyId(): void {
+    const id = this.document()?.id;
+    if (!id) return;
+    const text = String(id);
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        this.toast.success(this.transloco.translate('Document.IdCopied') || 'ID kopiert');
+      }).catch(() => {
+        this.fallbackCopy(text);
+        this.toast.success(this.transloco.translate('Document.IdCopied') || 'ID kopiert');
+      });
+    } else {
+      this.fallbackCopy(text);
+      this.toast.success(this.transloco.translate('Document.IdCopied') || 'ID kopiert');
     }
   }
 

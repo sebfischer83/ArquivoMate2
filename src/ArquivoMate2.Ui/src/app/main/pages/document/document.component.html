@@ -3,78 +3,112 @@
 	<div class="main-area" tuiSurface appearance="floating">
 		<div class="document-detail">
 			<div class="toolbar-wrapper">
-			<div class="toolbar">
-				<div class="left">
-                                        <button tuiButton size="s" appearance="secondary" iconStart="@tui.arrow-left" type="button" (click)="back()">{{ t('Document.Back') || '←' }}</button>
-										<div class="nav-buttons" *ngIf="hasData()">
-                                                <button
-                                                        tuiButton
-                                                        size="s"
-                                                        appearance="secondary"
-                                                        iconStart="@tui.chevron-left"
-                                                        type="button"
-                                                        (click)="goToPrevious()"
-                                                        [disabled]="!hasNavigationContext() || !canNavigatePrevious() || navigationBusy()"
-                                                >
-                                                        {{ t('Document.PreviousDocument') }}
-                                                </button>
-                                                <button
-                                                        tuiButton
-                                                        size="s"
-                                                        appearance="secondary"
-                                                        iconStart="@tui.chevron-right"
-                                                        type="button"
-                                                        (click)="goToNext()"
-                                                        [disabled]="!hasNavigationContext() || !canNavigateNext() || navigationBusy()"
-                                                >
-                                                        {{ t('Document.NextDocument') }}
-                                                </button>
-						<!-- Accept button: shown when document is not accepted -->
-						<button
-							*ngIf="!document()?.accepted"
-							tuiButton
-							size="s"
-							appearance="primary"
-							iconStart="@tui.check"
-							type="button"
-							(click)="confirmAccept()"
-							[disabled]="acceptPending() || loading()"
-						>
-							{{ t('Document.Accept') || 'Accept' }}
-						</button>
-                                        </div>
-				</div>
-				<div class="actions" *ngIf="hasData()">
-					<!-- If archivePath exists show dropdown menu, else show direct download button -->
-					<ng-container *ngIf="document()?.archivePath; else noArchive">
-						<button
-							size="s"
-							appearance="flat"
-							tuiButton
-							iconStart="@tui.download"
-							type="button"
-							[tuiDropdownOpen]="downloadMenuOpen()"
-							(tuiDropdownOpenChange)="onDownloadMenu($event)"
-							[tuiDropdown]="downloadMenu"
-							[disabled]="!filePath || downloadLoading()"
-						>
-							{{ downloadLoading() ? t('Document.LoadingEllipsis') : t('Document.Download') }}
-						</button>
-						<ng-template #downloadMenu>
-							<div class="download-menu" tuiDropdown tuiSurface appearance="floating">
-								<button type="button" tuiButton size="s" appearance="flat" class="menu-item" (click)="downloadOriginal(); closeDownloadMenu()" [disabled]="downloadLoading()">{{ t('Document.DownloadOriginal') }}</button>
-								<button type="button" tuiButton size="s" appearance="flat" class="menu-item" (click)="downloadArchive(); closeDownloadMenu()" [disabled]="downloadLoading()">{{ t('Document.DownloadArchive') }}</button>
-							</div>
+				<div class="toolbar">
+					<div class="left">
+						<button tuiButton size="s" appearance="secondary" iconStart="@tui.arrow-left" type="button" (click)="back()">{{ t('Document.Back') || '←' }}</button>
+						<div class="nav-buttons" *ngIf="hasData()">
+							<button
+								tuiButton
+								size="s"
+								appearance="secondary"
+								iconStart="@tui.chevron-left"
+								type="button"
+								(click)="goToPrevious()"
+								[disabled]="!hasNavigationContext() || !canNavigatePrevious() || navigationBusy()"
+							>
+								{{ t('Document.PreviousDocument') }}
+							</button>
+							<button
+								tuiButton
+								size="s"
+								appearance="secondary"
+								iconStart="@tui.chevron-right"
+								type="button"
+								(click)="goToNext()"
+								[disabled]="!hasNavigationContext() || !canNavigateNext() || navigationBusy()"
+							>
+								{{ t('Document.NextDocument') }}
+							</button>
+							<!-- Accept button: shown when document is not accepted -->
+							<button
+								*ngIf="!document()?.accepted"
+								tuiButton
+								size="s"
+								appearance="primary"
+								iconStart="@tui.check"
+								type="button"
+								(click)="confirmAccept()"
+								[disabled]="acceptPending() || loading()"
+							>
+								{{ t('Document.Accept') || 'Accept' }}
+							</button>
+						</div>
+					</div>
+					<div class="actions" *ngIf="hasData()">
+						<div class="global-edit">
+							<button
+								tuiButton
+								size="s"
+								appearance="secondary"
+								iconStart="@tui.pen"
+								type="button"
+								*ngIf="!editMode() && hasData()"
+								(click)="startEdit()"
+								[attr.title]="t('Document.Edit')"
+								[attr.aria-label]="t('Document.Edit')"
+							></button>
+							<button
+								tuiButton
+								size="s"
+								appearance="primary"
+								iconStart="@tui.check"
+								type="button"
+								*ngIf="editMode()"
+								(click)="saveEdit()"
+								[attr.title]="t('Document.Save')"
+								[attr.aria-label]="t('Document.Save')"
+							></button>
+							<button
+								tuiButton
+								size="s"
+								appearance="flat"
+								iconStart="@tui.undo"
+								type="button"
+								*ngIf="editMode()"
+								(click)="cancelEdit()"
+								[attr.title]="t('Document.Cancel')"
+								[attr.aria-label]="t('Document.Cancel')"
+							></button>
+						</div>
+						<!-- If archivePath exists show dropdown menu, else show direct download button -->
+						<ng-container *ngIf="document()?.archivePath; else noArchive">
+							<button
+								size="s"
+								appearance="flat"
+								tuiButton
+								iconStart="@tui.download"
+								type="button"
+								[tuiDropdownOpen]="downloadMenuOpen()"
+								(tuiDropdownOpenChange)="onDownloadMenu($event)"
+								[tuiDropdown]="downloadMenu"
+								[disabled]="!filePath || downloadLoading()"
+							>
+								{{ downloadLoading() ? t('Document.LoadingEllipsis') : t('Document.Download') }}
+							</button>
+							<ng-template #downloadMenu>
+								<div class="download-menu" tuiDropdown tuiSurface appearance="floating">
+									<button type="button" tuiButton size="s" appearance="flat" class="menu-item" (click)="downloadOriginal(); closeDownloadMenu()" [disabled]="downloadLoading()">{{ t('Document.DownloadOriginal') }}</button>
+									<button type="button" tuiButton size="s" appearance="flat" class="menu-item" (click)="downloadArchive(); closeDownloadMenu()" [disabled]="downloadLoading()">{{ t('Document.DownloadArchive') }}</button>
+								</div>
+							</ng-template>
+						</ng-container>
+						<ng-template #noArchive>
+							<button tuiButton size="s" appearance="flat" iconStart="@tui.download" type="button" (click)="downloadOriginal()" [disabled]="!filePath || downloadLoading()">{{ downloadLoading() ? t('Document.LoadingEllipsis') : t('Document.Download') }}</button>
 						</ng-template>
-					</ng-container>
-					<ng-template #noArchive>
-						<button tuiButton size="s" appearance="flat" iconStart="@tui.download" type="button" (click)="downloadOriginal()" [disabled]="!filePath || downloadLoading()">{{ downloadLoading() ? t('Document.LoadingEllipsis') : t('Document.Download') }}</button>
-					</ng-template>
 						<button tuiButton size="s" appearance="flat" iconStart="@tui.external-link" type="button" (click)="openInNewTab()" [disabled]="!filePath">{{ t('Document.Open') }}</button>
+					</div>
 				</div>
 			</div>
-			</div>
-			
 
 			<ng-container *ngIf="loading()">
 				<section class="skeleton" [attr.aria-label]="t('Document.LoadingDocument')">
@@ -97,8 +131,8 @@
 					<div class="detail-pane left-col">
 														<app-document-tabs [(activeIndex)]="activeItemIndex" [sticky]="true" [notesCount]="document()?.notesCount || 0"></app-document-tabs>
 								<div class="title-row">
-				<h2 tuiTitle="m" class="doc-title" *ngIf="hasData()">{{ document()?.title || originalFileName() || t('Document.DocumentTitleFallback') }}</h2>
-			</div>
+									<h2 tuiTitle="m" class="doc-title">{{ document()?.title || originalFileName() || t('Document.DocumentTitleFallback') }}</h2>
+								</div>
 						<ng-container *ngIf="activeItemIndex === 1">
 							<app-content-toolbar class="outside-content-toolbar" [wrap]="wrapContent" [copied]="copiedContent" (toggleWrap)="toggleWrap()" (copy)="copyContent()" />
 						</ng-container>
@@ -138,10 +172,32 @@
 							</div>
 							<div class="prop-grid">
 								<div class="prop"><span class="label">{{ t('Document.FileName') }}</span><span class="value mono">{{ originalFileName() || '-' }}</span></div>
-								<div class="prop"><span class="label">ID</span><span class="value mono">{{ doc.id }}</span></div>
-								<div class="prop" *ngIf="doc.title"><span class="label">{{ t('Document.Title') }}</span><span class="value">{{ doc.title }}</span></div>
-								<div class="prop"><span class="label">{{ t('Document.Type') }}</span><span class="value">{{ doc.type || '-' }}</span></div>
-								<div class="prop"><span class="label">{{ t('Document.Accepted') }}</span><span class="value">{{ doc.accepted ? t('Document.Yes') : t('Document.No') }}</span></div>
+								<div class="prop"><span class="label">ID</span><span class="value mono" title="Doppelklick zum Kopieren" (dblclick)="copyId()">{{ doc.id }}</span></div>
+								<div class="prop"><span class="label">{{ t('Document.Title') }}</span>
+									<span class="value" *ngIf="!editMode()">{{ doc.title }}</span>
+									<span class="value" *ngIf="editMode()">
+										<input tuiInput type="text" [value]="editBuffer().title" (input)="setEditTitle($any($event.target).value)" />
+									</span>
+								</div>
+								<div class="prop"><span class="label">{{ t('Document.Type') }}</span>
+									<span class="value" *ngIf="!editMode()">{{ doc.type || '-' }}</span>
+																		<span class="value" *ngIf="editMode()">
+																			<input
+																				tuiInput
+																				type="text"
+																				[value]="editBuffer().type || ''"
+																				(input)="setEditType($any($event.target).value)"
+																				list="documentTypesList"
+																				[placeholder]="t('Document.SelectType') || 'Type wählen'"
+																			/>
+																			<datalist id="documentTypesList">
+																				<ng-container *ngFor="let n of documentTypeNames()">
+																					<option [value]="n"></option>
+																				</ng-container>
+																			</datalist>
+																		</span>
+																		</div>
+																		<div class="prop"><span class="label">{{ t('Document.Accepted') }}</span><span class="value">{{ doc.accepted ? t('Document.Yes') : t('Document.No') }}</span></div>
 								<div class="prop"><span class="label">{{ t('Document.UploadedAt') }}</span><span class="value">{{ doc.uploadedAt || '-' }}</span></div>
 								<div class="prop" *ngIf="doc.contentLength"><span class="label">{{ t('Document.ContentLength') }}</span><span class="value mono">{{ doc.contentLength }}</span></div>
 								<div class="prop" *ngIf="doc.invoiceNumber"><span class="label">{{ t('Document.InvoiceNumber') }}</span><span class="value mono">{{ doc.invoiceNumber }}</span></div>

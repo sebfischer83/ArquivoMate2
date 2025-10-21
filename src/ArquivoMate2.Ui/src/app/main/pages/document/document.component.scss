@@ -84,6 +84,17 @@
  .prop .value { font-size: 0.85rem; line-height: 1.2; word-break: break-word; }
  .prop .value.mono { font-family: var(--tui-font-mono); font-size: 0.75rem; }
 
+/* editable field hover/pencil */
+.prop .value.editable { position: relative; display: flex; align-items: center; gap: 0.5rem; }
+.prop .value.editable .value-text { flex: 1 1 auto; }
+.prop .value.editable .pencil { display: inline-block; background: transparent; border: none; color: var(--tui-text-03); opacity: 0; cursor: pointer; transition: opacity .12s ease; font-size: 0.9rem; }
+.prop:hover .pencil { opacity: 1; }
+.prop .value.editable[data-editing='true'] .pencil { display: none; }
+
+.inline-editor { display:flex; gap:0.5rem; align-items:center; width:100%; }
+.inline-input, .inline-select { padding:0.35rem 0.5rem; border:1px solid var(--tui-base-04); border-radius:0.35rem; background:var(--tui-base-01); font-family:inherit; font-size:0.9rem; flex:1 1 auto; }
+.inline-input:focus, .inline-select:focus { outline:2px solid var(--tui-focus); outline-offset:1px; }
+
 /* Keywords section */
 .keywords-box { background: var(--tui-base-02); padding:0.6rem 0.75rem 0.75rem; border-radius:0.5rem; margin-bottom:0.75rem; display:flex; flex-direction:column; gap:0.55rem; }
 .keywords-header { display:flex; align-items:center; justify-content:space-between; }

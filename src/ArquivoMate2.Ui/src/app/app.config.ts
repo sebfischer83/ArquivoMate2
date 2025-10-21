@@ -23,6 +23,7 @@ import { registerLocaleData } from '@angular/common';
 import localeDe from '@angular/common/locales/de';
 import localeEn from '@angular/common/locales/en';
 import localeRu from '@angular/common/locales/ru';
+import { DocumentTypesService } from './client/services/document-types.service';
 
 const defaultAuthConfig: AuthConfig = {
   issuer: 'https://default-issuer.com',
@@ -46,6 +47,7 @@ const intializeAppFn = () => {
   const apiConfig = inject(ApiConfiguration);
   const http = inject(HttpClient);
   const transloco = inject(TranslocoService);
+  const docTypesApi = inject(DocumentTypesService);
 
   // Lade allein runtime-config.json (enthält jetzt apiBaseUrl + auth)
   const runtimeCfg$ = http.get<RuntimeConfigFile>('runtime-config.json').pipe(catchError(() => of({} as RuntimeConfigFile)));
@@ -65,6 +67,20 @@ const intializeAppFn = () => {
       const version = runtimeFile.version || 'unknown';
       // eslint-disable-next-line no-console
       console.info(`[ArquivoMate2] Runtime config loaded (apiBaseUrl=${apiBase}, version=${version})`);
+    })
+    .then(async () => {
+      // After runtime config is set, preload document types once and store in a cheap global cache
+      try {
+        const resp = await firstValueFrom(docTypesApi.apiDocumentTypesGet$Json().pipe(catchError(() => of(null))));
+        // store the plain data array on globalThis for simple reuse
+        (globalThis as any).__am_documentTypes = resp?.data ?? null;
+        // eslint-disable-next-line no-console
+        console.info('[ArquivoMate2] Preloaded document types', Array.isArray((globalThis as any).__am_documentTypes) ? (globalThis as any).__am_documentTypes!.length : 0);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('[ArquivoMate2] Failed to preload document types', e);
+        (globalThis as any).__am_documentTypes = null;
+      }
     })
     .catch(() => {
       apiConfig.rootUrl = 'http://localhost:5000';

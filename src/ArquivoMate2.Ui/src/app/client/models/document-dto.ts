@@ -24,6 +24,7 @@ export interface DocumentDto {
   language?: string | null;
   metadataPath?: string | null;
   notesCount?: number;
+  originalFileName?: string | null;
   previewPath?: string | null;
   processedAt?: string | null;
   sender?: PartyDto;

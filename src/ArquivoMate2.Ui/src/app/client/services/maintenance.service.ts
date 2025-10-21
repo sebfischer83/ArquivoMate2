@@ -13,8 +13,6 @@ import { StrictHttpResponse } from '../strict-http-response';
 
 import { apiMaintenanceCacheKeyCountsGet } from '../fn/maintenance/api-maintenance-cache-key-counts-get';
 import { ApiMaintenanceCacheKeyCountsGet$Params } from '../fn/maintenance/api-maintenance-cache-key-counts-get';
-import { apiMaintenanceDbStatsGet } from '../fn/maintenance/api-maintenance-db-stats-get';
-import { ApiMaintenanceDbStatsGet$Params } from '../fn/maintenance/api-maintenance-db-stats-get';
 import { apiMaintenanceDocumentEncryptionKeysGet } from '../fn/maintenance/api-maintenance-document-encryption-keys-get';
 import { ApiMaintenanceDocumentEncryptionKeysGet$Params } from '../fn/maintenance/api-maintenance-document-encryption-keys-get';
 import { apiMaintenanceInfraStatsGet } from '../fn/maintenance/api-maintenance-infra-stats-get';
@@ -125,31 +123,6 @@ export class MaintenanceService extends BaseService {
    */
   apiMaintenanceInfraStatsGet(params?: ApiMaintenanceInfraStatsGet$Params, context?: HttpContext): Observable<void> {
     return this.apiMaintenanceInfraStatsGet$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
-  }
-
-  /** Path part for operation `apiMaintenanceDbStatsGet()` */
-  static readonly ApiMaintenanceDbStatsGetPath = '/api/maintenance/db-stats';
-
-  /**
-   * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `apiMaintenanceDbStatsGet()` instead.
-   *
-   * This method doesn't expect any request body.
-   */
-  apiMaintenanceDbStatsGet$Response(params?: ApiMaintenanceDbStatsGet$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-    return apiMaintenanceDbStatsGet(this.http, this.rootUrl, params, context);
-  }
-
-  /**
-   * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `apiMaintenanceDbStatsGet$Response()` instead.
-   *
-   * This method doesn't expect any request body.
-   */
-  apiMaintenanceDbStatsGet(params?: ApiMaintenanceDbStatsGet$Params, context?: HttpContext): Observable<void> {
-    return this.apiMaintenanceDbStatsGet$Response(params, context).pipe(
       map((r: StrictHttpResponse<void>): void => r.body)
     );
   }

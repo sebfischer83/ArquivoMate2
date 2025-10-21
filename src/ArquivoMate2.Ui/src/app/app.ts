@@ -1,4 +1,5 @@
 import { TUI_DARK_MODE, TuiDropdownService, TuiRoot } from "@taiga-ui/core";
+import { TuiConfirmService } from '@taiga-ui/kit';
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { OAuthEvent, OAuthSuccessEvent, OAuthService } from "angular-oauth2-oidc";
@@ -13,7 +14,7 @@ import { filter, finalize } from 'rxjs/operators';
   imports: [RouterOutlet, TuiRoot],
   templateUrl: './app.html',
   styleUrl: './app.scss',
-  providers: [TuiDropdownService, tuiAsPortal(TuiDropdownService)],
+  providers: [TuiDropdownService, tuiAsPortal(TuiDropdownService), TuiConfirmService],
 })
 export class App {
   protected title = 'ArquivoMate2.Ui';

@@ -9,12 +9,14 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 
-export interface ApiMaintenanceDbStatsGet$Params {
+export interface ApiDocumentTypesIdDelete$Params {
+  id: string;
 }
 
-export function apiMaintenanceDbStatsGet(http: HttpClient, rootUrl: string, params?: ApiMaintenanceDbStatsGet$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-  const rb = new RequestBuilder(rootUrl, apiMaintenanceDbStatsGet.PATH, 'get');
+export function apiDocumentTypesIdDelete(http: HttpClient, rootUrl: string, params: ApiDocumentTypesIdDelete$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  const rb = new RequestBuilder(rootUrl, apiDocumentTypesIdDelete.PATH, 'delete');
   if (params) {
+    rb.path('id', params.id, {});
   }
 
   return http.request(
@@ -27,4 +29,4 @@ export function apiMaintenanceDbStatsGet(http: HttpClient, rootUrl: string, para
   );
 }
 
-apiMaintenanceDbStatsGet.PATH = '/api/maintenance/db-stats';
+apiDocumentTypesIdDelete.PATH = '/api/document-types/{id}';

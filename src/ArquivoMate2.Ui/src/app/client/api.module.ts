@@ -12,6 +12,7 @@ import { DocumentGroupingService } from './services/document-grouping.service';
 import { DocumentNotesService } from './services/document-notes.service';
 import { DocumentsService } from './services/documents.service';
 import { DocumentSharesService } from './services/document-shares.service';
+import { DocumentTypesService } from './services/document-types.service';
 import { EmailService } from './services/email.service';
 import { ImportHistoryService } from './services/import-history.service';
 import { IngestionService } from './services/ingestion.service';
@@ -20,6 +21,7 @@ import { PartiesService } from './services/parties.service';
 import { PublicShareService } from './services/public-share.service';
 import { ShareAutomationRulesService } from './services/share-automation-rules.service';
 import { ShareGroupsService } from './services/share-groups.service';
+import { SystemService } from './services/system.service';
 import { UsersService } from './services/users.service';
 
 /**
@@ -36,6 +38,7 @@ import { UsersService } from './services/users.service';
     DocumentNotesService,
     DocumentsService,
     DocumentSharesService,
+    DocumentTypesService,
     EmailService,
     ImportHistoryService,
     IngestionService,
@@ -44,6 +47,7 @@ import { UsersService } from './services/users.service';
     PublicShareService,
     ShareAutomationRulesService,
     ShareGroupsService,
+    SystemService,
     UsersService,
     ApiConfiguration
   ],

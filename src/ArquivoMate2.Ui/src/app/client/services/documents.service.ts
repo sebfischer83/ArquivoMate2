@@ -19,6 +19,10 @@ import { apiDocumentsGet$Json } from '../fn/documents/api-documents-get-json';
 import { ApiDocumentsGet$Json$Params } from '../fn/documents/api-documents-get-json';
 import { apiDocumentsGet$Plain } from '../fn/documents/api-documents-get-plain';
 import { ApiDocumentsGet$Plain$Params } from '../fn/documents/api-documents-get-plain';
+import { apiDocumentsIdAcceptPatch$Json } from '../fn/documents/api-documents-id-accept-patch-json';
+import { ApiDocumentsIdAcceptPatch$Json$Params } from '../fn/documents/api-documents-id-accept-patch-json';
+import { apiDocumentsIdAcceptPatch$Plain } from '../fn/documents/api-documents-id-accept-patch-plain';
+import { ApiDocumentsIdAcceptPatch$Plain$Params } from '../fn/documents/api-documents-id-accept-patch-plain';
 import { apiDocumentsIdChatPost$Json } from '../fn/documents/api-documents-id-chat-post-json';
 import { ApiDocumentsIdChatPost$Json$Params } from '../fn/documents/api-documents-id-chat-post-json';
 import { apiDocumentsIdChatPost$Plain } from '../fn/documents/api-documents-id-chat-post-plain';
@@ -27,6 +31,12 @@ import { apiDocumentsIdGet$Json } from '../fn/documents/api-documents-id-get-jso
 import { ApiDocumentsIdGet$Json$Params } from '../fn/documents/api-documents-id-get-json';
 import { apiDocumentsIdGet$Plain } from '../fn/documents/api-documents-id-get-plain';
 import { ApiDocumentsIdGet$Plain$Params } from '../fn/documents/api-documents-id-get-plain';
+import { apiDocumentsIdSharesGet$Json } from '../fn/documents/api-documents-id-shares-get-json';
+import { ApiDocumentsIdSharesGet$Json$Params } from '../fn/documents/api-documents-id-shares-get-json';
+import { apiDocumentsIdSharesGet$Plain } from '../fn/documents/api-documents-id-shares-get-plain';
+import { ApiDocumentsIdSharesGet$Plain$Params } from '../fn/documents/api-documents-id-shares-get-plain';
+import { apiDocumentsIdSharesShareIdDelete } from '../fn/documents/api-documents-id-shares-share-id-delete';
+import { ApiDocumentsIdSharesShareIdDelete$Params } from '../fn/documents/api-documents-id-shares-share-id-delete';
 import { apiDocumentsIdUpdateFieldsPatch$Json } from '../fn/documents/api-documents-id-update-fields-patch-json';
 import { ApiDocumentsIdUpdateFieldsPatch$Json$Params } from '../fn/documents/api-documents-id-update-fields-patch-json';
 import { apiDocumentsIdUpdateFieldsPatch$Plain } from '../fn/documents/api-documents-id-update-fields-patch-plain';
@@ -43,10 +53,12 @@ import { apiDocumentsStatsGet$Json } from '../fn/documents/api-documents-stats-g
 import { ApiDocumentsStatsGet$Json$Params } from '../fn/documents/api-documents-stats-get-json';
 import { apiDocumentsStatsGet$Plain } from '../fn/documents/api-documents-stats-get-plain';
 import { ApiDocumentsStatsGet$Plain$Params } from '../fn/documents/api-documents-stats-get-plain';
+import { BooleanApiResponse } from '../models/boolean-api-response';
 import { DocumentAnswerDtoApiResponse } from '../models/document-answer-dto-api-response';
 import { DocumentDtoApiResponse } from '../models/document-dto-api-response';
 import { DocumentListDtoApiResponse } from '../models/document-list-dto-api-response';
 import { DocumentStatsDtoApiResponse } from '../models/document-stats-dto-api-response';
+import { ExternalShareIEnumerableApiResponse } from '../models/external-share-i-enumerable-api-response';
 import { GuidApiResponse } from '../models/guid-api-response';
 import { ShareCreatedDtoApiResponse } from '../models/share-created-dto-api-response';
 
@@ -561,6 +573,165 @@ export class DocumentsService extends BaseService {
   apiDocumentsSharePost$Json(params?: ApiDocumentsSharePost$Json$Params, context?: HttpContext): Observable<ShareCreatedDtoApiResponse> {
     return this.apiDocumentsSharePost$Json$Response(params, context).pipe(
       map((r: StrictHttpResponse<ShareCreatedDtoApiResponse>): ShareCreatedDtoApiResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `apiDocumentsIdSharesGet()` */
+  static readonly ApiDocumentsIdSharesGetPath = '/api/documents/{id}/shares';
+
+  /**
+   * Lists public shares created for a document (owner only).
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiDocumentsIdSharesGet$Plain()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiDocumentsIdSharesGet$Plain$Response(params: ApiDocumentsIdSharesGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<ExternalShareIEnumerableApiResponse>> {
+    return apiDocumentsIdSharesGet$Plain(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Lists public shares created for a document (owner only).
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiDocumentsIdSharesGet$Plain$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiDocumentsIdSharesGet$Plain(params: ApiDocumentsIdSharesGet$Plain$Params, context?: HttpContext): Observable<ExternalShareIEnumerableApiResponse> {
+    return this.apiDocumentsIdSharesGet$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<ExternalShareIEnumerableApiResponse>): ExternalShareIEnumerableApiResponse => r.body)
+    );
+  }
+
+  /**
+   * Lists public shares created for a document (owner only).
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiDocumentsIdSharesGet$Json()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiDocumentsIdSharesGet$Json$Response(params: ApiDocumentsIdSharesGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<ExternalShareIEnumerableApiResponse>> {
+    return apiDocumentsIdSharesGet$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Lists public shares created for a document (owner only).
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiDocumentsIdSharesGet$Json$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiDocumentsIdSharesGet$Json(params: ApiDocumentsIdSharesGet$Json$Params, context?: HttpContext): Observable<ExternalShareIEnumerableApiResponse> {
+    return this.apiDocumentsIdSharesGet$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<ExternalShareIEnumerableApiResponse>): ExternalShareIEnumerableApiResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `apiDocumentsIdSharesShareIdDelete()` */
+  static readonly ApiDocumentsIdSharesShareIdDeletePath = '/api/documents/{id}/shares/{shareId}';
+
+  /**
+   * Deletes a specific public share for the given document (owner only).
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiDocumentsIdSharesShareIdDelete()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiDocumentsIdSharesShareIdDelete$Response(params: ApiDocumentsIdSharesShareIdDelete$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return apiDocumentsIdSharesShareIdDelete(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Deletes a specific public share for the given document (owner only).
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiDocumentsIdSharesShareIdDelete$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiDocumentsIdSharesShareIdDelete(params: ApiDocumentsIdSharesShareIdDelete$Params, context?: HttpContext): Observable<void> {
+    return this.apiDocumentsIdSharesShareIdDelete$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `apiDocumentsIdAcceptPatch()` */
+  static readonly ApiDocumentsIdAcceptPatchPath = '/api/documents/{id}/accept';
+
+  /**
+   * Sets or unsets the Accepted flag on a document (owner/edit access required).
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiDocumentsIdAcceptPatch$Plain()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsIdAcceptPatch$Plain$Response(params: ApiDocumentsIdAcceptPatch$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<BooleanApiResponse>> {
+    return apiDocumentsIdAcceptPatch$Plain(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Sets or unsets the Accepted flag on a document (owner/edit access required).
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiDocumentsIdAcceptPatch$Plain$Response()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsIdAcceptPatch$Plain(params: ApiDocumentsIdAcceptPatch$Plain$Params, context?: HttpContext): Observable<BooleanApiResponse> {
+    return this.apiDocumentsIdAcceptPatch$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<BooleanApiResponse>): BooleanApiResponse => r.body)
+    );
+  }
+
+  /**
+   * Sets or unsets the Accepted flag on a document (owner/edit access required).
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiDocumentsIdAcceptPatch$Json()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsIdAcceptPatch$Json$Response(params: ApiDocumentsIdAcceptPatch$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<BooleanApiResponse>> {
+    return apiDocumentsIdAcceptPatch$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Sets or unsets the Accepted flag on a document (owner/edit access required).
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiDocumentsIdAcceptPatch$Json$Response()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiDocumentsIdAcceptPatch$Json(params: ApiDocumentsIdAcceptPatch$Json$Params, context?: HttpContext): Observable<BooleanApiResponse> {
+    return this.apiDocumentsIdAcceptPatch$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<BooleanApiResponse>): BooleanApiResponse => r.body)
     );
   }
 

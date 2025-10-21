@@ -1,8 +1,8 @@
 // ...existing code...
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, signal, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, signal, computed, inject, Injector } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TuiButton, TuiSurface, TuiTitle, TuiDropdown, TuiDropdownOpen } from '@taiga-ui/core';
-import { TuiTabs, TuiChip } from '@taiga-ui/kit';
+import { TuiButton, TuiSurface, TuiTitle, TuiDropdown, TuiDropdownOpen, TuiDialogService } from '@taiga-ui/core';
+import { TuiTabs, TuiChip, TUI_CONFIRM } from '@taiga-ui/kit';
 import { DocumentTabsComponent } from './components/document-tabs/document-tabs.component';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PdfJsViewerComponent } from '../../../components/pdfjs-viewer/pdfjs-viewer.component';
@@ -64,6 +64,8 @@ export class DocumentComponent implements OnInit, OnDestroy {
   private readonly documentNavigator = inject(DocumentNavigationService);
   private readonly router = inject(Router);
   readonly navigationPending = signal(false);
+  readonly acceptPending = signal(false);
+  readonly dialogs = inject(TuiDialogService);
   readonly navigationLoading = computed(() => this.documentNavigator.isLoading());
   readonly navigationBusy = computed(() => this.navigationPending() || this.navigationLoading());
   readonly canNavigatePrevious = computed(() => {
@@ -113,6 +115,66 @@ export class DocumentComponent implements OnInit, OnDestroy {
     private transloco: TranslocoService,
   ) {
     this.documentId.set(this.route.snapshot.paramMap.get('id'));
+  }
+
+  /** Marks document as accepted by calling backend API and updates UI/toast */
+  acceptDocument(): void {
+    const id = this.documentId();
+    if (!id || this.acceptPending() || this.loading()) return;
+    this.acceptPending.set(true);
+    // API expects a boolean body to set accepted flag (true = accept)
+    this.api.apiDocumentsIdAcceptPatch$Json({ id, body: true }).subscribe({
+      next: (resp: any) => {
+        const ok = resp?.success !== false;
+        if (!ok) {
+          this.toast.error(this.transloco.translate('Document.AcceptError') || 'Fehler beim Akzeptieren');
+          this.acceptPending.set(false);
+          return;
+        }
+        // If api returns data, update document; otherwise optimistically set accepted
+        if (resp?.data) {
+          const doc = this.document();
+          if (doc) {
+            // merge returned fields into current document
+            this.document.set({ ...doc, ...(resp.data ? { accepted: resp.data } : {}) } as DocumentDto);
+          }
+        } else {
+          const doc = this.document();
+          if (doc) { doc.accepted = true; this.document.set({ ...doc }); }
+        }
+        this.toast.success(this.transloco.translate('Document.Accepted') || 'Dokument akzeptiert');
+        this.acceptPending.set(false);
+      },
+      error: () => {
+        this.acceptPending.set(false);
+        this.toast.error(this.transloco.translate('Document.AcceptError') || 'Fehler beim Akzeptieren');
+      }
+    });
+  }
+
+  // trackBy function for keywords ngFor to improve rendering
+  trackByKeyword(index: number, item: string): string {
+    return item;
+  }
+
+  /** Shows a Taiga confirm before accepting the document */
+  confirmAccept(): void {
+    const msg = this.transloco.translate('Document.AcceptConfirm') || 'Do you really want to accept this document?';
+
+    const yes = this.transloco.translate('Common.Yes') || this.transloco.translate('Document.Yes') || 'Yes';
+    const no = this.transloco.translate('Common.No') || this.transloco.translate('Document.No') || 'No';
+    this.dialogs
+      .open<boolean>(TUI_CONFIRM, {
+        label: 'Akzeptieren',
+        data: {
+          content: msg,
+          yes: yes,
+          no: no,
+        },
+      })
+      .subscribe((response) => {
+        if (response) this.acceptDocument();
+      });
   }
 
   back(): void {

@@ -66,6 +66,7 @@ using ArquivoMate2.Infrastructure.Services.Encryption; // Encryption helpers
 using ArquivoMate2.Infrastructure.Persistance;
 using Minio.Handlers; // ensure interface is visible
 using System.Net.Http;
+using ArquivoMate2.Application.Features.Processors.LabResults;
 
 namespace ArquivoMate2.Infrastructure.Configuration
 {
@@ -208,7 +209,7 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddScoped<IThumbnailService, ThumbnailService>();
             // Register system feature processors and registry
             // Individual processors should be registered so the registry can discover them via IEnumerable<ISystemFeatureProcessor>
-            services.AddScoped<ArquivoMate2.Application.Features.ISystemFeatureProcessor, ArquivoMate2.Application.Features.Processors.LabResultsFeatureProcessor>();
+            services.AddScoped<ArquivoMate2.Application.Features.ISystemFeatureProcessor, LabResultsFeatureProcessor>();
             // Changed: register the registry as Scoped to allow consuming scoped ISystemFeatureProcessor instances
             services.AddScoped<ArquivoMate2.Application.Features.ISystemFeatureProcessorRegistry, ArquivoMate2.Application.Features.SystemFeatureProcessorRegistry>();
             // Document types were moved to ServerConfig.DocumentTypes in appsettings.json
@@ -268,26 +269,15 @@ namespace ArquivoMate2.Infrastructure.Configuration
                         services.AddSingleton<IDocumentVectorizationService, NullDocumentVectorizationService>();
                     }
 
-                    if (openAISettings.UseBatch)
+                    services.AddScoped<IChatBot, OpenAIChatBot>(sp =>
                     {
-                        services.AddScoped<IChatBot, OpenAIBatchChatBot>(_ =>
-                        {
-                            BatchClient client = new BatchClient(openAISettings.ApiKey);
-                            return new OpenAIBatchChatBot(client, openAISettings.ServerLanguage);
-                        });
-                    }
-                    else
-                    {
-                        services.AddScoped<IChatBot, OpenAIChatBot>(sp =>
-                        {
-                            ChatClient client = new(model: openAISettings.Model, apiKey: openAISettings.ApiKey);
-                            return new OpenAIChatBot(
-                                client,
-                                sp.GetRequiredService<IDocumentVectorizationService>(),
-                                sp.GetRequiredService<ILogger<OpenAIChatBot>>(),
-                                openAISettings);
-                        });
-                    }
+                        ChatClient client = new(model: openAISettings.Model, apiKey: openAISettings.ApiKey);
+                        return new OpenAIChatBot(
+                            client,
+                            sp.GetRequiredService<IDocumentVectorizationService>(),
+                            sp.GetRequiredService<ILogger<OpenAIChatBot>>(),
+                            openAISettings);
+                    });
                 }
                 else if (chatbotSettings is OpenRouterSettings openRouterSettings)
                 {

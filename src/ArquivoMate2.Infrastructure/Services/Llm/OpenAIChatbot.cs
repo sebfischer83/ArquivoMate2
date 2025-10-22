@@ -800,9 +800,9 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             return builder.ToString();
         }
 
-        public async Task<T> AnalyzeDocumentImage<T>(byte[] imageBytes, string contentType, string question, string systemPrompt, string? structuredJsonSchema, CancellationToken cancellationToken)
+        public async Task<T> AnalyzeDocumentFile<T>(byte[] imageBytes, string contentType, string question, string systemPrompt, string? structuredJsonSchema, CancellationToken cancellationToken)
         {
-            var imagePart = ChatMessageContentPart.CreateImagePart(new BinaryData(imageBytes), contentType, ChatImageDetailLevel.High);
+            var imagePart = ChatMessageContentPart.CreateFilePart(new BinaryData(imageBytes), contentType, "file.pdf");
 
               var messages = new List<ChatMessage>
                 {
@@ -815,9 +815,9 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             var options = new ChatCompletionOptions
             {
                 ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
-                    jsonSchemaFormatName: "analyze_document",
+                    jsonSchemaFormatName: "LabReport",
                     jsonSchema: BinaryData.FromString(schemaJson),
-                    jsonSchemaIsStrict: true)
+                    jsonSchemaIsStrict: false)
             };
 
             cancellationToken.ThrowIfCancellationRequested();

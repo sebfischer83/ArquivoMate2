@@ -615,7 +615,7 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             => string.IsNullOrWhiteSpace(content) ? string.Empty : (content.Length <= 400 ? content : content.Substring(0, 400) + "...");
         private static string Truncate(string s, int max) => s.Length <= max ? s : s.Substring(0, max) + "...";
 
-        public Task<T> AnalyzeDocumentImage<T>(byte[] imageBytes, string contentType, string question, string systemPrompt, string? structuredJsonSchema, CancellationToken cancellationToken)
+        public Task<T> AnalyzeDocumentFile<T>(byte[] imageBytes, string contentType, string question, string systemPrompt, string? structuredJsonSchema, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }

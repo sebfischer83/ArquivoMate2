@@ -14,7 +14,7 @@ namespace ArquivoMate2.Application.Interfaces
             IReadOnlyList<DocumentTypeOption> availableTypes,
             CancellationToken cancellationToken);
 
-        Task<T> AnalyzeDocumentImage<T>(
+        Task<T> AnalyzeDocumentFile<T>(
             byte[] imageBytes,
             string contentType,
             string question,

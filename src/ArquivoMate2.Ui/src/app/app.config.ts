@@ -7,7 +7,8 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { AuthConfig } from 'angular-oauth2-oidc';
 import { routes } from './app.routes';
 import { firstValueFrom, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, filter, take } from 'rxjs/operators';
+import { OAuthService } from 'angular-oauth2-oidc';
 import { provideZonelessChangeDetection, isDevMode } from '@angular/core';
 import { AuthGuard } from "./guards/auth.guard";
 import { ApiConfiguration } from './client/api-configuration';
@@ -48,6 +49,7 @@ const intializeAppFn = () => {
   const http = inject(HttpClient);
   const transloco = inject(TranslocoService);
   const docTypesApi = inject(DocumentTypesService);
+  const oauth = inject(OAuthService);
 
   // Lade allein runtime-config.json (enthält jetzt apiBaseUrl + auth)
   const runtimeCfg$ = http.get<RuntimeConfigFile>('runtime-config.json').pipe(catchError(() => of({} as RuntimeConfigFile)));
@@ -68,18 +70,39 @@ const intializeAppFn = () => {
       // eslint-disable-next-line no-console
       console.info(`[ArquivoMate2] Runtime config loaded (apiBaseUrl=${apiBase}, version=${version})`);
     })
-    .then(async () => {
-      // After runtime config is set, preload document types once and store in a cheap global cache
-      try {
-        const resp = await firstValueFrom(docTypesApi.apiDocumentTypesGet$Json().pipe(catchError(() => of(null))));
-        // store the plain data array on globalThis for simple reuse
-        (globalThis as any).__am_documentTypes = resp?.data ?? null;
-        // eslint-disable-next-line no-console
-        console.info('[ArquivoMate2] Preloaded document types', Array.isArray((globalThis as any).__am_documentTypes) ? (globalThis as any).__am_documentTypes!.length : 0);
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn('[ArquivoMate2] Failed to preload document types', e);
-        (globalThis as any).__am_documentTypes = null;
+    .then(() => {
+      // After runtime config is set, preload document types only after authentication.
+      // Define preload logic but don't block app initialization. If a valid token is
+      // already present, preload immediately. Otherwise wait for a token_received
+      // event and preload once (take(1)). This avoids making unauthenticated calls
+      // during app bootstrap which could result in 401s.
+
+      const preload = async () => {
+        try {
+          const resp = await firstValueFrom(docTypesApi.apiDocumentTypesGet$Json().pipe(catchError(() => of(null))));
+          // store the plain data array on globalThis for simple reuse
+          (globalThis as any).__am_documentTypes = resp?.data ?? null;
+          // eslint-disable-next-line no-console
+          console.info('[ArquivoMate2] Preloaded document types', Array.isArray((globalThis as any).__am_documentTypes) ? (globalThis as any).__am_documentTypes!.length : 0);
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn('[ArquivoMate2] Failed to preload document types', e);
+          (globalThis as any).__am_documentTypes = null;
+        }
+      };
+
+      if (oauth.hasValidAccessToken && oauth.hasValidAccessToken()) {
+        // token already present
+        void preload();
+      } else {
+        // do not block app init; preload once when token is received
+        oauth.events.pipe(
+          filter((e: any) => e?.type === 'token_received'),
+          filter(() => oauth.hasValidAccessToken && oauth.hasValidAccessToken()),
+          take(1)
+        ).subscribe(() => {
+          void preload();
+        });
       }
     })
     .catch(() => {

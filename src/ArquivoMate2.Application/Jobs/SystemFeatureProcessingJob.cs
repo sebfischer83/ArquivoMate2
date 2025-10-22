@@ -32,7 +32,7 @@ namespace ArquivoMate2.Application.Jobs
         public async Task ExecuteAsync(Guid documentId, string featureKey)
         {
             var status = await _querySession.Query<DocumentFeatureProcessing>()
-                .FirstOrDefaultAsync(x => x.Id == documentId);
+                .FirstOrDefaultAsync(x => x.DocumentId == documentId);
             if (status == null)
             {
                 _logger.LogWarning("Feature status document missing for {DocumentId}", documentId);

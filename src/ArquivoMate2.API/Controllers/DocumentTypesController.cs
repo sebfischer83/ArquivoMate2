@@ -52,7 +52,10 @@ namespace ArquivoMate2.API.Controllers
             }
 
             var userId = _currentUserService.UserId;
-            var result = await _mediator.Send(new ArquivoMate2.Application.Commands.DocumentTypes.CreateDocumentTypeCommand(userId, request.Name, request.SystemFeature, request.UserDefinedFunction), cancellationToken);
+            var systemFeatures = request.SystemFeatures != null && request.SystemFeatures.Count > 0 ? request.SystemFeatures : new List<string>();
+            var userDefinedFunctions = request.UserDefinedFunctions != null && request.UserDefinedFunctions.Count > 0 ? request.UserDefinedFunctions : new List<string>();
+
+            var result = await _mediator.Send(new ArquivoMate2.Application.Commands.DocumentTypes.CreateDocumentTypeCommand(userId, request.Name, systemFeatures, userDefinedFunctions), cancellationToken);
 
             if (!result.Success)
             {
@@ -76,7 +79,10 @@ namespace ArquivoMate2.API.Controllers
             }
 
             var userId = _currentUserService.UserId;
-            var result = await _mediator.Send(new ArquivoMate2.Application.Commands.DocumentTypes.UpdateDocumentTypeCommand(id, userId, request.Name, request.SystemFeature, request.UserDefinedFunction), cancellationToken);
+            var systemFeatures = request.SystemFeatures != null && request.SystemFeatures.Count > 0 ? request.SystemFeatures : new List<string>();
+            var userDefinedFunctions = request.UserDefinedFunctions != null && request.UserDefinedFunctions.Count > 0 ? request.UserDefinedFunctions : new List<string>();
+
+            var result = await _mediator.Send(new ArquivoMate2.Application.Commands.DocumentTypes.UpdateDocumentTypeCommand(id, userId, request.Name, systemFeatures, userDefinedFunctions), cancellationToken);
 
             if (!result.Success)
             {

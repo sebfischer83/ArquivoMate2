@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
+using System.Collections.Generic;
 
 namespace ArquivoMate2.Application.Handlers.Documents
 {
@@ -68,33 +69,41 @@ namespace ArquivoMate2.Application.Handlers.Documents
                         var definition = await _querySession.Query<DocumentTypeDefinition>()
                             .FirstOrDefaultAsync(x => x.Name.Equals(docTypeName, StringComparison.OrdinalIgnoreCase), cancellationToken);
 
-                        // use first configured system feature if any
-                        var featureKey = definition?.SystemFeatures?.FirstOrDefault();
-                        if (!string.IsNullOrWhiteSpace(featureKey))
+                        var featureKeys = definition?.SystemFeatures ?? new List<string>();
+
+                        foreach (var featureKey in featureKeys.Where(k => !string.IsNullOrWhiteSpace(k)).Select(k => k!.Trim()))
                         {
-                            var processor = _registry.Get(featureKey!);
-                            if (processor != null)
+                            var processor = _registry.Get(featureKey);
+                            if (processor == null)
                             {
-                                // Idempotenz prÃ¼fen
-                                var existing = await _querySession.Query<DocumentFeatureProcessing>()
-                                    .FirstOrDefaultAsync(x => x.DocumentId == request.DocumentId, cancellationToken);
-                                if (existing == null)
+                                _logger.LogWarning("No processor registered for feature {FeatureKey} - skipping", featureKey);
+                                continue;
+                            }
+
+                            // Idempotenz prüfen per (DocumentId, FeatureKey)
+                            var existing = await _querySession.Query<DocumentFeatureProcessing>()
+                                .FirstOrDefaultAsync(x => x.DocumentId == request.DocumentId && x.FeatureKey == featureKey, cancellationToken);
+
+                            if (existing == null)
+                            {
+                                var chatBot = _services.GetService(typeof(IChatBot)) as IChatBot;
+                                var status = new DocumentFeatureProcessing
                                 {
-                                    var chatBot = _services.GetService(typeof(IChatBot)) as IChatBot;
-                                    var status = new DocumentFeatureProcessing
-                                    {
-                                        DocumentId = request.DocumentId,
-                                        FeatureKey = featureKey!,
-                                        ChatBotAvailable = chatBot != null,
-                                        State = FeatureProcessingState.Pending,
-                                        CreatedAtUtc = DateTime.UtcNow
-                                    };
-                                    _session.Store(status);
-                                    await _session.SaveChangesAsync(cancellationToken);
-                                    // Schedule background job
-                                    BackgroundJob.Enqueue<SystemFeatureProcessingJob>(job => job.ExecuteAsync(request.DocumentId, featureKey!));
-                                    _logger.LogInformation("Scheduled feature processing job for document {DocumentId} with feature {FeatureKey}", request.DocumentId, featureKey);
-                                }
+                                    DocumentId = request.DocumentId,
+                                    FeatureKey = featureKey,
+                                    ChatBotAvailable = chatBot != null,
+                                    State = FeatureProcessingState.Pending,
+                                    CreatedAtUtc = DateTime.UtcNow
+                                };
+                                _session.Store(status);
+                                await _session.SaveChangesAsync(cancellationToken);
+                                // Schedule background job for this specific feature
+                                BackgroundJob.Enqueue<SystemFeatureProcessingJob>(job => job.ExecuteAsync(request.DocumentId, featureKey));
+                                _logger.LogInformation("Scheduled feature processing job for document {DocumentId} with feature {FeatureKey}", request.DocumentId, featureKey);
+                            }
+                            else
+                            {
+                                _logger.LogInformation("Feature processing already scheduled or running for document {DocumentId} feature {FeatureKey}", request.DocumentId, featureKey);
                             }
                         }
                     }

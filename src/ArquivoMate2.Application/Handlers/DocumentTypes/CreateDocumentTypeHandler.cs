@@ -7,6 +7,7 @@ using ArquivoMate2.Shared.Models.DocumentTypes;
 using ArquivoMate2.Domain.DocumentTypes;
 using Marten;
 using MediatR;
+using System.Collections.Generic;
 
 namespace ArquivoMate2.Application.Handlers.DocumentTypes
 {
@@ -30,13 +31,21 @@ namespace ArquivoMate2.Application.Handlers.DocumentTypes
                 return new ApiResponse<DocumentTypeDto> { Success = false, Message = "Document type already exists." };
             }
 
+            var systemFeatures = request.SystemFeatures != null && request.SystemFeatures.Count > 0
+                ? new List<string>(request.SystemFeatures)
+                : new List<string>();
+
+            var userDefinedFunctions = request.UserDefinedFunctions != null && request.UserDefinedFunctions.Count > 0
+                ? new List<string>(request.UserDefinedFunctions)
+                : new List<string>();
+
             var definition = new DocumentTypeDefinition
             {
                 Id = Guid.NewGuid(),
                 Name = trimmedName,
                 NormalizedName = trimmedName.ToUpperInvariant(),
-                SystemFeature = string.IsNullOrWhiteSpace(request.SystemFeature) ? string.Empty : request.SystemFeature.Trim(),
-                UserDefinedFunction = string.IsNullOrWhiteSpace(request.UserDefinedFunction) ? string.Empty : request.UserDefinedFunction.Trim(),
+                SystemFeatures = systemFeatures,
+                UserDefinedFunctions = userDefinedFunctions,
                 IsLocked = false,
                 CreatedAtUtc = DateTime.UtcNow
             };
@@ -57,11 +66,12 @@ namespace ArquivoMate2.Application.Handlers.DocumentTypes
             {
                 Id = definition.Id,
                 Name = definition.Name,
-                SystemFeature = definition.SystemFeature,
+                SystemFeatures = definition.SystemFeatures ?? new List<string>(),
                 IsLocked = definition.IsLocked,
                 CreatedAtUtc = definition.CreatedAtUtc,
                 UpdatedAtUtc = definition.UpdatedAtUtc,
-                IsAssignedToCurrentUser = true
+                IsAssignedToCurrentUser = true,
+                UserDefinedFunctions = definition.UserDefinedFunctions ?? new List<string>()
             };
 
             return new ApiResponse<DocumentTypeDto>(dto);

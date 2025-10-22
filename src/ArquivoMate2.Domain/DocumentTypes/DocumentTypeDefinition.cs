@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace ArquivoMate2.Domain.DocumentTypes
 {
@@ -14,12 +15,13 @@ namespace ArquivoMate2.Domain.DocumentTypes
         // Upper-cased normalized name used for case-insensitive unique constraint.
         public string NormalizedName { get; set; } = string.Empty;
 
-    // Optional system feature identifier for this seeded type (e.g. 'invoicing')
-    public string SystemFeature { get; set; } = string.Empty;
+        // Optional system feature identifiers for this seeded type (e.g. 'invoicing').
+        // Multiple features are supported.
+        public List<string> SystemFeatures { get; set; } = new();
 
-        // Optional user-defined function associated with user-created types.
-        // Stored as-is; execution/validation happens elsewhere.
-        public string UserDefinedFunction { get; set; } = string.Empty;
+        // Optional user-defined functions associated with user-created types.
+        // Stored as-is; execution/validation happens elsewhere. Multiple allowed.
+        public List<string> UserDefinedFunctions { get; set; } = new();
 
         public bool IsLocked { get; set; }
         public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;

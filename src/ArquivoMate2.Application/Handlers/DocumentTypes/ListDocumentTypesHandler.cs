@@ -35,8 +35,8 @@ namespace ArquivoMate2.Application.Handlers.DocumentTypes
             {
                 Id = def.Id,
                 Name = def.Name,
-                SystemFeature = def.SystemFeature,
-                UserDefinedFunction = def.UserDefinedFunction,
+                SystemFeatures = def.SystemFeatures ?? new List<string>(),
+                UserDefinedFunctions = def.UserDefinedFunctions ?? new List<string>(),
                 IsLocked = def.IsLocked,
                 CreatedAtUtc = def.CreatedAtUtc,
                 UpdatedAtUtc = def.UpdatedAtUtc,

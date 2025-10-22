@@ -10,7 +10,9 @@ namespace ArquivoMate2.Domain.Features
 
     public class DocumentFeatureProcessing
     {
-        public Guid Id { get; set; }              // DocumentId
+        public Guid Id { get; set; } = Guid.NewGuid();
+
+        public Guid DocumentId { get; set; }
         public string FeatureKey { get; set; } = string.Empty;
         public FeatureProcessingState State { get; set; } = FeatureProcessingState.Pending;
         public int AttemptCount { get; set; }

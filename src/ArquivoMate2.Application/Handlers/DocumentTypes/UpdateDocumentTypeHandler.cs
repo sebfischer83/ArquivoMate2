@@ -7,6 +7,8 @@ using ArquivoMate2.Shared.Models.DocumentTypes;
 using ArquivoMate2.Domain.DocumentTypes;
 using Marten;
 using MediatR;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace ArquivoMate2.Application.Handlers.DocumentTypes
 {
@@ -43,8 +45,16 @@ namespace ArquivoMate2.Application.Handlers.DocumentTypes
             }
 
             definition.Name = trimmedName;
-            definition.SystemFeature = string.IsNullOrWhiteSpace(request.SystemFeature) ? string.Empty : request.SystemFeature.Trim();
-            definition.UserDefinedFunction = string.IsNullOrWhiteSpace(request.UserDefinedFunction) ? string.Empty : request.UserDefinedFunction.Trim();
+
+            // assign lists (use provided lists or empty lists)
+            definition.SystemFeatures = request.SystemFeatures != null && request.SystemFeatures.Count > 0
+                ? new List<string>(request.SystemFeatures)
+                : new List<string>();
+
+            definition.UserDefinedFunctions = request.UserDefinedFunctions != null && request.UserDefinedFunctions.Count > 0
+                ? new List<string>(request.UserDefinedFunctions)
+                : new List<string>();
+
             definition.NormalizedName = trimmedName.ToUpperInvariant();
             definition.UpdatedAtUtc = DateTime.UtcNow;
             _session.Store(definition);
@@ -57,8 +67,8 @@ namespace ArquivoMate2.Application.Handlers.DocumentTypes
             {
                 Id = definition.Id,
                 Name = definition.Name,
-                SystemFeature = definition.SystemFeature,
-                UserDefinedFunction = definition.UserDefinedFunction,
+                SystemFeatures = definition.SystemFeatures ?? new List<string>(),
+                UserDefinedFunctions = definition.UserDefinedFunctions ?? new List<string>(),
                 IsLocked = definition.IsLocked,
                 CreatedAtUtc = definition.CreatedAtUtc,
                 UpdatedAtUtc = definition.UpdatedAtUtc,

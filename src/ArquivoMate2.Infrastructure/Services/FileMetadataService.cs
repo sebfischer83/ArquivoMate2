@@ -49,5 +49,21 @@ namespace ArquivoMate2.Infrastructure.Services
             return JsonSerializer.Deserialize<DocumentMetadata>(json,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
+
+        public Task<DocumentMetadata?> ReadMetadataAsync(byte[] data, CancellationToken ct = default)
+        {
+            if (data == null || data.Length == 0) return Task.FromResult<DocumentMetadata?>(null);
+            try
+            {
+                var readerOptions = new JsonReaderOptions { CommentHandling = JsonCommentHandling.Skip };
+                var json = Encoding.UTF8.GetString(data);
+                var md = JsonSerializer.Deserialize<DocumentMetadata>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return Task.FromResult(md);
+            }
+            catch
+            {
+                return Task.FromResult<DocumentMetadata?>(null);
+            }
+        }
     }
 }

@@ -21,6 +21,11 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             return Task.FromResult(empty);
         }
 
+        public Task<T> AnalyzeDocumentFile<T>(byte[] imageBytes, string contentType, string question, string systemPrompt, string? structuredJsonSchema, CancellationToken cancellationToken)
+        {
+           return Task.FromResult(default(T)!);
+        }
+
         public Task<DocumentAnswerResult> AnswerQuestion(DocumentQuestionContext context, string question, IDocumentQuestionTooling tooling, CancellationToken cancellationToken)
         {
             var result = new DocumentAnswerResult

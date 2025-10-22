@@ -38,7 +38,6 @@ namespace ArquivoMate2.Infrastructure.Configuration.DocumentTypes
 
             using var session = _store.LightweightSession();
             var existing = await session.Query<DocumentTypeDefinition>().ToListAsync(cancellationToken);
-            var existingNames = existing.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             var added = 0;
             var updated = 0;
@@ -51,13 +50,17 @@ namespace ArquivoMate2.Infrastructure.Configuration.DocumentTypes
 
                 var name = seed.Name.Trim();
                 var existingDef = existing.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
+                var newFeatures = seed.GetSystemFeatures();
+
                 if (existingDef != null)
                 {
-                    // Update existing definition's SystemFeature and ensure it's locked
-                    var newFeature = seed.SystemFeature ?? string.Empty;
-                    if (existingDef.SystemFeature != newFeature || !existingDef.IsLocked)
+                    // Compare sequences (order-insensitive)
+                    var existingSet = (existingDef.SystemFeatures ?? new System.Collections.Generic.List<string>()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    var newSet = newFeatures.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                    if (!existingSet.SetEquals(newSet) || !existingDef.IsLocked)
                     {
-                        existingDef.SystemFeature = newFeature;
+                        existingDef.SystemFeatures = newFeatures;
                         existingDef.IsLocked = true;
                         existingDef.UpdatedAtUtc = DateTime.UtcNow;
                         session.Store(existingDef);
@@ -70,7 +73,7 @@ namespace ArquivoMate2.Infrastructure.Configuration.DocumentTypes
                 {
                     Name = name,
                     NormalizedName = name.ToUpperInvariant(),
-                    SystemFeature = seed.SystemFeature ?? string.Empty,
+                    SystemFeatures = newFeatures,
                     IsLocked = true,
                     CreatedAtUtc = DateTime.UtcNow
                 });

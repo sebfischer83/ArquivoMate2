@@ -59,11 +59,17 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Queries\**" />
+    <Content Remove="Queries\**" />
+    <EmbeddedResource Remove="Queries\**" />
+    <None Remove="Queries\**" />
+  </ItemGroup>
 
 
   <ItemGroup>
+    <Folder Include="Controllers\Feature\" />
     <Folder Include="logs\" />
-    <Folder Include="Queries\ImportHistory\" />
   </ItemGroup>
 
 </Project>

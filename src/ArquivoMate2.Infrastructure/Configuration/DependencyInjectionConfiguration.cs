@@ -67,6 +67,9 @@ using ArquivoMate2.Infrastructure.Persistance;
 using Minio.Handlers; // ensure interface is visible
 using System.Net.Http;
 using ArquivoMate2.Application.Features.Processors.LabResults;
+using ArquivoMate2.Application.Features.Processors.LabResults.Models;
+using ArquivoMate2.Application.Features.Processors.LabResults.Services;
+using ArquivoMate2.Infrastructure.Services.LabResults;
 
 namespace ArquivoMate2.Infrastructure.Configuration
 {
@@ -197,6 +200,10 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 options.Schema.For<ExternalShare>()
                     .Index(x => x.DocumentId)
                     .Index(x => x.ExpiresAtUtc);
+
+                options.Schema.For<LabPivotTable>()
+                    .Index(x => x.OwnerId)
+                    .UniqueIndex(x => x.Id);
             });
 
             services.AddScoped<IDocumentSession>(sp => sp.GetRequiredService<IDocumentStore>().LightweightSession());
@@ -506,6 +513,12 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddTransient<IDocumentArtifactStreamer, DocumentArtifactStreamer>();
             // Register Marten-backed document encryption keys provider
             services.AddScoped<IDocumentEncryptionKeysProvider, MartenDocumentEncryptionKeysProvider>();
+            services.AddScoped<ILabPivotUpdater, LabPivotUpdater>();
+            // register default parameter normalizer for LabResults feature
+            services.AddScoped<IParameterNormalizer, DefaultParameterNormalizer>();
+
+            // register unit normalizer
+            services.AddScoped<IUnitNormalizer, DefaultUnitNormalizer>();
 
             return services;
         }

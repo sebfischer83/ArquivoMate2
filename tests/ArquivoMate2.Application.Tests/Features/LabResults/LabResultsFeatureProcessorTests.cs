@@ -75,7 +75,8 @@ namespace ArquivoMate2.Application.Tests.Features.LabResults
             var p1 = lr.Points[0];
             Assert.Equal("<", p1.ResultComparator);
             Assert.Equal(0.6m, p1.ResultNumeric);
-            Assert.Equal("mmol/l", p1.NormalizedUnit);
+            // DefaultUnitNormalizer canonicalizes to "mmol/L"
+            Assert.Equal("mmol/L", p1.NormalizedUnit);
             Assert.Equal(0.50m, p1.ReferenceFrom);
             Assert.Equal(1.25m, p1.ReferenceTo);
 
@@ -84,6 +85,8 @@ namespace ArquivoMate2.Application.Tests.Features.LabResults
             Assert.Equal(13.2m, p2.ResultNumeric);
             Assert.Equal(">=", p2.ReferenceComparator);
             Assert.Equal(12m, p2.ReferenceFrom);
+            // canonicalized g/dL
+            Assert.Equal("g/dL", p2.NormalizedUnit);
         }
 
         [Fact]

@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Globalization;
+using ArquivoMate2.Application.Features.Processors.LabResults.Services;
 
 namespace ArquivoMate2.Application.Features.Processors.LabResults
 {
@@ -19,6 +20,9 @@ namespace ArquivoMate2.Application.Features.Processors.LabResults
         private readonly IStorageProvider _storageProvider;
         private readonly IFileMetadataService _fileMetadataService;
         private readonly ILogger<LabResultsFeatureProcessor> _logger;
+        private readonly ILabPivotUpdater _pivotUpdater;
+        private readonly IParameterNormalizer _parameterNormalizer;
+        private readonly IUnitNormalizer _unitNormalizer;
         public string FeatureKey => "lab-results";
 
         // Support numbers like ".4" or "0.4" as well as "11" and use comma or dot as decimal separator
@@ -27,18 +31,18 @@ namespace ArquivoMate2.Application.Features.Processors.LabResults
         private static readonly Regex ResultRegex = new(@"^\s*(?<op><=|>=|<|>)?\s*(?<num>\d*[\.,]?\d+)\s*$", RegexOptions.Compiled);
         private static readonly Regex ReferenceWithComparatorRegex = new(@"^\s*(?<op><=|>=|<|>)\s*(?<rest>.+)$", RegexOptions.Compiled);
 
-        // Normalization helpers (static for reuse and performance)
-        private static readonly Regex s_removeParentheses = new(@"\([^)]*\)", RegexOptions.Compiled);
-        private static readonly Regex s_invalidUnitChars = new(@"[^a-z0-9/+\-\s%°\.]", RegexOptions.Compiled | RegexOptions.CultureInvariant);
-        private static readonly Regex s_multiWhitespace = new(@"\s+", RegexOptions.Compiled);
+        // Note: legacy unit/parameter string normalization moved to IParameterNormalizer implementation
 
-        public LabResultsFeatureProcessor(IQuerySession query, IDocumentSession session, IStorageProvider storageProvider, IFileMetadataService fileMetadataService, ILogger<LabResultsFeatureProcessor> logger)
+        public LabResultsFeatureProcessor(IQuerySession query, IDocumentSession session, IStorageProvider storageProvider, IFileMetadataService fileMetadataService, ILogger<LabResultsFeatureProcessor> logger, ILabPivotUpdater? pivotUpdater = null, IParameterNormalizer? parameterNormalizer = null, IUnitNormalizer? unitNormalizer = null)
         {
             _query = query;
             _session = session;
             _storageProvider = storageProvider;
             _fileMetadataService = fileMetadataService;
             _logger = logger;
+            _pivotUpdater = pivotUpdater ?? new ArquivoMate2.Application.Features.Processors.LabResults.Services.NoopLabPivotUpdater();
+            _parameterNormalizer = parameterNormalizer ?? new ArquivoMate2.Application.Features.Processors.LabResults.Services.DefaultParameterNormalizer();
+            _unitNormalizer = unitNormalizer ?? new ArquivoMate2.Application.Features.Processors.LabResults.Services.DefaultUnitNormalizer();
         }
 
         public async Task ProcessAsync(SystemFeatureProcessingContext context, CancellationToken ct)
@@ -93,13 +97,16 @@ namespace ArquivoMate2.Application.Features.Processors.LabResults
 
             var labResults = ProcessRawData(rawData, context.DocumentId);
 
-            // Persist lab results to Marten
+            // Persist lab results to Marten and update pivot in same session/transaction
             if (labResults != null && labResults.Count > 0)
             {
                 foreach (var lr in labResults)
                 {
                     _session.Store(lr);
+                    // Update pivot using same session; pivot updater will store pivot but not save
+                    await _pivotUpdater.AddOrUpdateAsync(_session, lr, _parameterNormalizer, ct);
                 }
+                // Commit both LabResults and corresponding pivot changes in one SaveChanges
                 await _session.SaveChangesAsync(ct);
             }
 
@@ -186,8 +193,40 @@ namespace ArquivoMate2.Application.Features.Processors.LabResults
                         }
                     }
 
+                    // Additional fallback: if comparator existed but bounds still null, attempt to find a number anywhere in the original reference string
+                    if (!referenceFrom.HasValue && !referenceTo.HasValue && !string.IsNullOrWhiteSpace(point.Reference))
+                    {
+                        var s2 = SingleNumberRegex.Match(point.Reference);
+                        if (s2.Success && decimal.TryParse(s2.Groups["num"].Value.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var single2))
+                        {
+                            if (referenceComparator != null)
+                            {
+                                if (referenceComparator.Contains('<') || referenceComparator.Contains('≤'))
+                                    referenceTo = single2;
+                                else
+                                    referenceFrom = single2;
+                            }
+                            else
+                            {
+                                referenceFrom = single2;
+                            }
+                        }
+                    }
+
+                    // Normalize unit: use same NormalizeString + case normalization and simple mapping
+                    // Use IParameterNormalizer for unit normalization as well to centralize normalization logic
+                    string? unit = null;
+                    if (!string.IsNullOrWhiteSpace(point.Unit))
+                    {
+                        var u = _parameterNormalizer.Normalize(point.Unit ?? string.Empty);
+                        // Map common variants to preferred casing using unit normalizer
+                        var mapped = _unitNormalizer.Normalize(u);
+                        unit = mapped;
+                    }
+
                     LabResultPoint labResultPoint = new LabResultPoint
                     {
+                        Parameter = point.Parameter ?? string.Empty,
                         ResultRaw = point.Result,
                         ResultNumeric = numericResult,
                         ResultComparator = resultComparator,
@@ -198,8 +237,11 @@ namespace ArquivoMate2.Application.Features.Processors.LabResults
                         ReferenceTo = referenceTo
                     };
 
-                    // normalize fields using separate helper
+                    // normalize fields using instance helper that uses the injected normalizer
                     NormalizeLabResultPoint(labResultPoint);
+
+                    // override NormalizedUnit with our unit mapping produced above
+                    labResultPoint.NormalizedUnit = unit ?? labResultPoint.NormalizedUnit;
 
                     labResult.Points.Add(labResultPoint);
                 }
@@ -209,51 +251,20 @@ namespace ArquivoMate2.Application.Features.Processors.LabResults
             return results;
         }
 
-        private static string NormalizeString(string? s)
-        {
-            if (string.IsNullOrWhiteSpace(s)) return string.Empty;
-
-            // lowercase + trim
-            var work = s.ToLowerInvariant().Trim();
-
-            // remove parentheses content (replace with space to keep token separation)
-            work = s_removeParentheses.Replace(work, " ");
-
-            // remove diacritical marks
-            var formD = work.Normalize(NormalizationForm.FormD);
-            var sb = new StringBuilder();
-            foreach (var ch in formD)
-            {
-                var uc = CharUnicodeInfo.GetUnicodeCategory(ch);
-                if (uc != UnicodeCategory.NonSpacingMark)
-                    sb.Append(ch);
-            }
-            work = sb.ToString().Normalize(NormalizationForm.FormC);
-
-            // normalize common micro symbols to 'u'
-            work = work.Replace('µ', 'u').Replace('μ', 'u');
-
-            // remove any remaining disallowed characters but keep percent, degree and dot
-            work = s_invalidUnitChars.Replace(work, " ");
-
-            // collapse whitespace
-            work = s_multiWhitespace.Replace(work, " ").Trim();
-
-            return work;
-        }
+        // legacy NormalizeString removed - parameter/unit normalization delegated to IParameterNormalizer
 
         // Separate normalization helper as requested
-        private static void NormalizeLabResultPoint(LabResultPoint p)
+        private void NormalizeLabResultPoint(LabResultPoint p)
         {
             if (p == null) return;
 
             // Normalized numeric result: currently just the parsed numeric value
             p.NormalizedResult = p.ResultNumeric;
 
-            // Normalize unit using the shared normalizer
+            // Normalize unit using the injected normalizer
             if (!string.IsNullOrWhiteSpace(p.Unit))
             {
-                var normalized = NormalizeString(p.Unit);
+                var normalized = _parameterNormalizer.Normalize(p.Unit ?? string.Empty);
                 p.NormalizedUnit = string.IsNullOrWhiteSpace(normalized) ? null : normalized;
             }
             else

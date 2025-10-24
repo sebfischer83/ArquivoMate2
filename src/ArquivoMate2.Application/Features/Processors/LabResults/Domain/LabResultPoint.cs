@@ -2,6 +2,9 @@
 {
     public sealed class LabResultPoint
     {
+        // Parameter name as extracted from the report (e.g. "Hemoglobin")
+        public string Parameter { get; set; } = string.Empty;
+
         public string ResultRaw { get; set; } = default!;
         public decimal? ResultNumeric { get; set; }                 // parst z. B. „13,2“ → 13.2
         public string? ResultComparator { get; set; }               // e.g. "<", ">=", stored when present

@@ -18,12 +18,14 @@ namespace ArquivoMate2.API.Controllers.Feature
         private readonly IMediator _mediator;
         private readonly ICurrentUserService _currentUserService;
         private readonly IDocumentAccessService _documentAccessService;
+        private readonly ArquivoMate2.Application.Interfaces.Sharing.IDocumentOwnershipLookup _ownershipLookup;
 
-        public LabResultFeatureController(IMediator mediator, ICurrentUserService currentUserService, IDocumentAccessService documentAccessService)
+        public LabResultFeatureController(IMediator mediator, ICurrentUserService currentUserService, IDocumentAccessService documentAccessService, ArquivoMate2.Application.Interfaces.Sharing.IDocumentOwnershipLookup ownershipLookup)
         {
             _mediator = mediator;
             _currentUserService = currentUserService;
             _documentAccessService = documentAccessService;
+            _ownershipLookup = ownershipLookup;
         }
 
         [HttpGet("{documentId:guid}")]
@@ -39,6 +41,83 @@ namespace ArquivoMate2.API.Controllers.Feature
 
             var data = await _mediator.Send(new ArquivoMate2.Application.Queries.LabResults.GetLabResultsByDocumentQuery(documentId), cancellationToken);
             var response = new ApiResponse<System.Collections.Generic.List<LabResultDto>>(data);
+            return Ok(response);
+        }
+
+        [HttpPut]
+        [ProducesResponseType(200)]
+        public async Task<ActionResult> UpdateLabResult([FromBody] LabResultDto dto, CancellationToken cancellationToken)
+        {
+            // verify access to document
+            var userId = _currentUserService.UserId;
+            var hasAccess = await _documentAccessService.HasAccessToDocumentAsync(dto.DocumentId, userId, cancellationToken);
+            if (!hasAccess) return NotFound();
+
+            var ok = await _mediator.Send(new ArquivoMate2.Application.Commands.LabResults.UpdateLabResultCommand(dto), cancellationToken);
+            if (!ok) return NotFound();
+
+            // rebuild pivot for owner
+            var owner = await _ownershipLookup.GetAsync(dto.DocumentId, cancellationToken);
+            if (owner.HasValue && !owner.Value.Deleted)
+            {
+                await _mediator.Send(new ArquivoMate2.Application.Commands.LabResults.RebuildLabPivotForOwnerCommand(owner.Value.UserId), cancellationToken);
+            }
+
+            return Ok();
+        }
+
+        [HttpDelete("{labResultId:guid}")]
+        [ProducesResponseType(200)]
+        public async Task<ActionResult> DeleteLabResult(Guid labResultId, CancellationToken cancellationToken)
+        {
+            // find lab result to get document id
+            var lr = await _mediator.Send(new ArquivoMate2.Application.Queries.LabResults.GetLabResultByIdQuery(labResultId), cancellationToken);
+            if (lr == null) return NotFound();
+
+            var userId = _currentUserService.UserId;
+            var hasAccess = await _documentAccessService.HasAccessToDocumentAsync(lr.DocumentId, userId, cancellationToken);
+            if (!hasAccess) return NotFound();
+
+            var ok = await _mediator.Send(new ArquivoMate2.Application.Commands.LabResults.DeleteLabResultCommand(labResultId), cancellationToken);
+            if (!ok) return NotFound();
+
+            var owner = await _ownershipLookup.GetAsync(lr.DocumentId, cancellationToken);
+            if (owner.HasValue && !owner.Value.Deleted)
+            {
+                await _mediator.Send(new ArquivoMate2.Application.Commands.LabResults.RebuildLabPivotForOwnerCommand(owner.Value.UserId), cancellationToken);
+            }
+
+            return Ok();
+        }
+
+        [HttpGet("pivot/{documentId:guid}")]
+        [ProducesResponseType(200, Type = typeof(ApiResponse<LabPivotTableDto>))]
+        public async Task<ActionResult<ApiResponse<LabPivotTableDto>>> GetPivotForDocument(Guid documentId, CancellationToken cancellationToken)
+        {
+            var userId = _currentUserService.UserId;
+            var hasAccess = await _documentAccessService.HasAccessToDocumentAsync(documentId, userId, cancellationToken);
+            if (!hasAccess)
+            {
+                return NotFound();
+            }
+
+            var pivot = await _mediator.Send(new ArquivoMate2.Application.Queries.LabResults.GetLabPivotByDocumentQuery(documentId), cancellationToken);
+            var response = new ApiResponse<LabPivotTableDto>(pivot);
+            return Ok(response);
+        }
+
+        [HttpGet("pivot/owner")]
+        [ProducesResponseType(200, Type = typeof(ApiResponse<LabPivotTableDto>))]
+        public async Task<ActionResult<ApiResponse<LabPivotTableDto>>> GetPivotForCurrentUser(CancellationToken cancellationToken)
+        {
+            var ownerId = _currentUserService.UserId;
+            if (string.IsNullOrWhiteSpace(ownerId))
+            {
+                return NotFound();
+            }
+
+            var pivot = await _mediator.Send(new ArquivoMate2.Application.Queries.LabResults.GetLabPivotByOwnerQuery(ownerId), cancellationToken);
+            var response = new ApiResponse<LabPivotTableDto>(pivot);
             return Ok(response);
         }
     }

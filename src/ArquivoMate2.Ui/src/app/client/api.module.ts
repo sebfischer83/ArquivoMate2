@@ -16,6 +16,7 @@ import { DocumentTypesService } from './services/document-types.service';
 import { EmailService } from './services/email.service';
 import { ImportHistoryService } from './services/import-history.service';
 import { IngestionService } from './services/ingestion.service';
+import { LabResultFeatureService } from './services/lab-result-feature.service';
 import { MaintenanceService } from './services/maintenance.service';
 import { PartiesService } from './services/parties.service';
 import { PublicShareService } from './services/public-share.service';
@@ -42,6 +43,7 @@ import { UsersService } from './services/users.service';
     EmailService,
     ImportHistoryService,
     IngestionService,
+    LabResultFeatureService,
     MaintenanceService,
     PartiesService,
     PublicShareService,

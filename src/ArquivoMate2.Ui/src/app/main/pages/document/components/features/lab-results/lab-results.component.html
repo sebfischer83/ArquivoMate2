@@ -1,0 +1,9 @@
+<ng-container *transloco="let t">
+  <div class="lab-results-root">
+    <h3>{{ t('Document.Tabs.LabResults') }}</h3>
+    <div class="lab-placeholder">
+      <p>{{ t('Document.LabResults.Empty') || 'Keine Laborwerte vorhanden.' }}</p>
+  <p [hidden]="!document">{{ document && document.id ? ('ID: ' + document.id) : '' }}</p>
+    </div>
+  </div>
+</ng-container>

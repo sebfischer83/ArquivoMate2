@@ -10,6 +10,7 @@ import { PdfJsViewerComponent } from '../../../components/pdfjs-viewer/pdfjs-vie
 import { PdfJsViewerToolbarComponent } from '../../../components/pdfjs-viewer/pdfjs-viewer-toolbar.component';
 import { ContentToolbarComponent } from './components/content-toolbar/content-toolbar.component';
 import { DocumentHistoryComponent } from '../../../components/document-history/document-history.component';
+import { LabResultsComponent } from './components/features/lab-results/lab-results.component';
 import { DocumentEventDto } from '../../../client/models/document-event-dto';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DocumentsService } from '../../../client/services/documents.service';
@@ -31,7 +32,7 @@ import { take, takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-document',
-  imports: [CommonModule, ReactiveFormsModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, TuiDropdown, TuiDropdownOpen, TuiChip, TuiTextfield, TuiTextfieldDropdownDirective, TuiDataListWrapper, TuiComboBox, TuiLabel, DocumentHistoryComponent, PdfJsViewerComponent, DocumentTabsComponent, PdfJsViewerToolbarComponent, ContentToolbarComponent, NotesListComponent, TranslocoModule],
+  imports: [CommonModule, ReactiveFormsModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, TuiDropdown, TuiDropdownOpen, TuiChip, TuiTextfield, TuiTextfieldDropdownDirective, TuiDataListWrapper, TuiComboBox, TuiLabel, DocumentHistoryComponent, PdfJsViewerComponent, DocumentTabsComponent, PdfJsViewerToolbarComponent, ContentToolbarComponent, NotesListComponent, LabResultsComponent, TranslocoModule],
   templateUrl: './document.component.html',
   styleUrls: ['./document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

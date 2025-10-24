@@ -5,5 +5,7 @@
 export interface UpdateDocumentTypeRequest {
   name: string;
   systemFeature?: string | null;
+  systemFeatures?: Array<string> | null;
   userDefinedFunction?: string | null;
+  userDefinedFunctions?: Array<string> | null;
 }

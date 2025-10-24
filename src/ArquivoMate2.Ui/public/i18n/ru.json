@@ -57,6 +57,17 @@
     "NoteSaveError": "Не удалось сохранить заметку",
     "PdfLoadError": "PDF не удалось загрузить"
     ,"KeywordTooLong": "Ключевое слово слишком длинное (макс. 30)"
+    ,"LabResults": {
+      "Empty": "Нет данных лабораторных показателей."
+    }
+  }
+
+  ,"Document.Tabs": {
+    "Details": "Детали",
+    "Content": "Содержание",
+    "History": "История",
+    "Notes": "Заметки",
+    "LabResults": "Результаты лаборатории"
   }
 
   ,"Settings": {

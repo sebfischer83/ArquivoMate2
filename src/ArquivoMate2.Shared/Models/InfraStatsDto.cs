@@ -23,7 +23,7 @@ namespace ArquivoMate2.Shared.Models
     public sealed class InfraStatsDto
     {
         public object RedisInfo { get; init; } = new { };
-        public Dictionary<string, long> KeyCounts { get; init; } = new();
+        public Dictionary<string, long> KeyCounts { get; init; } = new Dictionary<string, long>();
         public object? MeiliHealth { get; init; }
         public object? MeiliIndexStats { get; init; }
         public object? MeiliVersion { get; init; }

@@ -1,3 +1,34 @@
+# GitHub Copilot instructions for this repository
+
+When generating or editing Angular templates in this repository, ALWAYS follow the project's template convention described in `src/ArquivoMate2.Ui/docs/IF_USAGE.md`.
+
+Key rules (must be enforced):
+
+- Use the `@if (condition) { ... }` preprocessor pattern instead of Angular's `*ngIf` in any `.html` templates.
+- Do not introduce new `*ngIf` attributes in the codebase. If you see an existing `*ngIf`, prefer converting it to the `@if` pattern and keep formatting consistent with existing code.
+- When producing template snippets for developers, show both the original `*ngIf` example and the converted `@if` version.
+
+Examples:
+
+Before:
+
+```html
+<tui-badge *ngIf="notesCount && notesCount > 0">{{ notesCount }}</tui-badge>
+```
+
+After (preferred):
+
+```html
+@if (notesCount && notesCount > 0) { <tui-badge>{{ notesCount }}</tui-badge> }
+```
+
+Why:
+
+- This repository uses a preprocessing step that transforms `@if` blocks into valid Angular templates. The preprocessor also enforces consistent formatting and additional checks.
+
+Location of the rule: `src/ArquivoMate2.Ui/docs/IF_USAGE.md` — read it before making template changes.
+
+If you cannot follow this (for example, limited to Angular-only snippets), explicitly note the exception in the generated suggestion and provide the `@if` alternative.
 # ArquivoMate2.Ui — AI Coding Agent Guide
 
 NUTZE IMMER DIE AKTUELLE memory.instruction.md DATEI ALS REFERENZ.

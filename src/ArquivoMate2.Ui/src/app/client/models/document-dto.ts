@@ -14,6 +14,8 @@ export interface DocumentDto {
   content?: string | null;
   contentLength?: number;
   customerNumber?: string | null;
+  documentTypeSystemFeatures?: Array<string> | null;
+  documentTypeUserFunctions?: Array<string> | null;
   encrypted?: boolean;
   encryptionType?: DocumentEncryptionType;
   filePath?: string | null;

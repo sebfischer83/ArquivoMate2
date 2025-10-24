@@ -39,6 +39,13 @@ namespace ArquivoMate2.Shared.Models
 
         public string Type { get; set; } = string.Empty;
 
+        // Additional metadata about the selected document type
+        // SystemFeatures: list of built-in system feature keys associated with the document type
+        public List<string> DocumentTypeSystemFeatures { get; set; } = new List<string>();
+
+        // UserDefinedFunctions: list of user-configured feature keys or function identifiers associated with the document type
+        public List<string> DocumentTypeUserFunctions { get; set; } = new List<string>();
+
         public string CustomerNumber { get; set; } = string.Empty;
         public string InvoiceNumber { get; set; } = string.Empty;
         public decimal? TotalPrice { get; set; }

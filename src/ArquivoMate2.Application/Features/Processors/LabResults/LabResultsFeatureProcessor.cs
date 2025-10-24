@@ -115,6 +115,7 @@ namespace ArquivoMate2.Application.Features.Processors.LabResults
                 LabResult labResult = new LabResult
                 {
                     Id = Guid.NewGuid(),
+                    DocumentId = documentId,
                     Patient = rawData.Patient,
                     LabName = rawData.LabName,
                     Date = DateOnly.ParseExact(row.Date, "yyyy-MM-dd"),

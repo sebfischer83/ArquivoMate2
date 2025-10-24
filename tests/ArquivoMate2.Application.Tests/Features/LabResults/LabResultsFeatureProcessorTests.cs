@@ -59,6 +59,31 @@ namespace ArquivoMate2.Application.Tests.Features.LabResults
             var ex = Record.Exception(() => method.Invoke(sut, new object[] { report, docId }));
             // Invocation may wrap inner exceptions - ensure none
             Assert.Null(ex);
+
+            // verify returned results
+            var ret = method.Invoke(sut, new object[] { report, docId });
+            Assert.NotNull(ret);
+            var list = ret as List<LabResult>;
+            Assert.NotNull(list);
+            Assert.Single(list);
+            var lr = list![0];
+            Assert.Equal("TestLab", lr.LabName);
+            Assert.Equal("John Doe", lr.Patient);
+            Assert.Equal(DateOnly.Parse("2024-01-02"), lr.Date);
+            Assert.Equal(2, lr.Points.Count);
+
+            var p1 = lr.Points[0];
+            Assert.Equal("<", p1.ResultComparator);
+            Assert.Equal(0.6m, p1.ResultNumeric);
+            Assert.Equal("mmol/l", p1.NormalizedUnit);
+            Assert.Equal(0.50m, p1.ReferenceFrom);
+            Assert.Equal(1.25m, p1.ReferenceTo);
+
+            var p2 = lr.Points[1];
+            Assert.Null(p2.ResultComparator);
+            Assert.Equal(13.2m, p2.ResultNumeric);
+            Assert.Equal(">=", p2.ReferenceComparator);
+            Assert.Equal(12m, p2.ReferenceFrom);
         }
 
         [Fact]

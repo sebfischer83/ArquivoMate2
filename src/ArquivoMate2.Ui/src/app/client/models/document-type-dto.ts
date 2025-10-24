@@ -8,7 +8,7 @@ export interface DocumentTypeDto {
   isAssignedToCurrentUser?: boolean;
   isLocked?: boolean;
   name?: string | null;
-  systemFeature?: string | null;
+  systemFeatures?: Array<string> | null;
   updatedAtUtc?: string | null;
-  userDefinedFunction?: string | null;
+  userDefinedFunctions?: Array<string> | null;
 }

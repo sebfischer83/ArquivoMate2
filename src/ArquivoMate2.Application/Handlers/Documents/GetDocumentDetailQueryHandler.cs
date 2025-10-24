@@ -53,6 +53,24 @@ public class GetDocumentDetailQueryHandler : IRequestHandler<GetDocumentDetailQu
         var documentDto = _mapper.Map<DocumentDto>(view);
         documentDto.History = history;
 
+        // Enrich document DTO with document type definition metadata (system features and user-defined functions)
+        try
+        {
+            var docTypeName = view.Type;
+            if (!string.IsNullOrWhiteSpace(docTypeName))
+            {
+                var definition = await _querySession.Query<ArquivoMate2.Domain.DocumentTypes.DocumentTypeDefinition>()
+                    .FirstOrDefaultAsync(x => x.Name.Equals(docTypeName, StringComparison.OrdinalIgnoreCase), cancellationToken);
+
+                documentDto.DocumentTypeSystemFeatures = definition?.SystemFeatures ?? new List<string>();
+                documentDto.DocumentTypeUserFunctions = definition?.UserDefinedFunctions ?? new List<string>();
+            }
+        }
+        catch
+        {
+            // Ignore lookup failures - DTO remains with empty lists
+        }
+
         return new DocumentDetailQueryResultDto
         {
             Document = documentDto

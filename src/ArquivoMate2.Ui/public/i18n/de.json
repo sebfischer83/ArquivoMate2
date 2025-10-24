@@ -48,9 +48,19 @@
     "DownloadStartError": "Download konnte nicht gestartet werden",
     "NoteSaveError": "Notiz konnte nicht gespeichert werden",
     "PdfLoadError": "PDF konnte nicht geladen werden"
-    ,"KeywordTooLong": "Keyword zu lang (max 30)"
+    ,"KeywordTooLong": "Keyword zu lang (max 30)",
+    "LabResults": {
+      "Empty": "Keine Laborwerte vorhanden."
+    }
   }
 
+  ,"Document.Tabs": {
+    "Details": "Details",
+    "Content": "Inhalt",
+    "History": "Historie",
+    "Notes": "Notizen",
+    "LabResults": "Laborwerte"
+  }
   ,"Common": {
     "Reset": "Zurücksetzen",
     "SavingEllipsis": "Speichert…",

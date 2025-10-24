@@ -59,6 +59,17 @@
   "NotesLoadError": "Could not load notes",
     "PdfLoadError": "PDF could not be loaded"
     ,"KeywordTooLong": "Keyword too long (max 30)"
+    ,"LabResults": {
+      "Empty": "No lab results available."
+    }
+  }
+
+  ,"Document.Tabs": {
+    "Details": "Details",
+    "Content": "Content",
+    "History": "History",
+    "Notes": "Notes",
+    "LabResults": "Lab results"
   }
 
   ,"Settings": {

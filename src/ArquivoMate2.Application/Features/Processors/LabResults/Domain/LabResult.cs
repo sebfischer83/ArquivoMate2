@@ -7,6 +7,8 @@ namespace ArquivoMate2.Application.Features.Processors.LabResults.Domain
     {
         public Guid Id { get; set; }
 
+        public Guid DocumentId { get; set; }
+
         public string Patient { get; set; } = default!;
         public string LabName { get; set; } = default!;
         public DateOnly Date { get; set; }                          

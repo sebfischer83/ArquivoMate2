@@ -12,6 +12,7 @@ export { DocumentTypesService } from './services/document-types.service';
 export { EmailService } from './services/email.service';
 export { ImportHistoryService } from './services/import-history.service';
 export { IngestionService } from './services/ingestion.service';
+export { LabResultFeatureService } from './services/lab-result-feature.service';
 export { MaintenanceService } from './services/maintenance.service';
 export { PartiesService } from './services/parties.service';
 export { PublicShareService } from './services/public-share.service';

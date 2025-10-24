@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 import { CommonModule } from '@angular/common';
 import { TuiTabs } from '@taiga-ui/kit';
 import { TuiBadge } from '@taiga-ui/kit';
+import { TranslocoModule } from '@jsverse/transloco';
 
 /**
  * Standalone Tabs-Header für das Dokument. Kapselt Taiga UI Tabs.
@@ -10,25 +11,14 @@ import { TuiBadge } from '@taiga-ui/kit';
 @Component({
   selector: 'app-document-tabs',
   standalone: true,
-  imports: [CommonModule, TuiTabs, TuiBadge],
-  template: `
-    <div class="doc-tabs" [class.sticky]="sticky">
-      <tui-tabs [(activeItemIndex)]="_active" (activeItemIndexChange)="onIndexChange($event)" size="m">
-        <button tuiTab type="button" iconStart="@tui.file-text">Details</button>
-        <button tuiTab type="button" iconStart="@tui.align-left">Inhalt</button>
-        <button tuiTab type="button" iconStart="@tui.history">Historie</button>
-        <button tuiTab type="button" iconStart="@tui.message-square">
-          Notizen
-          <tui-badge *ngIf="notesCount && notesCount > 0" size="s" appearance="primary" class="ml-badge">{{ notesCount }}</tui-badge>
-        </button>
-      </tui-tabs>
-    </div>
-  `,
+  imports: [CommonModule, TuiTabs, TuiBadge, TranslocoModule],
+  templateUrl: './document-tabs.component.html',
   styleUrls: ['./document-tabs.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DocumentTabsComponent {
   @Input() sticky = true;
+  @Input() showLabResults = false;
   @Input() notesCount: number | null = null;
   @Input() set activeIndex(v: number) { this._active = v ?? 0; }
   get activeIndex(): number { return this._active; }

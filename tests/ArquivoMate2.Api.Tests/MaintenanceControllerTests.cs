@@ -62,10 +62,8 @@ namespace ArquivoMate2.Api.Tests
             mux.Setup(m => m.GetEndPoints(It.IsAny<bool>())).Returns(Array.Empty<EndPoint>());
 
             var meili = new Mock<MeilisearchClient>("http://localhost:7700", "key");
-            // Use overloads with explicit CancellationToken matcher to avoid optional-args in expression trees
-            meili.Setup(m => m.HealthAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new NotImplementedException());
-            meili.Setup(m => m.GetStatsAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new NotImplementedException());
-            meili.Setup(m => m.GetVersionAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new NotImplementedException());
+            // Note: MeilisearchClient methods are non-virtual and cannot be mocked with Moq.
+            // We rely on the controller's try/catch to handle any exceptions from the real client methods.
 
             var inMemoryConfig = new Dictionary<string, string?>();
             var configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemoryConfig).Build();

@@ -42,7 +42,7 @@ public class UsersController : ControllerBase
         var dto = await _mediator.Send(new GetCurrentUserQuery(userId), cancellationToken);
         if (dto is null)
             return NotFound();
-        return Ok(dto);
+        return Ok(new ApiResponse<CurrentUserDto>(dto));
     }
 
     /// <summary>

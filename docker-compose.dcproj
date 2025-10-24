@@ -33,6 +33,7 @@
     <None Include="LICENSE" />
     <None Include="README.md" />
     <None Include="scripts\docker-build-multiarch.sh" />
+    <None Include="src\ArquivoMate2.Application.Features.Processors.LabResults.Domain\LabResultPoint.cs" />
     <None Include="src\ArquivoMate2.Application.Handlers\Documents\SetDocumentAcceptedHandler.cs" />
   </ItemGroup>
 </Project>

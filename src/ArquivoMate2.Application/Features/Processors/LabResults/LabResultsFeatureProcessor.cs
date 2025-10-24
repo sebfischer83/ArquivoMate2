@@ -5,10 +5,14 @@ using ArquivoMate2.Application.Interfaces;
 using ArquivoMate2.Domain.Document;
 using Marten;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Globalization;
 
 namespace ArquivoMate2.Application.Features.Processors.LabResults
 {
-    public class LabResultsFeatureProcessor : ISystemFeatureProcessor
+    public partial class LabResultsFeatureProcessor : ISystemFeatureProcessor
     {
         private readonly IQuerySession _query;
         private readonly IDocumentSession _session;
@@ -22,6 +26,11 @@ namespace ArquivoMate2.Application.Features.Processors.LabResults
         private static readonly Regex SingleNumberRegex = new(@"(?<num>\d*[\.,]?\d+)", RegexOptions.Compiled);
         private static readonly Regex ResultRegex = new(@"^\s*(?<op><=|>=|<|>)?\s*(?<num>\d*[\.,]?\d+)\s*$", RegexOptions.Compiled);
         private static readonly Regex ReferenceWithComparatorRegex = new(@"^\s*(?<op><=|>=|<|>)\s*(?<rest>.+)$", RegexOptions.Compiled);
+
+        // Normalization helpers (static for reuse and performance)
+        private static readonly Regex s_removeParentheses = new(@"\([^)]*\)", RegexOptions.Compiled);
+        private static readonly Regex s_invalidUnitChars = new(@"[^a-z0-9/+\-\s%°\.]", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex s_multiWhitespace = new(@"\s+", RegexOptions.Compiled);
 
         public LabResultsFeatureProcessor(IQuerySession query, IDocumentSession session, IStorageProvider storageProvider, IFileMetadataService fileMetadataService, ILogger<LabResultsFeatureProcessor> logger)
         {
@@ -82,14 +91,25 @@ namespace ArquivoMate2.Application.Features.Processors.LabResults
                 structuredJsonSchema: labReportSchemaJson,
                 cancellationToken: ct);
 
-            ProcessRawData(rawData, context.DocumentId);
+            var labResults = ProcessRawData(rawData, context.DocumentId);
+
+            // Persist lab results to Marten
+            if (labResults != null && labResults.Count > 0)
+            {
+                foreach (var lr in labResults)
+                {
+                    _session.Store(lr);
+                }
+                await _session.SaveChangesAsync(ct);
+            }
 
 
             _logger.LogInformation("[LabResults] Completed processing document {DocumentId}", context.DocumentId);
         }
 
-        private void ProcessRawData(LabReport rawData, Guid documentId)
+        private List<LabResult> ProcessRawData(LabReport rawData, Guid documentId)
         {
+            var results = new List<LabResult>();
             foreach (var row in rawData.Values)
             {
                 LabResult labResult = new LabResult
@@ -176,8 +196,82 @@ namespace ArquivoMate2.Application.Features.Processors.LabResults
                         ReferenceFrom = referenceFrom,
                         ReferenceTo = referenceTo
                     };
+
+                    // normalize fields using separate helper
+                    NormalizeLabResultPoint(labResultPoint);
+
                     labResult.Points.Add(labResultPoint);
                 }
+                results.Add(labResult);
+            }
+
+            return results;
+        }
+
+        private static string NormalizeString(string? s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+
+            // lowercase + trim
+            var work = s.ToLowerInvariant().Trim();
+
+            // remove parentheses content (replace with space to keep token separation)
+            work = s_removeParentheses.Replace(work, " ");
+
+            // remove diacritical marks
+            var formD = work.Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder();
+            foreach (var ch in formD)
+            {
+                var uc = CharUnicodeInfo.GetUnicodeCategory(ch);
+                if (uc != UnicodeCategory.NonSpacingMark)
+                    sb.Append(ch);
+            }
+            work = sb.ToString().Normalize(NormalizationForm.FormC);
+
+            // normalize common micro symbols to 'u'
+            work = work.Replace('µ', 'u').Replace('μ', 'u');
+
+            // remove any remaining disallowed characters but keep percent, degree and dot
+            work = s_invalidUnitChars.Replace(work, " ");
+
+            // collapse whitespace
+            work = s_multiWhitespace.Replace(work, " ").Trim();
+
+            return work;
+        }
+
+        // Separate normalization helper as requested
+        private static void NormalizeLabResultPoint(LabResultPoint p)
+        {
+            if (p == null) return;
+
+            // Normalized numeric result: currently just the parsed numeric value
+            p.NormalizedResult = p.ResultNumeric;
+
+            // Normalize unit using the shared normalizer
+            if (!string.IsNullOrWhiteSpace(p.Unit))
+            {
+                var normalized = NormalizeString(p.Unit);
+                p.NormalizedUnit = string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+            }
+            else
+            {
+                p.NormalizedUnit = null;
+            }
+
+            // Reference normalization: copy parsed numeric bounds
+            p.NormalizedReferenceFrom = p.ReferenceFrom;
+            p.NormalizedReferenceTo = p.ReferenceTo;
+
+            // If reference bounds are missing but comparator exists, attempt sensible fill
+            if (!p.NormalizedReferenceFrom.HasValue && !p.NormalizedReferenceTo.HasValue && !string.IsNullOrWhiteSpace(p.ReferenceComparator) && p.ResultNumeric.HasValue)
+            {
+                var v = p.ResultNumeric.Value;
+                if (p.ReferenceComparator!.Contains('<') || p.ReferenceComparator.Contains('='))
+                    p.NormalizedReferenceTo = v;
+                else if (p.ReferenceComparator.Contains('>') || p.ReferenceComparator.Contains('='))
+                    p.NormalizedReferenceFrom = v;
             }
         }
     }

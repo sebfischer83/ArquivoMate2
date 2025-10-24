@@ -17,6 +17,7 @@ using Meilisearch;
 using System.Collections.Generic;
 using System.Reflection;
 using Npgsql;
+using ArquivoMate2.Shared.Models;
 
 namespace ArquivoMate2.API.Controllers;
 
@@ -38,24 +39,6 @@ public class MaintenanceController : ControllerBase
         _redis = redis;
         _meilisearchClient = meilisearchClient;
         _configuration = configuration;
-    }
-
-    private sealed class TableSizeInfo
-    {
-        public string TableName { get; init; } = string.Empty;
-        public string TotalSize { get; init; } = string.Empty;
-        public long TotalSizeBytes { get; init; }
-        public string TableSize { get; init; } = string.Empty;
-        public string IndexSize { get; init; } = string.Empty;
-        public long ApproxRows { get; init; }
-    }
-
-    private sealed record DatabaseStatsDto
-    {
-        public string PgVersion { get; init; } = string.Empty;
-        public List<TableSizeInfo> TopTables { get; init; } = new();
-        public List<TableSizeInfo> MartenTables { get; init; } = new();
-        public string MartenVersion { get; init; } = string.Empty;
     }
 
     /// <summary>
@@ -284,7 +267,17 @@ public class MaintenanceController : ControllerBase
             dbStats = new DatabaseStatsDto { PgVersion = string.Empty, TopTables = new List<TableSizeInfo>(), MartenTables = new List<TableSizeInfo>(), MartenVersion = string.Empty };
         }
 
-        return Ok(new { RedisInfo = redisInfoStructured, KeyCounts = keyCountsResult, MeiliHealth = meiliHealth, MeiliIndexStats = meiliIndexStats, MeiliVersion = meiliVersion, Database = dbStats });
+        var infra = new InfraStatsDto
+        {
+            RedisInfo = redisInfoStructured,
+            KeyCounts = keyCountsResult,
+            MeiliHealth = meiliHealth,
+            MeiliIndexStats = meiliIndexStats,
+            MeiliVersion = meiliVersion,
+            Database = dbStats
+        };
+
+        return Ok(infra);
     }
 
     private async Task<DatabaseStatsDto> GetDatabaseStatsInternal(CancellationToken cancellationToken)

@@ -2,8 +2,56 @@
   <div class="lab-results-root">
     <h3>{{ t('Document.Tabs.LabResults') }}</h3>
     <div class="lab-placeholder">
-      <p>{{ t('Document.LabResults.Empty') || 'Keine Laborwerte vorhanden.' }}</p>
-  <p [hidden]="!document">{{ document && document.id ? ('ID: ' + document.id) : '' }}</p>
+      @if (loading) { <div class="lab-loading">
+        <p>{{ t('Document.LoadingLabResults') || 'Lade Laborwerte...' }}</p>
+      </div> }
+
+      @if (error) { <div class="lab-error" tuiSurface appearance="negative">
+        <p>{{ error }}</p>
+      </div> }
+
+      @if (!loading && !error) { <div>
+        @if ((labResults?.data?.length || 0) > 0) { <div class="lab-results-list">
+            @for (result of labResults?.data || []; track result.id) { <div class="lab-result">
+              <h4>{{ result.date }} <span class="muted">{{ result.labName }}</span></h4>
+              <table class="lab-table">
+                <thead>
+                  <tr>
+                    <th>{{ t('Document.LabResults.Table.Parameter') }}</th>
+                    <th>{{ t('Document.LabResults.Table.Value') }}</th>
+                    <th>{{ t('Document.LabResults.Table.ReferenceRange') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (point of result.points || []; track $index) { <tr>
+                    <td class="param">
+                      {{ point.parameter }}
+                    </td>
+                    <td class="value" [tuiHint]="(point.resultRaw || '') + ' ' + (point.unit || '') + (point.reference ? ('\n' + (t('Document.LabResults.ReferencePrefix') || 'Ref: ') + point.reference) : '')">
+                      @if ($any(point).resultComparator != null) { {{ $any(point).resultComparator }} }
+                      {{ $any(point).normalizedResult }} {{ $any(point).normalizedUnit }}
+                    </td>
+                    <td class="ref">
+                      @if ($any(point).normalizedReferenceFrom != null || $any(point).normalizedReferenceTo != null) { <ng-container>
+                        @if ($any(point).referenceComparator != null) { {{ $any(point).referenceComparator }} {{ $any(point).normalizedReferenceTo }} {{ $any(point).normalizedUnit }} }
+                        @if (!($any(point).referenceComparator != null)) { <span>{{ $any(point).normalizedReferenceFrom }} - {{ $any(point).normalizedReferenceTo }} {{ $any(point).normalizedUnit }}</span> }
+                      </ng-container> }
+
+                      @if (!($any(point).normalizedReferenceFrom != null || $any(point).normalizedReferenceTo != null)) { <ng-container>
+                        @if ($any(point).referenceComparator != null) { {{ $any(point).referenceComparator }} {{ $any(point).referenceTo }} {{ $any(point).unit }} }
+                        @if (!($any(point).referenceComparator != null)) { <span>{{ $any(point).reference || ($any(point).referenceFrom + ' - ' + $any(point).referenceTo) || '-' }}</span> }
+                      </ng-container> }
+                    </td>
+                  </tr> }
+                </tbody>
+              </table>
+            </div> }
+          </div> }
+
+        @if (!((labResults?.data?.length || 0) > 0)) { <p>{{ t('Document.LabResults.Empty') || 'Keine Laborwerte vorhanden.' }}</p> }
+      </div> }
+
+  @if (document) { <p>{{ document && document.id ? ((t('Document.IdLabel') || 'ID: ') + document.id) : '' }}</p> }
     </div>
   </div>
 </ng-container>

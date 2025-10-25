@@ -7,6 +7,7 @@ export interface LabResultPointDto {
   normalizedReferenceTo?: number | null;
   normalizedResult?: number | null;
   normalizedUnit?: string | null;
+  parameter?: string | null;
   reference?: string | null;
   referenceComparator?: string | null;
   referenceFrom?: number | null;

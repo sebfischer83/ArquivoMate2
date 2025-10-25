@@ -34,6 +34,7 @@ namespace ArquivoMate2.Application.Handlers.LabResults
                 Date = r.Date,
                 Points = r.Points.Select(p => new LabResultPointDto
                 {
+                    Parameter = p.Parameter,
                     ResultRaw = p.ResultRaw,
                     ResultNumeric = p.ResultNumeric,
                     ResultComparator = p.ResultComparator,

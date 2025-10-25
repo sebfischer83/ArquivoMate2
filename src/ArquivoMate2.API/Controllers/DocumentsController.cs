@@ -135,6 +135,14 @@ namespace ArquivoMate2.API.Controllers
                             .Where(d => d.Id == id && !d.Deleted)
                             .FirstOrDefaultAsync(cancellationToken);
                         var mapped = _mapper.Map<DocumentDto>(document);
+
+                        // Enrich DocumentDto using registered enricher to avoid duplication
+                        var enricher = HttpContext.RequestServices.GetService(typeof(ArquivoMate2.Application.Interfaces.IDocumentTypeEnricher)) as ArquivoMate2.Application.Interfaces.IDocumentTypeEnricher;
+                        if (enricher != null)
+                        {
+                            await enricher.EnrichAsync(mapped, document.Type, querySession, cancellationToken);
+                        }
+
                         if (document!.Encrypted) ApplyDeliveryUrls(mapped);
                         return Ok(mapped);
                     case PatchResult.Forbidden:

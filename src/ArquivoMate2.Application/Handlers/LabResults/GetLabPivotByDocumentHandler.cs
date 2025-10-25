@@ -53,8 +53,9 @@ namespace ArquivoMate2.Application.Handlers.LabResults
             {
                 Parameter = r.Parameter,
                 Unit = r.Unit,
-                ValuesByCol = colIndexes.Select(i => r.ValuesByCol.Count > i ? r.ValuesByCol[i] : null).ToList()
-            }).Where(r => r.ValuesByCol.Any(v => v.HasValue)).ToList();
+                ValuesByCol = colIndexes.Select(i => r.ValuesByCol.Count > i ? r.ValuesByCol[i] : null).ToList(),
+                QualitativeByCol = colIndexes.Select(i => r.QualitativeByCol.Count > i ? r.QualitativeByCol[i] : null).ToList()
+            }).Where(r => r.ValuesByCol.Any(v => v.HasValue) || r.QualitativeByCol.Any(q => !string.IsNullOrWhiteSpace(q))).ToList();
 
             var dto = new LabPivotTableDto
             {

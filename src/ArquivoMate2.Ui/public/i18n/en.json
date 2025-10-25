@@ -28,7 +28,8 @@
     "NextDocument": "Next document",
     "NoMoreDocuments": "No more documents available",
     "NavigationError": "Unable to load additional documents",
-    "DocumentTitleFallback": "Document",
+  "DocumentTitleFallback": "Document",
+  "IdLabel": "ID: ",
     "LoadingEllipsis": "Loading…",
     "Open": "Open",
     "LoadingDocument": "Loading document",
@@ -58,9 +59,15 @@
   "NoteSaveError": "Note could not be saved",
   "NotesLoadError": "Could not load notes",
     "PdfLoadError": "PDF could not be loaded"
-    ,"KeywordTooLong": "Keyword too long (max 30)"
-    ,"LabResults": {
-      "Empty": "No lab results available."
+  ,"KeywordTooLong": "Keyword too long (max 30)",
+  "LabResults": {
+      "Empty": "No lab results available.",
+      "ReferencePrefix": "Ref: ",
+      "Table": {
+        "Parameter": "Parameter",
+        "Value": "Value",
+        "ReferenceRange": "Reference range"
+      }
     }
   }
 

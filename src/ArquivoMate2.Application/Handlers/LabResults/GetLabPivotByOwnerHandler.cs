@@ -32,7 +32,11 @@ namespace ArquivoMate2.Application.Handlers.LabResults
                 {
                     Parameter = r.Parameter,
                     Unit = r.Unit,
-                    ValuesByCol = r.ValuesByCol
+                    ValuesByCol = r.ValuesByCol,
+                    QualitativeByCol = r.QualitativeByCol,
+                    ReferenceFromByCol = r.ReferenceFromByCol,
+                    ReferenceToByCol = r.ReferenceToByCol,
+                    ReferenceComparatorByCol = r.ReferenceComparatorByCol
                 }).ToList()
             };
 

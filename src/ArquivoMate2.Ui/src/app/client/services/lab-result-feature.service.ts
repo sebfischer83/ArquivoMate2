@@ -15,6 +15,19 @@ import { apiFeatureLabresultsDocumentIdGet$Json } from '../fn/lab-result-feature
 import { ApiFeatureLabresultsDocumentIdGet$Json$Params } from '../fn/lab-result-feature/api-feature-labresults-document-id-get-json';
 import { apiFeatureLabresultsDocumentIdGet$Plain } from '../fn/lab-result-feature/api-feature-labresults-document-id-get-plain';
 import { ApiFeatureLabresultsDocumentIdGet$Plain$Params } from '../fn/lab-result-feature/api-feature-labresults-document-id-get-plain';
+import { apiFeatureLabresultsLabResultIdDelete } from '../fn/lab-result-feature/api-feature-labresults-lab-result-id-delete';
+import { ApiFeatureLabresultsLabResultIdDelete$Params } from '../fn/lab-result-feature/api-feature-labresults-lab-result-id-delete';
+import { apiFeatureLabresultsPivotDocumentIdGet$Json } from '../fn/lab-result-feature/api-feature-labresults-pivot-document-id-get-json';
+import { ApiFeatureLabresultsPivotDocumentIdGet$Json$Params } from '../fn/lab-result-feature/api-feature-labresults-pivot-document-id-get-json';
+import { apiFeatureLabresultsPivotDocumentIdGet$Plain } from '../fn/lab-result-feature/api-feature-labresults-pivot-document-id-get-plain';
+import { ApiFeatureLabresultsPivotDocumentIdGet$Plain$Params } from '../fn/lab-result-feature/api-feature-labresults-pivot-document-id-get-plain';
+import { apiFeatureLabresultsPivotOwnerGet$Json } from '../fn/lab-result-feature/api-feature-labresults-pivot-owner-get-json';
+import { ApiFeatureLabresultsPivotOwnerGet$Json$Params } from '../fn/lab-result-feature/api-feature-labresults-pivot-owner-get-json';
+import { apiFeatureLabresultsPivotOwnerGet$Plain } from '../fn/lab-result-feature/api-feature-labresults-pivot-owner-get-plain';
+import { ApiFeatureLabresultsPivotOwnerGet$Plain$Params } from '../fn/lab-result-feature/api-feature-labresults-pivot-owner-get-plain';
+import { apiFeatureLabresultsPut } from '../fn/lab-result-feature/api-feature-labresults-put';
+import { ApiFeatureLabresultsPut$Params } from '../fn/lab-result-feature/api-feature-labresults-put';
+import { LabPivotTableDtoApiResponse } from '../models/lab-pivot-table-dto-api-response';
 import { LabResultDtoListApiResponse } from '../models/lab-result-dto-list-api-response';
 
 @Injectable({ providedIn: 'root' })
@@ -67,6 +80,150 @@ export class LabResultFeatureService extends BaseService {
   apiFeatureLabresultsDocumentIdGet$Json(params: ApiFeatureLabresultsDocumentIdGet$Json$Params, context?: HttpContext): Observable<LabResultDtoListApiResponse> {
     return this.apiFeatureLabresultsDocumentIdGet$Json$Response(params, context).pipe(
       map((r: StrictHttpResponse<LabResultDtoListApiResponse>): LabResultDtoListApiResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `apiFeatureLabresultsPut()` */
+  static readonly ApiFeatureLabresultsPutPath = '/api/feature/labresults';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiFeatureLabresultsPut()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiFeatureLabresultsPut$Response(params?: ApiFeatureLabresultsPut$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return apiFeatureLabresultsPut(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiFeatureLabresultsPut$Response()` instead.
+   *
+   * This method sends `application/*+json` and handles request body of type `application/*+json`.
+   */
+  apiFeatureLabresultsPut(params?: ApiFeatureLabresultsPut$Params, context?: HttpContext): Observable<void> {
+    return this.apiFeatureLabresultsPut$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `apiFeatureLabresultsLabResultIdDelete()` */
+  static readonly ApiFeatureLabresultsLabResultIdDeletePath = '/api/feature/labresults/{labResultId}';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiFeatureLabresultsLabResultIdDelete()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiFeatureLabresultsLabResultIdDelete$Response(params: ApiFeatureLabresultsLabResultIdDelete$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return apiFeatureLabresultsLabResultIdDelete(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiFeatureLabresultsLabResultIdDelete$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiFeatureLabresultsLabResultIdDelete(params: ApiFeatureLabresultsLabResultIdDelete$Params, context?: HttpContext): Observable<void> {
+    return this.apiFeatureLabresultsLabResultIdDelete$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `apiFeatureLabresultsPivotDocumentIdGet()` */
+  static readonly ApiFeatureLabresultsPivotDocumentIdGetPath = '/api/feature/labresults/pivot/{documentId}';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiFeatureLabresultsPivotDocumentIdGet$Plain()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiFeatureLabresultsPivotDocumentIdGet$Plain$Response(params: ApiFeatureLabresultsPivotDocumentIdGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<LabPivotTableDtoApiResponse>> {
+    return apiFeatureLabresultsPivotDocumentIdGet$Plain(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiFeatureLabresultsPivotDocumentIdGet$Plain$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiFeatureLabresultsPivotDocumentIdGet$Plain(params: ApiFeatureLabresultsPivotDocumentIdGet$Plain$Params, context?: HttpContext): Observable<LabPivotTableDtoApiResponse> {
+    return this.apiFeatureLabresultsPivotDocumentIdGet$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<LabPivotTableDtoApiResponse>): LabPivotTableDtoApiResponse => r.body)
+    );
+  }
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiFeatureLabresultsPivotDocumentIdGet$Json()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiFeatureLabresultsPivotDocumentIdGet$Json$Response(params: ApiFeatureLabresultsPivotDocumentIdGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<LabPivotTableDtoApiResponse>> {
+    return apiFeatureLabresultsPivotDocumentIdGet$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiFeatureLabresultsPivotDocumentIdGet$Json$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiFeatureLabresultsPivotDocumentIdGet$Json(params: ApiFeatureLabresultsPivotDocumentIdGet$Json$Params, context?: HttpContext): Observable<LabPivotTableDtoApiResponse> {
+    return this.apiFeatureLabresultsPivotDocumentIdGet$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<LabPivotTableDtoApiResponse>): LabPivotTableDtoApiResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `apiFeatureLabresultsPivotOwnerGet()` */
+  static readonly ApiFeatureLabresultsPivotOwnerGetPath = '/api/feature/labresults/pivot/owner';
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiFeatureLabresultsPivotOwnerGet$Plain()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiFeatureLabresultsPivotOwnerGet$Plain$Response(params?: ApiFeatureLabresultsPivotOwnerGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<LabPivotTableDtoApiResponse>> {
+    return apiFeatureLabresultsPivotOwnerGet$Plain(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiFeatureLabresultsPivotOwnerGet$Plain$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiFeatureLabresultsPivotOwnerGet$Plain(params?: ApiFeatureLabresultsPivotOwnerGet$Plain$Params, context?: HttpContext): Observable<LabPivotTableDtoApiResponse> {
+    return this.apiFeatureLabresultsPivotOwnerGet$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<LabPivotTableDtoApiResponse>): LabPivotTableDtoApiResponse => r.body)
+    );
+  }
+
+  /**
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiFeatureLabresultsPivotOwnerGet$Json()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiFeatureLabresultsPivotOwnerGet$Json$Response(params?: ApiFeatureLabresultsPivotOwnerGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<LabPivotTableDtoApiResponse>> {
+    return apiFeatureLabresultsPivotOwnerGet$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiFeatureLabresultsPivotOwnerGet$Json$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiFeatureLabresultsPivotOwnerGet$Json(params?: ApiFeatureLabresultsPivotOwnerGet$Json$Params, context?: HttpContext): Observable<LabPivotTableDtoApiResponse> {
+    return this.apiFeatureLabresultsPivotOwnerGet$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<LabPivotTableDtoApiResponse>): LabPivotTableDtoApiResponse => r.body)
     );
   }
 

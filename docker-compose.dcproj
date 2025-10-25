@@ -36,4 +36,7 @@
     <None Include="src\ArquivoMate2.Application.Features.Processors.LabResults.Domain\LabResultPoint.cs" />
     <None Include="src\ArquivoMate2.Application.Handlers\Documents\SetDocumentAcceptedHandler.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="src\ArquivoMate2.Application.Features.Processors.LabResults.Models\" />
+  </ItemGroup>
 </Project>

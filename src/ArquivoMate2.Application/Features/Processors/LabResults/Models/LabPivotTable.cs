@@ -23,5 +23,18 @@ namespace ArquivoMate2.Application.Features.Processors.LabResults.Models
 
         // Values aligned with ColumnsDesc in LabPivotTable; length must match
         public List<decimal?> ValuesByCol { get; set; } = new();
+
+        // Qualitative textual values per column when numeric result is not available
+        public List<string?> QualitativeByCol { get; set; } = new();
+
+        // Reference ranges per column (normalized numeric bounds)
+        public List<decimal?> ReferenceFromByCol { get; set; } = new();
+        public List<decimal?> ReferenceToByCol { get; set; } = new();
+
+        // Optional comparator or raw reference string per column
+        public List<string?> ReferenceComparatorByCol { get; set; } = new();
+
+        // Track per-column units
+        public List<string?> UnitsByCol { get; set; } = new();
     }
 }

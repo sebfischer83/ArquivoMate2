@@ -5,6 +5,7 @@ namespace ArquivoMate2.Shared.Models
 {
     public sealed class LabResultPointDto
     {
+        public string Parameter { get; init; } = string.Empty;
         public string ResultRaw { get; init; } = string.Empty;
         public decimal? ResultNumeric { get; init; }
         public string? ResultComparator { get; init; }

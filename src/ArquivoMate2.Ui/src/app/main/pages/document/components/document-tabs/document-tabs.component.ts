@@ -24,7 +24,6 @@ export class DocumentTabsComponent {
   get activeIndex(): number { return this._active; }
   @Output() activeIndexChange = new EventEmitter<number>();
   _active = 0;
-
   onIndexChange(i: number) {
     this._active = i;
     this.activeIndexChange.emit(i);

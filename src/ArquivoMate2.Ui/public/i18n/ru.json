@@ -27,7 +27,8 @@
     "NextDocument": "Следующий документ",
     "NoMoreDocuments": "Больше документов недоступно",
     "NavigationError": "Не удалось загрузить другие документы",
-    "DocumentTitleFallback": "Документ",
+  "DocumentTitleFallback": "Документ",
+  "IdLabel": "ID: ",
     "LoadingEllipsis": "Загрузка…",
     "Open": "Открыть",
     "LoadingDocument": "Загрузка документа",
@@ -55,10 +56,16 @@
     "DocumentLoadError": "Документ не удалось загрузить",
     "DownloadStartError": "Не удалось начать загрузку",
     "NoteSaveError": "Не удалось сохранить заметку",
-    "PdfLoadError": "PDF не удалось загрузить"
-    ,"KeywordTooLong": "Ключевое слово слишком длинное (макс. 30)"
-    ,"LabResults": {
-      "Empty": "Нет данных лабораторных показателей."
+  "PdfLoadError": "PDF не удалось загрузить",
+  "KeywordTooLong": "Ключевое слово слишком длинное (макс. 30)",
+  "LabResults": {
+      "Empty": "Нет данных лабораторных показателей.",
+      "ReferencePrefix": "Ref: ",
+      "Table": {
+        "Parameter": "Параметр",
+        "Value": "Значение",
+        "ReferenceRange": "Референсный диапазон"
+      }
     }
   }
 

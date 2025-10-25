@@ -19,7 +19,8 @@
     "NextDocument": "Nächstes Dokument",
     "NoMoreDocuments": "Keine weiteren Dokumente verfügbar",
     "NavigationError": "Weitere Dokumente konnten nicht geladen werden",
-    "DocumentTitleFallback": "Dokument",
+  "DocumentTitleFallback": "Dokument",
+  "IdLabel": "ID: ",
     "LoadingEllipsis": "Lädt…",
     "Open": "Öffnen",
     "LoadingDocument": "Lade Dokument",
@@ -50,7 +51,13 @@
     "PdfLoadError": "PDF konnte nicht geladen werden"
     ,"KeywordTooLong": "Keyword zu lang (max 30)",
     "LabResults": {
-      "Empty": "Keine Laborwerte vorhanden."
+      "Empty": "Keine Laborwerte vorhanden.",
+      "ReferencePrefix": "Ref: ",
+      "Table": {
+        "Parameter": "Parameter",
+        "Value": "Wert",
+        "ReferenceRange": "Referenzbereich"
+      }
     }
   }
 

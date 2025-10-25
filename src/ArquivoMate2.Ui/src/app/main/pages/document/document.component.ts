@@ -1,7 +1,7 @@
 // ...existing code...
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, signal, computed, inject, Injector } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TuiButton, TuiSurface, TuiTitle, TuiDropdown, TuiDropdownOpen, TuiDialogService, TuiTextfield, TuiTextfieldDropdownDirective, TuiLabel } from '@taiga-ui/core';
+import { TuiButton, TuiSurface, TuiTitle, TuiDropdown, TuiDropdownOpen, TuiDialogService, TuiTextfield, TuiTextfieldDropdownDirective, TuiLabel, TuiHint } from '@taiga-ui/core';
 import { TuiTabs, TuiChip, TuiDataListWrapper, TUI_CONFIRM, TuiComboBox } from '@taiga-ui/kit';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { DocumentTabsComponent } from './components/document-tabs/document-tabs.component';
@@ -32,7 +32,7 @@ import { take, takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-document',
-  imports: [CommonModule, ReactiveFormsModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, TuiDropdown, TuiDropdownOpen, TuiChip, TuiTextfield, TuiTextfieldDropdownDirective, TuiDataListWrapper, TuiComboBox, TuiLabel, DocumentHistoryComponent, PdfJsViewerComponent, DocumentTabsComponent, PdfJsViewerToolbarComponent, ContentToolbarComponent, NotesListComponent, LabResultsComponent, TranslocoModule],
+  imports: [CommonModule, ReactiveFormsModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, TuiDropdown, TuiDropdownOpen, TuiChip, TuiTextfield, TuiTextfieldDropdownDirective, TuiDataListWrapper, TuiComboBox, TuiLabel, TuiHint, DocumentHistoryComponent, PdfJsViewerComponent, DocumentTabsComponent, PdfJsViewerToolbarComponent, ContentToolbarComponent, NotesListComponent, LabResultsComponent, TranslocoModule],
   templateUrl: './document.component.html',
   styleUrls: ['./document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -84,6 +84,7 @@ export class DocumentComponent implements OnInit, OnDestroy {
   readonly dialogs = inject(TuiDialogService);
   readonly navigationLoading = computed(() => this.documentNavigator.isLoading());
   readonly navigationBusy = computed(() => this.navigationPending() || this.navigationLoading());
+  // lab results are handled inside the dedicated LabResultsComponent
   readonly canNavigatePrevious = computed(() => {
     const id = this.documentId();
     if (!id) return false;
@@ -281,6 +282,7 @@ export class DocumentComponent implements OnInit, OnDestroy {
     // reset edit buffer and mode
     this.editMode.set(false);
     this.editBuffer.set({});
+    // keep initial tab at index 0 (do not auto-activate lab-results)
   }
 
   startEdit(): void {

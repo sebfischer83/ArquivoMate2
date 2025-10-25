@@ -62,9 +62,9 @@ using ZiggyCreatures.Caching.Fusion.Serialization.SystemTextJson;
 using EmailCriteria = ArquivoMate2.Domain.Email.EmailCriteria;
 using JasperFx.Events.Projections;
 using ArquivoMate2.Application.Interfaces.Sharing;
-using ArquivoMate2.Infrastructure.Services.Encryption; // Encryption helpers
+using ArquivoMate2.Infrastructure.Services.Encryption;
 using ArquivoMate2.Infrastructure.Persistance;
-using Minio.Handlers; // ensure interface is visible
+using Minio.Handlers;
 using System.Net.Http;
 using ArquivoMate2.Application.Features.Processors.LabResults;
 using ArquivoMate2.Application.Features.Processors.LabResults.Models;
@@ -73,109 +73,44 @@ using ArquivoMate2.Infrastructure.Services.LabResults;
 
 namespace ArquivoMate2.Infrastructure.Configuration
 {
-    /// <summary>
-    /// Extension methods for wiring up infrastructure services and data access.
-    /// </summary>
     public static class DependencyInjectionConfiguration
     {
-        /// <summary>
-        /// Registers infrastructure services including persistence, projections, search, and integrations.
-        /// </summary>
-        /// <param name="services">Service collection to configure.</param>
-        /// <param name="config">Application configuration source.</param>
-        /// <returns>The updated service collection.</returns>
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
         {
             services.AddMarten(options =>
             {
-                // Connection string sourced from appsettings.json
                 options.Connection(config.GetConnectionString("Default")!);
-
                 var env = config["ASPNETCORE_ENVIRONMENT"] ?? "Production";
                 options.AutoCreateSchemaObjects = env.Equals("Development", StringComparison.OrdinalIgnoreCase)
                     ? JasperFx.AutoCreate.All
                     : JasperFx.AutoCreate.CreateOrUpdate;
 
-                // Register domain events used by the aggregates
                 options.Events.AddEventTypes(new[]
                 {
-                    typeof(DocumentUploaded),
-                    typeof(DocumentDeleted),
-                    typeof(DocumentContentExtracted),
-                    typeof(DocumentFilesPrepared),
-                    typeof(DocumentChatBotDataReceived),
-                    typeof(InitDocumentImport),
-                    typeof(MarkFailedDocumentImport),
-                    typeof(MarkSucceededDocumentImport),
-                    typeof(StartDocumentImport),
-                    typeof(DocumentProcessed),
-                    typeof(HideDocumentImport),
-                    typeof(DocumentTitleInitialized),
-                    typeof(DocumentTitleSuggested),
-                    typeof(DocumentEncryptionEnabled),
-                    typeof(DocumentEncryptionKeysAdded),
-                    typeof(DocumentNoteAdded), // RESTORED
-                    typeof(DocumentNoteDeleted), // RESTORED
-                    typeof(DocumentLanguageDetected) // RESTORED
+                    typeof(DocumentUploaded), typeof(DocumentDeleted), typeof(DocumentContentExtracted), typeof(DocumentFilesPrepared),
+                    typeof(DocumentChatBotDataReceived), typeof(InitDocumentImport), typeof(MarkFailedDocumentImport), typeof(MarkSucceededDocumentImport),
+                    typeof(StartDocumentImport), typeof(DocumentProcessed), typeof(HideDocumentImport), typeof(DocumentTitleInitialized),
+                    typeof(DocumentTitleSuggested), typeof(DocumentEncryptionEnabled), typeof(DocumentEncryptionKeysAdded), typeof(DocumentNoteAdded),
+                    typeof(DocumentNoteDeleted), typeof(DocumentLanguageDetected)
                 });
 
-                options.Schema.For<PartyInfo>()
-                    .Index(x => x.UserId);
-                options.Schema.For<EmailSettings>()
-                    .Index(x => x.UserId)
-                    .Index(x => x.IsActive);
-
-                options.Schema.For<EmailCriteria>()
-                    .Index(x => x.UserId);
-
-                options.Schema.For<ProcessedEmail>()
-                    .Index(x => x.UserId)
-                    .Index(x => x.EmailUid)
-                    .Index(x => x.Status);
-
+                options.Schema.For<PartyInfo>().Index(x => x.UserId);
+                options.Schema.For<EmailSettings>().Index(x => x.UserId).Index(x => x.IsActive);
+                options.Schema.For<EmailCriteria>().Index(x => x.UserId);
+                options.Schema.For<ProcessedEmail>().Index(x => x.UserId).Index(x => x.EmailUid).Index(x => x.Status);
                 options.Events.StreamIdentity = JasperFx.Events.StreamIdentity.AsGuid;
-
-                options.Schema.For<Document>()
-                .Index(d => d.UserId)
-                .Index(d => d.Hash);
-
-                // Use NormalizedName for case-insensitive uniqueness
-                options.Schema.For<DocumentTypeDefinition>()
-                    .UniqueIndex(x => x.NormalizedName);
-
-                options.Schema.For<UserDocumentType>()
-                    .Index(x => x.UserId)
-                    .Index(x => x.DocumentTypeId); // removed composite UniqueIndex that caused Guid.UserId chain
-
+                options.Schema.For<Document>().Index(d => d.UserId).Index(d => d.Hash);
+                options.Schema.For<DocumentTypeDefinition>().UniqueIndex(x => x.NormalizedName);
+                options.Schema.For<UserDocumentType>().Index(x => x.UserId).Index(x => x.DocumentTypeId);
                 options.Schema.For<UserProfile>();
+                options.Schema.For<DocumentShare>().Index(x => x.DocumentId).Index(x => x.OwnerUserId);
+                options.Schema.For<ShareGroup>().Index(x => x.OwnerUserId);
+                options.Schema.For<ShareAutomationRule>().Index(x => x.OwnerUserId);
+                options.Schema.For<DocumentAccessView>().Index(x => x.OwnerUserId);
 
-                options.Schema.For<DocumentShare>()
-                    .Index(x => x.DocumentId)
-                    .Index(x => x.OwnerUserId);
+                options.Schema.For<ImportProcess>().Index(d => d.UserId).Index(x => x.IsHidden).Index(x => x.DocumentId).Index(x => x.Status).Index(x => x.Source);
+                options.Schema.For<ImportHistoryView>().Index(x => x.UserId).Index(x => x.Status).Index(x => x.Source).Index(x => x.IsHidden);
 
-                options.Schema.For<ShareGroup>()
-                    .Index(x => x.OwnerUserId);
-
-                options.Schema.For<ShareAutomationRule>()
-                    .Index(x => x.OwnerUserId);
-
-                options.Schema.For<DocumentAccessView>()
-                    .Index(x => x.OwnerUserId); // Base index (extend with custom GIN for EffectiveUserIds if required)
-
-                options.Schema.For<ImportProcess>()
-                    .Index(d => d.UserId)
-                    .Index(x => x.IsHidden)
-                    .Index(x => x.DocumentId)
-                    .Index(x => x.Status)
-                    .Index(x => x.Source);
-
-                options.Schema.For<ImportHistoryView>()
-                    .Index(x => x.UserId)
-                    .Index(x => x.Status)
-                    .Index(x => x.Source)
-                    .Index(x => x.IsHidden);
-
-                // Indexes to support DocumentView sorting and filtering
                 var docView = options.Schema.For<DocumentView>();
                 docView.Index(x => x.UserId);
                 docView.Index(x => x.Date);
@@ -185,25 +120,14 @@ namespace ArquivoMate2.Infrastructure.Configuration
                 docView.Index(x => x.Accepted);
                 docView.Index(x => x.CustomerNumber);
                 docView.Index(x => x.InvoiceNumber);
-                // Composite index for the common (user + date) combination
                 docView.Index(x => new { x.UserId, x.Date });
-                // Add advanced partial or GIN indexes via SQL migrations if required (kept out of code for simpler builds)
 
                 options.Projections.Add<DocumentProjection>(ProjectionLifecycle.Inline);
                 options.Projections.Add<ImportHistoryProjection>(ProjectionLifecycle.Inline);
 
-                // Notes document schema
-                options.Schema.For<ArquivoMate2.Domain.Notes.DocumentNote>()
-                    .Index(x => x.DocumentId)
-                    .Index(x => x.UserId);
-
-                options.Schema.For<ExternalShare>()
-                    .Index(x => x.DocumentId)
-                    .Index(x => x.ExpiresAtUtc);
-
-                options.Schema.For<LabPivotTable>()
-                    .Index(x => x.OwnerId)
-                    .UniqueIndex(x => x.Id);
+                options.Schema.For<ArquivoMate2.Domain.Notes.DocumentNote>().Index(x => x.DocumentId).Index(x => x.UserId);
+                options.Schema.For<ExternalShare>().Index(x => x.DocumentId).Index(x => x.ExpiresAtUtc);
+                options.Schema.For<LabPivotTable>().Index(x => x.OwnerId).UniqueIndex(x => x.Id);
             });
 
             services.AddScoped<IDocumentSession>(sp => sp.GetRequiredService<IDocumentStore>().LightweightSession());
@@ -214,147 +138,85 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddScoped<IFileMetadataService, FileMetadataService>();
             services.AddScoped<IPathService, PathService>();
             services.AddScoped<IThumbnailService, ThumbnailService>();
-            // Register system feature processors and registry
-            // Individual processors should be registered so the registry can discover them via IEnumerable<ISystemFeatureProcessor>
+
             services.AddScoped<ArquivoMate2.Application.Features.ISystemFeatureProcessor, LabResultsFeatureProcessor>();
-            // Changed: register the registry as Scoped to allow consuming scoped ISystemFeatureProcessor instances
             services.AddScoped<ArquivoMate2.Application.Features.ISystemFeatureProcessorRegistry, ArquivoMate2.Application.Features.SystemFeatureProcessorRegistry>();
-            // Document types were moved to ServerConfig.DocumentTypes in appsettings.json
             services.Configure<DocumentTypeOptions>(config.GetSection("ServerConfig").GetSection("DocumentTypes"));
             services.AddHostedService<DocumentTypeInitializationService>();
-            var meilisearchUrl = config["Meilisearch:Url"]
-                ?? throw new InvalidOperationException("Meilisearch URL is not configured.");
-            var meilisearchApiKey = config["Meilisearch:ApiKey"]
-                ?? config["Meilisearch:MasterKey"]
-                ?? config["Meilisearch:Key"]
-                ?? config["MEILI_MASTER_KEY"]
-                ?? "supersecret";
 
+            var meilisearchUrl = config["Meilisearch:Url"] ?? throw new InvalidOperationException("Meilisearch URL is not configured.");
+            var meilisearchApiKey = config["Meilisearch:ApiKey"] ?? config["Meilisearch:MasterKey"] ?? config["Meilisearch:Key"] ?? config["MEILI_MASTER_KEY"] ?? "supersecret";
             services.AddScoped<MeilisearchClient>(_ => new MeilisearchClient(meilisearchUrl, meilisearchApiKey));
             services.AddScoped<ISearchClient, SearchClient>();
             services.AddScoped<IDocumentAccessService, DocumentAccessService>();
             services.AddScoped<IAutoShareService, AutoShareService>();
             services.AddHttpClient();
-            // Language detection service is configured in Program.cs where options are bound.
-            // Avoid registering LanguageDetectionService here to prevent DI-validation issues when options are not yet configured.
-            services.AddScoped<IDocumentOwnershipLookup, DocumentOwnershipLookup>(); // Provides ownership lookups for sharing
-            services.AddScoped<IDocumentAccessUpdater, DocumentAccessUpdater>(); // Updates the read model for document access
+
+            services.AddScoped<IDocumentOwnershipLookup, DocumentOwnershipLookup>();
+            services.AddScoped<IDocumentAccessUpdater, DocumentAccessUpdater>();
             services.AddScoped<ArquivoMate2.Application.Interfaces.ImportHistory.IImportHistoryReadStore, ArquivoMate2.Infrastructure.Services.ImportHistory.ImportHistoryReadStore>();
             services.AddSingleton<ChatBotSettingsFactory>();
 
-            // Register ChatBot and vectorization services optionally. If ChatBot settings are missing or invalid,
-            // fall back to NullChatBot and NullDocumentVectorizationService to keep DI resolution stable.
             try
             {
                 var chatbotSettings = new ChatBotSettingsFactory(config).GetChatBotSettings();
                 if (chatbotSettings is OpenAISettings openAISettings)
                 {
                     services.AddSingleton(openAISettings);
-
                     if (openAISettings.EnableEmbeddings)
-                    {
-                        services.AddSingleton<IEmbeddingsClient>(sp =>
-                            new OpenAiEmbeddingsClient(openAISettings.EmbeddingModel, openAISettings.ApiKey));
-                    }
+                        services.AddSingleton<IEmbeddingsClient>(sp => new OpenAiEmbeddingsClient(openAISettings.EmbeddingModel, openAISettings.ApiKey));
                     else
-                    {
                         services.AddSingleton<IEmbeddingsClient, NullEmbeddingsClient>();
-                    }
 
                     var vectorStoreConnection = config.GetConnectionString("VectorStore");
                     if (openAISettings.EnableEmbeddings && !string.IsNullOrWhiteSpace(vectorStoreConnection))
-                    {
-                        services.AddSingleton<IDocumentVectorizationService>(sp =>
-                            new DocumentVectorizationService(
-                                vectorStoreConnection!,
-                                openAISettings,
-                                sp.GetRequiredService<IEmbeddingsClient>(),
-                                sp.GetRequiredService<ILogger<DocumentVectorizationService>>()));
-                    }
+                        services.AddSingleton<IDocumentVectorizationService>(sp => new DocumentVectorizationService(vectorStoreConnection!, openAISettings, sp.GetRequiredService<IEmbeddingsClient>(), sp.GetRequiredService<ILogger<DocumentVectorizationService>>()));
                     else
-                    {
                         services.AddSingleton<IDocumentVectorizationService, NullDocumentVectorizationService>();
-                    }
 
                     services.AddScoped<IChatBot, OpenAIChatBot>(sp =>
                     {
                         ChatClient client = new(model: openAISettings.Model, apiKey: openAISettings.ApiKey);
-                        return new OpenAIChatBot(
-                            client,
-                            sp.GetRequiredService<IDocumentVectorizationService>(),
-                            sp.GetRequiredService<ILogger<OpenAIChatBot>>(),
-                            openAISettings);
+                        return new OpenAIChatBot(client, sp.GetRequiredService<IDocumentVectorizationService>(), sp.GetRequiredService<ILogger<OpenAIChatBot>>(), openAISettings);
                     });
                 }
                 else if (chatbotSettings is OpenRouterSettings openRouterSettings)
                 {
-                    // bind settings and register
                     services.AddSingleton(openRouterSettings);
                     services.Configure<OpenRouterSettings>(config.GetSection("ChatBot").GetSection("Args"));
-
                     services.AddHttpClient<OpenRouterChatBot>(client =>
                     {
                         client.BaseAddress = new Uri(openRouterSettings.BaseUrl);
                         if (!string.IsNullOrWhiteSpace(openRouterSettings.ApiKey))
-                        {
                             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", openRouterSettings.ApiKey);
-                        }
                     });
 
                     services.AddScoped<IChatBot, OpenRouterChatBot>();
-
                     if (openRouterSettings.EnableEmbeddings)
-                    {
-                        services.AddSingleton<IEmbeddingsClient>(sp =>
-                            new OpenAiEmbeddingsClient(openRouterSettings.EmbeddingModel, openRouterSettings.ApiKey));
-                    }
+                        services.AddSingleton<IEmbeddingsClient>(sp => new OpenAiEmbeddingsClient(openRouterSettings.EmbeddingModel, openRouterSettings.ApiKey));
                     else
-                    {
                         services.AddSingleton<IEmbeddingsClient, NullEmbeddingsClient>();
-                    }
 
                     var vectorStoreConnection = config.GetConnectionString("VectorStore");
                     if (openRouterSettings.EnableEmbeddings && !string.IsNullOrWhiteSpace(vectorStoreConnection))
-                    {
-                        var mapped = new OpenAISettings
-                        {
-                            ApiKey = openRouterSettings.ApiKey,
-                            Model = openRouterSettings.Model,
-                            EmbeddingModel = openRouterSettings.EmbeddingModel,
-                            EmbeddingDimensions =1536,
-                            UseBatch = openRouterSettings.UseBatch,
-                            EnableEmbeddings = openRouterSettings.EnableEmbeddings
-                        };
-
-                        services.AddSingleton<IDocumentVectorizationService>(sp =>
-                            new DocumentVectorizationService(
-                                vectorStoreConnection!,
-                                mapped,
-                                sp.GetRequiredService<IEmbeddingsClient>(),
-                                sp.GetRequiredService<ILogger<DocumentVectorizationService>>()));
-                    }
+                        services.AddSingleton<IDocumentVectorizationService>(sp => new DocumentVectorizationService(vectorStoreConnection!, new OpenAISettings { ApiKey = openRouterSettings.ApiKey, Model = openRouterSettings.Model, EmbeddingModel = openRouterSettings.EmbeddingModel, EmbeddingDimensions = 1536, UseBatch = openRouterSettings.UseBatch, EnableEmbeddings = openRouterSettings.EnableEmbeddings }, sp.GetRequiredService<IEmbeddingsClient>(), sp.GetRequiredService<ILogger<DocumentVectorizationService>>()));
                     else
-                    {
                         services.AddSingleton<IDocumentVectorizationService, NullDocumentVectorizationService>();
-                    }
                 }
                 else
                 {
-                    // Unknown chatbot type - fallback to null
                     services.AddSingleton<IDocumentVectorizationService, NullDocumentVectorizationService>();
                     services.AddSingleton<IChatBot, NullChatBot>();
                 }
             }
             catch (Exception)
             {
-                // If configuration is missing or invalid, log at DI time isn't straightforward. Fall back to null implementations.
                 services.AddSingleton<IDocumentVectorizationService, NullDocumentVectorizationService>();
                 services.AddSingleton<IChatBot, NullChatBot>();
             }
 
             services.Configure<OcrSettings>(config.GetSection("OcrSettings"));
             services.AddSingleton(sp => sp.GetRequiredService<IOptions<OcrSettings>>().Value);
-
             services.Configure<Paths>(config.GetSection("Paths"));
             services.AddSingleton(sp => sp.GetRequiredService<IOptions<Paths>>().Value);
 
@@ -375,19 +237,12 @@ namespace ArquivoMate2.Infrastructure.Configuration
             switch (settings)
             {
                 case S3StorageProviderSettings local:
-                    // Register the resolved settings instance (which already merged parent-level RootPath)
                     services.AddSingleton<Microsoft.Extensions.Options.IOptions<S3StorageProviderSettings>>(Microsoft.Extensions.Options.Options.Create(local));
                     services.AddScoped<IStorageProvider, S3StorageProvider>();
-
-                    // Configure Minio client with resolved S3 settings
                     var endpoint = local.Endpoint;
                     services.AddMinio(configureClient =>
                     {
-                        // Basic configuration
-                        var builder = configureClient.WithEndpoint(endpoint)
-                                                     .WithCredentials(local.AccessKey, local.SecretKey)
-                                                     .WithSSL(true);
-
+                        var builder = configureClient.WithEndpoint(endpoint).WithCredentials(local.AccessKey, local.SecretKey).WithSSL(true);
                         builder.Build();
                     });
                     break;
@@ -425,11 +280,9 @@ namespace ArquivoMate2.Infrastructure.Configuration
             switch (deliverySettings)
             {
                 case DeliveryProviderSettings noop when noop.Type == DeliveryProviderType.Noop:
-                    // Default noop returns the raw fullPath. If you want server-side delivery, register ServerDeliveryProvider in DI and change config.
                     services.AddScoped<IDeliveryProvider, NoopDeliveryProvider>();
                     break;
                 case DeliveryProviderSettings server when server.Type == DeliveryProviderType.Server:
-                    // Route delivery through the API server. ServerDeliveryProvider builds a /api/delivery/... URL with a token.
                     services.AddScoped<IDeliveryProvider, ServerDeliveryProvider>();
                     break;
                 case S3DeliveryProviderSettings s3:
@@ -454,53 +307,21 @@ namespace ArquivoMate2.Infrastructure.Configuration
             var cachingSection = config.GetSection("Caching");
             services.Configure<CachingOptions>(cachingSection);
 
-            // Use in-memory cache without explicit SizeLimit so localization and other libraries can cache without specifying sizes
             services.AddMemoryCache();
 
-            var redisConfiguration = cachingSection.GetValue<string>("Redis:Configuration")
-                ?? config["Redis:Configuration"]
-                ?? "cache:6379";
+            var redisConfiguration = cachingSection.GetValue<string>("Redis:Configuration") ?? config["Redis:Configuration"] ?? "cache:6379";
             var redisInstanceName = cachingSection.GetValue<string>("Redis:InstanceName") ?? "redis:";
+            services.AddStackExchangeRedisCache(options => { options.Configuration = redisConfiguration; options.InstanceName = redisInstanceName; });
 
-            services.AddStackExchangeRedisCache(options =>
-            {
-                options.Configuration = redisConfiguration;
-                options.InstanceName = redisInstanceName;
-            });
-
-            var serializerOptions = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented = false,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-            };
-
-            // Use the builder-style API for FusionCache and configure options via IServiceCollection configuration
+            var serializerOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
             var fusionBuilder = services.AddFusionCache();
-
-            services.Configure<FusionCacheOptions>(options =>
-            {
-                options.DefaultEntryOptions = new FusionCacheEntryOptions
-                {
-                    Duration = TimeSpan.FromMinutes(5),
-                    IsFailSafeEnabled = true,
-                    FactorySoftTimeout = TimeSpan.FromSeconds(2),
-                    FactoryHardTimeout = TimeSpan.FromSeconds(10),
-                    AllowBackgroundDistributedCacheOperations = true
-                };
-            });
-
-            fusionBuilder.TryWithAutoSetup()
-                         .WithSerializer(new FusionCacheSystemTextJsonSerializer(serializerOptions));
+            services.Configure<FusionCacheOptions>(options => { options.DefaultEntryOptions = new FusionCacheEntryOptions { Duration = TimeSpan.FromMinutes(5), IsFailSafeEnabled = true, FactorySoftTimeout = TimeSpan.FromSeconds(2), FactoryHardTimeout = TimeSpan.FromSeconds(10), AllowBackgroundDistributedCacheOperations = true }; });
+            fusionBuilder.TryWithAutoSetup().WithSerializer(new FusionCacheSystemTextJsonSerializer(serializerOptions));
 
             services.AddSingleton<ITtlResolver, TtlResolver>();
             services.AddSingleton<IAppCache, EasyToFusionCacheAdapter>();
 
-            // Register a StackExchange.Redis ConnectionMultiplexer for direct Redis operations (admin tasks)
-            var redisConfig = redisConfiguration;
-            var redisOptions = ConfigurationOptions.Parse(redisConfig);
-            redisOptions.AbortOnConnectFail = false;
-            var mux = ConnectionMultiplexer.Connect(redisOptions);
+            var mux = ConnectionMultiplexer.Connect(redisConfiguration);
             services.AddSingleton<IConnectionMultiplexer>(mux);
 
             services.Configure<EncryptionSettings>(config.GetSection("Encryption"));
@@ -511,14 +332,17 @@ namespace ArquivoMate2.Infrastructure.Configuration
             services.AddSingleton(sp => sp.GetRequiredService<IOptions<AppSettings>>().Value);
             services.AddTransient<IExternalShareService, ExternalShareService>();
             services.AddTransient<IDocumentArtifactStreamer, DocumentArtifactStreamer>();
-            // Register Marten-backed document encryption keys provider
-            services.AddScoped<IDocumentEncryptionKeysProvider, MartenDocumentEncryptionKeysProvider>();
-            services.AddScoped<ILabPivotUpdater, LabPivotUpdater>();
-            // register default parameter normalizer for LabResults feature
-            services.AddScoped<IParameterNormalizer, DefaultParameterNormalizer>();
 
-            // register unit normalizer
+            services.AddScoped<IDocumentEncryptionKeysProvider, MartenDocumentEncryptionKeysProvider>();
+
+            // LabResults feature services
+            services.AddScoped<ILabPivotUpdater, LabPivotUpdater>();
+            services.AddScoped<IParameterNormalizer, DefaultParameterNormalizer>();
             services.AddScoped<IUnitNormalizer, DefaultUnitNormalizer>();
+            services.AddScoped<IUnitConverter, DefaultUnitConverter>();
+
+            // Document type enricher used to fill DocumentDto with type metadata
+            services.AddScoped<ArquivoMate2.Application.Interfaces.IDocumentTypeEnricher, ArquivoMate2.Infrastructure.Services.DocumentTypeEnricher>();
 
             return services;
         }

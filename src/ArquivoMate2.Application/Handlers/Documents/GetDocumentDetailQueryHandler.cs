@@ -22,12 +22,14 @@ public class GetDocumentDetailQueryHandler : IRequestHandler<GetDocumentDetailQu
     private readonly IQuerySession _querySession;
     private readonly IDocumentAccessService _documentAccessService;
     private readonly IMapper _mapper;
+    private readonly IDocumentTypeEnricher? _enricher;
 
-    public GetDocumentDetailQueryHandler(IQuerySession querySession, IDocumentAccessService documentAccessService, IMapper mapper)
+    public GetDocumentDetailQueryHandler(IQuerySession querySession, IDocumentAccessService documentAccessService, IMapper mapper, IDocumentTypeEnricher? enricher = null)
     {
         _querySession = querySession;
         _documentAccessService = documentAccessService;
         _mapper = mapper;
+        _enricher = enricher;
     }
 
     public async Task<DocumentDetailQueryResultDto?> Handle(GetDocumentDetailQuery request, CancellationToken cancellationToken)
@@ -53,22 +55,17 @@ public class GetDocumentDetailQueryHandler : IRequestHandler<GetDocumentDetailQu
         var documentDto = _mapper.Map<DocumentDto>(view);
         documentDto.History = history;
 
-        // Enrich document DTO with document type definition metadata (system features and user-defined functions)
+        // Enrich document DTO with document type definition metadata via enricher
         try
         {
-            var docTypeName = view.Type;
-            if (!string.IsNullOrWhiteSpace(docTypeName))
+            if (_enricher != null)
             {
-                var definition = await _querySession.Query<ArquivoMate2.Domain.DocumentTypes.DocumentTypeDefinition>()
-                    .FirstOrDefaultAsync(x => x.Name.Equals(docTypeName, StringComparison.OrdinalIgnoreCase), cancellationToken);
-
-                documentDto.DocumentTypeSystemFeatures = definition?.SystemFeatures ?? new List<string>();
-                documentDto.DocumentTypeUserFunctions = definition?.UserDefinedFunctions ?? new List<string>();
+                await _enricher.EnrichAsync(documentDto, view.Type, _querySession, cancellationToken);
             }
         }
         catch
         {
-            // Ignore lookup failures - DTO remains with empty lists
+            // ignore lookup failures - DTO remains with empty lists
         }
 
         return new DocumentDetailQueryResultDto

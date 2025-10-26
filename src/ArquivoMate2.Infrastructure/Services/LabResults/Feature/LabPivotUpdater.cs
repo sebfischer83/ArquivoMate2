@@ -41,10 +41,24 @@ namespace ArquivoMate2.Infrastructure.Services.LabResults
                 return;
             }
 
-            // Load existing pivot by OwnerId (one pivot per owner)
-            var pivot = await session.Query<LabPivotTable>()
+            // Attempt to resolve existing pivot Id first. This allows us to use session.LoadAsync
+            // which will return a tracked instance if the pivot was already staged in this session.
+            var existingPivotId = await session.Query<LabPivotTable>()
                 .Where(p => p.OwnerId == ownerId)
+                .Select(p => p.Id)
                 .FirstOrDefaultAsync(cancellationToken);
+
+            LabPivotTable? pivot = null;
+            if (existingPivotId != default)
+            {
+                // Load via session to prefer any in-memory tracked instance
+                pivot = await session.LoadAsync<LabPivotTable>(existingPivotId, cancellationToken);
+            }
+            else
+            {
+                // No existing pivot found in DB
+                pivot = null;
+            }
 
             if (pivot == null)
             {
@@ -173,6 +187,32 @@ namespace ArquivoMate2.Infrastructure.Services.LabResults
 
             // Store pivot in session; do NOT call SaveChanges here to allow caller to commit once transactionally
             session.Store(pivot);
+
+            // --- NEW: Upsert LabPivotDateIndex for this DocumentId so lookups are cheap ---
+            try
+            {
+                var indexId = report.DocumentId;
+                var index = await session.LoadAsync<LabPivotDateIndex>(indexId, cancellationToken);
+                if (index == null)
+                {
+                    index = new LabPivotDateIndex { Id = indexId, Dates = new List<DateOnly> { report.Date } };
+                    session.Store(index);
+                }
+                else
+                {
+                    // Merge report.Date into existing index dates if missing
+                    if (!index.Dates.Contains(report.Date))
+                    {
+                        index.Dates.Add(report.Date);
+                        index.Dates = index.Dates.Distinct().OrderByDescending(d => d).ToList();
+                        session.Store(index);
+                    }
+                }
+            }
+            catch
+            {
+                // Do not fail pivot update if index upsert fails; log could be added later
+            }
         }
 
         private void ConsolidateUnits(LabPivotTable pivot)

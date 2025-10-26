@@ -27,6 +27,11 @@ import { apiFeatureLabresultsPivotOwnerGet$Plain } from '../fn/lab-result-featur
 import { ApiFeatureLabresultsPivotOwnerGet$Plain$Params } from '../fn/lab-result-feature/api-feature-labresults-pivot-owner-get-plain';
 import { apiFeatureLabresultsPut } from '../fn/lab-result-feature/api-feature-labresults-put';
 import { ApiFeatureLabresultsPut$Params } from '../fn/lab-result-feature/api-feature-labresults-put';
+import { apiFeatureLabresultsStatusDocumentIdGet$Json } from '../fn/lab-result-feature/api-feature-labresults-status-document-id-get-json';
+import { ApiFeatureLabresultsStatusDocumentIdGet$Json$Params } from '../fn/lab-result-feature/api-feature-labresults-status-document-id-get-json';
+import { apiFeatureLabresultsStatusDocumentIdGet$Plain } from '../fn/lab-result-feature/api-feature-labresults-status-document-id-get-plain';
+import { ApiFeatureLabresultsStatusDocumentIdGet$Plain$Params } from '../fn/lab-result-feature/api-feature-labresults-status-document-id-get-plain';
+import { DocumentFeatureProcessingDtoApiResponse } from '../models/document-feature-processing-dto-api-response';
 import { LabPivotTableDtoApiResponse } from '../models/lab-pivot-table-dto-api-response';
 import { LabResultDtoListApiResponse } from '../models/lab-result-dto-list-api-response';
 
@@ -224,6 +229,73 @@ export class LabResultFeatureService extends BaseService {
   apiFeatureLabresultsPivotOwnerGet$Json(params?: ApiFeatureLabresultsPivotOwnerGet$Json$Params, context?: HttpContext): Observable<LabPivotTableDtoApiResponse> {
     return this.apiFeatureLabresultsPivotOwnerGet$Json$Response(params, context).pipe(
       map((r: StrictHttpResponse<LabPivotTableDtoApiResponse>): LabPivotTableDtoApiResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `apiFeatureLabresultsStatusDocumentIdGet()` */
+  static readonly ApiFeatureLabresultsStatusDocumentIdGetPath = '/api/feature/labresults/status/{documentId}';
+
+  /**
+   * Exposes the feature processing status for the current controller's FeatureKey.
+   * Route: [ControllerRoute]/status/{documentId}.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiFeatureLabresultsStatusDocumentIdGet$Plain()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiFeatureLabresultsStatusDocumentIdGet$Plain$Response(params: ApiFeatureLabresultsStatusDocumentIdGet$Plain$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentFeatureProcessingDtoApiResponse>> {
+    return apiFeatureLabresultsStatusDocumentIdGet$Plain(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Exposes the feature processing status for the current controller's FeatureKey.
+   * Route: [ControllerRoute]/status/{documentId}.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiFeatureLabresultsStatusDocumentIdGet$Plain$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiFeatureLabresultsStatusDocumentIdGet$Plain(params: ApiFeatureLabresultsStatusDocumentIdGet$Plain$Params, context?: HttpContext): Observable<DocumentFeatureProcessingDtoApiResponse> {
+    return this.apiFeatureLabresultsStatusDocumentIdGet$Plain$Response(params, context).pipe(
+      map((r: StrictHttpResponse<DocumentFeatureProcessingDtoApiResponse>): DocumentFeatureProcessingDtoApiResponse => r.body)
+    );
+  }
+
+  /**
+   * Exposes the feature processing status for the current controller's FeatureKey.
+   * Route: [ControllerRoute]/status/{documentId}.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiFeatureLabresultsStatusDocumentIdGet$Json()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiFeatureLabresultsStatusDocumentIdGet$Json$Response(params: ApiFeatureLabresultsStatusDocumentIdGet$Json$Params, context?: HttpContext): Observable<StrictHttpResponse<DocumentFeatureProcessingDtoApiResponse>> {
+    return apiFeatureLabresultsStatusDocumentIdGet$Json(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Exposes the feature processing status for the current controller's FeatureKey.
+   * Route: [ControllerRoute]/status/{documentId}.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiFeatureLabresultsStatusDocumentIdGet$Json$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiFeatureLabresultsStatusDocumentIdGet$Json(params: ApiFeatureLabresultsStatusDocumentIdGet$Json$Params, context?: HttpContext): Observable<DocumentFeatureProcessingDtoApiResponse> {
+    return this.apiFeatureLabresultsStatusDocumentIdGet$Json$Response(params, context).pipe(
+      map((r: StrictHttpResponse<DocumentFeatureProcessingDtoApiResponse>): DocumentFeatureProcessingDtoApiResponse => r.body)
     );
   }
 

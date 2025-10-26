@@ -22,28 +22,36 @@ namespace ArquivoMate2.Application.Handlers.DocumentTypes
 
         public async Task<ApiResponse<IEnumerable<DocumentTypeDto>>> Handle(ListDocumentTypesQuery request, CancellationToken cancellationToken)
         {
-            var definitions = await _querySession.Query<DocumentTypeDefinition>()
-                .OrderBy(x => x.Name)
-                .ToListAsync(cancellationToken);
-
-            var assigned = await _querySession.Query<UserDocumentType>()
-                .Where(x => x.UserId == request.UserId)
-                .ToListAsync(cancellationToken);
-
-            var assignedSet = assigned.Select(x => x.DocumentTypeId).ToHashSet();
-            var dtos = definitions.Select(def => new DocumentTypeDto
+            try
             {
-                Id = def.Id,
-                Name = def.Name,
-                SystemFeatures = def.SystemFeatures ?? new List<string>(),
-                UserDefinedFunctions = def.UserDefinedFunctions ?? new List<string>(),
-                IsLocked = def.IsLocked,
-                CreatedAtUtc = def.CreatedAtUtc,
-                UpdatedAtUtc = def.UpdatedAtUtc,
-                IsAssignedToCurrentUser = assignedSet.Contains(def.Id)
-            }).ToList();
+                var definitions = await _querySession.Query<DocumentTypeDefinition>()
+                    .OrderBy(x => x.Name)
+                    .ToListAsync(cancellationToken);
 
-            return new ApiResponse<IEnumerable<DocumentTypeDto>>(dtos);
+                var assigned = await _querySession.Query<UserDocumentType>()
+                    .Where(x => x.UserId == request.UserId)
+                    .ToListAsync(cancellationToken);
+
+                var assignedSet = assigned.Select(x => x.DocumentTypeId).ToHashSet();
+                var dtos = definitions.Select(def => new DocumentTypeDto
+                {
+                    Id = def.Id,
+                    Name = def.Name,
+                    SystemFeatures = def.SystemFeatures ?? new List<string>(),
+                    UserDefinedFunctions = def.UserDefinedFunctions ?? new List<string>(),
+                    IsLocked = def.IsLocked,
+                    CreatedAtUtc = def.CreatedAtUtc,
+                    UpdatedAtUtc = def.UpdatedAtUtc,
+                    IsAssignedToCurrentUser = assignedSet.Contains(def.Id)
+                }).ToList();
+
+                return new ApiResponse<IEnumerable<DocumentTypeDto>>(dtos);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // The request was canceled (e.g. client disconnected or timeout). Return a graceful API response instead of propagating Polly/Marten cancellation exceptions.
+                return new ApiResponse<IEnumerable<DocumentTypeDto>>(null, success: false, message: "Request canceled");
+            }
         }
     }
 }

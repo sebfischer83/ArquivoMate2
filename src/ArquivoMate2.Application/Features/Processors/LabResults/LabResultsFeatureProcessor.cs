@@ -102,12 +102,16 @@ namespace ArquivoMate2.Application.Features.Processors.LabResults
             {
                 foreach (var lr in labResults)
                 {
+                    // Store and persist the LabResult first so it is available in the database
                     _session.Store(lr);
+                    await _session.SaveChangesAsync(ct);
+
                     // Update pivot using same session; pivot updater will store pivot but not save
                     await _pivotUpdater.AddOrUpdateAsync(_session, lr, _parameterNormalizer, ct);
+
+                    // Persist pivot changes immediately after each insertion to make incremental progress durable
+                    await _session.SaveChangesAsync(ct);
                 }
-                // Commit both LabResults and corresponding pivot changes in one SaveChanges
-                await _session.SaveChangesAsync(ct);
             }
 
 
@@ -251,9 +255,6 @@ namespace ArquivoMate2.Application.Features.Processors.LabResults
             return results;
         }
 
-        // legacy NormalizeString removed - parameter/unit normalization delegated to IParameterNormalizer
-
-        // Separate normalization helper as requested
         private void NormalizeLabResultPoint(LabResultPoint p)
         {
             if (p == null) return;

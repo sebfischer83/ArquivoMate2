@@ -60,15 +60,30 @@
   "NotesLoadError": "Could not load notes",
     "PdfLoadError": "PDF could not be loaded"
   ,"KeywordTooLong": "Keyword too long (max 30)",
-  "LabResults": {
+    "LabResults": {
       "Empty": "No lab results available.",
+      "Processing": "Lab results are being processed",
+      "State": {
+        "Queued": "Queued",
+        "Processing": "Processing",
+        "Completed": "Completed",
+        "Failed": "Failed",
+        "Unknown": "Unknown"
+      },
       "ReferencePrefix": "Ref: ",
+      "Hint": {
+        "Raw": "Raw: ",
+        "Normalized": "Normalized: "
+      },
       "Table": {
         "Parameter": "Parameter",
         "Value": "Value",
         "ReferenceRange": "Reference range"
       }
     }
+    ,
+    "LoadingLabResults": "Loading lab results...",
+    "Refresh": "Refresh"
   }
 
   ,"Document.Tabs": {

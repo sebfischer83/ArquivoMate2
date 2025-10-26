@@ -7,26 +7,32 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten;
 
 namespace ArquivoMate2.API.Controllers.Feature
 {
     [ApiController]
     [Authorize]
     [Route("api/feature/labresults")]
-    public class LabResultFeatureController : ControllerBase
+    public class LabResultFeatureController : FeatureController
     {
         private readonly IMediator _mediator;
+        private readonly IQuerySession _querySession;
         private readonly ICurrentUserService _currentUserService;
         private readonly IDocumentAccessService _documentAccessService;
         private readonly ArquivoMate2.Application.Interfaces.Sharing.IDocumentOwnershipLookup _ownershipLookup;
 
-        public LabResultFeatureController(IMediator mediator, ICurrentUserService currentUserService, IDocumentAccessService documentAccessService, ArquivoMate2.Application.Interfaces.Sharing.IDocumentOwnershipLookup ownershipLookup)
+        public LabResultFeatureController(IMediator mediator, IQuerySession querySession, ICurrentUserService currentUserService, IDocumentAccessService documentAccessService, ArquivoMate2.Application.Interfaces.Sharing.IDocumentOwnershipLookup ownershipLookup)
+            : base(mediator)
         {
-            _mediator = mediator;
-            _currentUserService = currentUserService;
-            _documentAccessService = documentAccessService;
-            _ownershipLookup = ownershipLookup;
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            _querySession = querySession ?? throw new ArgumentNullException(nameof(querySession));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+            _documentAccessService = documentAccessService ?? throw new ArgumentNullException(nameof(documentAccessService));
+            _ownershipLookup = ownershipLookup ?? throw new ArgumentNullException(nameof(ownershipLookup));
         }
+
+        protected override string FeatureKey => "lab-results";
 
         [HttpGet("{documentId:guid}")]
         [ProducesResponseType(200, Type = typeof(ApiResponse<System.Collections.Generic.List<LabResultDto>>))]

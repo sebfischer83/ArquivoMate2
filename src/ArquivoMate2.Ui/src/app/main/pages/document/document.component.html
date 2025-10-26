@@ -129,7 +129,7 @@
 				
 				<div class="doc-split"> 
 					<div class="detail-pane left-col">
-																												<app-document-tabs [(activeIndex)]="activeItemIndex" [sticky]="true" [notesCount]="document()?.notesCount || 0" [showLabResults]="document()?.documentTypeSystemFeatures?.includes('lab-results') || false"></app-document-tabs>
+																												<app-document-tabs [(activeIndex)]="activeItemIndex" [sticky]="true" [notesCount]="document()?.notesCount || 0" [documentTypeSystemFeatures]="document()?.documentTypeSystemFeatures || []" [documentAccepted]="document()?.accepted || false"></app-document-tabs>
 								<div class="title-row">
 									<h2 tuiTitle="m" class="doc-title">{{ document()?.title || originalFileName() || t('Document.DocumentTitleFallback') }}</h2>
 								</div>

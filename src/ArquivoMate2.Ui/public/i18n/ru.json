@@ -58,15 +58,30 @@
     "NoteSaveError": "Не удалось сохранить заметку",
   "PdfLoadError": "PDF не удалось загрузить",
   "KeywordTooLong": "Ключевое слово слишком длинное (макс. 30)",
-  "LabResults": {
+    "LabResults": {
       "Empty": "Нет данных лабораторных показателей.",
+      "Processing": "Результаты лаборатории обрабатываются",
+      "State": {
+        "Queued": "В очереди",
+        "Processing": "В обработке",
+        "Completed": "Завершено",
+        "Failed": "Ошибка",
+        "Unknown": "Неизвестно"
+      },
       "ReferencePrefix": "Ref: ",
+      "Hint": {
+        "Raw": "Исходное: ",
+        "Normalized": "Нормализованное: "
+      },
       "Table": {
         "Parameter": "Параметр",
         "Value": "Значение",
         "ReferenceRange": "Референсный диапазон"
       }
     }
+    ,
+    "LoadingLabResults": "Загрузка результатов лаборатории...",
+    "Refresh": "Обновить"
   }
 
   ,"Document.Tabs": {

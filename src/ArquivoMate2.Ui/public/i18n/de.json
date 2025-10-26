@@ -52,13 +52,28 @@
     ,"KeywordTooLong": "Keyword zu lang (max 30)",
     "LabResults": {
       "Empty": "Keine Laborwerte vorhanden.",
+      "Processing": "Laborwerte werden verarbeitet",
+      "State": {
+        "Queued": "In Warteschlange",
+        "Processing": "In Bearbeitung",
+        "Completed": "Abgeschlossen",
+        "Failed": "Fehlgeschlagen",
+        "Unknown": "Unbekannt"
+      },
       "ReferencePrefix": "Ref: ",
+      "Hint": {
+        "Raw": "Roh: ",
+        "Normalized": "Normalisiert: "
+      },
       "Table": {
         "Parameter": "Parameter",
         "Value": "Wert",
         "ReferenceRange": "Referenzbereich"
       }
     }
+    ,
+    "LoadingLabResults": "Lade Laborwerte...",
+    "Refresh": "Aktualisieren"
   }
 
   ,"Document.Tabs": {

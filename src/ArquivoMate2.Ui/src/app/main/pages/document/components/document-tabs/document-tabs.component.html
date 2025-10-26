@@ -8,7 +8,7 @@
         {{ t('Document.Tabs.Notes') }}
         @if (notesCount && notesCount > 0) { <tui-badge size="s" appearance="primary" class="ml-badge">{{ notesCount }}</tui-badge> }
       </button>
-  @if (showLabResults) { <button tuiTab type="button" iconStart="@tui.activity">{{ t('Document.Tabs.LabResults') }}</button> }
+  @if (hasLabResults && documentAccepted) { <button tuiTab type="button" iconStart="@tui.activity">{{ t('Document.Tabs.LabResults') }}</button> }
     </tui-tabs>
   </ng-container>
 </div>

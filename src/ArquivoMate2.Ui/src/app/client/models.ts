@@ -30,6 +30,8 @@ export type { DocumentDto } from './models/document-dto';
 export type { DocumentDtoApiResponse } from './models/document-dto-api-response';
 export { DocumentEncryptionType } from './models/document-encryption-type';
 export type { DocumentEventDto } from './models/document-event-dto';
+export type { DocumentFeatureProcessingDto } from './models/document-feature-processing-dto';
+export type { DocumentFeatureProcessingDtoApiResponse } from './models/document-feature-processing-dto-api-response';
 export type { DocumentGroupingNode } from './models/document-grouping-node';
 export type { DocumentGroupingNodeIEnumerableApiResponse } from './models/document-grouping-node-i-enumerable-api-response';
 export type { DocumentGroupingPathSegment } from './models/document-grouping-path-segment';
@@ -58,6 +60,7 @@ export type { EmailSettingsDtoApiResponse } from './models/email-settings-dto-ap
 export { EmailSortBy } from './models/email-sort-by';
 export type { ExternalShare } from './models/external-share';
 export type { ExternalShareIEnumerableApiResponse } from './models/external-share-i-enumerable-api-response';
+export { FeatureProcessingState } from './models/feature-processing-state';
 export type { GuidApiResponse } from './models/guid-api-response';
 export type { ImportHistoryListDto } from './models/import-history-list-dto';
 export type { ImportHistoryListDtoApiResponse } from './models/import-history-list-dto-api-response';

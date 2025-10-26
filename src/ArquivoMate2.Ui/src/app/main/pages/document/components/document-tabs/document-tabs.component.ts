@@ -19,6 +19,15 @@ import { TranslocoModule } from '@jsverse/transloco';
 export class DocumentTabsComponent {
   @Input() sticky = true;
   @Input() showLabResults = false;
+  /** Whether the current document is accepted; parent should pass document()?.accepted */
+  @Input() documentAccepted = false;
+  /** Pass the features declared for the document type (e.g. ['lab-results']) */
+  @Input() documentTypeSystemFeatures: string[] | null = null;
+
+  /** Compatibility helper: tab shows if either the explicit flag is set or the features include 'lab-results' */
+  get hasLabResults(): boolean {
+    return this.showLabResults || !!(this.documentTypeSystemFeatures && this.documentTypeSystemFeatures.includes('lab-results'));
+  }
   @Input() notesCount: number | null = null;
   @Input() set activeIndex(v: number) { this._active = v ?? 0; }
   get activeIndex(): number { return this._active; }

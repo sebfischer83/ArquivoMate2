@@ -4,3 +4,88 @@
 .lab-placeholder {
   color: var(--tui-secondary-text);
 }
+
+/* Improved table/card styles for lab results */
+.lab-results-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.lab-result {
+  /* don't set a background color here to remain theme-neutral */
+  border: 1px solid var(--tui-border, rgba(0,0,0,0.08));
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.lab-result h4 {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0 0 0.6rem 0;
+  gap: 1rem;
+  font-size: 1rem;
+}
+.lab-result .muted {
+  color: var(--tui-secondary-text);
+  font-size: 0.9rem;
+  margin-left: 0.5rem;
+}
+
+.lab-table-wrapper {
+  overflow: auto;
+}
+
+.lab-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.95rem;
+  min-width: 560px; /* allow horizontal scroll on small screens (narrower) */
+}
+
+.lab-table thead th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  color: var(--tui-secondary-text);
+  font-weight: 600;
+  background: transparent;
+  position: sticky;
+  top: 0;
+}
+
+.lab-table tbody td {
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid rgba(0,0,0,0.04);
+  vertical-align: middle;
+}
+
+
+
+.param {
+  width: 30%;
+  font-weight: 600;
+}
+.value {
+  width: 35%;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+  text-align: left;
+}
+.ref {
+  width: 35%;
+  color: var(--tui-secondary-text);
+}
+
+/* Highlight abnormal values */
+.abnormal td.value,
+.abnormal td.param {
+  color: var(--tui-error, #d32f2f);
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .lab-result h4 { font-size: 0.95rem; flex-direction: column; align-items: flex-start; gap: 0.25rem }
+  .lab-table { min-width: 520px; font-size: 0.92rem }
+}

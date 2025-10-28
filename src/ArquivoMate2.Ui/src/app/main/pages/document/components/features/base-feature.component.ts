@@ -1,4 +1,4 @@
-import { Input, SimpleChanges, ChangeDetectorRef, Directive } from '@angular/core';
+import { Input, SimpleChanges, ChangeDetectorRef, Directive, signal, WritableSignal } from '@angular/core';
 import { Observable, Subscription, interval } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { DocumentDto } from '../../../../../client/models/document-dto';
@@ -17,12 +17,14 @@ export abstract class BaseFeatureComponent<T> {
   @Input() active = false;
 
   status: DocumentFeatureProcessingDtoApiResponse | null = null;
-  statusLoading = false;
-  statusError: string | null = null;
+  // New Angular signals to represent status
+  statusLoadingSignal: WritableSignal<boolean> = signal(false);
+  statusCompletedSignal: WritableSignal<boolean> = signal(false);
+  statusFailedSignal: WritableSignal<boolean> = signal(false);
+  // status error as signal (string message or null)
+  statusErrorSignal: WritableSignal<string | null> = signal(null);
 
   data: T | null = null;
-  dataLoading = false;
-  dataError: string | null = null;
   protected _loaded = false;
 
   private subs = new Subscription();
@@ -47,29 +49,47 @@ export abstract class BaseFeatureComponent<T> {
   protected checkStatusAndMaybeLoad(): void {
     const id = this.document?.id;
     if (!id) {
-      this.statusError = 'no-document-id';
+      this.statusErrorSignal.set('no-document-id');
+      this.statusLoadingSignal.set(false);
+      this.statusCompletedSignal.set(false);
+      this.statusFailedSignal.set(true);
       this.cd.markForCheck();
       return;
     }
-
-    this.statusLoading = true;
-    this.statusError = null;
+    this.statusErrorSignal.set(null);
+    this.statusLoadingSignal.set(true);
+    this.statusCompletedSignal.set(false);
+    this.statusFailedSignal.set(false);
       // initial one-off fetch
       const s = this.fetchStatus(id).subscribe({
           next: (res: DocumentFeatureProcessingDtoApiResponse) => {
             this.status = res;
-          this.statusLoading = false;
-          const completed = !!(res?.data && (res.data.completedAtUtc != null));
+          this.statusLoadingSignal.set(false);
+
+          console.log('Feature status:', res);
+          const completed = res.data?.state === 'Completed';
+          const failed = res.data?.state === 'Failed';
           if (completed) {
+            this.statusCompletedSignal.set(true);
+            this.statusFailedSignal.set(false);
             this.loadData(id);
+          } else if (failed) {
+            this.statusFailedSignal.set(true);
+            this.statusCompletedSignal.set(false);
+            this.statusErrorSignal.set(res.data?.lastError || 'processing-failed');
+            this.cd.markForCheck();
           } else {
             // start polling
+            this.statusCompletedSignal.set(false);
+            this.statusFailedSignal.set(false);
             this.startPolling(id);
           }
         },
           error: (err: any) => {
-            this.statusError = err?.message || 'status-failed';
-          this.statusLoading = false;
+            this.statusErrorSignal.set(err?.message || 'status-failed');
+          this.statusLoadingSignal.set(false);
+          this.statusFailedSignal.set(true);
+          this.statusCompletedSignal.set(false);
           this.cd.markForCheck();
         }
       });
@@ -99,24 +119,37 @@ export abstract class BaseFeatureComponent<T> {
         next: (res: DocumentFeatureProcessingDtoApiResponse) => {
             attempts++;
             this.status = res;
-            const completed = !!(res?.data && (res.data.completedAtUtc != null));
-            if (completed) {
-              // stop polling and load data
-              if (this.pollingSub) { this.pollingSub.unsubscribe(); this.pollingSub = null; }
-              this.loadData(documentId);
-            } else if (attempts >= this.maxPollAttempts) {
-              // give up
-              if (this.pollingSub) { this.pollingSub.unsubscribe(); this.pollingSub = null; }
-              this.statusError = 'processing-timeout';
-              this.cd.markForCheck();
-            } else {
-              this.cd.markForCheck();
-            }
+              const completed = !!(res?.data && (res.data.completedAtUtc != null));
+              if (completed) {
+                // stop polling and load data
+                if (this.pollingSub) { this.pollingSub.unsubscribe(); this.pollingSub = null; }
+                this.statusCompletedSignal.set(true);
+                this.statusFailedSignal.set(false);
+                this.statusLoadingSignal.set(false);
+                this.loadData(documentId);
+              } else if (attempts >= this.maxPollAttempts) {
+                // give up
+                if (this.pollingSub) { this.pollingSub.unsubscribe(); this.pollingSub = null; }
+                this.statusErrorSignal.set('processing-timeout');
+                this.statusFailedSignal.set(true);
+                this.statusCompletedSignal.set(false);
+                this.statusLoadingSignal.set(false);
+                this.cd.markForCheck();
+              } else {
+                // still polling
+                this.statusLoadingSignal.set(true);
+                this.statusCompletedSignal.set(false);
+                this.statusFailedSignal.set(false);
+                this.cd.markForCheck();
+              }
           },
           error: (err: any) => {
             if (this.pollingSub) { this.pollingSub.unsubscribe(); this.pollingSub = null; }
-            this.statusError = err?.message || 'status-failed';
-            this.cd.markForCheck();
+              this.statusErrorSignal.set(err?.message || 'status-failed');
+              this.statusFailedSignal.set(true);
+              this.statusCompletedSignal.set(false);
+              this.statusLoadingSignal.set(false);
+              this.cd.markForCheck();
           }
         });
 

@@ -60,7 +60,6 @@ export type { EmailSettingsDtoApiResponse } from './models/email-settings-dto-ap
 export { EmailSortBy } from './models/email-sort-by';
 export type { ExternalShare } from './models/external-share';
 export type { ExternalShareIEnumerableApiResponse } from './models/external-share-i-enumerable-api-response';
-export { FeatureProcessingState } from './models/feature-processing-state';
 export type { GuidApiResponse } from './models/guid-api-response';
 export type { ImportHistoryListDto } from './models/import-history-list-dto';
 export type { ImportHistoryListDtoApiResponse } from './models/import-history-list-dto-api-response';

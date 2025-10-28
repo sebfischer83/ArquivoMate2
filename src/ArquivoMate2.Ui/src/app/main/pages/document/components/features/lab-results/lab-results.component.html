@@ -1,21 +1,19 @@
 <ng-container *transloco="let t">
   <div class="lab-results-root">
-    <h3>{{ t('Document.Tabs.LabResults') }}</h3>
     <div class="lab-placeholder">
-      @if (statusLoading || dataLoading) { <div class="lab-loading">
+      @if (statusLoadingSignal() || dataLoadingSignal()) { <div class="lab-loading">
         <p>{{ t('Document.LoadingLabResults') || 'Lade Laborwerte...' }}</p>
       </div> }
 
-      @if (statusError || dataError) { <div class="lab-error" tuiSurface appearance="negative">
-        <p>{{ statusError || dataError }}</p>
+      @if (statusErrorSignal() || dataErrorSignal()) { <div class="lab-error" tuiSurface appearance="negative">
+        <p>{{ statusErrorSignal() || dataErrorSignal() }}</p>
       </div> }
 
-      @if (status?.data?.completedAtUtc == null) { <div class="lab-status" tuiSurface>
-        <p>{{ (t('Document.LabResults.Processing') || 'Laborwerte werden verarbeitet') + ' — ' + (getStateLabel(status?.data?.state) || '') + ' (' + (status?.data?.attemptCount || 0) + ')' }}</p>
-        <button tuiButton size="s" appearance="flat" type="button" (click)="refreshStatus()">{{ t('Document.Refresh') || 'Aktualisieren' }}</button>
+      @if (status?.data?.state === 'Running') { <div class="lab-status" tuiSurface>
+        <p>{{ (t('Document.LabResults.Processing') || 'Laborwerte werden verarbeitet') }}</p>
       </div> }
 
-      @if (!(statusLoading || dataLoading) && !(statusError || dataError)) { <div>
+  @if (!(statusLoadingSignal() || dataLoadingSignal()) && !(statusErrorSignal() || dataErrorSignal())) { <div>
         @if ((labResults?.data?.length || 0) > 0) { <div class="lab-results-list">
             @for (result of labResults?.data || []; track result.id) { <div class="lab-result">
               <h4>{{ result.date }} <span class="muted">{{ result.labName }}</span></h4>
@@ -47,10 +45,8 @@
             </div> }
           </div> }
 
-        @if (!((labResults?.data?.length || 0) > 0)) { <p>{{ t('Document.LabResults.Empty') || 'Keine Laborwerte vorhanden.' }}</p> }
+        @if (status?.data?.completedAtUtc != null && !((labResults?.data?.length || 0) > 0)) { <p>{{ t('Document.LabResults.Empty') || 'Keine Laborwerte vorhanden.' }}</p> }
       </div> }
-
-  @if (document) { <p>{{ document && document.id ? ((t('Document.IdLabel') || 'ID: ') + document.id) : '' }}</p> }
     </div>
   </div>
 </ng-container>

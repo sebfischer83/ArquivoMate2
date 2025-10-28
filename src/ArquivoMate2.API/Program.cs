@@ -40,6 +40,7 @@ using Microsoft.Extensions.Options; // added for options access
 using ArquivoMate2.Infrastructure.Services; // for LanguageDetectionService & options
 using ArquivoMate2.Application.Behaviors; // register pipeline behavior
 using Microsoft.Net.Http.Headers;
+using ArquivoMate2.Shared.Models; // map FeatureProcessingState
 
 namespace ArquivoMate2.API
 {
@@ -123,7 +124,13 @@ namespace ArquivoMate2.API
             builder.Services.AddControllers(options =>
             {
                 options.Filters.Add<ApiResponseWrapperFilter>();
+            })
+            // Ensure enums are serialized as strings in controller JSON responses
+            .AddJsonOptions(opts =>
+            {
+                opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
+
             builder.Services.AddScoped<ApiKeyAuthorizationFilter>();
             builder.Services.AddScoped<ApiResponseWrapperFilter>();
             builder.Services.AddInfrastructure(builder.Configuration);
@@ -227,6 +234,15 @@ namespace ArquivoMate2.API
                             .ToList()
                     },
                     Description = "Flags: subset of [Read, Edit, Delete]. Empty array = None. Accepts legacy formats: comma string or numeric." 
+                });
+
+                // Map FeatureProcessingState as string enum so the generated client receives string values
+                c.MapType<FeatureProcessingState>(() => new OpenApiSchema
+                {
+                    Type = "string",
+                    Enum = Enum.GetNames(typeof(FeatureProcessingState))
+                        .Select(n => (IOpenApiAny)new OpenApiString(n))
+                        .ToList()
                 });
 
                 // Use operation filter to show ApiResponse<T> wrapper for successful responses

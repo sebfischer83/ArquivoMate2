@@ -67,7 +67,19 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             };
 
             cancellationToken.ThrowIfCancellationRequested();
-            ChatCompletion response = await _client.CompleteChatAsync(messages, options);
+
+            // Use configured timeout if provided by settings, otherwise rely on caller token
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            if (_settings?.RequestTimeoutSeconds > 0)
+            {
+                try
+                {
+                    linkedCts.CancelAfter(TimeSpan.FromSeconds(_settings.RequestTimeoutSeconds));
+                }
+                catch { }
+            }
+
+            ChatCompletion response = await _client.CompleteChatAsync(messages, options, linkedCts.Token);
 
             string jsonText = response.Content[0].Text;
 
@@ -583,10 +595,10 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
       "description": "Maximum number of document hits to return."
     },
     "projection": {
-      "type": "string",
-      "enum": ["documents", "count", "both"],
-      "description": "Whether the model needs document hits, an aggregate count, or both."
-    },
+                    "type": "string",
+                    "enum": ["documents", "count", "both"],
+                    "description": "Whether the model needs document hits, an aggregate count, or both."
+                },
     "filters": {
       "type": "object",
       "properties": {
@@ -821,7 +833,19 @@ namespace ArquivoMate2.Infrastructure.Services.Llm
             };
 
             cancellationToken.ThrowIfCancellationRequested();
-            ChatCompletion response = await _client.CompleteChatAsync(messages, options);
+
+            // Use configured timeout if provided
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            if (_settings?.RequestTimeoutSeconds > 0)
+            {
+                try
+                {
+                    linkedCts.CancelAfter(TimeSpan.FromSeconds(_settings.RequestTimeoutSeconds));
+                }
+                catch { }
+            }
+
+            ChatCompletion response = await _client.CompleteChatAsync(messages, options, linkedCts.Token);
 
             string jsonText = response.Content[0].Text;
 

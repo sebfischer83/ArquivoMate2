@@ -26,5 +26,8 @@ namespace ArquivoMate2.Infrastructure.Configuration.Llm
         public string? VisionModel { get; set; } = null;
         // If set, reuse this assistant id instead of creating a new one on every request
         public string? AssistantId { get; set; } = null;
+
+        // Request timeout for Chat completions in seconds (default 300s = 5 minutes)
+        public int RequestTimeoutSeconds { get; set; } = 300;
     }
 }

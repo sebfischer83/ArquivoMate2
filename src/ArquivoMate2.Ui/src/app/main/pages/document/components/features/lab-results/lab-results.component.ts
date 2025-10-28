@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, ChangeDetectorRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ChangeDetectorRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
 import { DocumentDto } from '../../../../../../client/models/document-dto';
 import { LabResultFeatureService } from '../../../../../../client/services/lab-result-feature.service';
 import { LabResultDtoListApiResponse } from '../../../../../../client/models/lab-result-dto-list-api-response';
-import { FeatureProcessingState } from '../../../../../../client/models/feature-processing-state';
 import { DocumentFeatureProcessingDtoApiResponse } from '../../../../../../client/models/document-feature-processing-dto-api-response';
 import { BaseFeatureComponent } from '../base-feature.component';
 import { TuiHint } from '@taiga-ui/core';
@@ -19,6 +18,9 @@ import { TuiHint } from '@taiga-ui/core';
 })
 export class LabResultsComponent extends BaseFeatureComponent<LabResultDtoListApiResponse> {
   labResults: LabResultDtoListApiResponse | null = null; // kept for template compatibility
+  // New signals for data loading/error
+  dataLoadingSignal = signal(false);
+  dataErrorSignal = signal<string | null>(null);
 
   constructor(private labService: LabResultFeatureService, protected override cd: ChangeDetectorRef, private transloco: TranslocoService) {
     super(cd);
@@ -87,39 +89,21 @@ export class LabResultsComponent extends BaseFeatureComponent<LabResultDtoListAp
   }
 
   protected loadData(documentId: string): void {
-    this.dataLoading = true;
-    this.dataError = null;
+    this.dataLoadingSignal.set(true);
+    this.dataErrorSignal.set(null);
     this.labService.apiFeatureLabresultsDocumentIdGet$Json({ documentId }).subscribe({
       next: (res) => {
         this.labResults = res;
         this.data = res;
         this._loaded = true;
-        this.dataLoading = false;
+        this.dataLoadingSignal.set(false);
         this.cd.markForCheck();
       },
       error: (err) => {
-        this.dataError = err?.message || 'load-failed';
-        this.dataLoading = false;
+        this.dataErrorSignal.set(err?.message || 'load-failed');
+        this.dataLoadingSignal.set(false);
         this.cd.markForCheck();
       }
     });
-  }
-
-  // map numeric enum to readable label
-  getStateLabel(state?: FeatureProcessingState | null): string {
-    // Prefer translated labels from transloco; fall back to english keys
-    if (state == null) return this.transloco.translate('Document.LabResults.State.Unknown') || 'unknown';
-    switch (state) {
-      case FeatureProcessingState.$0:
-        return this.transloco.translate('Document.LabResults.State.Queued') || 'queued';
-      case FeatureProcessingState.$1:
-        return this.transloco.translate('Document.LabResults.State.Processing') || 'processing';
-      case FeatureProcessingState.$2:
-        return this.transloco.translate('Document.LabResults.State.Completed') || 'completed';
-      case FeatureProcessingState.$3:
-        return this.transloco.translate('Document.LabResults.State.Failed') || 'failed';
-      default:
-        return String(state);
-    }
   }
 }

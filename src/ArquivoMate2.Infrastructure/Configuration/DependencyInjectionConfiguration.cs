@@ -70,6 +70,7 @@ using ArquivoMate2.Application.Features.Processors.LabResults;
 using ArquivoMate2.Application.Features.Processors.LabResults.Models;
 using ArquivoMate2.Application.Features.Processors.LabResults.Services;
 using ArquivoMate2.Infrastructure.Services.LabResults;
+using System.ClientModel;
 
 namespace ArquivoMate2.Infrastructure.Configuration
 {
@@ -176,7 +177,12 @@ namespace ArquivoMate2.Infrastructure.Configuration
 
                     services.AddScoped<IChatBot, OpenAIChatBot>(sp =>
                     {
-                        ChatClient client = new(model: openAISettings.Model, apiKey: openAISettings.ApiKey);
+
+                        ChatClient client = new ChatClient(openAISettings.Model, new ApiKeyCredential(openAISettings.ApiKey), new OpenAI.OpenAIClientOptions()
+                        {
+                            EnableDistributedTracing = true,
+                            NetworkTimeout = TimeSpan.FromSeconds(openAISettings.RequestTimeoutSeconds)
+                        });
                         return new OpenAIChatBot(client, sp.GetRequiredService<IDocumentVectorizationService>(), sp.GetRequiredService<ILogger<OpenAIChatBot>>(), openAISettings);
                     });
                 }

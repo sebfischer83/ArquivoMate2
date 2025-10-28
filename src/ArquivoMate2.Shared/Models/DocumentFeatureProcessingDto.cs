@@ -7,7 +7,7 @@ namespace ArquivoMate2.Shared.Models
         public Guid Id { get; set; }
         public Guid DocumentId { get; set; }
         public string FeatureKey { get; set; } = string.Empty;
-        public FeatureProcessingState State { get; set; } // enum so client can understand allowed values
+        public FeatureProcessingState State { get; set; } 
         public int AttemptCount { get; set; }
         public bool ChatBotAvailable { get; set; }
         public bool ChatBotUsed { get; set; }

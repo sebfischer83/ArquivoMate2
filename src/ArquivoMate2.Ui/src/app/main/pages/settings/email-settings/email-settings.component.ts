@@ -60,7 +60,7 @@ type CriteriaFormControls = {
   maxResults: FormControl<number | null>;
   maxDaysBack: FormControl<number | null>;
   skip: FormControl<number | null>;
-  sortBy: FormControl<number>;
+  sortBy: FormControl<string>;
   sortDescending: FormControl<boolean>;
   includeFlags: FormControl<string>;
   excludeFlags: FormControl<string>;
@@ -80,7 +80,7 @@ type CriteriaFormValue = {
   maxResults: number | null;
   maxDaysBack: number | null;
   skip: number | null;
-  sortBy: number;
+  sortBy: string;
   sortDescending: boolean;
   includeFlags: string;
   excludeFlags: string;
@@ -131,12 +131,12 @@ export class EmailSettingsComponent implements OnInit {
     ];
   }
 
-  protected get sortOptions(): ReadonlyArray<{ label: string; value: number }> {
+  protected get sortOptions(): ReadonlyArray<{ label: string; value: string }> {
     return [
-      { label: this.transloco.translate('Settings.Email.Sort.Date'), value: EmailSortBy.$0 },
-      { label: this.transloco.translate('Settings.Email.Sort.Subject'), value: EmailSortBy.$1 },
-      { label: this.transloco.translate('Settings.Email.Sort.Sender'), value: EmailSortBy.$2 },
-      { label: this.transloco.translate('Settings.Email.Sort.Size'), value: EmailSortBy.$3 },
+      { label: this.transloco.translate('Settings.Email.Sort.Date'), value: EmailSortBy.Date },
+      { label: this.transloco.translate('Settings.Email.Sort.Subject'), value: EmailSortBy.Subject },
+      { label: this.transloco.translate('Settings.Email.Sort.Sender'), value: EmailSortBy.From },
+      { label: this.transloco.translate('Settings.Email.Sort.Size'), value: EmailSortBy.Size },
     ];
   }
 
@@ -200,7 +200,7 @@ export class EmailSettingsComponent implements OnInit {
     skip: new FormControl<number | null>(0, {
       validators: [Validators.min(0)],
     }),
-    sortBy: new FormControl<number>(EmailSortBy.$0, { nonNullable: true }),
+  sortBy: new FormControl<string>(EmailSortBy.Date, { nonNullable: true }),
     sortDescending: new FormControl<boolean>(true, { nonNullable: true }),
     includeFlags: new FormControl<string>('', { nonNullable: true }),
     excludeFlags: new FormControl<string>('', { nonNullable: true }),
@@ -233,7 +233,7 @@ export class EmailSettingsComponent implements OnInit {
     maxResults: 100,
     maxDaysBack: 30,
     skip: 0,
-    sortBy: EmailSortBy.$0,
+  sortBy: EmailSortBy.Date,
     sortDescending: true,
     includeFlags: '',
     excludeFlags: '',
@@ -703,7 +703,7 @@ export class EmailSettingsComponent implements OnInit {
       maxResults: dto.maxResults ?? 100,
       maxDaysBack: dto.maxDaysBack ?? 30,
       skip: dto.skip ?? 0,
-      sortBy: dto.sortBy ?? EmailSortBy.$0,
+      sortBy: dto.sortBy ?? EmailSortBy.Date,
       sortDescending: dto.sortDescending ?? true,
       includeFlags: this.joinFlags(dto.includeFlags),
       excludeFlags: this.joinFlags(dto.excludeFlags),
@@ -725,7 +725,7 @@ export class EmailSettingsComponent implements OnInit {
       maxResults: request.maxResults ?? undefined,
       maxDaysBack: request.maxDaysBack ?? undefined,
       skip: request.skip ?? undefined,
-      sortBy: request.sortBy ?? EmailSortBy.$0,
+      sortBy: request.sortBy ?? EmailSortBy.Date,
       sortDescending: request.sortDescending ?? true,
       includeFlags: request.includeFlags ?? undefined,
       excludeFlags: request.excludeFlags ?? undefined,

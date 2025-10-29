@@ -48,8 +48,9 @@
     "DocumentLoadError": "Dokument konnte nicht geladen werden",
     "DownloadStartError": "Download konnte nicht gestartet werden",
     "NoteSaveError": "Notiz konnte nicht gespeichert werden",
-    "PdfLoadError": "PDF konnte nicht geladen werden"
-    ,"KeywordTooLong": "Keyword zu lang (max 30)",
+  "PdfLoadError": "PDF konnte nicht geladen werden",
+  "LabResultsSaveError": "Fehler beim Speichern der Laborwerte",
+  "KeywordTooLong": "Keyword zu lang (max 30)",
     "LabResults": {
       "Empty": "Keine Laborwerte vorhanden.",
       "Processing": "Laborwerte werden verarbeitet",
@@ -68,8 +69,11 @@
       "Table": {
         "Parameter": "Parameter",
         "Value": "Wert",
+        "Unit": "Einheit",
         "ReferenceRange": "Referenzbereich"
       }
+      ,
+      "Restart": "Verarbeitung erneut starten"
     }
     ,
     "LoadingLabResults": "Lade Laborwerte...",

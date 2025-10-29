@@ -38,5 +38,18 @@ namespace ArquivoMate2.API.Controllers.Feature
             var response = new ApiResponse<DocumentFeatureProcessingDto>(dto);
             return Ok(response);
         }
+
+        /// <summary>
+        /// Restart processing of a feature for a document when it previously failed.
+        /// PUT /restart/{documentId}
+        /// </summary>
+        [HttpPut("restart/{documentId:guid}")]
+        [ProducesResponseType(200)]
+        public async Task<ActionResult> RestartFeatureProcessing(Guid documentId, CancellationToken cancellationToken)
+        {
+            var ok = await _mediator.Send(new ArquivoMate2.Application.Commands.Features.RestartDocumentFeatureProcessingCommand(documentId, FeatureKey));
+            if (!ok) return NotFound();
+            return Ok();
+        }
     }
 }

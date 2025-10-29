@@ -1,4 +1,5 @@
 import { Input, SimpleChanges, ChangeDetectorRef, Directive, signal, WritableSignal } from '@angular/core';
+import { ToastService } from '../../../../../services/toast.service';
 import { Observable, Subscription, interval } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { DocumentDto } from '../../../../../client/models/document-dto';
@@ -34,12 +35,58 @@ export abstract class BaseFeatureComponent<T> {
   /** max polling attempts before giving up */
   protected maxPollAttempts = 12;
 
-  constructor(protected cd: ChangeDetectorRef) {}
+  constructor(protected cd: ChangeDetectorRef, protected toast: ToastService) {}
 
   ngOnChanges(changes: SimpleChanges) {
     if (this.active && !this._loaded) {
       this.checkStatusAndMaybeLoad();
     }
+  }
+
+  /**
+   * Hook for subclasses to implement the actual restart call for their feature.
+   * Should perform the restart request and return an Observable that completes when done.
+   */
+  protected abstract restartFeature(documentId: string): Observable<void>;
+
+  /**
+   * Public helper so templates can trigger a manual restart of processing when it previously failed.
+   * Handles signals and refreshing status/data after the restart request.
+   */
+  public restartProcessing(documentId?: string | null): void {
+    if (!documentId) return;
+
+    // Clear prior errors and indicate loading
+    this.statusErrorSignal.set(null);
+    this.statusLoadingSignal.set(true);
+
+    // show a toast indicating restart was started
+    try {
+      this.toast?.info('Verarbeitung wird gestartet...');
+    } catch (e) {
+      // ignore toast errors
+    }
+
+    const obs = this.restartFeature(documentId);
+    const sub = obs.subscribe({
+      next: () => {
+        // After restart succeeded, re-check status which will load data when completed
+        this.refreshStatus();
+      },
+      error: (err: any) => {
+        this.statusErrorSignal.set(err?.message || 'restart-failed');
+        this.statusLoadingSignal.set(false);
+        this.statusFailedSignal.set(true);
+        this.cd.markForCheck();
+      },
+      complete: () => {
+        // ensure loading flag cleared; refreshStatus will set proper flags when status arrives
+        this.statusLoadingSignal.set(false);
+        this.cd.markForCheck();
+      }
+    });
+
+    this.subs.add(sub);
   }
 
   ngOnDestroy(): void {

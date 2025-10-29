@@ -1,5 +1,5 @@
 // ...existing code...
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, signal, computed, inject, Injector } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, signal, computed, inject, Injector, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TuiButton, TuiSurface, TuiTitle, TuiDropdown, TuiDropdownOpen, TuiDialogService, TuiTextfield, TuiTextfieldDropdownDirective, TuiLabel, TuiHint } from '@taiga-ui/core';
 import { TuiTabs, TuiChip, TuiDataListWrapper, TUI_CONFIRM, TuiComboBox } from '@taiga-ui/kit';
@@ -27,7 +27,7 @@ import { DocumentNoteDto } from '../../../client/models/document-note-dto';
 import { NotesListComponent } from './components/notes-list/notes-list.component';
 import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
 import { DocumentNavigationService } from '../../../services/document-navigation.service';
-import { Subject } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 
 @Component({
@@ -71,6 +71,8 @@ export class DocumentComponent implements OnInit, OnDestroy {
   readonly documentTypeNames = computed(() => (this.documentTypes() ?? []).map(t => t?.name ?? ''));
   // Global edit mode state
   readonly editMode = signal(false);
+  // Indicates a save operation in progress (document fields + lab results)
+  readonly isSaving = signal(false);
   // Buffer for editing fields before saving
   readonly editBuffer = signal<{ title?: string | null; type?: string | null }>({});
   // Form control used to provide NgControl for Taiga ComboBox and to sync value with editBuffer
@@ -134,6 +136,8 @@ export class DocumentComponent implements OnInit, OnDestroy {
   ) {
     this.documentId.set(this.route.snapshot.paramMap.get('id'));
   }
+
+  @ViewChild(LabResultsComponent) labResultsComponent?: LabResultsComponent;
 
   /** Marks document as accepted by calling backend API and updates UI/toast */
   acceptDocument(): void {
@@ -314,12 +318,33 @@ export class DocumentComponent implements OnInit, OnDestroy {
       const origType = current?.type ?? null;
       if (buffer.type !== origType) fields.Type = buffer.type;
     }
-    if (Object.keys(fields).length === 0) { this.editMode.set(false); return; }
+
+    const finalize = () => {
+      this.isSaving.set(false);
+      this.editMode.set(false);
+      this.editBuffer.set({});
+    };
+    // If nothing changed on document fields, still try to commit lab-result edits
+    if (Object.keys(fields).length === 0) {
+      this.isSaving.set(true);
+      const commit$ = this.labResultsComponent ? this.labResultsComponent.commitEdits() : of(null);
+      (commit$ as any).subscribe({
+        next: () => finalize(),
+        error: (err: any) => {
+          this.toast.error(this.transloco.translate('Document.LabResultsSaveError') || 'Fehler beim Speichern der Laborwerte');
+          finalize();
+        }
+      });
+      return;
+    }
+
     // call update-fields endpoint
+    this.isSaving.set(true);
     this.api.apiDocumentsIdUpdateFieldsPatch$Json({ id, body: { fields } as any }).subscribe({
       next: (resp: any) => {
         const ok = resp?.success !== false;
         if (!ok) {
+          this.isSaving.set(false);
           this.toast.error(this.transloco.translate('Document.SaveError') || 'Fehler beim Speichern');
           return;
         }
@@ -335,10 +360,19 @@ export class DocumentComponent implements OnInit, OnDestroy {
           }
         }
         this.toast.success(this.transloco.translate('Document.Saved') || 'Gespeichert');
-        this.editMode.set(false);
-        this.editBuffer.set({});
+
+        // commit lab result edits and finalize when done
+        const commit$ = this.labResultsComponent ? this.labResultsComponent.commitEdits() : of(null);
+        (commit$ as any).subscribe({
+          next: () => finalize(),
+          error: (err: any) => {
+            this.toast.error(this.transloco.translate('Document.LabResultsSaveError') || 'Fehler beim Speichern der Laborwerte');
+            finalize();
+          }
+        });
       },
       error: () => {
+        this.isSaving.set(false);
         this.toast.error(this.transloco.translate('Document.SaveError') || 'Fehler beim Speichern');
       }
     });

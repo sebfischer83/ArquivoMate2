@@ -35,7 +35,7 @@ namespace ArquivoMate2.Application.Handlers.LabResults
             // replace points
             existing.Points = dto.Points.Select(p => new LabResultPoint
             {
-                Parameter = p.ResultRaw != null ? p.ResultRaw : string.Empty, // placeholder, mapping might differ
+                Parameter = p.Parameter,
                 ResultRaw = p.ResultRaw,
                 ResultNumeric = p.ResultNumeric,
                 ResultComparator = p.ResultComparator,

@@ -78,8 +78,11 @@
       "Table": {
         "Parameter": "Parameter",
         "Value": "Value",
+        "Unit": "Unit",
         "ReferenceRange": "Reference range"
       }
+      ,
+      "Restart": "Restart processing"
     }
     ,
     "LoadingLabResults": "Loading lab results...",

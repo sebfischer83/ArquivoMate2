@@ -45,41 +45,7 @@
 						</div>
 					</div>
 					<div class="actions" *ngIf="hasData()">
-						<div class="global-edit">
-							<button
-								tuiButton
-								size="s"
-								appearance="secondary"
-								iconStart="@tui.pen"
-								type="button"
-								*ngIf="!editMode() && hasData()"
-								(click)="startEdit()"
-								[attr.title]="t('Document.Edit')"
-								[attr.aria-label]="t('Document.Edit')"
-							></button>
-							<button
-								tuiButton
-								size="s"
-								appearance="primary"
-								iconStart="@tui.check"
-								type="button"
-								*ngIf="editMode()"
-								(click)="saveEdit()"
-								[attr.title]="t('Document.Save')"
-								[attr.aria-label]="t('Document.Save')"
-							></button>
-							<button
-								tuiButton
-								size="s"
-								appearance="flat"
-								iconStart="@tui.undo"
-								type="button"
-								*ngIf="editMode()"
-								(click)="cancelEdit()"
-								[attr.title]="t('Document.Cancel')"
-								[attr.aria-label]="t('Document.Cancel')"
-							></button>
-						</div>
+						<!-- global-edit buttons moved to title-row -->
 						<!-- If archivePath exists show dropdown menu, else show direct download button -->
 						<ng-container *ngIf="document()?.archivePath; else noArchive">
 							<button
@@ -132,6 +98,41 @@
 																												<app-document-tabs [(activeIndex)]="activeItemIndex" [sticky]="true" [notesCount]="document()?.notesCount || 0" [documentTypeSystemFeatures]="document()?.documentTypeSystemFeatures || []" [documentAccepted]="document()?.accepted || false"></app-document-tabs>
 								<div class="title-row">
 									<h2 tuiTitle="m" class="doc-title">{{ document()?.title || originalFileName() || t('Document.DocumentTitleFallback') }}</h2>
+									<div class="global-edit title-edit">
+										<button
+											tuiButton
+											size="s"
+											appearance="secondary"
+											iconStart="@tui.pen"
+											type="button"
+											*ngIf="!editMode() && hasData()"
+											(click)="startEdit()"
+											[attr.title]="t('Document.Edit')"
+											[attr.aria-label]="t('Document.Edit')"
+										></button>
+										<button
+											tuiButton
+											size="s"
+											appearance="primary"
+											iconStart="@tui.check"
+											type="button"
+											*ngIf="editMode()"
+											(click)="saveEdit()"
+											[attr.title]="t('Document.Save')"
+											[attr.aria-label]="t('Document.Save')"
+										></button>
+										<button
+											tuiButton
+											size="s"
+											appearance="flat"
+											iconStart="@tui.undo"
+											type="button"
+											*ngIf="editMode()"
+											(click)="cancelEdit()"
+											[attr.title]="t('Document.Cancel')"
+											[attr.aria-label]="t('Document.Cancel')"
+										></button>
+									</div>
 								</div>
 						<ng-container *ngIf="activeItemIndex === 1">
 							<app-content-toolbar class="outside-content-toolbar" [wrap]="wrapContent" [copied]="copiedContent" (toggleWrap)="toggleWrap()" (copy)="copyContent()" />
@@ -223,7 +224,7 @@
 							></app-notes-list>
 						</section>
 						<section *ngIf="document()?.documentTypeSystemFeatures?.includes('lab-results')" class="tab-pane lab-results-view" [class.active]="activeItemIndex === 4">
-							<app-lab-results [document]="document()" [active]="activeItemIndex === 4"></app-lab-results>
+							<app-lab-results [document]="document()" [active]="activeItemIndex === 4" [editMode]="editMode()"></app-lab-results>
 						</section>
 						</div><!-- /.tab-content -->
 						</div><!-- /.left-scroll -->

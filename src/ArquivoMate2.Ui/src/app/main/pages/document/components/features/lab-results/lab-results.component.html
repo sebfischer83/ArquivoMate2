@@ -7,36 +7,54 @@
 
       @if (statusErrorSignal() || dataErrorSignal()) { <div class="lab-error" tuiSurface appearance="negative">
         <p>{{ statusErrorSignal() || dataErrorSignal() }}</p>
+        @if (document?.id) { <div class="lab-error-actions">
+          <button tuiButton appearance="primary" size="s" iconStart="@tui.refresh-ccw" type="button" (click)="restartProcessing(document?.id)">{{ t('Document.LabResults.Restart') || 'Verarbeitung erneut starten' }}</button>
+        </div> }
       </div> }
 
       @if (status?.data?.state === 'Running') { <div class="lab-status" tuiSurface>
         <p>{{ (t('Document.LabResults.Processing') || 'Laborwerte werden verarbeitet') }}</p>
       </div> }
 
+
   @if (!(statusLoadingSignal() || dataLoadingSignal()) && !(statusErrorSignal() || dataErrorSignal())) { <div>
         @if ((labResults?.data?.length || 0) > 0) { <div class="lab-results-list">
             @for (result of labResults?.data || []; track result.id) { <div class="lab-result">
-              <h4>{{ result.date }} <span class="muted">{{ result.labName }}</span></h4>
+              <div class="lab-result-header">
+                <h4>{{ result.date | localeDate:'shortDate' }}</h4>
+                @if (editMode) { <button tuiButton appearance="flat" size="s" iconStart="@tui.trash" type="button" (click)="removeResult(result.id)"></button> }
+                
+              </div>
               <div class="lab-table-wrapper">
                 <table class="lab-table">
                 <thead>
                   <tr>
                     <th>{{ t('Document.LabResults.Table.Parameter') }}</th>
                     <th>{{ t('Document.LabResults.Table.Value') }}</th>
+                    <th>{{ t('Document.LabResults.Table.Unit') || 'Einheit' }}</th>
                     <th>{{ t('Document.LabResults.Table.ReferenceRange') }}</th>
                   </tr>
                 </thead>
                   <tbody>
                   @for (point of result.points || []; track $index) { <tr [class.abnormal]="isPointAbnormal(point)">
                     <td class="param">
-                      {{ point.parameter }}
+                      <tui-input-inline>
+                        <input type="text" [formControl]="controlForField(result.id, $index, 'parameter', point?.parameter)" />
+                      </tui-input-inline>
                     </td>
                     <td class="value" [tuiHint]="(t('Document.LabResults.Hint.Raw') || 'Roh: ') + (point?.resultRaw || '-') + ' ' + (point?.unit || '') + '\n' + (t('Document.LabResults.Hint.Normalized') || 'Normalisiert: ') + (point?.normalizedResult != null ? point?.normalizedResult : '-') + ' ' + (point?.normalizedUnit || '') + (point?.reference ? ('\n' + (t('Document.LabResults.ReferencePrefix') || 'Ref: ') + point?.reference) : '')">
-                      @if (point?.resultComparator != null) { {{ point.resultComparator }} }
-                      {{ point?.normalizedResult }} {{ point?.normalizedUnit }}
+                      <tui-input-inline>
+                        @if (point?.resultComparator != null) { {{ point.resultComparator }} }
+                        <input type="number" [formControl]="controlForPoint(result.id, $index, point?.normalizedResult)" class="lab-input-numeric" />
+                      </tui-input-inline>
+                    </td>
+                    <td class="unit">
+                      <tui-input-inline>
+                        <input type="text" [formControl]="controlForField(result.id, $index, 'unit', point?.unit)" class="lab-input-unit" />
+                      </tui-input-inline>
                     </td>
                     <td class="ref">
-                      <span>{{ formatReference(point) }}</span>
+                      <span class="ref-text">{{ formatReference(point) }}</span>
                     </td>
                     </tr> }
                 </tbody>

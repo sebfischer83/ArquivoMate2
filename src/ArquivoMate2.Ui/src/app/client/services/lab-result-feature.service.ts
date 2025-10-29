@@ -27,6 +27,8 @@ import { apiFeatureLabresultsPivotOwnerGet$Plain } from '../fn/lab-result-featur
 import { ApiFeatureLabresultsPivotOwnerGet$Plain$Params } from '../fn/lab-result-feature/api-feature-labresults-pivot-owner-get-plain';
 import { apiFeatureLabresultsPut } from '../fn/lab-result-feature/api-feature-labresults-put';
 import { ApiFeatureLabresultsPut$Params } from '../fn/lab-result-feature/api-feature-labresults-put';
+import { apiFeatureLabresultsRestartDocumentIdPut } from '../fn/lab-result-feature/api-feature-labresults-restart-document-id-put';
+import { ApiFeatureLabresultsRestartDocumentIdPut$Params } from '../fn/lab-result-feature/api-feature-labresults-restart-document-id-put';
 import { apiFeatureLabresultsStatusDocumentIdGet$Json } from '../fn/lab-result-feature/api-feature-labresults-status-document-id-get-json';
 import { ApiFeatureLabresultsStatusDocumentIdGet$Json$Params } from '../fn/lab-result-feature/api-feature-labresults-status-document-id-get-json';
 import { apiFeatureLabresultsStatusDocumentIdGet$Plain } from '../fn/lab-result-feature/api-feature-labresults-status-document-id-get-plain';
@@ -296,6 +298,41 @@ export class LabResultFeatureService extends BaseService {
   apiFeatureLabresultsStatusDocumentIdGet$Json(params: ApiFeatureLabresultsStatusDocumentIdGet$Json$Params, context?: HttpContext): Observable<DocumentFeatureProcessingDtoApiResponse> {
     return this.apiFeatureLabresultsStatusDocumentIdGet$Json$Response(params, context).pipe(
       map((r: StrictHttpResponse<DocumentFeatureProcessingDtoApiResponse>): DocumentFeatureProcessingDtoApiResponse => r.body)
+    );
+  }
+
+  /** Path part for operation `apiFeatureLabresultsRestartDocumentIdPut()` */
+  static readonly ApiFeatureLabresultsRestartDocumentIdPutPath = '/api/feature/labresults/restart/{documentId}';
+
+  /**
+   * Restart processing of a feature for a document when it previously failed.
+   * PUT /restart/{documentId}.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `apiFeatureLabresultsRestartDocumentIdPut()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiFeatureLabresultsRestartDocumentIdPut$Response(params: ApiFeatureLabresultsRestartDocumentIdPut$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return apiFeatureLabresultsRestartDocumentIdPut(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Restart processing of a feature for a document when it previously failed.
+   * PUT /restart/{documentId}.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `apiFeatureLabresultsRestartDocumentIdPut$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  apiFeatureLabresultsRestartDocumentIdPut(params: ApiFeatureLabresultsRestartDocumentIdPut$Params, context?: HttpContext): Observable<void> {
+    return this.apiFeatureLabresultsRestartDocumentIdPut$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
     );
   }
 

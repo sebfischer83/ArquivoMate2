@@ -1,5 +1,7 @@
 {
-  "LandingPage": {"Welcome": "Willkommen"},
+  "LandingPage": {
+    "Welcome": "Willkommen"
+  },
   "Document": {
     "Download": "Download",
     "DownloadOriginal": "Original",
@@ -19,8 +21,8 @@
     "NextDocument": "Nächstes Dokument",
     "NoMoreDocuments": "Keine weiteren Dokumente verfügbar",
     "NavigationError": "Weitere Dokumente konnten nicht geladen werden",
-  "DocumentTitleFallback": "Dokument",
-  "IdLabel": "ID: ",
+    "DocumentTitleFallback": "Dokument",
+    "IdLabel": "ID: ",
     "LoadingEllipsis": "Lädt…",
     "Open": "Öffnen",
     "LoadingDocument": "Lade Dokument",
@@ -48,9 +50,9 @@
     "DocumentLoadError": "Dokument konnte nicht geladen werden",
     "DownloadStartError": "Download konnte nicht gestartet werden",
     "NoteSaveError": "Notiz konnte nicht gespeichert werden",
-  "PdfLoadError": "PDF konnte nicht geladen werden",
-  "LabResultsSaveError": "Fehler beim Speichern der Laborwerte",
-  "KeywordTooLong": "Keyword zu lang (max 30)",
+    "PdfLoadError": "PDF konnte nicht geladen werden",
+    "LabResultsSaveError": "Fehler beim Speichern der Laborwerte",
+    "KeywordTooLong": "Keyword zu lang (max 30)",
     "LabResults": {
       "Empty": "Keine Laborwerte vorhanden.",
       "Processing": "Laborwerte werden verarbeitet",
@@ -66,28 +68,24 @@
         "Raw": "Roh: ",
         "Normalized": "Normalisiert: "
       },
-      "Table": {
-        "Parameter": "Parameter",
-        "Value": "Wert",
-        "Unit": "Einheit",
-        "ReferenceRange": "Referenzbereich"
-      }
-      ,
+      "Parameter": "Parameter",
+      "Value": "Wert",
+      "Unit": "Einheit",
+      "ReferenceRange": "Referenzbereich",
+      
       "Restart": "Verarbeitung erneut starten"
-    }
-    ,
+    },
     "LoadingLabResults": "Lade Laborwerte...",
-    "Refresh": "Aktualisieren"
-  }
-
-  ,"Document.Tabs": {
-    "Details": "Details",
-    "Content": "Inhalt",
-    "History": "Historie",
-    "Notes": "Notizen",
-    "LabResults": "Laborwerte"
-  }
-  ,"Common": {
+    "Refresh": "Aktualisieren",
+    "Tabs": {
+      "Details": "Details",
+      "Content": "Inhalt",
+      "History": "Historie",
+      "Notes": "Notizen",
+      "LabResults": "Laborwerte"
+    }
+  },
+  "Common": {
     "Reset": "Zurücksetzen",
     "SavingEllipsis": "Speichert…",
     "RemovingEllipsis": "Entferne…",
@@ -123,8 +121,8 @@
       "SaveError": "E-Mail-Einstellungen konnten nicht gespeichert werden.",
       "LoadError": "E-Mail-Einstellungen konnten nicht geladen werden.",
       "CountLoadError": "E-Mail-Zähler konnte nicht abgerufen werden.",
-  "StatusTitle": "Status",
-  "StatusDescription": "Verbindung und Postfachstatus anzeigen.",
+      "StatusTitle": "Status",
+      "StatusDescription": "Verbindung und Postfachstatus anzeigen.",
       "TestConnection": "Verbindung testen",
       "TestConnectionSuccess": "Verbindung erfolgreich getestet.",
       "TestConnectionFailed": "Verbindungstest fehlgeschlagen.",
@@ -134,10 +132,10 @@
       "CriteriaMissing": "Keine Regeln gespeichert",
       "LoadingRules": "Lade gespeicherte Regeln …",
       "CriteriaSaved": "Abruf-Regeln gespeichert.",
-  "CriteriaSave": "Regeln speichern",
-  "CriteriaSaveError": "Abruf-Regeln konnten nicht gespeichert werden.",
+      "CriteriaSave": "Regeln speichern",
+      "CriteriaSaveError": "Abruf-Regeln konnten nicht gespeichert werden.",
       "CriteriaDeleted": "Abruf-Regeln wurden entfernt.",
-  "CriteriaDelete": "Abruf-Regeln entfernen",
+      "CriteriaDelete": "Abruf-Regeln entfernen",
       "CriteriaDeleteError": "Abruf-Regeln konnten nicht entfernt werden.",
       "CriteriaLoadError": "Abruf-Regeln konnten nicht geladen werden.",
       "CriteriaValidationError": "Bitte prüfe die Angaben für die Abruf-Regeln.",
@@ -166,8 +164,7 @@
         "Subject": "Betreff",
         "Sender": "Absender",
         "Size": "Größe"
-      }
-      ,
+      },
       "Placeholders": {
         "Server": "imap.example.com",
         "DisplayName": "Eingangsordner",
@@ -176,8 +173,7 @@
         "CriteriaDescription": "Kurze Erläuterung",
         "IncludeFlags": "z. B. Seen,Flagged",
         "ExcludeFlags": "z. B. Draft"
-      }
-      ,
+      },
       "Hints": {
         "Provider": "Art des Mail-Providers (IMAP/POP3/Exchange).",
         "Server": "Hostname oder IP-Adresse des Mailservers.",
@@ -212,8 +208,7 @@
       "RefreshCount": "Anzahl aktualisieren",
       "RefreshingEllipsis": "Aktualisiere…",
       "TestingEllipsis": "Teste…",
-      "Testing": "Teste Verbindung"
-      ,
+      "Testing": "Teste Verbindung",
       "Status": {
         "MessagesInMailbox": "Nachrichten im Postfach",
         "AsOf": "Stand"
@@ -263,4 +258,3 @@
     }
   }
 }
-

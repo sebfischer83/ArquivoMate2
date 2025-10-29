@@ -214,14 +214,11 @@
 							<app-document-history style="width: 100%;" [events]="history()"></app-document-history>
 						</section>
 						<section class="tab-pane notes-view" [class.active]="activeItemIndex === 3">
-							<app-notes-list
-								[notes]="notes()"
-								[loading]="notesLoading()"
-								[error]="notesError()"
-								[adding]="addingNote()"
-								(retry)="retryNotes()"
-								(add)="addNote($event)"
-							></app-notes-list>
+								<app-notes-list
+									[documentId]="document()?.id || null"
+									[active]="activeItemIndex === 3"
+									(noteSaved)="onNoteSaved($event)"
+								></app-notes-list>
 						</section>
 						<section *ngIf="document()?.documentTypeSystemFeatures?.includes('lab-results')" class="tab-pane lab-results-view" [class.active]="activeItemIndex === 4">
 							<app-lab-results [document]="document()" [active]="activeItemIndex === 4" [editMode]="editMode()"></app-lab-results>

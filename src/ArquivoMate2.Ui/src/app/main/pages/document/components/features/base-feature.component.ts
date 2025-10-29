@@ -38,8 +38,20 @@ export abstract class BaseFeatureComponent<T> {
   constructor(protected cd: ChangeDetectorRef, protected toast: ToastService) {}
 
   ngOnChanges(changes: SimpleChanges) {
+    // If the active flag is true and the feature hasn't been loaded yet, attempt to load.
     if (this.active && !this._loaded) {
       this.checkStatusAndMaybeLoad();
+      return;
+    }
+
+    // If the associated document changed, reset loaded state so the feature will re-check
+    // status/data for the new document when the tab becomes active. Also cancel any
+    // existing polling so stale polls for the old document don't continue.
+    if (changes['document']) {
+      this._loaded = false;
+      if (this.pollingSub) { this.pollingSub.unsubscribe(); this.pollingSub = null; }
+      // If tab is currently active, immediately re-run status check for new document
+      if (this.active) this.checkStatusAndMaybeLoad();
     }
   }
 

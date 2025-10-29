@@ -17,11 +17,8 @@ import { DocumentsService } from '../../../client/services/documents.service';
 import { DocumentDownloadService } from '../../../services/document-download.service';
 import { DocumentDto } from '../../../client/models/document-dto';
 import { DocumentTypeDto } from '../../../client/models/document-type-dto';
-import { DocumentNoteDtoIEnumerableApiResponse } from '../../../client/models/document-note-dto-i-enumerable-api-response';
-import { DocumentNoteDtoApiResponse } from '../../../client/models/document-note-dto-api-response';
 import { ToastService } from '../../../services/toast.service';
 import { Location } from '@angular/common';
-import { DocumentNotesService } from '../../../client/services/document-notes.service';
 import { DocumentTypesService } from '../../../client/services/document-types.service';
 import { DocumentNoteDto } from '../../../client/models/document-note-dto';
 import { NotesListComponent } from './components/notes-list/notes-list.component';
@@ -58,11 +55,7 @@ export class DocumentComponent implements OnInit, OnDestroy {
   // Pending keyword operations
   readonly keywordAddPending = signal(false);
   readonly keywordPendingSet = signal<Set<string>>(new Set());
-  // Notes state/signals
-  readonly notes = signal<DocumentNoteDto[] | null>(null);
-  readonly notesLoading = signal(false);
-  readonly notesError = signal<string | null>(null);
-  readonly addingNote = signal(false);
+  // Notes are handled inside NotesListComponent now
   // document types loaded from server
   readonly documentTypes = signal<DocumentTypeDto[] | null>(null);
   readonly documentTypesLoading = signal(false);
@@ -77,7 +70,14 @@ export class DocumentComponent implements OnInit, OnDestroy {
   readonly editBuffer = signal<{ title?: string | null; type?: string | null }>({});
   // Form control used to provide NgControl for Taiga ComboBox and to sync value with editBuffer
   readonly editTypeControl = new FormControl<string | null>(null);
-  private notesLoadedOnce = false;
+  // (notes lifecycle moved to NotesListComponent)
+  // Handler for child noteSaved event
+  onNoteSaved(saved: DocumentNoteDto): void {
+    const doc = this.document();
+    if (!doc) return;
+    (doc as any).notesCount = (doc as any).notesCount ? (doc as any).notesCount + 1 : 1;
+    this.document.set({ ...doc });
+  }
   private readonly destroy$ = new Subject<void>();
   private readonly documentNavigator = inject(DocumentNavigationService);
   private readonly router = inject(Router);
@@ -126,7 +126,7 @@ export class DocumentComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private api: DocumentsService,
-    private notesApi: DocumentNotesService,
+    
     private downloadSrv: DocumentDownloadService,
     private toast: ToastService,
     private location: Location,
@@ -273,12 +273,7 @@ export class DocumentComponent implements OnInit, OnDestroy {
     this.document.set(dto);
     this.updateSafePreview();
     this.history.set(dto.history ?? []);
-    this.keywords.set([...(dto.keywords ?? [])]);
-    this.notes.set(null);
-    this.notesError.set(null);
-    this.notesLoading.set(false);
-    this.addingNote.set(false);
-    this.notesLoadedOnce = false;
+  this.keywords.set([...(dto.keywords ?? [])]);
     this.loading.set(false);
     this.error.set(null);
     // Load available document types when displaying a document
@@ -286,7 +281,24 @@ export class DocumentComponent implements OnInit, OnDestroy {
     // reset edit buffer and mode
     this.editMode.set(false);
     this.editBuffer.set({});
+    // Ensure the active tab is available for the newly loaded document.
+    // If the user was on a feature tab that the new document does not provide (e.g. lab-results),
+    // switch to the first available tab to avoid an empty content area.
+    try {
+      const available = [0, 1, 2, 3]; // properties, content, history, notes
+      if (dto?.documentTypeSystemFeatures?.includes && dto.documentTypeSystemFeatures.includes('lab-results')) {
+        available.push(4);
+      }
+      const current = this.tabIndex();
+      if (!available.includes(current)) {
+        this.tabIndex.set(available[0] ?? 0);
+      }
+    } catch (e) {
+      // non-blocking: if anything goes wrong, keep default behavior
+    }
     // keep initial tab at index 0 (do not auto-activate lab-results)
+    // Tabs are now responsible for loading their own data when the document changes.
+    // No manual child refresh calls here to keep parent logic simple.
   }
 
   startEdit(): void {
@@ -665,32 +677,9 @@ export class DocumentComponent implements OnInit, OnDestroy {
   get activeItemIndex(): number { return this.tabIndex(); }
   set activeItemIndex(i: number) {
     this.tabIndex.set(i);
-    if (i === 3 && !this.notesLoadedOnce) this.loadNotes();
   }
 
-  // --- Notes ---
-  private loadNotes(): void {
-    const id = this.documentId();
-    if (!id || this.notesLoading()) return;
-    this.notesLoading.set(true);
-    this.notesError.set(null);
-    this.notesApi.apiDocumentsDocumentIdNotesGet$Json({ documentId: id }).subscribe({
-      next: (resp: DocumentNoteDtoIEnumerableApiResponse) => {
-        const ok = resp?.success !== false;
-        if (!ok) {
-          this.notesLoading.set(false);
-          this.notesError.set(this.transloco.translate('Document.NotesLoadError'));
-          return;
-        }
-        this.notes.set(resp.data ?? []);
-        this.notesLoading.set(false);
-        this.notesLoadedOnce = true;
-      },
-      error: () => { this.notesLoading.set(false); this.notesError.set(this.transloco.translate('Document.NotesLoadError')); }
-    });
-  }
-
-  retryNotes(): void { this.notesLoadedOnce = false; this.loadNotes(); }
+  // Notes are handled by NotesListComponent now.
 
   goToPrevious(): void {
     this.navigateRelative(-1);
@@ -729,45 +718,7 @@ export class DocumentComponent implements OnInit, OnDestroy {
     });
   }
 
-  addNote(text: string): void {
-    const id = this.documentId();
-    if (!id || !text.trim()) return;
-    if (this.addingNote()) return;
-    // optimistic add
-    const draft: DocumentNoteDto = { id: 'tmp-' + Date.now(), text: text.trim(), createdAt: new Date().toISOString(), documentId: id };
-    const current = this.notes() || [];
-    this.notes.set([draft, ...current]);
-    // increment notesCount on document signal
-    const doc = this.document();
-    if (doc) { (doc as any).notesCount = (doc as any).notesCount ? (doc as any).notesCount + 1 : 1; this.document.set({ ...doc }); }
-    this.addingNote.set(true);
-    this.notesApi.apiDocumentsDocumentIdNotesPost$Json({ documentId: id, body: { text: text.trim() } as any }).subscribe({
-      next: (resp: DocumentNoteDtoApiResponse) => {
-        const ok = resp?.success !== false;
-        const saved = ok ? resp.data : null;
-        if (!ok || !saved) {
-          // revert optimistic insert
-          const list = this.notes() || [];
-          this.notes.set(list.filter(n => n.id !== draft.id));
-          if (doc) { (doc as any).notesCount = Math.max(((doc as any).notesCount || 1) - 1, 0); this.document.set({ ...doc }); }
-          this.toast.error(this.transloco.translate('Document.NoteSaveError'));
-          this.addingNote.set(false);
-          return;
-        }
-        const list = this.notes() || [];
-        this.notes.set(list.map(n => n.id === draft.id ? saved : n));
-        this.addingNote.set(false);
-        this.toast.success(this.transloco.translate('Document.NoteSaved'));
-      },
-      error: () => {
-        const list = this.notes() || [];
-        this.notes.set(list.filter(n => n.id !== draft.id));
-        if (doc) { (doc as any).notesCount = Math.max(((doc as any).notesCount || 1) - 1, 0); this.document.set({ ...doc }); }
-        this.toast.error(this.transloco.translate('Document.NoteSaveError'));
-        this.addingNote.set(false);
-      }
-    });
-  }
+  // parent does not manage notes anymore
 
   private fallbackCopy(text: string) {
     try {

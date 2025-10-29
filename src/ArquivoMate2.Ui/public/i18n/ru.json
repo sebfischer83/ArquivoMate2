@@ -1,5 +1,7 @@
 {
-  "LandingPage": {"Welcome": "Добро пожаловать"},
+  "LandingPage": {
+    "Welcome": "Добро пожаловать"
+  },
   "Common": {
     "Reset": "Сброс",
     "SavingEllipsis": "Сохранение…",
@@ -27,8 +29,8 @@
     "NextDocument": "Следующий документ",
     "NoMoreDocuments": "Больше документов недоступно",
     "NavigationError": "Не удалось загрузить другие документы",
-  "DocumentTitleFallback": "Документ",
-  "IdLabel": "ID: ",
+    "DocumentTitleFallback": "Документ",
+    "IdLabel": "ID: ",
     "LoadingEllipsis": "Загрузка…",
     "Open": "Открыть",
     "LoadingDocument": "Загрузка документа",
@@ -41,9 +43,9 @@
     "Title": "Заголовок",
     "Type": "Тип",
     "Accepted": "Принято",
-  "Accept": "Принять",
-  "AcceptConfirm": "Вы действительно хотите отметить этот документ как принятый?",
-  "AcceptError": "Не удалось принять документ",
+    "Accept": "Принять",
+    "AcceptConfirm": "Вы действительно хотите отметить этот документ как принятый?",
+    "AcceptError": "Не удалось принять документ",
     "Yes": "Да",
     "No": "Нет",
     "UploadedAt": "Загружено",
@@ -56,8 +58,8 @@
     "DocumentLoadError": "Документ не удалось загрузить",
     "DownloadStartError": "Не удалось начать загрузку",
     "NoteSaveError": "Не удалось сохранить заметку",
-  "PdfLoadError": "PDF не удалось загрузить",
-  "KeywordTooLong": "Ключевое слово слишком длинное (макс. 30)",
+    "PdfLoadError": "PDF не удалось загрузить",
+    "KeywordTooLong": "Ключевое слово слишком длинное (макс. 30)",
     "LabResults": {
       "Empty": "Нет данных лабораторных показателей.",
       "Processing": "Результаты лаборатории обрабатываются",
@@ -73,29 +75,23 @@
         "Raw": "Исходное: ",
         "Normalized": "Нормализованное: "
       },
+      "Parameter": "Параметр",
+      "Value": "Значение",
+      "Unit": "Единица",
+      "ReferenceRange": "Референсный диапазон",
       "Table": {
         "Parameter": "Параметр",
         "Value": "Значение",
         "Unit": "Единица",
         "ReferenceRange": "Референсный диапазон"
-      }
-      ,
+      },
       "Restart": "Перезапустить обработку"
-    }
-    ,
-    "LoadingLabResults": "Загрузка результатов лаборатории...",
+    },
+    "LoadingLabResults": "Загрузка результатов лабораторий...",
     "Refresh": "Обновить"
-  }
-
-  ,"Document.Tabs": {
-    "Details": "Детали",
-    "Content": "Содержание",
-    "History": "История",
-    "Notes": "Заметки",
-    "LabResults": "Результаты лаборатории"
-  }
-
-  ,"Settings": {
+      
+  },
+  "Settings": {
     "Email": {
       "ConnectionTitle": "E-mail подключение",
       "ConnectionDescription": "Настройте почтовый ящик, из которого импортируются документы.",
@@ -123,8 +119,8 @@
       "SaveError": "Не удалось сохранить настройки электронной почты.",
       "LoadError": "Не удалось загрузить настройки электронной почты.",
       "CountLoadError": "Не удалось получить количество писем.",
-  "StatusTitle": "Статус",
-  "StatusDescription": "Показать состояние подключения и почтового ящика.",
+      "StatusTitle": "Статус",
+      "StatusDescription": "Показать состояние подключения и почтового ящика.",
       "TestConnection": "Проверить подключение",
       "TestConnectionSuccess": "Подключение успешно протестировано.",
       "TestConnectionFailed": "Проверка подключения не удалась.",
@@ -134,10 +130,10 @@
       "CriteriaMissing": "Правила не сохранены",
       "LoadingRules": "Загрузка сохраненных правил…",
       "CriteriaSaved": "Правила выборки сохранены.",
-  "CriteriaSave": "Сохранить правила",
-  "CriteriaSaveError": "Не удалось сохранить правила выборки.",
+      "CriteriaSave": "Сохранить правила",
+      "CriteriaSaveError": "Не удалось сохранить правила выборки.",
       "CriteriaDeleted": "Правила выборки удалены.",
-  "CriteriaDelete": "Удалить правила выборки",
+      "CriteriaDelete": "Удалить правила выборки",
       "CriteriaDeleteError": "Не удалось удалить правила выборки.",
       "CriteriaLoadError": "Не удалось загрузить правила выборки.",
       "CriteriaValidationError": "Пожалуйста, проверьте параметры правил выборки.",
@@ -166,8 +162,7 @@
         "Subject": "Тема",
         "Sender": "Отправитель",
         "Size": "Размер"
-      }
-      ,
+      },
       "Placeholders": {
         "Server": "imap.example.com",
         "DisplayName": "Входящая",
@@ -176,8 +171,7 @@
         "CriteriaDescription": "Краткое описание",
         "IncludeFlags": "например: Seen,Flagged",
         "ExcludeFlags": "например: Draft"
-      }
-      ,
+      },
       "Hints": {
         "Provider": "Тип почтового провайдера (IMAP/POP3/Exchange).",
         "Server": "Имя хоста или IP-адрес почтового сервера.",
@@ -212,8 +206,7 @@
       "RefreshCount": "Обновить количество",
       "RefreshingEllipsis": "Обновление…",
       "TestingEllipsis": "Проверка…",
-      "Testing": "Проверить подключение"
-      ,
+      "Testing": "Проверить подключение",
       "Status": {
         "MessagesInMailbox": "Сообщения в почтовом ящике",
         "AsOf": "По состоянию на"
@@ -263,4 +256,3 @@
     }
   }
 }
-

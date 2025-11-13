@@ -11,6 +11,8 @@ using StackExchange.Redis;
 using System.IO;
 using Marten;
 using ArquivoMate2.Application.Models;
+using ArquivoMate2.Domain.Collections;
+using ArquivoMate2.Shared.Models.Collections;
 
 namespace ArquivoMate2.Infrastructure.Mapping
 {
@@ -44,7 +46,8 @@ namespace ArquivoMate2.Infrastructure.Mapping
                     .ForMember(dest => dest.ChatBotClass, opt => opt.MapFrom(src => src.ChatBotClass))
                     .ForMember(dest => dest.NotesCount, opt => opt.MapFrom(src => src.NotesCount)) // NEW
                     .ForMember(dest => dest.Language, opt => opt.MapFrom(src => src.Language)) // NEW
-                    .ForMember(dest => dest.Sender, opt => opt.MapFrom<PartyResolver, Guid?>(src => src.SenderId)); // resolve sender
+                    .ForMember(dest => dest.Sender, opt => opt.MapFrom<PartyResolver, Guid?>(src => src.SenderId)) // resolve sender
+                    .ForMember(dest => dest.CollectionRefs, opt => opt.MapFrom<CollectionRefsResolver, Guid>(src => src.Id));
 
             // Resolve sender PartyDto if SenderId present in DocumentView (new column required in view)
             CreateMap<DocumentView, PartyDto>()
@@ -123,6 +126,39 @@ namespace ArquivoMate2.Infrastructure.Mapping
                 ? string.Join(' ', new[] { party.FirstName, party.LastName }.Where(s => !string.IsNullOrWhiteSpace(s))).Trim()
                 : party.CompanyName;
             return new PartyListDto { Id = party.Id, DisplayName = display };
+        }
+    }
+
+    public class CollectionRefsResolver : IMemberValueResolver<DocumentView, DocumentDto, Guid, List<CollectionRefDto>>
+    {
+        private readonly IQuerySession _query;
+
+        public CollectionRefsResolver(IQuerySession query)
+        {
+            _query = query;
+        }
+
+        public List<CollectionRefDto> Resolve(DocumentView source, DocumentDto destination, Guid sourceMember, List<CollectionRefDto> destMember, ResolutionContext context)
+        {
+            // Query memberships for this document and join with collections to get names
+            var pairs = _query.Query<DocumentCollectionMembership>()
+                .Where(m => m.DocumentId == sourceMember)
+                .Select(m => new { m.CollectionId })
+                .ToList();
+
+            if (pairs == null || pairs.Count == 0)
+                return new List<CollectionRefDto>();
+
+            var collectionIds = pairs.Select(p => p.CollectionId).ToList();
+
+            var collections = _query.Query<DocumentCollection>()
+                .Where(c => collectionIds.Contains(c.Id))
+                .OrderBy(c => c.Name)
+                .Select(c => new { c.Id, c.Name })
+                .ToList();
+
+            var result = collections.Select(c => new CollectionRefDto { Id = c.Id, Name = c.Name }).ToList();
+            return result;
         }
     }
 }

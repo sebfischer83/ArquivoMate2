@@ -70,5 +70,8 @@ namespace ArquivoMate2.Shared.Models
 
         // Original uploaded filename (as provided by the client at upload time)
         public string OriginalFileName { get; set; } = string.Empty;
+
+        // References to collections this document belongs to (Id + Name)
+        public List<ArquivoMate2.Shared.Models.Collections.CollectionRefDto> CollectionRefs { get; set; } = new();
     }
 }

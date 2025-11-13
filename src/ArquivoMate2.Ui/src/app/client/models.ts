@@ -9,6 +9,7 @@ export type { BooleanApiResponse } from './models/boolean-api-response';
 export type { CollectionDto } from './models/collection-dto';
 export type { CollectionDtoApiResponse } from './models/collection-dto-api-response';
 export type { CollectionDtoIEnumerableApiResponse } from './models/collection-dto-i-enumerable-api-response';
+export type { CollectionRefDto } from './models/collection-ref-dto';
 export type { ConnectionTestResultDto } from './models/connection-test-result-dto';
 export type { ConnectionTestResultDtoApiResponse } from './models/connection-test-result-dto-api-response';
 export type { CreateCollectionRequest } from './models/create-collection-request';

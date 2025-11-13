@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ChangeDetectorRef, signal, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ChangeDetectorRef, signal, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { forkJoin, of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
@@ -39,6 +39,45 @@ export class LabResultsComponent extends BaseFeatureComponent<LabResultDtoListAp
 
   constructor(private labService: LabResultFeatureService, protected override cd: ChangeDetectorRef, private transloco: TranslocoService, protected override toast: ToastService) {
     super(cd, toast);
+  }
+
+  // New inputs to allow tab-driven loading like NotesList
+  @Input() documentId: string | null = null;
+  @Input() override active = false;
+
+  // Mirror inputs into base-class `document`/`active` lifecycle by creating a minimal DocumentDto
+  override ngOnChanges(changes: SimpleChanges) {
+    // Support either `document` (parent passes whole DTO) or `documentId` (parent passes id)
+    const mapped: SimpleChanges = {} as any;
+
+    // If parent passed a whole document, forward it directly
+    if (changes['document']) {
+      this.document = changes['document'].currentValue ?? null;
+      mapped['document'] = changes['document'];
+    }
+
+    // If parent passed only an id, map it into a minimal DocumentDto and forward
+    if (changes['documentId']) {
+      const prevId = (changes['documentId'].previousValue ?? null) as string | null;
+      const currId = (changes['documentId'].currentValue ?? null) as string | null;
+      this.document = currId ? ({ id: currId } as DocumentDto) : null;
+      mapped['document'] = {
+        previousValue: prevId ? ({ id: prevId } as DocumentDto) : null,
+        currentValue: this.document,
+        firstChange: changes['documentId'].firstChange,
+        isFirstChange: changes['documentId'].isFirstChange,
+      } as SimpleChanges[keyof SimpleChanges];
+    }
+
+    if (changes['active']) {
+      // make sure our active flag mirrors the input value
+      this.active = !!changes['active'].currentValue;
+      mapped['active'] = changes['active'];
+    }
+
+    // If nothing was mapped (odd), fall back to forwarding the original changes
+    const toForward = Object.keys(mapped).length ? mapped : changes;
+    super.ngOnChanges(toForward as any);
   }
 
   // Workaround: reference TuiInputInline to satisfy Angular's "used in template" analyzer that

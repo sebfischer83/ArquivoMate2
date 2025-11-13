@@ -8,7 +8,7 @@
     </div>
 
     <tui-expand [expanded]="composerOpen">
-      <form class="note-composer" (submit)="onSubmit($event)">
+  <form class="note-composer" (submit)="onSubmit($event)">
         <textarea
           class="note-textarea"
           [(ngModel)]="draft"
@@ -22,7 +22,7 @@
           <span class="counter">{{ draft.length }}/1000</span>
           <span class="spacer"></span>
           <button tuiButton size="xs" appearance="secondary" type="button" (click)="cancelComposer()" [disabled]="adding">{{ t('Document.Cancel') }}</button>
-          <button tuiButton size="xs" appearance="primary" type="submit" [disabled]="adding || !draft.trim()">
+          <button tuiButton size="xs" appearance="primary" type="button" (click)="addNote(draft)" [disabled]="adding || !draft.trim()">
             <ng-container *ngIf="!adding; else savingTpl">{{ t('Document.Save') }}</ng-container>
           </button>
           <ng-template #savingTpl><span class="saving"><tui-loader size="xs"></tui-loader>&nbsp;{{ t('Document.Save') }}…</span></ng-template>
@@ -35,7 +35,7 @@
     </div>
     <div *ngIf="error && !loading" class="notes-error">
       <span>{{ error }}</span>
-  <button tuiButton size="xs" appearance="flat" type="button" (click)="retry.emit()">{{ t('Document.Retry') }}</button>
+  <button tuiButton size="xs" appearance="flat" type="button" (click)="loadNotes()">{{ t('Document.Retry') }}</button>
     </div>
   <div *ngIf="!loading && !error && empty" class="notes-empty">{{ t('Document.NoNotes') }}</div>
     <ul *ngIf="!loading && !error && !empty" class="notes-list">

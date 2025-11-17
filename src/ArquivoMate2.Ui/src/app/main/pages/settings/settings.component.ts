@@ -29,6 +29,11 @@ export class SettingsComponent {
       description: 'Teams für Dokumentfreigaben verwalten',
       link: 'share-groups',
     },
+    {
+      label: 'Sammlungen',
+      description: 'Dokumentsammlungen verwalten',
+      link: 'collections',
+    },
   ];
 
   // No body scroll workaround anymore — layout is handled by main-area flex rules

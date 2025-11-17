@@ -46,6 +46,11 @@ export const routes: Routes = [
                         path: 'share-groups',
                         loadComponent: () =>
                             import('./main/pages/settings/share-groups/share-groups.component').then(m => m.ShareGroupsComponent)
+                    },
+                    {
+                        path: 'collections',
+                        loadComponent: () =>
+                            import('./main/pages/settings/collections/collections.component').then(m => m.CollectionsComponent)
                     }
                 ]
             },

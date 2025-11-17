@@ -171,6 +171,42 @@
 									<button tuiButton size="xs" appearance="flat" type="button" (click)="addKeyword()" [disabled]="!newKeyword().trim() || keywordAddPending()">{{ keywordAddPending() ? t('Document.LoadingEllipsis') : t('Document.Add') }}</button>
 								</div>
 							</div>
+							<div class="collections-box">
+								<div class="collections-header">
+									<span class="collections-label">{{ t('Document.Collections') || 'Sammlungen' }}</span>
+								</div>
+								<div class="collections-chips">
+									<ng-container *ngFor="let coll of document()?.collectionRefs">
+										<span tuiChip size="s" appearance="secondary" class="collection-chip">{{ coll.name }}</span>
+									</ng-container>
+									<ng-container *ngIf="!document()?.collectionRefs?.length">
+										<span class="collections-empty">{{ t('Document.NoCollections') || 'Keine Sammlungen' }}</span>
+									</ng-container>
+								</div>
+								<div class="collections-checkboxes" *ngIf="availableCollections().length > 0">
+									<label *ngFor="let coll of availableCollections()" class="collection-checkbox">
+										<input 
+											type="checkbox" 
+											[value]="coll.id" 
+											[checked]="selectedCollectionIds().includes(coll.id || '')"
+											(change)="toggleCollection(coll.id || '')"
+										/>
+										<span>{{ coll.name }}</span>
+									</label>
+								</div>
+								<div class="collections-actions">
+									<button 
+										tuiButton 
+										size="s" 
+										appearance="secondary" 
+										type="button" 
+										(click)="saveCollections()" 
+										[disabled]="collectionsSaving() || collectionsLoading()"
+									>
+										{{ collectionsSaving() ? t('Document.LoadingEllipsis') : t('Document.Save') }}
+									</button>
+								</div>
+							</div>
 							<div class="prop-grid">
 								<div class="prop"><span class="label">{{ t('Document.FileName') }}</span><label tuiLabel size="s" class="value mono">{{ originalFileName() || '-' }}</label></div>
 								<div class="prop"><span class="label">ID</span><label tuiLabel size="s" class="value mono" title="Doppelklick zum Kopieren" (dblclick)="copyId()">{{ doc.id }}</label></div>

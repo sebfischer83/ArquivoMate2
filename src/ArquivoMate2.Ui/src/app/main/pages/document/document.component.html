@@ -184,15 +184,20 @@
 									</ng-container>
 								</div>
 								<div class="collections-checkboxes" *ngIf="availableCollections().length > 0">
-									<label *ngFor="let coll of availableCollections()" class="collection-checkbox">
-										<input 
-											type="checkbox" 
-											[value]="coll.id" 
-											[checked]="selectedCollectionIds().includes(coll.id || '')"
-											(change)="toggleCollection(coll.id || '')"
-										/>
-										<span>{{ coll.name }}</span>
+									<label
+										*ngFor="let coll of availableCollections()"
+										class="collection-checkbox"
+										[attr.for]="'collection-checkbox-' + coll.id"
+									>
 									</label>
+									<input
+										type="checkbox"
+										[value]="coll.id"
+										[checked]="selectedCollectionIds().includes(coll.id || '')"
+										(change)="toggleCollection(coll.id || '')"
+										[attr.id]="'collection-checkbox-' + coll.id"
+									/>
+									<span>{{ coll.name }}</span>
 								</div>
 								<div class="collections-actions">
 									<button 

@@ -36,7 +36,7 @@
                       <div class="collection-info">
                         <div class="collection-name">{{ collection.name || t('Settings.Collections.Untitled') || 'Unbenannt' }}</div>
                         <div class="collection-details">
-                          {{ collection.documentCount ?? 0 }} {{ (collection.documentCount === 1 ? t('Settings.Collections.Document') : t('Settings.Collections.Documents')) || 'Dokumente' }}
+                          {{ collection.documentCount ?? 0 }} {{ t('Settings.Collections.Documents' | translocoPlural: collection.documentCount) || 'Dokumente' }}
                         </div>
                       </div>
                       <div class="collection-actions">

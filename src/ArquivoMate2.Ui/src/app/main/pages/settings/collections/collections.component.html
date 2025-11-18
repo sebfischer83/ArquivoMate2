@@ -1,0 +1,122 @@
+<ng-container *transloco="let t">
+  <div class="collections-settings">
+    <div class="layout">
+      <section class="panel" tuiSurface appearance="floating">
+        <header class="panel-header">
+          <div class="panel-text">
+            <h2 class="panel-title">{{ t('Settings.Collections.ListTitle') || 'Sammlungen' }}</h2>
+            <p class="panel-description">{{ t('Settings.Collections.ListDescription') || 'Verwalte deine Dokumentsammlungen' }}</p>
+          </div>
+          <div class="panel-actions">
+            <button tuiButton appearance="secondary" size="s" type="button" (click)="reload()" [disabled]="loadingCollections()">
+              @if (loadingCollections()) { {{ t('Settings.Collections.Reloading') || 'Lädt...' }} } @else {
+                {{ t('Settings.Collections.Reload') || 'Aktualisieren' }}
+              }
+            </button>
+            <button tuiButton appearance="primary" size="s" type="button" (click)="startCreate()" [disabled]="savingCollection()">
+              {{ t('Settings.Collections.CreateButton') || 'Neue Sammlung' }}
+            </button>
+          </div>
+        </header>
+        <div class="panel-body">
+          @if (loadingCollections()) {
+            <div class="state">
+              <tui-loader size="m"></tui-loader>
+            </div>
+          } @else {
+            @if (sortedCollections().length === 0) {
+              <tui-notification status="neutral">
+                {{ t('Settings.Collections.EmptyState') || 'Keine Sammlungen vorhanden. Erstelle deine erste Sammlung.' }}
+              </tui-notification>
+            } @else {
+              <tui-scrollbar class="collection-scroll">
+                <ul class="collection-list">
+                  @for (collection of sortedCollections(); track trackByCollectionId($index, collection)) {
+                    <li class="collection-item" [class.active]="editingCollectionId() === (collection.id ?? null)">
+                      <div class="collection-info">
+                        <div class="collection-name">{{ collection.name || t('Settings.Collections.Untitled') || 'Unbenannt' }}</div>
+                        <div class="collection-details">
+                          {{ collection.documentCount ?? 0 }} {{ t('Settings.Collections.Documents' | translocoPlural: collection.documentCount) || 'Dokumente' }}
+                        </div>
+                      </div>
+                      <div class="collection-actions">
+                        <button tuiButton appearance="secondary" size="s" type="button" (click)="editCollection(collection)">
+                          {{ t('Settings.Collections.Edit') || 'Bearbeiten' }}
+                        </button>
+                        <button
+                          tuiButton
+                          appearance="secondary"
+                          size="s"
+                          type="button"
+                          class="danger"
+                          (click)="deleteCollection(collection)"
+                          [disabled]="isDeleting(collection)"
+                        >
+                          @if (isDeleting(collection)) { {{ t('Common.RemovingEllipsis') || 'Wird gelöscht...' }} } @else {
+                            {{ t('Settings.Collections.Delete.Label') || 'Löschen' }}
+                          }
+                        </button>
+                      </div>
+                    </li>
+                  }
+                </ul>
+              </tui-scrollbar>
+            }
+          }
+        </div>
+      </section>
+
+      <section class="panel sticky" tuiSurface appearance="floating">
+        <header class="panel-header">
+          <div class="panel-text">
+            <h2 class="panel-title">
+              @if (editingCollectionId()) {
+                {{ t('Settings.Collections.Form.EditTitle') || 'Sammlung bearbeiten' }}
+              } @else {
+                {{ t('Settings.Collections.Form.CreateTitle') || 'Neue Sammlung erstellen' }}
+              }
+            </h2>
+            <p class="panel-description">{{ t('Settings.Collections.Form.Description') || 'Gib der Sammlung einen Namen' }}</p>
+          </div>
+        </header>
+        <div class="panel-body">
+          @if (savingCollection()) {
+            <div class="state">
+              <tui-loader size="m"></tui-loader>
+            </div>
+          }
+
+          <form [formGroup]="collectionForm" (ngSubmit)="saveCollection()">
+            <div class="form-field">
+              <label for="collectionName">{{ t('Settings.Collections.Form.NameLabel') || 'Name' }}</label>
+              <tui-textfield>
+                <input
+                  tuiTextfield
+                  id="collectionName"
+                  type="text"
+                  formControlName="name"
+                  [placeholder]="t('Settings.Collections.Form.NamePlaceholder') || 'z.B. Rechnungen 2024'"
+                  autocomplete="off"
+                />
+              </tui-textfield>
+              @if (collectionForm.controls.name.touched && collectionForm.controls.name.invalid) {
+                <span class="error">{{ t('Settings.Collections.Form.NameRequired') || 'Name ist erforderlich' }}</span>
+              }
+            </div>
+
+            <div class="form-actions">
+              <button tuiButton appearance="primary" size="m" type="submit" [disabled]="savingCollection()">
+                @if (savingCollection()) { {{ t('Common.SavingEllipsis') || 'Wird gespeichert...' }} } @else {
+                  {{ t('Settings.Collections.Form.Save') || 'Speichern' }}
+                }
+              </button>
+              <button tuiButton appearance="secondary" size="m" type="button" (click)="startCreate()" [disabled]="savingCollection()">
+                {{ t('Settings.Collections.Form.CancelEdit') || 'Abbrechen' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+</ng-container>

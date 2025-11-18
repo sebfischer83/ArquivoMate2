@@ -1,7 +1,7 @@
 // ...existing code...
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, signal, computed, inject, Injector, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TuiButton, TuiSurface, TuiTitle, TuiDropdown, TuiDropdownOpen, TuiDialogService, TuiTextfield, TuiTextfieldDropdownDirective, TuiLabel, TuiHint } from '@taiga-ui/core';
+import { TuiButton, TuiSurface, TuiTitle, TuiDropdown, TuiDropdownOpen, TuiDialogService, TuiTextfield, TuiTextfieldDropdownDirective, TuiLabel, TuiHint, TuiDataList } from '@taiga-ui/core';
 import { TuiTabs, TuiChip, TuiDataListWrapper, TUI_CONFIRM, TuiComboBox } from '@taiga-ui/kit';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { DocumentTabsComponent } from './components/document-tabs/document-tabs.component';
@@ -26,10 +26,12 @@ import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
 import { DocumentNavigationService } from '../../../services/document-navigation.service';
 import { Subject, of } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
+import { CollectionsService } from '../../../client/services/collections.service';
+import { CollectionDto } from '../../../client/models/collection-dto';
 
 @Component({
   selector: 'app-document',
-  imports: [CommonModule, ReactiveFormsModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, TuiDropdown, TuiDropdownOpen, TuiChip, TuiTextfield, TuiTextfieldDropdownDirective, TuiDataListWrapper, TuiComboBox, TuiLabel, TuiHint, DocumentHistoryComponent, PdfJsViewerComponent, DocumentTabsComponent, PdfJsViewerToolbarComponent, ContentToolbarComponent, NotesListComponent, LabResultsComponent, TranslocoModule],
+  imports: [CommonModule, ReactiveFormsModule, TuiButton, TuiSurface, TuiTitle, TuiTabs, TuiDropdown, TuiDropdownOpen, TuiChip, TuiTextfield, TuiTextfieldDropdownDirective, TuiDataList, TuiDataListWrapper, TuiComboBox, TuiLabel, TuiHint, DocumentHistoryComponent, PdfJsViewerComponent, DocumentTabsComponent, PdfJsViewerToolbarComponent, ContentToolbarComponent, NotesListComponent, LabResultsComponent, TranslocoModule],
   templateUrl: './document.component.html',
   styleUrls: ['./document.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -70,6 +72,11 @@ export class DocumentComponent implements OnInit, OnDestroy {
   readonly editBuffer = signal<{ title?: string | null; type?: string | null }>({});
   // Form control used to provide NgControl for Taiga ComboBox and to sync value with editBuffer
   readonly editTypeControl = new FormControl<string | null>(null);
+  // Collections management
+  readonly availableCollections = signal<CollectionDto[]>([]);
+  readonly collectionsLoading = signal(false);
+  readonly selectedCollectionIds = signal<string[]>([]);
+  readonly collectionsSaving = signal(false);
   // (notes lifecycle moved to NotesListComponent)
   // Handler for child noteSaved event
   onNoteSaved(saved: DocumentNoteDto): void {
@@ -133,6 +140,7 @@ export class DocumentComponent implements OnInit, OnDestroy {
     private sanitizer: DomSanitizer,
     private transloco: TranslocoService,
     private docTypesApi: DocumentTypesService,
+    private collectionsApi: CollectionsService,
   ) {
     this.documentId.set(this.route.snapshot.paramMap.get('id'));
   }
@@ -278,6 +286,11 @@ export class DocumentComponent implements OnInit, OnDestroy {
     this.error.set(null);
     // Load available document types when displaying a document
     this.loadDocumentTypes();
+    // Load available collections
+    this.loadCollections();
+    // Set selected collections from document
+    const collectionIds = (dto.collectionRefs ?? []).map(c => c.id).filter(Boolean) as string[];
+    this.selectedCollectionIds.set(collectionIds);
     // reset edit buffer and mode
     this.editMode.set(false);
     this.editBuffer.set({});
@@ -447,6 +460,91 @@ export class DocumentComponent implements OnInit, OnDestroy {
         this.documentTypesLoading.set(false);
         this.documentTypesError.set(this.transloco.translate('Document.TypesLoadError'));
       }
+    });
+  }
+
+  private loadCollections(): void {
+    if (this.collectionsLoading()) return;
+    this.collectionsLoading.set(true);
+    this.collectionsApi.apiCollectionsGet$Json().pipe(take(1)).subscribe({
+      next: (resp: { success?: boolean; data?: CollectionDto[] }) => {
+        const ok = resp?.success !== false;
+        const list = resp?.data ?? [];
+        if (ok) {
+          this.availableCollections.set(list as CollectionDto[]);
+        }
+        this.collectionsLoading.set(false);
+      },
+      error: () => {
+        this.collectionsLoading.set(false);
+        this.toast.error(this.transloco.translate('Document.CollectionsLoadError') || 'Fehler beim Laden der Sammlungen');
+      }
+    });
+  }
+
+  public saveCollections(): void {
+    const doc = this.document();
+    const docId = this.documentId();
+    if (!doc || !docId) return;
+    
+    const currentIds = (doc.collectionRefs ?? []).map(c => c.id).filter(Boolean) as string[];
+    const selectedIds = this.selectedCollectionIds();
+    
+    const toAdd = selectedIds.filter(id => !currentIds.includes(id));
+    const toRemove = currentIds.filter(id => !selectedIds.includes(id));
+    
+    if (toAdd.length === 0 && toRemove.length === 0) {
+      return; // No changes
+    }
+    
+    this.collectionsSaving.set(true);
+    
+    // Execute all operations
+    let totalOps = toAdd.length + toRemove.length;
+    let completed = 0;
+    let hasError = false;
+    
+    const checkCompletion = () => {
+      completed++;
+      if (completed === totalOps) {
+        this.collectionsSaving.set(false);
+        if (!hasError) {
+          this.toast.success(this.transloco.translate('Document.CollectionsSaved') || 'Sammlungen gespeichert');
+          // Reload document to get updated collectionRefs
+          const id = this.documentId();
+          if (id) this.fetch(id);
+        } else {
+          this.toast.error(this.transloco.translate('Document.CollectionsSaveError') || 'Fehler beim Speichern der Sammlungen');
+        }
+      }
+    };
+    
+    // Process removals
+    toRemove.forEach(collectionId => {
+      this.collectionsApi.apiCollectionsIdDocumentsDocumentIdDelete({ 
+        id: collectionId, 
+        documentId: docId 
+      }).subscribe({
+        next: () => checkCompletion(),
+        error: () => {
+          hasError = true;
+          checkCompletion();
+        }
+      });
+    });
+    
+    // Process additions
+    toAdd.forEach(collectionId => {
+      this.collectionsApi.apiCollectionsIdAssignPost$Json({
+        id: collectionId,
+        body: { documentIds: [docId], collectionId }
+      }).subscribe({
+        next: () => checkCompletion(),
+        error: () => {
+          hasError = true;
+          checkCompletion();
+        }
+      });
     });
   }
 
@@ -677,6 +775,18 @@ export class DocumentComponent implements OnInit, OnDestroy {
   get activeItemIndex(): number { return this.tabIndex(); }
   set activeItemIndex(i: number) {
     this.tabIndex.set(i);
+  }
+
+  // Stringify function for collections multi-select
+  readonly stringify = (item: CollectionDto): string => item?.name ?? '';
+
+  toggleCollection(id: string): void {
+    const current = this.selectedCollectionIds();
+    if (current.includes(id)) {
+      this.selectedCollectionIds.set(current.filter(cid => cid !== id));
+    } else {
+      this.selectedCollectionIds.set([...current, id]);
+    }
   }
 
   // Notes are handled by NotesListComponent now.

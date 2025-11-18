@@ -467,7 +467,7 @@ export class DocumentComponent implements OnInit, OnDestroy {
     if (this.collectionsLoading()) return;
     this.collectionsLoading.set(true);
     this.collectionsApi.apiCollectionsGet$Json().pipe(take(1)).subscribe({
-      next: (resp: any) => {
+      next: (resp: { success?: boolean; data?: CollectionDto[] }) => {
         const ok = resp?.success !== false;
         const list = resp?.data ?? [];
         if (ok) {

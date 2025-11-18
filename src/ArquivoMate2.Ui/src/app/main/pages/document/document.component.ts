@@ -482,7 +482,7 @@ export class DocumentComponent implements OnInit, OnDestroy {
     });
   }
 
-  saveCollections(): void {
+  public saveCollections(): void {
     const doc = this.document();
     const docId = this.documentId();
     if (!doc || !docId) return;
